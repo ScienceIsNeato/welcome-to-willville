@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "project": {
+    "name": "your-repo-name",
+    "display_name": "The Building's Sign",
+    "district": "the-foundry",
+    "stop": "the-building",
+    "lines": ["ai"],
+    "visibility": "public",
+    "homepage": "https://example.com"
+  },
+  "status": {
+    "state": "wip",
+    "summary": "One-line headline shown on the sign.",
+    "blockers": ["Whatever is blocking you right now (up to 3 shown)"],
+    "next": ["First concrete next action", "Second concrete next action"],
+    "updated": "2026-05-19"
+  },
+  "queue": {
+    "active": true,
+    "milestone": "What's the next big shipment?",
+    "eta_days": 7,
+    "priority": 2
+  }
+}

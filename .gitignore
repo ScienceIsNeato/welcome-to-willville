@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+.cursor
+
+# Generated Copilot instructions (from cursor-rules)
+.github/instructions/*.instructions.md
+
+# slop-mop working directory (machine-local state)
+.slopmop/
+
+# Local cursor-rules clone (separate git repo)
+/cursor-rules/
