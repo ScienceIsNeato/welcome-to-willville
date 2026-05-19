@@ -1,31 +1,27 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import type { District } from "@/lib/willville";
 
 type Props = {
   district: District;
-  isFocused: boolean;
 };
 
-export function DistrictZone({ district, isFocused }: Props) {
-  const router = useRouter();
+/** Visual district overlay — labels and tint only; no click navigation. */
+export function DistrictZone({ district }: Props) {
   const color = `var(${district.colorVar})`;
   return (
     <g
       className={`district-${district.id.replace(/^the-/, "")}`}
-      onClick={() => router.push(`/${district.id}/`)}
-      style={{ cursor: "pointer" }}
-      aria-label={district.displayName}
+      style={{ pointerEvents: "none" }}
+      aria-hidden
     >
       <polygon
         points={district.polygon}
         fill={color}
-        fillOpacity={isFocused ? 0.28 : 0}
+        fillOpacity={0}
         stroke={color}
-        strokeWidth={isFocused ? 3 : 1.5}
-        strokeOpacity={isFocused ? 0.85 : 0.35}
-        style={{ transition: "fill-opacity 200ms, stroke-opacity 200ms" }}
+        strokeWidth={1.5}
+        strokeOpacity={0.35}
       >
         <title>{district.displayName}</title>
       </polygon>

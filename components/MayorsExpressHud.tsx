@@ -1,7 +1,6 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { useRouter } from "next/navigation";
 import { activeQueue, type Stop } from "@/lib/town";
 
 function useIsClient(): boolean {
@@ -19,8 +18,13 @@ function useIsClient(): boolean {
  *
  * Renders only on the client so queue order/ETAs never diverge during hydration.
  */
-export function MayorsExpressHud({ stops }: { stops: Stop[] }) {
-  const router = useRouter();
+export function MayorsExpressHud({
+  stops,
+  onSelectStop,
+}: {
+  stops: Stop[];
+  onSelectStop: (stop: Stop) => void;
+}) {
   const isClient = useIsClient();
 
   if (!isClient) return null;
@@ -52,7 +56,7 @@ export function MayorsExpressHud({ stops }: { stops: Stop[] }) {
       <HudBody
         next={next}
         after={after}
-        onSelect={(stop) => router.push(`/${stop.district}/${stop.id}/`)}
+        onSelect={onSelectStop}
       />
     </div>
   );

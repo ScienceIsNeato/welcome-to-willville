@@ -3,10 +3,10 @@
  *
  * Combines:
  *   1. Manual stops from willville.ts
- *   2. Per-repo heuristics from willville.heuristics.ts
- *   3. .willville.json manifests fetched live from each repo's default branch
- *   4. Optional GitHub repo metadata (default branch, last pushed)
+ *   2. Per-repo heuristics from willville.heuristics.ts (position, district, lines)
+ *   3. Live GitHub repo metadata (description, pushed_at, open milestones)
  *
+ * No .willville.json required — everything is derived from the repo itself.
  * The result is a flat array of Stop objects that the SVG layer renders.
  */
 import {
@@ -17,7 +17,6 @@ import {
   type LineId,
 } from "./willville";
 import { HEURISTICS, type Heuristic } from "./willville.heuristics";
-import type { Manifest } from "./manifest";
 
 export type StatusState =
   | "idea"
@@ -100,6 +99,12 @@ export function activeQueue(stops: Stop[]): Stop[] {
     .sort(compareQueue);
 }
 
+export type OpenMilestone = {
+  title: string;
+  dueOn: string | null;
+  openIssues: number;
+};
+
 export type RepoMeta = {
   repo: string; // "owner/name"
   isPrivate: boolean;
@@ -108,32 +113,64 @@ export type RepoMeta = {
   pushedAt: string;
   defaultBranch: string;
   homepage?: string;
+  /** GitHub repo description — used as status.summary. */
+  description?: string;
+  /** Open milestones sorted by due date ascending. */
+  openMilestones?: OpenMilestone[];
 };
 
-export type RepoWithManifest = {
-  meta: RepoMeta;
-  manifest: Manifest | null;
-};
+/**
+ * Derive project status state from GitHub push recency and milestone presence.
+ * Open milestone → wip. Recent push → shipping. Otherwise maintenance/dormant.
+ */
+function deriveState(
+  pushedAt: string,
+  hasOpenMilestone: boolean,
+): StatusState {
+  if (hasOpenMilestone) return "wip";
+  const daysSince = (Date.now() - Date.parse(pushedAt)) / 86_400_000;
+  if (daysSince <= 14) return "shipping";
+  if (daysSince <= 90) return "maintenance";
+  return "dormant";
+}
 
-/** Merge a heuristic + manifest into a Stop. */
-export function buildStop(
-  meta: RepoMeta,
-  manifest: Manifest | null,
-  heuristic?: Heuristic,
-): Stop {
-  const project = manifest?.project ?? {};
-  const status = manifest?.status ?? {};
-  const displayName =
-    project.display_name ?? heuristic?.displayName ?? meta.repo.split("/")[1];
-  const district =
-    (project.district as DistrictId | undefined) ??
-    heuristic?.district ??
-    "the-hearth";
-  const lines =
-    (project.lines as LineId[] | undefined) ?? heuristic?.lines ?? [];
+/**
+ * Derive queue entry from GitHub open milestones.
+ * Falls back to heuristic queue if no milestones exist.
+ */
+function deriveQueue(
+  openMilestones: OpenMilestone[] | undefined,
+  heuristicQueue: Heuristic["queue"] | undefined,
+): QueueEntry | undefined {
+  if (openMilestones && openMilestones.length > 0) {
+    const m = openMilestones[0]!;
+    const etaDays = m.dueOn
+      ? deriveEtaDays({ target_date: m.dueOn })
+      : undefined;
+    return {
+      active: true,
+      milestone: m.title,
+      etaDays: Number.isFinite(etaDays ?? NaN) ? etaDays : undefined,
+    };
+  }
+  if (!heuristicQueue) return undefined;
+  return {
+    active: heuristicQueue.active,
+    milestone: heuristicQueue.milestone,
+    etaDays: heuristicQueue.etaDays,
+    priority: heuristicQueue.priority,
+  };
+}
+
+/** Build a Stop from GitHub repo metadata + optional heuristic layout overrides. */
+export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
+  const hasOpenMilestone = (meta.openMilestones?.length ?? 0) > 0;
+  const district = heuristic?.district ?? "the-hearth";
+  const lines = heuristic?.lines ?? [];
   const stopId =
-    project.stop ?? heuristic?.stopId ?? meta.repo.split("/")[1].toLowerCase();
-  const queue = mergeQueue(manifest?.queue, heuristic?.queue);
+    heuristic?.stopId ?? meta.repo.split("/")[1]!.toLowerCase();
+  const displayName = heuristic?.displayName ?? repoDisplayName(meta.repo);
+  const queue = deriveQueue(meta.openMilestones, heuristic?.queue);
   return {
     id: stopId,
     displayName,
@@ -141,53 +178,24 @@ export function buildStop(
     lines,
     position: heuristic?.position ?? { x: 800, y: 500 },
     repo: meta.repo,
-    homepage: project.homepage ?? meta.homepage,
+    homepage: meta.homepage,
     blurb: heuristic?.blurb,
-    visibility: project.visibility ?? "public",
+    visibility: "public",
     isPrivate: meta.isPrivate,
     status: {
-      state: status.state ?? "unknown",
-      summary: status.summary,
-      blockers: status.blockers ?? [],
-      next: status.next ?? [],
-      updated: status.updated ?? meta.pushedAt,
+      state: deriveState(meta.pushedAt, hasOpenMilestone),
+      summary: meta.description,
+      blockers: [],
+      next: [],
+      updated: meta.pushedAt,
     },
     queue,
   };
 }
 
-/** Manifest queue wins over heuristic queue. Returns undefined if neither. */
-function mergeQueue(
-  fromManifest: Manifest["queue"] | undefined,
-  fromHeuristic:
-    | {
-        active: boolean;
-        milestone?: string;
-        etaDays?: number;
-        priority?: number;
-      }
-    | undefined,
-): QueueEntry | undefined {
-  if (!fromManifest && !fromHeuristic) return undefined;
-  const etaFromManifest = fromManifest
-    ? deriveEtaDays({
-        eta_days: fromManifest.eta_days,
-        target_date: fromManifest.target_date,
-      })
-    : Number.POSITIVE_INFINITY;
-  return {
-    active: fromManifest?.active ?? fromHeuristic?.active ?? false,
-    milestone: fromManifest?.milestone ?? fromHeuristic?.milestone,
-    etaDays: Number.isFinite(etaFromManifest)
-      ? etaFromManifest
-      : fromHeuristic?.etaDays,
-    priority: fromManifest?.priority ?? fromHeuristic?.priority,
-  };
-}
-
-/** Build the full Stop array including manual stops + heuristic-only stops. */
+/** Build the full Stop array including manual stops + repo-driven stops. */
 export function buildTown(
-  reposWithManifests: RepoWithManifest[],
+  repoMetas: RepoMeta[],
   options: { isMayor: boolean } = { isMayor: false },
 ): Stop[] {
   const stops: Stop[] = [];
@@ -213,11 +221,11 @@ export function buildTown(
   }
 
   // Repo-driven stops.
-  for (const { meta, manifest } of reposWithManifests) {
+  for (const meta of repoMetas) {
     const heuristic = HEURISTICS.find(
       (h) => h.repo.toLowerCase() === meta.repo.toLowerCase(),
     );
-    const stop = buildStop(meta, manifest, heuristic);
+    const stop = buildStop(meta, heuristic);
     if (stop.visibility === "mayor" && !options.isMayor) continue;
     if (stop.isPrivate && !options.isMayor) continue;
     stops.push(stop);
@@ -252,7 +260,7 @@ export function buildInitialStops(): Stop[] {
   for (const h of HEURISTICS) {
     stops.push({
       id: h.stopId,
-      displayName: h.displayName,
+      displayName: repoDisplayName(h.repo),
       district: h.district,
       lines: h.lines,
       position: h.position ?? { x: 800, y: 500 },
@@ -264,4 +272,8 @@ export function buildInitialStops(): Stop[] {
     });
   }
   return stops;
+}
+
+function repoDisplayName(repo: string): string {
+  return repo.split("/").at(-1) ?? repo;
 }

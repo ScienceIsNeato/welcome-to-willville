@@ -1,12 +1,14 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import type { MouseEvent } from "react";
 import type { Stop } from "@/lib/town";
 
 type Props = {
   stop: Stop;
   isFocused: boolean;
   recentlyUpdated: boolean;
+  onClick: (e: MouseEvent<SVGGElement>) => void;
+  onDoubleClick: (e: MouseEvent<SVGGElement>) => void;
 };
 
 const STATE_COLOR: Record<Stop["status"]["state"], string> = {
@@ -18,16 +20,26 @@ const STATE_COLOR: Record<Stop["status"]["state"], string> = {
   unknown: "#cccccc",
 };
 
-export function StopMarker({ stop, isFocused, recentlyUpdated }: Props) {
-  const router = useRouter();
+export function StopMarker({
+  stop,
+  isFocused,
+  recentlyUpdated,
+  onClick,
+  onDoubleClick,
+}: Props) {
   const color = STATE_COLOR[stop.status.state];
   return (
     <g
+      data-stop-marker
       transform={`translate(${stop.position.x}, ${stop.position.y})`}
       style={{ cursor: "pointer" }}
       onClick={(e) => {
         e.stopPropagation();
-        router.push(`/${stop.district}/${stop.id}/`);
+        onClick(e);
+      }}
+      onDoubleClick={(e) => {
+        e.stopPropagation();
+        onDoubleClick(e);
       }}
       aria-label={stop.displayName}
     >

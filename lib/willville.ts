@@ -1,14 +1,33 @@
 /**
  * Willville core data model.
  *
- * The town is laid out on a 1600×1240 SVG viewbox. Districts are polygons,
+ * The town island is 1600×1240 inside a 2400×1800 world canvas. Districts are polygons,
  * Lines are Bezier paths that snake serpentine through (and brush past) multiple
  * districts, and Stops are points inside districts whose live status is sourced
  * from each repo's .willville.json manifest (with heuristic fallbacks).
  */
 import { CANAL_PATH_D } from "./canal-path";
 
-export const VIEWBOX = { width: 1600, height: 1240 } as const;
+/** Inner town map coordinate space (districts, stops, canal). */
+export const TOWN = { width: 1600, height: 1240 } as const;
+
+/** Full painted world including bucolic margins around the town. */
+export const WORLD = { width: 2400, height: 1800 } as const;
+
+/** Town art and gameplay geometry sit centered inside WORLD. */
+export const TOWN_OFFSET = {
+  x: (WORLD.width - TOWN.width) / 2,
+  y: (WORLD.height - TOWN.height) / 2,
+} as const;
+
+/** Focal point for the default camera (center of the town island). */
+export const TOWN_CENTER = {
+  x: TOWN_OFFSET.x + TOWN.width / 2,
+  y: TOWN_OFFSET.y + TOWN.height / 2,
+} as const;
+
+/** @deprecated Prefer WORLD — kept for callers that mean the full canvas. */
+export const VIEWBOX = WORLD;
 
 /**
  * Coastal harbor canal woven through the lower town. PRs sail the curved

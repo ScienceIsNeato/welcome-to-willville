@@ -1,8 +1,37 @@
 "use client";
 
-import { useMemo, useEffect, useState, useSyncExternalStore } from "react";
+import {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useSyncExternalStore,
+  type MouseEvent,
+} from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { motion } from "framer-motion";
+import {
+  DISTRICTS,
+  TOWN,
+  TOWN_OFFSET,
+  WORLD,
+} from "@/lib/willville";
+import { type Stop } from "@/lib/town";
+import { isKnownDistrict } from "@/lib/slugs";
+import type { CanalBoat } from "@/lib/canal";
+import { DistrictZone } from "./DistrictZone";
+import { BucolicMargin } from "./BucolicMargin";
+import { TransitLines } from "./TransitLines";
+import { StopMarker } from "./StopMarker";
+import { ProjectHud } from "./ProjectHud";
+import { MainLine } from "./MainLine";
+import { MayorsExpressHud } from "./MayorsExpressHud";
+import { Canal } from "./Canal";
+import { ChimneySmoke } from "./ChimneySmoke";
+import { screenToWorld, useTownCamera } from "@/hooks/useTownCamera";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
+const STOP_HIT_RADIUS = 24;
 
 function useIsClient(): boolean {
   return useSyncExternalStore(
@@ -11,61 +40,60 @@ function useIsClient(): boolean {
     () => false,
   );
 }
-import { usePathname, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { DISTRICTS, VIEWBOX } from "@/lib/willville";
-import { type Stop } from "@/lib/town";
-import { isKnownDistrict } from "@/lib/slugs";
-import type { CanalBoat } from "@/lib/canal";
-import { DistrictZone } from "./DistrictZone";
-import { TransitLines } from "./TransitLines";
-import { StopMarker } from "./StopMarker";
-import { SpogCard } from "./SpogCard";
-import { MainLine } from "./MainLine";
-import { MayorsExpressHud } from "./MayorsExpressHud";
-import { Canal } from "./Canal";
 
-/**
- * The persistent stage that lives in the root layout. It renders the SVG
- * board, transit Lines, Stops, the Mayor's Express, the Canal, and the
- * framer-motion camera. The URL (via usePathname) drives the camera target
- * so navigating between Town Square, districts, and stops feels like a
- * continuous pan/zoom instead of a page swap.
- */
-
-type Camera = { cx: number; cy: number; scale: number };
-
-/** Focal point and zoom for the current URL (district label or stop position). */
-function cameraForPath(path: string, stops: Stop[]): Camera {
-  const parts = path.split("/").filter(Boolean);
-  const districtSlug = parts[0];
-  const stopSlug = parts[1];
-  if (!districtSlug || !isKnownDistrict(districtSlug)) {
-    return { cx: VIEWBOX.width / 2, cy: VIEWBOX.height / 2, scale: 1 };
-  }
-  const district = DISTRICTS.find((d) => d.id === districtSlug);
-  if (!district) {
-    return { cx: VIEWBOX.width / 2, cy: VIEWBOX.height / 2, scale: 1 };
-  }
-  if (stopSlug) {
-    const stop = stops.find(
-      (s) => s.id === stopSlug && s.district === districtSlug,
-    );
-    if (stop) {
-      return { cx: stop.position.x, cy: stop.position.y, scale: 3.2 };
+function findStopAt(
+  stops: Stop[],
+  wx: number,
+  wy: number,
+  scale: number,
+): Stop | null {
+  const threshold = STOP_HIT_RADIUS / scale;
+  const thresholdSq = threshold * threshold;
+  let best: Stop | null = null;
+  let bestDist = thresholdSq;
+  for (const stop of stops) {
+    const sx = TOWN_OFFSET.x + stop.position.x;
+    const sy = TOWN_OFFSET.y + stop.position.y;
+    const dx = wx - sx;
+    const dy = wy - sy;
+    const dist = dx * dx + dy * dy;
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = stop;
     }
   }
-  return { cx: district.label.x, cy: district.label.y, scale: 2.2 };
+  return best;
 }
 
+/**
+ * Persistent SVG stage with viewport camera (pan/zoom) and center HUD for stops.
+ */
 export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
   const [stops] = useState<Stop[]>(initialStops);
   const isClient = useIsClient();
+  const svgRef = useRef<SVGSVGElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
 
-  // Live town data (overrides heuristics).
+  const {
+    getCameraSnapshot,
+    isDragging,
+    gX,
+    gY,
+    mvScale,
+    markSkipDrag,
+    zoomAtWorldPoint,
+    stageHandlers,
+  } = useTownCamera(svgRef, stageRef);
+
+  const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
+  const hudDismissPendingRef = useRef(false);
+
   const [liveStops, setLiveStops] = useState<Stop[] | null>(null);
+  const [isMayor, setIsMayor] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
   useEffect(() => {
     let cancelled = false;
     fetch("/api/town")
@@ -73,6 +101,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       .then((data) => {
         if (!cancelled && data && Array.isArray(data.stops)) {
           setLiveStops(data.stops as Stop[]);
+          setIsMayor(data.mayor === true);
         }
       })
       .catch(() => undefined);
@@ -81,7 +110,19 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     };
   }, []);
 
-  // Live canal (open PRs across all repos).
+  const handleSync = useCallback(() => {
+    setSyncing(true);
+    fetch("/api/town")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.stops)) {
+          setLiveStops(data.stops as Stop[]);
+        }
+      })
+      .catch(() => undefined)
+      .finally(() => setSyncing(false));
+  }, []);
+
   const [boats, setBoats] = useState<CanalBoat[]>([]);
   useEffect(() => {
     let cancelled = false;
@@ -103,28 +144,112 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   }, []);
 
   const currentStops = liveStops ?? stops;
-  const camera = useMemo(
-    () => cameraForPath(pathname, currentStops),
-    [pathname, currentStops],
-  );
 
   const parts = pathname.split("/").filter(Boolean);
-  const focusedDistrict = isKnownDistrict(parts[0] ?? "") ? parts[0] : null;
-  const focusedStopId = parts[1] ?? null;
-  const focusedStop = currentStops.find(
-    (s) => s.district === focusedDistrict && s.id === focusedStopId,
+  const pathDistrict = isKnownDistrict(parts[0] ?? "") ? parts[0] : null;
+  const pathStopId = parts[1] ?? null;
+
+  // Deep link: open HUD without reframing camera.
+  useEffect(() => {
+    if (!pathDistrict || !pathStopId) {
+      hudDismissPendingRef.current = false;
+      return;
+    }
+    if (hudDismissPendingRef.current) return;
+    const stop = currentStops.find(
+      (s) => s.district === pathDistrict && s.id === pathStopId,
+    );
+    if (stop) setSelectedStop(stop);
+  }, [pathDistrict, pathStopId, currentStops]);
+
+  const openStopHud = useCallback((stop: Stop) => {
+    setSelectedStop(stop);
+    window.history.replaceState(
+      null,
+      "",
+      `/${stop.district}/${stop.id}/`,
+    );
+  }, []);
+
+  const closeHud = useCallback(() => {
+    hudDismissPendingRef.current = true;
+    window.history.replaceState(null, "", "/");
+    setSelectedStop(null);
+    router.replace("/", { scroll: false });
+  }, [router]);
+
+  const handleStageClick = useCallback(
+    (e: MouseEvent<HTMLDivElement>) => {
+      const svg = svgRef.current;
+      if (!svg || isDragging) return;
+      const snap = getCameraSnapshot();
+      const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
+      const hit = findStopAt(currentStops, wx, wy, snap.scale);
+      if (hit) openStopHud(hit);
+    },
+    [currentStops, getCameraSnapshot, isDragging, openStopHud],
   );
 
+  const handleStageDoubleClick = useCallback(
+    (e: MouseEvent<HTMLDivElement>) => {
+      markSkipDrag();
+      const svg = svgRef.current;
+      if (!svg) return;
+      const snap = getCameraSnapshot();
+      const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
+      zoomAtWorldPoint(wx, wy);
+      const hit = findStopAt(currentStops, wx, wy, snap.scale);
+      if (hit) {
+        openStopHud(hit);
+      } else if (selectedStop) {
+        closeHud();
+      }
+    },
+    [
+      closeHud,
+      currentStops,
+      getCameraSnapshot,
+      markSkipDrag,
+      openStopHud,
+      selectedStop,
+      zoomAtWorldPoint,
+    ],
+  );
+
+  const handleStopDoubleClick = useCallback(
+    (stop: Stop) => {
+      const wx = TOWN_OFFSET.x + stop.position.x;
+      const wy = TOWN_OFFSET.y + stop.position.y;
+      zoomAtWorldPoint(wx, wy);
+      openStopHud(stop);
+    },
+    [openStopHud, zoomAtWorldPoint],
+  );
+
+  const showWelcomeHint =
+    !selectedStop && pathDistrict === null;
+
   return (
-    <div id="willville-stage">
+    <div
+      id="willville-stage"
+      ref={stageRef}
+      style={{
+        touchAction: "none",
+        cursor: isDragging ? "grabbing" : "default",
+        background:
+          "linear-gradient(180deg, #283b6d 0%, #283b6d 28%, #244631 72%, #244631 100%)",
+      }}
+      onClick={handleStageClick}
+      onDoubleClick={handleStageDoubleClick}
+      {...stageHandlers}
+    >
       <svg
-        viewBox={`0 0 ${VIEWBOX.width} ${VIEWBOX.height}`}
+        ref={svgRef}
+        viewBox={`0 0 ${WORLD.width} ${WORLD.height}`}
         preserveAspectRatio="xMidYMid meet"
         width="100%"
         height="100%"
-        onClick={() => {
-          if (parts.length > 0) router.push("/");
-        }}
+        style={{ pointerEvents: isDragging ? "none" : "auto" }}
       >
         <defs>
           <radialGradient id="ground" cx="50%" cy="42%" r="65%">
@@ -132,78 +257,81 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             <stop offset="100%" stopColor="#15102a" stopOpacity="0.95" />
           </radialGradient>
         </defs>
-        {/* Void backdrop sits outside the camera so the world has an edge to peek
-            past when zoomed out. Everything else — including the painted town —
-            lives inside the motion group so it pans/zooms together. */}
-        <rect
-          x={0}
-          y={0}
-          width={VIEWBOX.width}
-          height={VIEWBOX.height}
-          fill="#0b0719"
-        />
+
         <motion.g
-          animate={{
-            x: VIEWBOX.width / 2 - camera.cx,
-            y: VIEWBOX.height / 2 - camera.cy,
-            scale: camera.scale,
-          }}
-          transition={{ type: "spring", stiffness: 80, damping: 18, mass: 0.9 }}
           style={{
-            transformOrigin: `${camera.cx}px ${camera.cy}px`,
+            x: gX,
+            y: gY,
+            scale: mvScale,
+            transformOrigin: `${WORLD.width / 2}px ${WORLD.height / 2}px`,
           }}
         >
-          {/* The painted PNG is the map. Everything below this is an
-              interactive overlay layered on top of the painting. */}
-          <rect
-            x={0}
-            y={0}
-            width={VIEWBOX.width}
-            height={VIEWBOX.height}
-            fill="url(#ground)"
-          />
-          <image
-            href="/art/town/willville.png"
-            x={0}
-            y={0}
-            width={VIEWBOX.width}
-            height={VIEWBOX.height}
-            preserveAspectRatio="none"
-          />
-          {DISTRICTS.map((d) => (
-            <DistrictZone
-              key={d.id}
-              district={d}
-              isFocused={focusedDistrict === d.id}
+          <BucolicMargin />
+
+          <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
+            <rect
+              x={0}
+              y={0}
+              width={TOWN.width}
+              height={TOWN.height}
+              fill="url(#ground)"
             />
-          ))}
-          <TransitLines />
-          <MainLine stops={currentStops} />
-          {currentStops.map((stop) => {
-            const updated = stop.status.updated
-              ? Date.parse(stop.status.updated)
-              : NaN;
-            const recently =
-              isClient &&
-              !Number.isNaN(updated) &&
-              // eslint-disable-next-line react-hooks/purity -- client-only freshness halo
-              Date.now() - updated < DAY_MS;
-            return (
-              <StopMarker
-                key={`${stop.district}-${stop.id}`}
-                stop={stop}
-                isFocused={focusedStop?.id === stop.id}
-                recentlyUpdated={recently}
-              />
-            );
-          })}
-          <Canal boats={boats} />
+            <image
+              href="/art/town/willville.png"
+              x={0}
+              y={0}
+              width={TOWN.width}
+              height={TOWN.height}
+              preserveAspectRatio="none"
+            />
+            <ChimneySmoke />
+            {DISTRICTS.map((d) => (
+              <DistrictZone key={d.id} district={d} />
+            ))}
+            <TransitLines />
+            <MainLine stops={currentStops} />
+            {currentStops.map((stop) => {
+              const updated = stop.status.updated
+                ? Date.parse(stop.status.updated)
+                : NaN;
+              const recently =
+                isClient &&
+                !Number.isNaN(updated) &&
+                Date.now() - updated < DAY_MS;
+              return (
+                <StopMarker
+                  key={`${stop.district}-${stop.id}`}
+                  stop={stop}
+                  isFocused={selectedStop?.id === stop.id}
+                  recentlyUpdated={recently}
+                  onClick={() => openStopHud(stop)}
+                  onDoubleClick={() => handleStopDoubleClick(stop)}
+                />
+              );
+            })}
+            <Canal boats={boats} />
+          </g>
         </motion.g>
       </svg>
-      {focusedStop && <SpogCard stop={focusedStop} />}
-      {!focusedStop && <MayorsExpressHud stops={currentStops} />}
-      {!focusedDistrict && (
-        <div
+
+      {selectedStop && (
+        <ProjectHud
+          stop={selectedStop}
+          boats={boats}
+          allStops={currentStops}
+          onClose={closeHud}
+        />
+      )}
+
+      {!selectedStop && (
+        <MayorsExpressHud
+          stops={currentStops}
+          onSelectStop={openStopHud}
+        />
+      )}
+
+      {showWelcomeHint && (
+        <motion.div
           style={{
             position: "absolute",
             bottom: 16,
@@ -216,10 +344,53 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             textShadow: "0 1px 4px rgba(0,0,0,0.6)",
           }}
         >
-          Welcome to Willville · click a district to enter · trains run all
-          night
-        </div>
+          Welcome to Willville · scroll to zoom · drag to pan · double-click to
+          zoom in
+        </motion.div>
       )}
+
+      {isMayor && (
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          aria-label="Sync town data from GitHub"
+          title="Sync from GitHub"
+          style={{
+            position: "absolute",
+            bottom: 16,
+            right: 16,
+            width: 36,
+            height: 36,
+            borderRadius: "50%",
+            border: "1px solid rgba(230,198,106,0.45)",
+            background:
+              "linear-gradient(180deg, rgba(36,24,12,0.92) 0%, rgba(20,12,6,0.96) 100%)",
+            color: "var(--willville-paper)",
+            fontSize: 18,
+            cursor: syncing ? "wait" : "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow:
+              "0 4px 12px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(230,198,106,0.2)",
+            opacity: syncing ? 0.6 : 1,
+            transition: "opacity 0.2s",
+          }}
+        >
+          <span
+            style={{
+              display: "inline-block",
+              animation: syncing ? "spin 1s linear infinite" : "none",
+            }}
+          >
+            ↻
+          </span>
+        </button>
+      )}
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }

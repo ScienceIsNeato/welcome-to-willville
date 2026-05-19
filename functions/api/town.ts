@@ -3,8 +3,10 @@
  *
  * Discovers the town's live state by:
  *   1. Listing repos under ScienceIsNeato (non-fork, non-archived, <1y stale)
- *   2. For each, attempting to fetch `.willville.json` from the default branch
- *   3. Merging with baked-in heuristics + manual stops
+ *   2. For each, fetching open GitHub milestones (queue + ETA data)
+ *   3. Merging with baked-in heuristics for layout (position, district, lines)
+ *
+ * No .willville.json required — everything is derived from the repo itself.
  *
  * Tourists see public repos only. Mayors (with the willville_mayor cookie)
  * also see private repos and stops marked visibility: mayor.
@@ -13,12 +15,7 @@
  * Mayors: private, no-store.
  */
 
-import {
-  buildTown,
-  type RepoMeta,
-  type RepoWithManifest,
-} from "../../lib/town";
-import { parseManifest } from "../../lib/manifest";
+import { buildTown, type RepoMeta } from "../../lib/town";
 
 interface Env {
   GITHUB_PAT?: string;
@@ -37,6 +34,8 @@ type GitHubRepo = {
   pushed_at: string;
   default_branch: string;
   homepage: string | null;
+  description: string | null;
+  open_issues_count: number;
 };
 
 async function listOwnerRepos(token?: string): Promise<GitHubRepo[]> {
@@ -66,32 +65,31 @@ async function listOwnerRepos(token?: string): Promise<GitHubRepo[]> {
   return repos;
 }
 
-async function fetchManifest(
+type GitHubMilestone = {
+  title: string;
+  due_on: string | null;
+  open_issues: number;
+  state: "open" | "closed";
+};
+
+async function fetchMilestones(
   owner: string,
   name: string,
-  branch: string,
-  isPrivate: boolean,
   token?: string,
-) {
+): Promise<GitHubMilestone[]> {
   const headers: Record<string, string> = {
     "User-Agent": "willville-edge",
+    Accept: "application/vnd.github+json",
   };
-  let url: string;
-  if (isPrivate) {
-    if (!token) return null;
-    url = `https://api.github.com/repos/${owner}/${name}/contents/.willville.json?ref=${branch}`;
-    headers.Authorization = `Bearer ${token}`;
-    headers.Accept = "application/vnd.github.raw";
-  } else {
-    url = `https://raw.githubusercontent.com/${owner}/${name}/${branch}/.willville.json`;
-  }
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const url = `https://api.github.com/repos/${owner}/${name}/milestones?state=open&sort=due_on&direction=asc&per_page=5`;
   try {
     const r = await fetch(url, { headers });
-    if (!r.ok) return null;
-    const text = await r.text();
-    return parseManifest(JSON.parse(text));
+    if (!r.ok) return [];
+    const data = (await r.json()) as GitHubMilestone[];
+    return Array.isArray(data) ? data : [];
   } catch {
-    return null;
+    return [];
   }
 }
 
@@ -111,16 +109,10 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     return Date.parse(r.pushed_at) >= cutoff;
   });
 
-  const reposWithManifests: RepoWithManifest[] = await Promise.all(
+  const repoMetas: RepoMeta[] = await Promise.all(
     candidates.map(async (r) => {
-      const manifest = await fetchManifest(
-        OWNER,
-        r.name,
-        r.default_branch,
-        r.private,
-        token,
-      );
-      const meta: RepoMeta = {
+      const milestones = await fetchMilestones(OWNER, r.name, token);
+      return {
         repo: r.full_name,
         isPrivate: r.private,
         isFork: r.fork,
@@ -128,12 +120,17 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
         pushedAt: r.pushed_at,
         defaultBranch: r.default_branch,
         homepage: r.homepage ?? undefined,
+        description: r.description ?? undefined,
+        openMilestones: milestones.map((m) => ({
+          title: m.title,
+          dueOn: m.due_on,
+          openIssues: m.open_issues,
+        })),
       };
-      return { meta, manifest };
     }),
   );
 
-  const stops = buildTown(reposWithManifests, { isMayor: mayor });
+  const stops = buildTown(repoMetas, { isMayor: mayor });
 
   const cacheControl = mayor
     ? "private, no-store"

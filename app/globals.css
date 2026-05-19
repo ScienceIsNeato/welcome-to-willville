@@ -57,6 +57,9 @@ body {
   height: 100vh;
   position: relative;
   overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 48%, rgba(87, 122, 90, 0.42) 0%, rgba(54, 94, 66, 0.36) 44%, rgba(21, 16, 42, 0.12) 100%),
+    linear-gradient(180deg, #283b6d 0%, #283b6d 28%, #244631 72%, #244631 100%);
 }
 
 .train-glow {
@@ -95,4 +98,9 @@ body {
 .is-october .district-hallow {
   animation: hallow-flicker 3.5s ease-in-out infinite;
   filter: drop-shadow(0 0 12px var(--willville-hallow));
+}
+
+.chimney-smoke {
+  mix-blend-mode: screen;
+  pointer-events: none;
 }
