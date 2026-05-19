@@ -36,6 +36,7 @@ type GitHubRepo = {
   homepage: string | null;
   description: string | null;
   open_issues_count: number;
+  topics: string[];
 };
 
 async function listOwnerRepos(token?: string): Promise<GitHubRepo[]> {
@@ -121,6 +122,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
         defaultBranch: r.default_branch,
         homepage: r.homepage ?? undefined,
         description: r.description ?? undefined,
+        topics: r.topics ?? [],
         openMilestones: milestones.map((m) => ({
           title: m.title,
           dueOn: m.due_on,

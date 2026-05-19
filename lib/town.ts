@@ -13,6 +13,7 @@ import {
   DISTRICTS,
   LINES,
   MANUAL_STOPS,
+  type District,
   type DistrictId,
   type LineId,
 } from "./willville";
@@ -115,9 +116,152 @@ export type RepoMeta = {
   homepage?: string;
   /** GitHub repo description — used as status.summary. */
   description?: string;
+  /** GitHub topics — used to auto-assign district and transit lines. */
+  topics?: string[];
   /** Open milestones sorted by due date ascending. */
   openMilestones?: OpenMilestone[];
 };
+
+// ---------------------------------------------------------------------------
+// Topic-based auto-layout
+// ---------------------------------------------------------------------------
+
+/** Maps GitHub topic strings to Willville district IDs. First match wins. */
+const TOPIC_DISTRICT: Partial<Record<string, DistrictId>> = {
+  // The Foundry
+  ai: "the-foundry",
+  "machine-learning": "the-foundry",
+  "deep-learning": "the-foundry",
+  llm: "the-foundry",
+  gpt: "the-foundry",
+  openai: "the-foundry",
+  ganglia: "the-foundry",
+  // Web Row
+  web: "web-row",
+  react: "web-row",
+  nextjs: "web-row",
+  "next-js": "web-row",
+  frontend: "web-row",
+  website: "web-row",
+  // The Press Row
+  writing: "the-press-row",
+  blog: "the-press-row",
+  novel: "the-press-row",
+  fiction: "the-press-row",
+  // Slop Wharf
+  quality: "slop-wharf",
+  testing: "slop-wharf",
+  linting: "slop-wharf",
+  ci: "slop-wharf",
+  "github-actions": "slop-wharf",
+  "code-quality": "slop-wharf",
+  // The Sawmill District
+  hardware: "the-sawmill-district",
+  arduino: "the-sawmill-district",
+  "raspberry-pi": "the-sawmill-district",
+  iot: "the-sawmill-district",
+  electronics: "the-sawmill-district",
+  // Hallow Hollow
+  halloween: "hallow-hollow",
+  spooky: "hallow-hollow",
+  horror: "hallow-hollow",
+  // The Audit Yard
+  monitoring: "the-audit-yard",
+  observability: "the-audit-yard",
+  analytics: "the-audit-yard",
+  audit: "the-audit-yard",
+};
+
+/** Maps GitHub topic strings to Willville transit line IDs. All matches kept. */
+const TOPIC_LINE: Partial<Record<string, LineId>> = {
+  ai: "ai",
+  "machine-learning": "ai",
+  llm: "ai",
+  gpt: "ai",
+  quality: "quality",
+  testing: "quality",
+  ci: "quality",
+  web: "web",
+  react: "web",
+  nextjs: "web",
+  frontend: "web",
+  writing: "writing",
+  blog: "writing",
+  novel: "writing",
+  halloween: "halloween",
+  spooky: "halloween",
+};
+
+function topicsToDistrict(topics: string[]): DistrictId {
+  for (const t of topics) {
+    const d = TOPIC_DISTRICT[t.toLowerCase()];
+    if (d) return d;
+  }
+  return "the-hearth";
+}
+
+function topicsToLines(topics: string[]): LineId[] {
+  const seen = new Set<LineId>();
+  for (const t of topics) {
+    const l = TOPIC_LINE[t.toLowerCase()];
+    if (l) seen.add(l);
+  }
+  return [...seen];
+}
+
+/** AABB of a district polygon (used to scatter auto-positioned stops). */
+function districtBounds(
+  district: District,
+): { minX: number; maxX: number; minY: number; maxY: number } {
+  const pts = district.polygon
+    .trim()
+    .split(/\s+/)
+    .map((p) => {
+      const [x, y] = p.split(",").map(Number);
+      return { x: x!, y: y! };
+    });
+  return {
+    minX: Math.min(...pts.map((p) => p.x)),
+    maxX: Math.max(...pts.map((p) => p.x)),
+    minY: Math.min(...pts.map((p) => p.y)),
+    maxY: Math.max(...pts.map((p) => p.y)),
+  };
+}
+
+/** FNV-1a 32-bit hash — fast, deterministic, good distribution. */
+function hashStr(s: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  return h;
+}
+
+/**
+ * Deterministic position within a district derived from the repo full name.
+ * Stable across syncs — same repo always lands in the same spot.
+ */
+function autoPosition(
+  districtId: DistrictId,
+  repo: string,
+): { x: number; y: number } {
+  const district = DISTRICTS.find((d) => d.id === districtId);
+  const bounds = district
+    ? districtBounds(district)
+    : { minX: 600, maxX: 1000, minY: 400, maxY: 700 };
+  const pad = 40;
+  const w = Math.max(1, bounds.maxX - bounds.minX - pad * 2);
+  const h = Math.max(1, bounds.maxY - bounds.minY - pad * 2);
+  const hx = hashStr(repo);
+  const hy = hashStr(repo + "\x00y");
+  return {
+    x: Math.round(bounds.minX + pad + ((hx % 1000) / 999) * w),
+    y: Math.round(bounds.minY + pad + ((hy % 1000) / 999) * h),
+  };
+}
+
+// ---------------------------------------------------------------------------
 
 /**
  * Derive project status state from GitHub push recency and milestone presence.
@@ -165,18 +309,19 @@ function deriveQueue(
 /** Build a Stop from GitHub repo metadata + optional heuristic layout overrides. */
 export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
   const hasOpenMilestone = (meta.openMilestones?.length ?? 0) > 0;
-  const district = heuristic?.district ?? "the-hearth";
-  const lines = heuristic?.lines ?? [];
-  const stopId =
-    heuristic?.stopId ?? meta.repo.split("/")[1]!.toLowerCase();
+  const district =
+    heuristic?.district ?? topicsToDistrict(meta.topics ?? []);
+  const lines = heuristic?.lines ?? topicsToLines(meta.topics ?? []);
+  const stopId = heuristic?.stopId ?? meta.repo.split("/")[1]!.toLowerCase();
   const displayName = heuristic?.displayName ?? repoDisplayName(meta.repo);
+  const position = heuristic?.position ?? autoPosition(district, meta.repo);
   const queue = deriveQueue(meta.openMilestones, heuristic?.queue);
   return {
     id: stopId,
     displayName,
     district,
     lines,
-    position: heuristic?.position ?? { x: 800, y: 500 },
+    position,
     repo: meta.repo,
     homepage: meta.homepage,
     blurb: heuristic?.blurb,
@@ -260,7 +405,7 @@ export function buildInitialStops(): Stop[] {
   for (const h of HEURISTICS) {
     stops.push({
       id: h.stopId,
-      displayName: repoDisplayName(h.repo),
+      displayName: h.displayName,
       district: h.district,
       lines: h.lines,
       position: h.position ?? { x: 800, y: 500 },
@@ -275,5 +420,8 @@ export function buildInitialStops(): Stop[] {
 }
 
 function repoDisplayName(repo: string): string {
-  return repo.split("/").at(-1) ?? repo;
+  const slug = repo.split("/").at(-1) ?? repo;
+  return slug
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
