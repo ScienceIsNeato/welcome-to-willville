@@ -313,7 +313,7 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
     heuristic?.district ?? topicsToDistrict(meta.topics ?? []);
   const lines = heuristic?.lines ?? topicsToLines(meta.topics ?? []);
   const stopId = heuristic?.stopId ?? meta.repo.split("/")[1]!.toLowerCase();
-  const displayName = heuristic?.displayName ?? repoDisplayName(meta.repo);
+  const displayName = repoDisplayName(meta.repo);
   const position = heuristic?.position ?? autoPosition(district, meta.repo);
   const queue = deriveQueue(meta.openMilestones, heuristic?.queue);
   return {
@@ -405,7 +405,7 @@ export function buildInitialStops(): Stop[] {
   for (const h of HEURISTICS) {
     stops.push({
       id: h.stopId,
-      displayName: h.displayName,
+      displayName: repoDisplayName(h.repo),
       district: h.district,
       lines: h.lines,
       position: h.position ?? { x: 800, y: 500 },
@@ -420,8 +420,5 @@ export function buildInitialStops(): Stop[] {
 }
 
 function repoDisplayName(repo: string): string {
-  const slug = repo.split("/").at(-1) ?? repo;
-  return slug
-    .replace(/[-_]/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return repo.split("/").at(-1) ?? repo;
 }
