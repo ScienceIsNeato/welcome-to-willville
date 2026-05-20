@@ -132,6 +132,26 @@ export function ProjectHud({ stop, boats, allStops, onClose }: Props) {
               {stop.status.summary}
             </p>
           )}
+          {stop.blurb && !stop.status.summary && (
+            <p style={{ margin: "0 0 14px", fontSize: 14, lineHeight: 1.45, opacity: 0.8 }}>
+              {stop.blurb}
+            </p>
+          )}
+          {(stop.stars != null || stop.openIssues != null || stop.language) && (
+            <div style={{ display: "flex", gap: 14, fontSize: 12, opacity: 0.7, margin: "0 0 8px", flexWrap: "wrap" }}>
+              {stop.language && <span>⌨ {stop.language}</span>}
+              {stop.stars != null && <span>★ {stop.stars.toLocaleString()}</span>}
+              {stop.openIssues != null && <span>⚑ {stop.openIssues} open</span>}
+            </div>
+          )}
+          {(stop.commits3d != null || stop.commits7d != null || stop.commits21d != null) && (
+            <div style={{ display: "flex", gap: 14, fontSize: 12, opacity: 0.7, margin: "0 0 12px", flexWrap: "wrap" }}>
+              <span style={{ opacity: 0.55, marginRight: 2 }}>commits</span>
+              {stop.commits3d != null && <span>{stop.commits3d} (3d)</span>}
+              {stop.commits7d != null && <span>{stop.commits7d} (7d)</span>}
+              {stop.commits21d != null && <span>{stop.commits21d} (21d)</span>}
+            </div>
+          )}
           <QueueSection stop={stop} expressPriority={expressPriority} />
           {stop.status.blockers.length > 0 && (
             <ItemSection
@@ -151,11 +171,6 @@ export function ProjectHud({ stop, boats, allStops, onClose }: Props) {
           {stop.status.updated && (
             <p style={{ fontSize: 12, opacity: 0.75, margin: "8px 0 0" }}>
               Recent activity · last updated {updatedLabel ?? "recently"}
-            </p>
-          )}
-          {stop.blurb && stop.status.state === "unknown" && (
-            <p style={{ margin: "12px 0 0", fontSize: 13, opacity: 0.8 }}>
-              {stop.blurb}
             </p>
           )}
         </div>

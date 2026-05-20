@@ -54,6 +54,18 @@ export type Stop = {
     updated?: string;
   };
   queue?: QueueEntry;
+  /** Open issues + PRs on GitHub. */
+  openIssues?: number;
+  /** GitHub star count. */
+  stars?: number;
+  /** Primary language reported by GitHub. */
+  language?: string;
+  /** Commit count over the last 3 calendar days. */
+  commits3d?: number;
+  /** Commit count over the last 7 calendar days. */
+  commits7d?: number;
+  /** Commit count over the last 21 calendar days (3 weekly buckets). */
+  commits21d?: number;
 };
 
 /**
@@ -106,6 +118,25 @@ export type OpenMilestone = {
   openIssues: number;
 };
 
+/**
+ * Structured data parsed from a `<!-- willville ... -->` block in STATUS.md.
+ * Agents write this; Willville reads it.
+ */
+export type WillvillePacket = {
+  /** wip | shipping | maintenance | dormant | unknown */
+  status?: StatusState;
+  /** Short human-readable description of the project's current state. */
+  summary?: string;
+  /** Active milestone title. */
+  milestone?: string;
+  /** ISO date string (YYYY-MM-DD) for milestone target. */
+  etaDate?: string;
+  /** Known blockers agents want to surface in Willville. */
+  blockers?: string[];
+  /** Immediate next actions the agent is tracking. */
+  next?: string[];
+};
+
 export type RepoMeta = {
   repo: string; // "owner/name"
   isPrivate: boolean;
@@ -114,12 +145,26 @@ export type RepoMeta = {
   pushedAt: string;
   defaultBranch: string;
   homepage?: string;
-  /** GitHub repo description — used as status.summary. */
+  /** GitHub repo description — fallback summary if no willville packet. */
   description?: string;
   /** GitHub topics — used to auto-assign district and transit lines. */
   topics?: string[];
   /** Open milestones sorted by due date ascending. */
   openMilestones?: OpenMilestone[];
+  /** Parsed willville packet from STATUS.md, if present. Agent-written data. */
+  willvillePacket?: WillvillePacket;
+  /** Open issues + PRs count from GitHub. */
+  openIssuesCount?: number;
+  /** GitHub star count. */
+  stars?: number;
+  /** Primary language reported by GitHub. */
+  language?: string;
+  /** Commit count over the last 3 calendar days. */
+  commits3d?: number;
+  /** Commit count over the last 7 calendar days. */
+  commits7d?: number;
+  /** Commit count over the last 21 calendar days (3 weekly buckets). */
+  commits21d?: number;
 };
 
 // ---------------------------------------------------------------------------
@@ -308,6 +353,7 @@ function deriveQueue(
 
 /** Build a Stop from GitHub repo metadata + optional heuristic layout overrides. */
 export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
+  const pkt = meta.willvillePacket;
   const hasOpenMilestone = (meta.openMilestones?.length ?? 0) > 0;
   const district =
     heuristic?.district ?? topicsToDistrict(meta.topics ?? []);
@@ -328,13 +374,20 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
     visibility: "public",
     isPrivate: meta.isPrivate,
     status: {
-      state: deriveState(meta.pushedAt, hasOpenMilestone),
-      summary: meta.description,
-      blockers: [],
-      next: [],
+      // Packet fields take priority over GitHub-derived values
+      state: pkt?.status ?? deriveState(meta.pushedAt, hasOpenMilestone),
+      summary: pkt?.summary ?? meta.description,
+      blockers: pkt?.blockers ?? [],
+      next: pkt?.next ?? [],
       updated: meta.pushedAt,
     },
     queue,
+    openIssues: meta.openIssuesCount,
+    stars: meta.stars,
+    language: meta.language,
+    commits3d: meta.commits3d,
+    commits7d: meta.commits7d,
+    commits21d: meta.commits21d,
   };
 }
 
@@ -358,7 +411,7 @@ export function buildTown(
       visibility: "public",
       isManual: true,
       status: {
-        state: "unknown",
+        state: m.statusState ?? "unknown",
         blockers: [],
         next: [],
       },
@@ -399,7 +452,7 @@ export function buildInitialStops(): Stop[] {
       blurb: m.blurb,
       visibility: "public",
       isManual: true,
-      status: { state: "unknown", blockers: [], next: [] },
+      status: { state: m.statusState ?? "unknown", blockers: [], next: [] },
     });
   }
   for (const h of HEURISTICS) {

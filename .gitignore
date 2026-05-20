@@ -24,6 +24,15 @@
 .DS_Store
 *.pem
 
+# local dev secrets
+.dev.vars
+
+# wrangler dev artifacts
+.wrangler/
+
+# temp files
+.tmp/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
