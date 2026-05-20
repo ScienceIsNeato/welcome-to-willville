@@ -15,7 +15,7 @@ import { type Stop } from "@/lib/town";
 import { isKnownDistrict } from "@/lib/slugs";
 import type { CanalBoat } from "@/lib/canal";
 import { DistrictZone } from "./DistrictZone";
-import { BucolicMargin } from "./BucolicMargin";
+import { BucolicMargin, WATER_TILE_ART } from "./BucolicMargin";
 import { TransitLines } from "./TransitLines";
 import { StopMarker } from "./StopMarker";
 import { ProjectHud } from "./ProjectHud";
@@ -316,8 +316,10 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       style={{
         touchAction: "none",
         cursor: isDragging ? "grabbing" : "default",
-        background:
-          "linear-gradient(180deg, #283b6d 0%, #283b6d 28%, #244631 72%, #244631 100%)",
+        backgroundColor: "#063755",
+        backgroundImage: `linear-gradient(rgba(6, 55, 85, 0.32), rgba(8, 5, 21, 0.42)), url(${WATER_TILE_ART})`,
+        backgroundPosition: "center",
+        backgroundSize: "520px 290px",
       }}
       onClick={handleStageClick}
       onDoubleClick={handleStageDoubleClick}
@@ -326,16 +328,53 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       <svg
         ref={svgRef}
         viewBox={`0 0 ${WORLD.width} ${WORLD.height}`}
-        preserveAspectRatio="xMidYMid meet"
+        preserveAspectRatio="xMidYMid slice"
         width="100%"
         height="100%"
         style={{ pointerEvents: isDragging ? "none" : "auto" }}
       >
         <defs>
-          <radialGradient id="ground" cx="50%" cy="42%" r="65%">
-            <stop offset="0%" stopColor="#3b2a5e" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#15102a" stopOpacity="0.95" />
-          </radialGradient>
+          <linearGradient id="town-feather-top" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="black" />
+            <stop offset="100%" stopColor="white" />
+          </linearGradient>
+          <linearGradient id="town-feather-bottom" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="white" />
+            <stop offset="100%" stopColor="black" />
+          </linearGradient>
+          <linearGradient id="town-feather-left" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="black" />
+            <stop offset="100%" stopColor="white" />
+          </linearGradient>
+          <linearGradient id="town-feather-right" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="white" />
+            <stop offset="100%" stopColor="black" />
+          </linearGradient>
+          <mask id="town-art-feather-mask" maskUnits="userSpaceOnUse">
+            <rect width={TOWN.width} height={TOWN.height} fill="white" />
+            <rect
+              width={TOWN.width}
+              height={76}
+              fill="url(#town-feather-top)"
+            />
+            <rect
+              y={TOWN.height - 76}
+              width={TOWN.width}
+              height={76}
+              fill="url(#town-feather-bottom)"
+            />
+            <rect
+              width={76}
+              height={TOWN.height}
+              fill="url(#town-feather-left)"
+            />
+            <rect
+              x={TOWN.width - 76}
+              width={76}
+              height={TOWN.height}
+              fill="url(#town-feather-right)"
+            />
+          </mask>
         </defs>
 
         <motion.g
@@ -349,13 +388,6 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           <BucolicMargin />
 
           <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
-            <rect
-              x={0}
-              y={0}
-              width={TOWN.width}
-              height={TOWN.height}
-              fill="url(#ground)"
-            />
             <image
               href="/art/town/willville-v3-closed-loops-draft.png"
               x={0}
@@ -363,6 +395,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               width={TOWN.width}
               height={TOWN.height}
               preserveAspectRatio="none"
+              mask="url(#town-art-feather-mask)"
             />
             <ChimneySmoke />
             <DynamicWalls />
