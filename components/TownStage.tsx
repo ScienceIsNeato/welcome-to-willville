@@ -82,6 +82,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     markSkipDrag,
     zoomAtWorldPoint,
     stageHandlers,
+    wasDragging,
   } = useTownCamera(svgRef, stageRef);
 
   const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
@@ -269,13 +270,13 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const handleStageClick = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
       const svg = svgRef.current;
-      if (!svg || isDragging) return;
+      if (!svg || wasDragging()) return;
       const snap = getCameraSnapshot();
       const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
       const hit = findStopAt(currentStops, wx, wy, snap.scale);
       if (hit) openStopHud(hit);
     },
-    [currentStops, getCameraSnapshot, isDragging, openStopHud],
+    [currentStops, getCameraSnapshot, wasDragging, openStopHud],
   );
 
   const handleStageDoubleClick = useCallback(
@@ -350,7 +351,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           preserveAspectRatio="xMidYMid meet"
           width="100%"
           height="100%"
-          style={{ pointerEvents: isDragging ? "none" : "auto" }}
+          style={{ pointerEvents: "auto" }}
         >
           <defs>
             <radialGradient id="ground" cx="50%" cy="42%" r="65%">

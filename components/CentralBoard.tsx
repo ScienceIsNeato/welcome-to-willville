@@ -228,8 +228,16 @@ function SplitFlapCell({
 }) {
   const [displayChar, setDisplayChar] = useState(char);
   const [isFlipping, setIsFlipping] = useState(false);
+  const prevCharRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // Skip flipping cells that have not changed their character value
+    if (prevCharRef.current !== null && prevCharRef.current === char) {
+      setDisplayChar(char);
+      return;
+    }
+    prevCharRef.current = char;
+
     const delay = rowIndex * 58 + (index % BOARD_COLUMNS) * 18;
     let swap = 0;
     let finish = 0;
@@ -472,16 +480,22 @@ function playFlipTicks(previousRows: string[], nextRows: string[]) {
 }
 
 function scheduleTick(ctx: AudioContext, time: number, gainLevel: number) {
-  const duration = 0.045;
+  const duration = 0.135; // Tripled the length for each flip
   const sampleCount = Math.max(1, Math.floor(ctx.sampleRate * duration));
   const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
   const channel = buffer.getChannelData(0);
   for (let i = 0; i < sampleCount; i += 1) {
     const t = i / sampleCount;
-    const envelope = Math.pow(1 - t, 2.6);
+    // Softer envelope with a gentle attack and smooth decay for rustling leaves
+    let envelope = 1;
+    if (t < 0.15) {
+      envelope = t / 0.15; // Gentle attack over 20ms
+    } else {
+      const decayT = (t - 0.15) / 0.85;
+      envelope = Math.pow(1 - decayT, 2.5); // Smooth organic decay
+    }
     const scratch = Math.random() * 2 - 1;
-    const grain = i % 3 === 0 ? Math.random() * 2 - 1 : 0;
-    channel[i] = (scratch * 0.72 + grain * 0.28) * envelope;
+    channel[i] = scratch * envelope * 0.45;
   }
 
   const source = ctx.createBufferSource();
@@ -490,13 +504,18 @@ function scheduleTick(ctx: AudioContext, time: number, gainLevel: number) {
   const paper = ctx.createBiquadFilter();
 
   source.buffer = buffer;
+
+  // Broader, softer bandpass filter for whisper-like foliage sound
   body.type = "bandpass";
-  body.frequency.setValueAtTime(1700 + Math.random() * 650, time);
-  body.Q.setValueAtTime(0.9, time);
+  body.frequency.setValueAtTime(2400 + Math.random() * 800, time); // High shsh/whisper freq
+  body.Q.setValueAtTime(0.38, time); // Lower Q values represent a much wider, softer sound, removing high metallic rings
+
+  // Highpass to keep the breeze hiss and eliminate any mechanical clatter
   paper.type = "highpass";
-  paper.frequency.setValueAtTime(520, time);
+  paper.frequency.setValueAtTime(1100 + Math.random() * 300, time);
+
   gain.gain.setValueAtTime(0.0001, time);
-  gain.gain.linearRampToValueAtTime(gainLevel, time + 0.004);
+  gain.gain.linearRampToValueAtTime(gainLevel * 1.3, time + 0.022); // Longer linear ramp up (soft attack)
   gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
 
   source.connect(body);

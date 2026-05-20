@@ -100,6 +100,7 @@ export function useTownCamera(
   const [isDragging, setIsDragging] = useState(false);
   const hudDragRef = useRef(false);
   const didTriggerDragRef = useRef(false);
+  const wasDraggingRef = useRef(false);
 
   // In-flight spring animations — cancelled when drag starts.
   const animsRef = useRef<AnimationPlaybackControls[]>([]);
@@ -140,6 +141,7 @@ export function useTownCamera(
         if (!hudDragRef.current) {
           stopAnims();
           didTriggerDragRef.current = false;
+          wasDraggingRef.current = false;
         }
       },
       onDrag: ({ delta: [dx, dy] }) => {
@@ -147,7 +149,11 @@ export function useTownCamera(
         if (!didTriggerDragRef.current) {
           didTriggerDragRef.current = true;
           setIsDragging(true);
+          if (svgRef.current) {
+            svgRef.current.style.pointerEvents = "none";
+          }
         }
+        wasDraggingRef.current = true;
         // vbScale: CSS pixels per SVG viewBox unit (accounts for letterboxing).
         const ctm = svgRef.current?.getScreenCTM();
         const vbScale = ctm ? ctm.a : 1;
@@ -165,8 +171,14 @@ export function useTownCamera(
         if (!hudDragRef.current) {
           setIsDragging(false);
           didTriggerDragRef.current = false;
+          if (svgRef.current) {
+            svgRef.current.style.pointerEvents = "auto";
+          }
         }
         hudDragRef.current = false;
+        setTimeout(() => {
+          wasDraggingRef.current = false;
+        }, 50);
       },
       onWheel: ({ delta: [, dy], event }) => {
         if (event && event.cancelable) {
@@ -248,5 +260,6 @@ export function useTownCamera(
     zoomAtWorldPoint,
     markSkipDrag: () => {},
     stageHandlers: {},
+    wasDragging: () => wasDraggingRef.current,
   };
 }
