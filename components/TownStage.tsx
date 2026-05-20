@@ -160,7 +160,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   useEffect(() => {
     if (!pathDistrict || !pathStopId) {
       hudDismissPendingRef.current = false;
-      return;
+      const dismiss = window.setTimeout(() => setSelectedStop(null), 0);
+      return () => window.clearTimeout(dismiss);
     }
     if (hudDismissPendingRef.current) return;
     const stop = currentStops.find(
