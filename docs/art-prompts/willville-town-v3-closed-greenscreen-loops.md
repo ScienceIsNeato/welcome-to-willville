@@ -11,6 +11,7 @@ Scene/backdrop:
 A compact coastal fantasy town on a harbor island, viewed from above like a game board or hidden-object puzzle spread. The town is divided into eight distinct districts arranged around a central plaza with a fountain. Include an outer harbor wall, docks along the bottom edge, a small ocean/open-water edge, and tiny streets/rails/pathways that weave between zones.
 
 Districts and motif packages:
+
 - The Press Row: warm parchment, ink, tiny print shops, stacked papers, little newsstands, type blocks, small chimneys, wordy signs without readable text.
 - Web Row: bright blue roofs, storefronts, cables, glassy windows, tiny app kiosks, network-like paths, cheerful shop awnings.
 - The Foundry: hot oranges and reds, furnaces, smokestacks, gears, molten vats, industrial brick, tiny carts, metal catwalks.
@@ -30,6 +31,7 @@ Critical animation chroma-key requirements:
 Place perfectly flat, uniform #00ff00 chroma-green loops only where future animation should replace static art. These green areas are intentional mask channels, not scenery.
 
 Each district must have its own complete closed #00ff00 loop:
+
 - one continuous green belt fully encircling The Press Row
 - one continuous green belt fully encircling Web Row
 - one continuous green belt fully encircling The Foundry
@@ -40,6 +42,7 @@ Each district must have its own complete closed #00ff00 loop:
 - one continuous green belt fully encircling The Hearth
 
 The #00ff00 loops must:
+
 - be closed circuits with no dead ends, no open corridors, and no broken endpoints
 - look like complete wall tracks or rotating belts around each district
 - follow the visible masonry/passages between districts and around district edges
@@ -66,6 +69,7 @@ Text:
 No readable text. Do not render labels, names, signs with words, captions, logos, watermarks, or UI.
 
 Constraints:
+
 - Must be one cohesive town map while still reading as a patchwork of mini-zones.
 - Must feel hand-drawn, wobbly, lively, and cartoon-readable.
 - Must include eight clearly extractable flat #00ff00 closed loops, one around each district.

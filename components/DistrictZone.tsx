@@ -1,18 +1,24 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import type { MouseEvent } from "react";
+import type { KeyboardEvent } from "react";
 import type { District } from "@/lib/willville";
 
 type Props = {
   district: District;
+  onEnterDistrict: (district: District) => void;
 };
 
-export function DistrictZone({ district }: Props) {
-  const router = useRouter();
+export function DistrictZone({ district, onEnterDistrict }: Props) {
   const enterDistrict = (event: MouseEvent<SVGElement>) => {
     event.stopPropagation();
-    router.push(`/${district.id}/`);
+    onEnterDistrict(district);
+  };
+  const enterDistrictFromKeyboard = (event: KeyboardEvent<SVGElement>) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    event.stopPropagation();
+    onEnterDistrict(district);
   };
 
   return (
@@ -23,11 +29,15 @@ export function DistrictZone({ district }: Props) {
     >
       <polygon
         points={district.polygon}
-        fill="none"
+        fill="transparent"
         stroke="transparent"
         strokeWidth={0}
         pointerEvents="all"
+        role="link"
+        tabIndex={0}
+        aria-label={`Open ${district.displayName}`}
         onClick={enterDistrict}
+        onKeyDown={enterDistrictFromKeyboard}
       >
         <title>{district.displayName}</title>
       </polygon>

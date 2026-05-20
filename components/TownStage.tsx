@@ -10,12 +10,7 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import {
-  DISTRICTS,
-  TOWN,
-  TOWN_OFFSET,
-  WORLD,
-} from "@/lib/willville";
+import { DISTRICTS, TOWN, TOWN_OFFSET, WORLD } from "@/lib/willville";
 import { type Stop } from "@/lib/town";
 import { isKnownDistrict } from "@/lib/slugs";
 import type { CanalBoat } from "@/lib/canal";
@@ -74,6 +69,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const router = useRouter();
   const [stops] = useState<Stop[]>(initialStops);
   const isClient = useIsClient();
+  const [now, setNow] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
 
@@ -144,6 +140,15 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     };
   }, []);
 
+  useEffect(() => {
+    const initial = window.setTimeout(() => setNow(Date.now()), 0);
+    const interval = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(interval);
+    };
+  }, []);
+
   const currentStops = liveStops ?? stops;
 
   const parts = pathname.split("/").filter(Boolean);
@@ -161,16 +166,14 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     const stop = currentStops.find(
       (s) => s.district === pathDistrict && s.id === pathStopId,
     );
-    if (stop) setSelectedStop(stop);
+    if (!stop) return;
+    const open = window.setTimeout(() => setSelectedStop(stop), 0);
+    return () => window.clearTimeout(open);
   }, [pathDistrict, pathStopId, currentStops]);
 
   const openStopHud = useCallback((stop: Stop) => {
     setSelectedStop(stop);
-    window.history.replaceState(
-      null,
-      "",
-      `/${stop.district}/${stop.id}/`,
-    );
+    window.history.replaceState(null, "", `/${stop.district}/${stop.id}/`);
   }, []);
 
   const closeHud = useCallback(() => {
@@ -179,6 +182,15 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     setSelectedStop(null);
     router.replace("/", { scroll: false });
   }, [router]);
+
+  const enterDistrict = useCallback(
+    (district: (typeof DISTRICTS)[number]) => {
+      hudDismissPendingRef.current = false;
+      setSelectedStop(null);
+      router.push(`/${district.id}/`);
+    },
+    [router],
+  );
 
   const handleStageClick = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
@@ -228,8 +240,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     [openStopHud, zoomAtWorldPoint],
   );
 
-  const showWelcomeHint =
-    !selectedStop && pathDistrict === null;
+  const showWelcomeHint = !selectedStop && pathDistrict === null;
 
   return (
     <div
@@ -289,7 +300,11 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             <ChimneySmoke />
             <DynamicWalls />
             {DISTRICTS.map((d) => (
-              <DistrictZone key={d.id} district={d} />
+              <DistrictZone
+                key={d.id}
+                district={d}
+                onEnterDistrict={enterDistrict}
+              />
             ))}
             <TransitLines />
             <MainLine stops={currentStops} />
@@ -299,8 +314,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                 : NaN;
               const recently =
                 isClient &&
+                now !== null &&
                 !Number.isNaN(updated) &&
-                Date.now() - updated < DAY_MS;
+                now - updated < DAY_MS;
               return (
                 <StopMarker
                   key={`${stop.district}-${stop.id}`}
@@ -327,10 +343,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       )}
 
       {!selectedStop && (
-        <MayorsExpressHud
-          stops={currentStops}
-          onSelectStop={openStopHud}
-        />
+        <MayorsExpressHud stops={currentStops} onSelectStop={openStopHud} />
       )}
 
       {showWelcomeHint && (

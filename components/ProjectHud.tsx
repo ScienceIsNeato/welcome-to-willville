@@ -275,7 +275,11 @@ function TitleRow({
           href={repoUrl}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ fontSize: 12, color: "#e6c66a", textDecoration: "underline" }}
+          style={{
+            fontSize: 12,
+            color: "#e6c66a",
+            textDecoration: "underline",
+          }}
         >
           repo
         </a>
@@ -285,7 +289,11 @@ function TitleRow({
           href={linkOut}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ fontSize: 12, color: "#e6c66a", textDecoration: "underline" }}
+          style={{
+            fontSize: 12,
+            color: "#e6c66a",
+            textDecoration: "underline",
+          }}
         >
           site
         </a>
@@ -355,7 +363,9 @@ function StatusRow({
         {STATE_LABEL[stop.status.state]}
       </span>
       {updatedLabel && (
-        <span style={{ fontSize: 12, opacity: 0.7 }}>updated {updatedLabel}</span>
+        <span style={{ fontSize: 12, opacity: 0.7 }}>
+          updated {updatedLabel}
+        </span>
       )}
     </div>
   );

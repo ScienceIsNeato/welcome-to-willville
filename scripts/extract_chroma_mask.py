@@ -37,7 +37,7 @@ def main() -> None:
     args = parser.parse_args()
     key = args.key.removeprefix("#")
     if len(key) != 6:
-      raise SystemExit("--key must be a 6-digit hex color")
+        raise SystemExit("--key must be a 6-digit hex color")
     rgb = tuple(int(key[i : i + 2], 16) for i in (0, 2, 4))
     extract(args.input, args.out, rgb)
 

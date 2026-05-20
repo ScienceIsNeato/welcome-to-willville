@@ -1,4 +1,4 @@
-import { DISTRICTS, type District } from "@/lib/willville";
+import { DISTRICTS, TOWN, type District } from "@/lib/willville";
 
 type Point = {
   x: number;
@@ -233,7 +233,8 @@ function smoothLoopPath(points: Point[]): string {
 }
 
 function loopForDistrict(district: District, index: number): WallLoop {
-  const points = CUSTOM_LOOP_POINTS[district.id] ?? polygonPoints(district.polygon);
+  const points =
+    CUSTOM_LOOP_POINTS[district.id] ?? polygonPoints(district.polygon);
   const clockwise = index % 2 === 0;
   const useCustomLoop = district.id in CUSTOM_LOOP_POINTS;
   const path = smoothLoopPath(
@@ -257,15 +258,15 @@ export function DynamicWalls() {
           maskUnits="userSpaceOnUse"
           x={0}
           y={0}
-          width={1600}
-          height={1240}
+          width={TOWN.width}
+          height={TOWN.height}
         >
           <image
             href="/art/town/willville-v3-animation-mask.png"
             x={0}
             y={0}
-            width={1600}
-            height={1240}
+            width={TOWN.width}
+            height={TOWN.height}
             preserveAspectRatio="none"
           />
         </mask>
@@ -276,15 +277,15 @@ export function DynamicWalls() {
           className="dynamic-wall-source-shadow"
           x={0}
           y={0}
-          width={1600}
-          height={1240}
+          width={TOWN.width}
+          height={TOWN.height}
         />
         <rect
           className="dynamic-wall-base"
           x={0}
           y={0}
-          width={1600}
-          height={1240}
+          width={TOWN.width}
+          height={TOWN.height}
         />
         {loops.map((loop, loopIndex) => (
           <g key={loop.id} className="dynamic-wall-loop">

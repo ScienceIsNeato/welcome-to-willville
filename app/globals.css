@@ -58,7 +58,12 @@ body {
   position: relative;
   overflow: hidden;
   background:
-    radial-gradient(ellipse at 50% 48%, rgba(87, 122, 90, 0.42) 0%, rgba(54, 94, 66, 0.36) 44%, rgba(21, 16, 42, 0.12) 100%),
+    radial-gradient(
+      ellipse at 50% 48%,
+      rgba(87, 122, 90, 0.42) 0%,
+      rgba(54, 94, 66, 0.36) 44%,
+      rgba(21, 16, 42, 0.12) 100%
+    ),
     linear-gradient(180deg, #283b6d 0%, #283b6d 28%, #244631 72%, #244631 100%);
 }
 
@@ -78,14 +83,12 @@ body {
 .dynamic-wall-base {
   fill: #756c5d;
   opacity: 1;
-  filter:
-    drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6))
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6))
     drop-shadow(0 0 2px rgba(230, 210, 170, 0.2));
 }
 
 .dynamic-wall-loop {
-  filter:
-    drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6))
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6))
     drop-shadow(0 0 2px rgba(240, 220, 180, 0.16));
 }
 
