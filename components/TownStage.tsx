@@ -85,7 +85,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   } = useTownCamera(svgRef, stageRef);
 
   const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
-  const hudDismissPendingRef = useRef(false);
+  const dismissedStopIdRef = useRef<string | null>(null);
   const transitioningToStopIdRef = useRef<string | null>(null);
 
   const [liveStops, setLiveStops] = useState<Stop[] | null>(null);
@@ -213,14 +213,17 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       if (transitioningToStopIdRef.current !== null) {
         return;
       }
-      hudDismissPendingRef.current = false;
+      dismissedStopIdRef.current = null;
       const dismiss = window.setTimeout(() => setSelectedStop(null), 0);
       return () => window.clearTimeout(dismiss);
     }
     if (pathStopId === transitioningToStopIdRef.current) {
       transitioningToStopIdRef.current = null;
     }
-    if (hudDismissPendingRef.current) return;
+    if (pathStopId === dismissedStopIdRef.current) {
+      return;
+    }
+    dismissedStopIdRef.current = null;
     const stop = currentStops.find(
       (s) => s.district === pathDistrict && s.id === pathStopId,
     );
@@ -232,6 +235,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const openStopHud = useCallback(
     (stop: Stop) => {
       transitioningToStopIdRef.current = stop.id;
+      dismissedStopIdRef.current = null;
       setSelectedStop(stop);
       router.replace(`/${stop.district}/${stop.id}/`, { scroll: false });
     },
@@ -240,19 +244,19 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
   const closeHud = useCallback(() => {
     transitioningToStopIdRef.current = null;
-    hudDismissPendingRef.current = true;
+    dismissedStopIdRef.current = pathStopId;
     setSelectedStop(null);
     router.replace("/", { scroll: false });
-  }, [router]);
+  }, [pathStopId, router]);
 
   const enterDistrict = useCallback(
     (district: (typeof DISTRICTS)[number]) => {
       transitioningToStopIdRef.current = null;
-      hudDismissPendingRef.current = true;
+      dismissedStopIdRef.current = pathStopId;
       setSelectedStop(null);
       router.push(`/${district.id}/`);
     },
-    [router],
+    [pathStopId, router],
   );
 
   const handleStageClick = useCallback(
