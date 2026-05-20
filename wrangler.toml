@@ -8,3 +8,12 @@ directory = "./out"
 [vars]
 # GITHUB_PAT is set as a secret in the Cloudflare Pages dashboard
 # (Settings → Environment variables → Add secret)
+
+[[routes]]
+pattern = "willville.ai"
+custom_domain = true
+
+[[routes]]
+pattern = "www.willville.ai"
+custom_domain = true
+
