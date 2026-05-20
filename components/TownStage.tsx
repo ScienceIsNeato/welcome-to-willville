@@ -86,6 +86,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
   const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
   const hudDismissPendingRef = useRef(false);
+  const transitioningToStopIdRef = useRef<string | null>(null);
 
   const [liveStops, setLiveStops] = useState<Stop[] | null>(null);
   const [isMayor, setIsMayor] = useState(false);
@@ -159,9 +160,15 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   // Deep link: open HUD without reframing camera.
   useEffect(() => {
     if (!pathDistrict || !pathStopId) {
+      if (transitioningToStopIdRef.current !== null) {
+        return;
+      }
       hudDismissPendingRef.current = false;
       const dismiss = window.setTimeout(() => setSelectedStop(null), 0);
       return () => window.clearTimeout(dismiss);
+    }
+    if (pathStopId === transitioningToStopIdRef.current) {
+      transitioningToStopIdRef.current = null;
     }
     if (hudDismissPendingRef.current) return;
     const stop = currentStops.find(
@@ -172,21 +179,24 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     return () => window.clearTimeout(open);
   }, [pathDistrict, pathStopId, currentStops]);
 
-  const openStopHud = useCallback((stop: Stop) => {
-    setSelectedStop(stop);
-    window.history.replaceState(null, "", `/${stop.district}/${stop.id}/`);
-  }, []);
+  const openStopHud = useCallback(
+    (stop: Stop) => {
+      transitioningToStopIdRef.current = stop.id;
+      setSelectedStop(stop);
+      router.replace(`/${stop.district}/${stop.id}/`, { scroll: false });
+    },
+    [router],
+  );
 
   const closeHud = useCallback(() => {
     hudDismissPendingRef.current = true;
-    window.history.replaceState(null, "", "/");
     setSelectedStop(null);
     router.replace("/", { scroll: false });
   }, [router]);
 
   const enterDistrict = useCallback(
     (district: (typeof DISTRICTS)[number]) => {
-      hudDismissPendingRef.current = false;
+      hudDismissPendingRef.current = true;
       setSelectedStop(null);
       router.push(`/${district.id}/`);
     },
