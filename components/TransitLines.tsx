@@ -11,7 +11,7 @@ import { Train } from "./Train";
  */
 export function TransitLines() {
   return (
-    <g aria-hidden="true">
+    <g aria-hidden="true" style={{ pointerEvents: "none" }}>
       {LINES.map((line) => (
         <path
           key={`rail-${line.id}`}

@@ -1,5 +1,3 @@
-# Slop-mop Quality Gates
-
 ## Slop-mop (`sm`) — substitution table for this repository
 
 `sm` wraps the tools you would normally reach for. In this repository,

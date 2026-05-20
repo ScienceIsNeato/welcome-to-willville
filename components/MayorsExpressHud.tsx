@@ -53,11 +53,7 @@ export function MayorsExpressHud({
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      <HudBody
-        next={next}
-        after={after}
-        onSelect={onSelectStop}
-      />
+      <HudBody next={next} after={after} onSelect={onSelectStop} />
     </div>
   );
 }

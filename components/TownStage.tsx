@@ -10,12 +10,7 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import {
-  DISTRICTS,
-  TOWN,
-  TOWN_OFFSET,
-  WORLD,
-} from "@/lib/willville";
+import { DISTRICTS, TOWN, TOWN_OFFSET, WORLD } from "@/lib/willville";
 import { type Stop } from "@/lib/town";
 import { isKnownDistrict } from "@/lib/slugs";
 import type { CanalBoat } from "@/lib/canal";
@@ -28,6 +23,7 @@ import { MainLine } from "./MainLine";
 import { MayorsExpressHud } from "./MayorsExpressHud";
 import { Canal } from "./Canal";
 import { ChimneySmoke } from "./ChimneySmoke";
+import { DynamicWalls } from "./DynamicWalls";
 import { screenToWorld, useTownCamera } from "@/hooks/useTownCamera";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
@@ -73,6 +69,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const router = useRouter();
   const [stops] = useState<Stop[]>(initialStops);
   const isClient = useIsClient();
+  const [now, setNow] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
 
@@ -88,11 +85,14 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   } = useTownCamera(svgRef, stageRef);
 
   const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
-  const hudDismissPendingRef = useRef(false);
+  const dismissedStopIdRef = useRef<string | null>(null);
+  const transitioningToStopIdRef = useRef<string | null>(null);
 
   const [liveStops, setLiveStops] = useState<Stop[] | null>(null);
   const [syncing, setSyncing] = useState(false);
-  const [populating, setPopulating] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [populating, setPopulating] = useState<
+    "idle" | "running" | "done" | "error"
+  >("idle");
   const [bellHovered, setBellHovered] = useState(false);
 
   useEffect(() => {
@@ -121,7 +121,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           .webkitAudioContext;
       const ctx = new Ctor();
       const partials = [
-        { mult: 1.0,   gain: 0.50 },
+        { mult: 1.0, gain: 0.5 },
         { mult: 2.756, gain: 0.28 },
         { mult: 5.404, gain: 0.18 },
         { mult: 8.933, gain: 0.09 },
@@ -191,40 +191,73 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     };
   }, []);
 
+  useEffect(() => {
+    const initial = window.setTimeout(() => setNow(Date.now()), 0);
+    const interval = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(interval);
+    };
+  }, []);
+
   const currentStops = liveStops ?? stops;
 
   const parts = pathname.split("/").filter(Boolean);
-  const pathDistrict = isKnownDistrict(parts[0] ?? "") ? parts[0] : null;
+  const districtSlug = parts[0] ?? "";
+  const pathDistrict = isKnownDistrict(districtSlug) ? districtSlug : null;
   const pathStopId = parts[1] ?? null;
 
   // Deep link: open HUD without reframing camera.
   useEffect(() => {
     if (!pathDistrict || !pathStopId) {
-      hudDismissPendingRef.current = false;
+      if (transitioningToStopIdRef.current !== null) {
+        return;
+      }
+      dismissedStopIdRef.current = null;
+      const dismiss = window.setTimeout(() => setSelectedStop(null), 0);
+      return () => window.clearTimeout(dismiss);
+    }
+    if (pathStopId === transitioningToStopIdRef.current) {
+      transitioningToStopIdRef.current = null;
+    }
+    if (pathStopId === dismissedStopIdRef.current) {
       return;
     }
-    if (hudDismissPendingRef.current) return;
+    dismissedStopIdRef.current = null;
     const stop = currentStops.find(
       (s) => s.district === pathDistrict && s.id === pathStopId,
     );
-    if (stop) setSelectedStop(stop);
+    if (!stop) return;
+    const open = window.setTimeout(() => setSelectedStop(stop), 0);
+    return () => window.clearTimeout(open);
   }, [pathDistrict, pathStopId, currentStops]);
 
-  const openStopHud = useCallback((stop: Stop) => {
-    setSelectedStop(stop);
-    window.history.replaceState(
-      null,
-      "",
-      `/${stop.district}/${stop.id}/`,
-    );
-  }, []);
+  const openStopHud = useCallback(
+    (stop: Stop) => {
+      transitioningToStopIdRef.current = stop.id;
+      dismissedStopIdRef.current = null;
+      setSelectedStop(stop);
+      router.replace(`/${stop.district}/${stop.id}/`, { scroll: false });
+    },
+    [router],
+  );
 
   const closeHud = useCallback(() => {
-    hudDismissPendingRef.current = true;
-    window.history.replaceState(null, "", "/");
+    transitioningToStopIdRef.current = null;
+    dismissedStopIdRef.current = pathStopId;
     setSelectedStop(null);
     router.replace("/", { scroll: false });
-  }, [router]);
+  }, [pathStopId, router]);
+
+  const enterDistrict = useCallback(
+    (district: (typeof DISTRICTS)[number]) => {
+      transitioningToStopIdRef.current = null;
+      dismissedStopIdRef.current = pathStopId;
+      setSelectedStop(null);
+      router.push(`/${district.id}/`);
+    },
+    [pathStopId, router],
+  );
 
   const handleStageClick = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
@@ -274,8 +307,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     [openStopHud, zoomAtWorldPoint],
   );
 
-  const showWelcomeHint =
-    !selectedStop && pathDistrict === null;
+  const showWelcomeHint = !selectedStop && pathDistrict === null;
 
   return (
     <div
@@ -325,7 +357,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               fill="url(#ground)"
             />
             <image
-              href="/art/town/willville.png"
+              href="/art/town/willville-v3-closed-loops-draft.png"
               x={0}
               y={0}
               width={TOWN.width}
@@ -333,8 +365,13 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               preserveAspectRatio="none"
             />
             <ChimneySmoke />
+            <DynamicWalls />
             {DISTRICTS.map((d) => (
-              <DistrictZone key={d.id} district={d} />
+              <DistrictZone
+                key={d.id}
+                district={d}
+                onEnterDistrict={enterDistrict}
+              />
             ))}
             <TransitLines />
             <MainLine stops={currentStops} />
@@ -344,8 +381,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                 : NaN;
               const recently =
                 isClient &&
+                now !== null &&
                 !Number.isNaN(updated) &&
-                Date.now() - updated < DAY_MS;
+                now - updated < DAY_MS;
               return (
                 <StopMarker
                   key={`${stop.district}-${stop.id}`}
@@ -404,14 +442,18 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               {bellHovered && populating === "idle" && (
                 <g style={{ pointerEvents: "none" }}>
                   <rect
-                    x={-68} y={-88} width={136} height={24}
+                    x={-68}
+                    y={-88}
+                    width={136}
+                    height={24}
                     rx={5}
                     fill="rgba(12,7,22,0.88)"
                     stroke="rgba(230,198,106,0.35)"
                     strokeWidth={1}
                   />
                   <text
-                    x={0} y={-71}
+                    x={0}
+                    y={-71}
                     textAnchor="middle"
                     fontSize={13}
                     fill="#e6c66a"
@@ -465,10 +507,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       )}
 
       {!selectedStop && (
-        <MayorsExpressHud
-          stops={currentStops}
-          onSelectStop={openStopHud}
-        />
+        <MayorsExpressHud stops={currentStops} onSelectStop={openStopHud} />
       )}
 
       {showWelcomeHint && (
@@ -491,41 +530,41 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       )}
 
       <button
-          onClick={handleSync}
-          disabled={syncing}
-          aria-label="Sync town data from GitHub"
-          title="Sync from GitHub"
+        onClick={handleSync}
+        disabled={syncing}
+        aria-label="Sync town data from GitHub"
+        title="Sync from GitHub"
+        style={{
+          position: "absolute",
+          bottom: 16,
+          right: 16,
+          width: 36,
+          height: 36,
+          borderRadius: "50%",
+          border: "1px solid rgba(230,198,106,0.45)",
+          background:
+            "linear-gradient(180deg, rgba(36,24,12,0.92) 0%, rgba(20,12,6,0.96) 100%)",
+          color: "var(--willville-paper)",
+          fontSize: 18,
+          cursor: syncing ? "wait" : "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow:
+            "0 4px 12px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(230,198,106,0.2)",
+          opacity: syncing ? 0.6 : 1,
+          transition: "opacity 0.2s",
+        }}
+      >
+        <span
           style={{
-            position: "absolute",
-            bottom: 16,
-            right: 16,
-            width: 36,
-            height: 36,
-            borderRadius: "50%",
-            border: "1px solid rgba(230,198,106,0.45)",
-            background:
-              "linear-gradient(180deg, rgba(36,24,12,0.92) 0%, rgba(20,12,6,0.96) 100%)",
-            color: "var(--willville-paper)",
-            fontSize: 18,
-            cursor: syncing ? "wait" : "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow:
-              "0 4px 12px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(230,198,106,0.2)",
-            opacity: syncing ? 0.6 : 1,
-            transition: "opacity 0.2s",
+            display: "inline-block",
+            animation: syncing ? "spin 1s linear infinite" : "none",
           }}
         >
-          <span
-            style={{
-              display: "inline-block",
-              animation: syncing ? "spin 1s linear infinite" : "none",
-            }}
-          >
-            ↻
-          </span>
-        </button>
+          ↻
+        </span>
+      </button>
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }

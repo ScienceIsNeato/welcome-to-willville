@@ -1,11 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useRef,
-  useState,
-  type RefObject,
-} from "react";
+import { useCallback, useRef, useState, type RefObject } from "react";
 import {
   useMotionValue,
   useTransform,
@@ -172,7 +167,11 @@ export function useTownCamera(
         const s = clampScale(
           dy < 0 ? mvScale.get() * ZOOM_FACTOR : mvScale.get() / ZOOM_FACTOR,
         );
-        const clamped = clampCamera({ cx: mvCx.get(), cy: mvCy.get(), scale: s });
+        const clamped = clampCamera({
+          cx: mvCx.get(),
+          cy: mvCy.get(),
+          scale: s,
+        });
         mvCx.set(clamped.cx);
         mvCy.set(clamped.cy);
         mvScale.set(clamped.scale);

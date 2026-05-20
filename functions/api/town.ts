@@ -133,7 +133,9 @@ async function fetchCommitCounts(
     if (!Array.isArray(commits)) return undefined;
 
     const now = Date.now();
-    let d3 = 0, d7 = 0, d21 = 0;
+    let d3 = 0,
+      d7 = 0,
+      d21 = 0;
     for (const c of commits) {
       const t = Date.parse(c.commit?.author?.date ?? "");
       if (Number.isNaN(t)) continue;
@@ -166,12 +168,20 @@ function parseWillvillePacket(body: string): WillvillePacket | undefined {
 
     switch (key) {
       case "status":
-        if (["wip", "shipping", "maintenance", "dormant", "unknown"].includes(val))
+        if (
+          ["wip", "shipping", "maintenance", "dormant", "unknown"].includes(val)
+        )
           pkt.status = val as WillvillePacket["status"];
         break;
-      case "summary": pkt.summary = val; break;
-      case "milestone": pkt.milestone = val; break;
-      case "eta_date": pkt.etaDate = val; break;
+      case "summary":
+        pkt.summary = val;
+        break;
+      case "milestone":
+        pkt.milestone = val;
+        break;
+      case "eta_date":
+        pkt.etaDate = val;
+        break;
     }
   }
 

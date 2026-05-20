@@ -1,27 +1,43 @@
 "use client";
 
+import type { MouseEvent } from "react";
+import type { KeyboardEvent } from "react";
 import type { District } from "@/lib/willville";
 
 type Props = {
   district: District;
+  onEnterDistrict: (district: District) => void;
 };
 
-/** Visual district overlay — labels and tint only; no click navigation. */
-export function DistrictZone({ district }: Props) {
-  const color = `var(${district.colorVar})`;
+export function DistrictZone({ district, onEnterDistrict }: Props) {
+  const enterDistrict = (event: MouseEvent<SVGElement>) => {
+    event.stopPropagation();
+    onEnterDistrict(district);
+  };
+  const enterDistrictFromKeyboard = (event: KeyboardEvent<SVGElement>) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    event.stopPropagation();
+    onEnterDistrict(district);
+  };
+
   return (
     <g
       className={`district-${district.id.replace(/^the-/, "")}`}
-      style={{ pointerEvents: "none" }}
-      aria-hidden
+      style={{ cursor: "pointer" }}
+      aria-label={district.displayName}
     >
       <polygon
         points={district.polygon}
-        fill={color}
-        fillOpacity={0}
-        stroke={color}
-        strokeWidth={1.5}
-        strokeOpacity={0.35}
+        fill="transparent"
+        stroke="transparent"
+        strokeWidth={0}
+        pointerEvents="all"
+        role="link"
+        tabIndex={0}
+        aria-label={`Open ${district.displayName}`}
+        onClick={enterDistrict}
+        onKeyDown={enterDistrictFromKeyboard}
       >
         <title>{district.displayName}</title>
       </polygon>

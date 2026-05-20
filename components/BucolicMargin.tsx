@@ -39,7 +39,13 @@ export function BucolicMargin() {
           <stop offset="54%" stopColor="#385f43" />
           <stop offset="100%" stopColor="#244631" />
         </linearGradient>
-        <linearGradient id="country-field-shadow" x1="0%" y1="0%" x2="0%" y2="100%">
+        <linearGradient
+          id="country-field-shadow"
+          x1="0%"
+          y1="0%"
+          x2="0%"
+          y2="100%"
+        >
           <stop offset="0%" stopColor="#416f50" stopOpacity="0.78" />
           <stop offset="100%" stopColor="#203b2b" stopOpacity="0.92" />
         </linearGradient>
@@ -54,7 +60,11 @@ export function BucolicMargin() {
         </radialGradient>
       </defs>
 
-      <rect width={WORLD.width} height={WORLD.height} fill="url(#country-sky)" />
+      <rect
+        width={WORLD.width}
+        height={WORLD.height}
+        fill="url(#country-sky)"
+      />
       <path
         d="M 0 405 C 260 350 500 370 730 330 C 1030 280 1250 335 1510 315 C 1840 288 2110 330 2400 275 L 2400 1800 L 0 1800 Z"
         fill="url(#country-field)"
@@ -107,13 +117,52 @@ export function BucolicMargin() {
       />
 
       {TREE_CLUMPS.map((tree, index) => (
-        <g key={`${tree.x}-${tree.y}`} transform={`translate(${tree.x} ${tree.y}) scale(${tree.s})`}>
-          <ellipse cx={0} cy={18} rx={34} ry={42} fill="#1e3e2b" opacity={0.86} />
-          <ellipse cx={-24} cy={30} rx={25} ry={36} fill="#244b33" opacity={0.8} />
-          <ellipse cx={26} cy={34} rx={28} ry={38} fill="#183625" opacity={0.72} />
-          <rect x={-5} y={48} width={10} height={38} rx={4} fill="#4c3a25" opacity={0.72} />
+        <g
+          key={`${tree.x}-${tree.y}`}
+          transform={`translate(${tree.x} ${tree.y}) scale(${tree.s})`}
+        >
+          <ellipse
+            cx={0}
+            cy={18}
+            rx={34}
+            ry={42}
+            fill="#1e3e2b"
+            opacity={0.86}
+          />
+          <ellipse
+            cx={-24}
+            cy={30}
+            rx={25}
+            ry={36}
+            fill="#244b33"
+            opacity={0.8}
+          />
+          <ellipse
+            cx={26}
+            cy={34}
+            rx={28}
+            ry={38}
+            fill="#183625"
+            opacity={0.72}
+          />
+          <rect
+            x={-5}
+            y={48}
+            width={10}
+            height={38}
+            rx={4}
+            fill="#4c3a25"
+            opacity={0.72}
+          />
           {index < 2 && (
-            <ellipse cx={12} cy={-6} rx={22} ry={24} fill="#2b563a" opacity={0.62} />
+            <ellipse
+              cx={12}
+              cy={-6}
+              rx={22}
+              ry={24}
+              fill="#2b563a"
+              opacity={0.62}
+            />
           )}
         </g>
       ))}
@@ -128,7 +177,11 @@ export function BucolicMargin() {
         strokeWidth={overlap * 2}
         opacity={0.18}
       />
-      <rect width={WORLD.width} height={WORLD.height} fill="url(#country-vignette)" />
+      <rect
+        width={WORLD.width}
+        height={WORLD.height}
+        fill="url(#country-vignette)"
+      />
     </g>
   );
 }

@@ -2,6 +2,9 @@
   "name": "welcome-to-willville",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22 <26"
+  },
   "scripts": {
     "dev": "next dev -p 3736",
     "dev:cf": "wrangler pages dev --proxy 3736 --port 3737 --compatibility-date 2024-09-23",

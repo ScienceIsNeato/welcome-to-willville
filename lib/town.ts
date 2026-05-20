@@ -255,9 +255,12 @@ function topicsToLines(topics: string[]): LineId[] {
 }
 
 /** AABB of a district polygon (used to scatter auto-positioned stops). */
-function districtBounds(
-  district: District,
-): { minX: number; maxX: number; minY: number; maxY: number } {
+function districtBounds(district: District): {
+  minX: number;
+  maxX: number;
+  minY: number;
+  maxY: number;
+} {
   const pts = district.polygon
     .trim()
     .split(/\s+/)
@@ -312,10 +315,7 @@ function autoPosition(
  * Derive project status state from GitHub push recency and milestone presence.
  * Open milestone → wip. Recent push → shipping. Otherwise maintenance/dormant.
  */
-function deriveState(
-  pushedAt: string,
-  hasOpenMilestone: boolean,
-): StatusState {
+function deriveState(pushedAt: string, hasOpenMilestone: boolean): StatusState {
   if (hasOpenMilestone) return "wip";
   const daysSince = (Date.now() - Date.parse(pushedAt)) / 86_400_000;
   if (daysSince <= 14) return "shipping";
@@ -355,8 +355,7 @@ function deriveQueue(
 export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
   const pkt = meta.willvillePacket;
   const hasOpenMilestone = (meta.openMilestones?.length ?? 0) > 0;
-  const district =
-    heuristic?.district ?? topicsToDistrict(meta.topics ?? []);
+  const district = heuristic?.district ?? topicsToDistrict(meta.topics ?? []);
   const lines = heuristic?.lines ?? topicsToLines(meta.topics ?? []);
   const stopId = heuristic?.stopId ?? meta.repo.split("/")[1]!.toLowerCase();
   const displayName = repoDisplayName(meta.repo);

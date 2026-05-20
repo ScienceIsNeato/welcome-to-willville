@@ -133,19 +133,48 @@ export function ProjectHud({ stop, boats, allStops, onClose }: Props) {
             </p>
           )}
           {stop.blurb && !stop.status.summary && (
-            <p style={{ margin: "0 0 14px", fontSize: 14, lineHeight: 1.45, opacity: 0.8 }}>
+            <p
+              style={{
+                margin: "0 0 14px",
+                fontSize: 14,
+                lineHeight: 1.45,
+                opacity: 0.8,
+              }}
+            >
               {stop.blurb}
             </p>
           )}
           {(stop.stars != null || stop.openIssues != null || stop.language) && (
-            <div style={{ display: "flex", gap: 14, fontSize: 12, opacity: 0.7, margin: "0 0 8px", flexWrap: "wrap" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: 14,
+                fontSize: 12,
+                opacity: 0.7,
+                margin: "0 0 8px",
+                flexWrap: "wrap",
+              }}
+            >
               {stop.language && <span>⌨ {stop.language}</span>}
-              {stop.stars != null && <span>★ {stop.stars.toLocaleString()}</span>}
+              {stop.stars != null && (
+                <span>★ {stop.stars.toLocaleString()}</span>
+              )}
               {stop.openIssues != null && <span>⚑ {stop.openIssues} open</span>}
             </div>
           )}
-          {(stop.commits3d != null || stop.commits7d != null || stop.commits21d != null) && (
-            <div style={{ display: "flex", gap: 14, fontSize: 12, opacity: 0.7, margin: "0 0 12px", flexWrap: "wrap" }}>
+          {(stop.commits3d != null ||
+            stop.commits7d != null ||
+            stop.commits21d != null) && (
+            <div
+              style={{
+                display: "flex",
+                gap: 14,
+                fontSize: 12,
+                opacity: 0.7,
+                margin: "0 0 12px",
+                flexWrap: "wrap",
+              }}
+            >
               <span style={{ opacity: 0.55, marginRight: 2 }}>commits</span>
               {stop.commits3d != null && <span>{stop.commits3d} (3d)</span>}
               {stop.commits7d != null && <span>{stop.commits7d} (7d)</span>}
@@ -290,7 +319,11 @@ function TitleRow({
           href={repoUrl}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ fontSize: 12, color: "#e6c66a", textDecoration: "underline" }}
+          style={{
+            fontSize: 12,
+            color: "#e6c66a",
+            textDecoration: "underline",
+          }}
         >
           repo
         </a>
@@ -300,7 +333,11 @@ function TitleRow({
           href={linkOut}
           target="_blank"
           rel="noopener noreferrer"
-          style={{ fontSize: 12, color: "#e6c66a", textDecoration: "underline" }}
+          style={{
+            fontSize: 12,
+            color: "#e6c66a",
+            textDecoration: "underline",
+          }}
         >
           site
         </a>
@@ -370,7 +407,9 @@ function StatusRow({
         {STATE_LABEL[stop.status.state]}
       </span>
       {updatedLabel && (
-        <span style={{ fontSize: 12, opacity: 0.7 }}>updated {updatedLabel}</span>
+        <span style={{ fontSize: 12, opacity: 0.7 }}>
+          updated {updatedLabel}
+        </span>
       )}
     </div>
   );

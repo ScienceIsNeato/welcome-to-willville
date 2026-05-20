@@ -28,7 +28,9 @@ function detectStrategy() {
     }
     // gh exists but not authed
     if (probe.stderr?.includes("not logged")) {
-      console.log("  gh CLI found but not logged in — run `gh auth login` or set GITHUB_PAT");
+      console.log(
+        "  gh CLI found but not logged in — run `gh auth login` or set GITHUB_PAT",
+      );
     }
   } catch {
     // gh not on PATH
@@ -40,7 +42,9 @@ function detectStrategy() {
     return { kind: "pat", token: pat };
   }
 
-  console.error("✗ No auth method available. Install gh CLI or set GITHUB_PAT.");
+  console.error(
+    "✗ No auth method available. Install gh CLI or set GITHUB_PAT.",
+  );
   process.exit(1);
 }
 
@@ -59,7 +63,9 @@ function ghApi(path, opts = {}) {
   // gh api exits non-zero on HTTP errors (4xx/5xx)
   if (result.status !== 0) {
     if (opts.allow404) return null;
-    throw new Error(result.stderr?.trim() || `gh api ${path} failed (exit ${result.status})`);
+    throw new Error(
+      result.stderr?.trim() || `gh api ${path} failed (exit ${result.status})`,
+    );
   }
 
   const out = result.stdout?.trim();
@@ -88,9 +94,12 @@ function patHeaders(token) {
 
 async function listRepos(strategy) {
   if (strategy.kind === "gh") {
-    const data = ghApi("/user/repos?per_page=100&affiliation=owner&sort=pushed&direction=desc", {
-      paginate: true,
-    });
+    const data = ghApi(
+      "/user/repos?per_page=100&affiliation=owner&sort=pushed&direction=desc",
+      {
+        paginate: true,
+      },
+    );
     const repos = Array.isArray(data) ? data : [];
     return repos.filter((r) => r.full_name?.startsWith(`${OWNER}/`));
   }
@@ -127,7 +136,9 @@ async function fetchMilestones(fullName, strategy) {
     const r = await fetch(url, { headers: patHeaders(strategy.token) });
     if (!r.ok) return [];
     const data = await r.json();
-    return Array.isArray(data) ? data.map((m) => ({ title: m.title, dueOn: m.due_on })) : [];
+    return Array.isArray(data)
+      ? data.map((m) => ({ title: m.title, dueOn: m.due_on }))
+      : [];
   } catch {
     return [];
   }
@@ -137,7 +148,9 @@ async function getStatusMd(fullName, branch, strategy) {
   try {
     let data;
     if (strategy.kind === "gh") {
-      data = ghApi(`/repos/${fullName}/contents/STATUS.md?ref=${branch}`, { allow404: true });
+      data = ghApi(`/repos/${fullName}/contents/STATUS.md?ref=${branch}`, {
+        allow404: true,
+      });
     } else {
       const url = `https://api.github.com/repos/${fullName}/contents/STATUS.md?ref=${branch}`;
       const r = await fetch(url, { headers: patHeaders(strategy.token) });
@@ -147,7 +160,10 @@ async function getStatusMd(fullName, branch, strategy) {
     }
 
     if (!data || !data.content) return null;
-    const body = Buffer.from(data.content.replace(/\s/g, ""), "base64").toString("utf8");
+    const body = Buffer.from(
+      data.content.replace(/\s/g, ""),
+      "base64",
+    ).toString("utf8");
     return { body, sha: data.sha };
   } catch {
     return null;
@@ -159,15 +175,28 @@ async function putStatusMd(fullName, branch, strategy, content, sha, message) {
   const b64 = Buffer.from(content, "utf8").toString("base64");
 
   if (strategy.kind === "gh") {
-    const payload = JSON.stringify({ message, content: b64, branch, ...(sha && { sha }) });
+    const payload = JSON.stringify({
+      message,
+      content: b64,
+      branch,
+      ...(sha && { sha }),
+    });
     const result = spawnSync(
       "gh",
-      ["api", `/repos/${fullName}/contents/STATUS.md`, "-X", "PUT", "--input", "-"],
+      [
+        "api",
+        `/repos/${fullName}/contents/STATUS.md`,
+        "-X",
+        "PUT",
+        "--input",
+        "-",
+      ],
       { encoding: "utf8", input: payload, maxBuffer: 2 * 1024 * 1024 },
     );
     if (result.status === 0) return "ok";
     // 409 = branch protection requires PR
-    if (result.stderr?.includes("409") || result.stdout?.includes("409")) return "protected";
+    if (result.stderr?.includes("409") || result.stdout?.includes("409"))
+      return "protected";
     return "failed";
   }
 
@@ -175,7 +204,10 @@ async function putStatusMd(fullName, branch, strategy, content, sha, message) {
   const body = { message, content: b64, branch, ...(sha && { sha }) };
   const r = await fetch(url, {
     method: "PUT",
-    headers: { ...patHeaders(strategy.token), "Content-Type": "application/json" },
+    headers: {
+      ...patHeaders(strategy.token),
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify(body),
   });
   if (r.ok || r.status === 201) return "ok";
@@ -243,7 +275,11 @@ async function main() {
         openMilestones: milestones,
       };
       const packet = buildPacket(meta);
-      const existing = await getStatusMd(r.full_name, r.default_branch, strategy);
+      const existing = await getStatusMd(
+        r.full_name,
+        r.default_branch,
+        strategy,
+      );
       const newBody = applyPacket(existing?.body ?? null, packet);
 
       if (existing && existing.body.trim() === newBody.trim()) {
@@ -280,7 +316,8 @@ async function main() {
   console.log(
     `\nDone: ${updated.length} updated, ${skipped.length} unchanged, ${protected_.length} branch-protected, ${errors.length} errors`,
   );
-  if (protected_.length > 0) console.log("Branch-protected (need PR):", protected_);
+  if (protected_.length > 0)
+    console.log("Branch-protected (need PR):", protected_);
   if (errors.length > 0) {
     console.log("Errors:", errors);
     process.exit(1);
