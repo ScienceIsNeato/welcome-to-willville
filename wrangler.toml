@@ -2,18 +2,6 @@ name = "welcome-to-willville"
 compatibility_date = "2024-09-23"
 pages_build_output_dir = "./out"
 
-[assets]
-directory = "./out"
-
 [vars]
-# GITHUB_PAT is set as a secret in the Cloudflare Pages dashboard
-# (Settings → Environment variables → Add secret)
-
-[[routes]]
-pattern = "willville.ai"
-custom_domain = true
-
-[[routes]]
-pattern = "www.willville.ai"
-custom_domain = true
+# GITHUB_PAT is set as a secret via: wrangler pages secret put GITHUB_PAT --project-name welcome-to-willville
 
