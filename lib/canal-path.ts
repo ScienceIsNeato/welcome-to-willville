@@ -11,37 +11,42 @@ export type Point = { x: number; y: number };
 
 type Cubic = { p0: Point; p1: Point; p2: Point; p3: Point };
 
-/** SVG path for the canal centerline (matches painted water in willville.png). */
+/**
+ * SVG path for the canal centerline.
+ *
+ * Stays inside the painted harbor zone (TOWN y ≈ 1085–1230) so that SVG boats
+ * and gate lines land on the actual water in willville.png.
+ */
 export const CANAL_PATH_D =
-  "M 70 1235 C 130 1120, 210 1000, 300 920" +
-  " S 520 800, 700 795" +
-  " S 920 820, 1100 870" +
-  " S 1380 960, 1575 1120";
+  "M 75 1225 C 140 1190, 260 1140, 380 1110" +
+  " S 620 1085, 800 1085" +
+  " S 1000 1090, 1160 1115" +
+  " S 1400 1155, 1570 1200";
 
 const SEGMENTS: Cubic[] = [
   {
-    p0: { x: 70, y: 1235 },
-    p1: { x: 130, y: 1120 },
-    p2: { x: 210, y: 1000 },
-    p3: { x: 300, y: 920 },
+    p0: { x: 75,   y: 1225 },
+    p1: { x: 140,  y: 1190 },
+    p2: { x: 260,  y: 1140 },
+    p3: { x: 380,  y: 1110 },
   },
   {
-    p0: { x: 300, y: 920 },
-    p1: { x: 410, y: 860 },
-    p2: { x: 610, y: 800 },
-    p3: { x: 700, y: 795 },
+    p0: { x: 380,  y: 1110 },
+    p1: { x: 500,  y: 1080 },
+    p2: { x: 620,  y: 1085 },
+    p3: { x: 800,  y: 1085 },
   },
   {
-    p0: { x: 700, y: 795 },
-    p1: { x: 810, y: 795 },
-    p2: { x: 910, y: 810 },
-    p3: { x: 1100, y: 870 },
+    p0: { x: 800,  y: 1085 },
+    p1: { x: 980,  y: 1085 },
+    p2: { x: 1000, y: 1090 },
+    p3: { x: 1160, y: 1115 },
   },
   {
-    p0: { x: 1100, y: 870 },
-    p1: { x: 1240, y: 915 },
-    p2: { x: 1450, y: 1000 },
-    p3: { x: 1575, y: 1120 },
+    p0: { x: 1160, y: 1115 },
+    p1: { x: 1320, y: 1140 },
+    p2: { x: 1400, y: 1155 },
+    p3: { x: 1570, y: 1200 },
   },
 ];
 
@@ -79,8 +84,8 @@ function cubicTangentAt(seg: Cubic, t: number): Point {
   };
 }
 
-/** Approximate arc-length weights per segment (precomputed, stable). */
-const SEGMENT_WEIGHTS = [1, 0.92, 0.88, 1.05] as const;
+/** Approximate arc-length weights per segment (proportional to chord lengths). */
+const SEGMENT_WEIGHTS = [0.82, 1.06, 0.91, 1.06] as const;
 const TOTAL_WEIGHT = SEGMENT_WEIGHTS.reduce((a, b) => a + b, 0);
 
 /**

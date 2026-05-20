@@ -39,7 +39,7 @@ export const CANAL = {
   /** Centerline path (Bezier) from southwest inlet to open sea on the east. */
   pathD: CANAL_PATH_D,
   /** Loose bounds for labels and fallback hit areas. */
-  top: 760,
+  top: 1080,
   bottom: 1240,
   left: 50,
   right: 1590,
@@ -235,6 +235,8 @@ export type ManualStop = {
   position: { x: number; y: number };
   homepage?: string;
   blurb?: string;
+  /** Explicit status state for non-repo stops. Defaults to "unknown" if omitted. */
+  statusState?: import("./town").StatusState;
 };
 
 export const MANUAL_STOPS: ManualStop[] = [
@@ -246,6 +248,7 @@ export const MANUAL_STOPS: ManualStop[] = [
     position: { x: 300, y: 240 },
     homepage: "https://scienceisneato.substack.com",
     blurb: "Will's Substack — essays, origin stories, and ledger entries.",
+    statusState: "shipping",
   },
   {
     id: "the-planter-beds",
@@ -254,6 +257,7 @@ export const MANUAL_STOPS: ManualStop[] = [
     lines: ["workshop"],
     position: { x: 540, y: 780 },
     blurb: "Hand-built planters scattered around the property.",
+    statusState: "maintenance",
   },
   {
     id: "the-library-shelves",
@@ -262,6 +266,7 @@ export const MANUAL_STOPS: ManualStop[] = [
     lines: ["workshop"],
     position: { x: 720, y: 780 },
     blurb: "Built-in shelving made of reclaimed lumber.",
+    statusState: "maintenance",
   },
   {
     id: "the-pumpkin-patch",
@@ -270,6 +275,7 @@ export const MANUAL_STOPS: ManualStop[] = [
     lines: ["halloween"],
     position: { x: 1380, y: 780 },
     blurb: "The annual Halloween showcase. Open one month a year.",
+    statusState: "dormant",
   },
   {
     id: "the-tax-ledger",
@@ -278,6 +284,7 @@ export const MANUAL_STOPS: ManualStop[] = [
     lines: [],
     position: { x: 140, y: 820 },
     blurb: "Quarterly estimates, returns, receipts.",
+    statusState: "maintenance",
   },
   {
     id: "the-hearth-table",
@@ -286,6 +293,7 @@ export const MANUAL_STOPS: ManualStop[] = [
     lines: [],
     position: { x: 240, y: 880 },
     blurb: "Household ops: groceries, repairs, calendar.",
+    statusState: "wip",
   },
   {
     id: "the-day-planner",
@@ -294,5 +302,6 @@ export const MANUAL_STOPS: ManualStop[] = [
     lines: [],
     position: { x: 320, y: 820 },
     blurb: "Personal productivity, weekly review, the GDP loop.",
+    statusState: "wip",
   },
 ];

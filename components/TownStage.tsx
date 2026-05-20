@@ -89,8 +89,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const transitioningToStopIdRef = useRef<string | null>(null);
 
   const [liveStops, setLiveStops] = useState<Stop[] | null>(null);
-  const [isMayor, setIsMayor] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [populating, setPopulating] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [bellHovered, setBellHovered] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -99,7 +100,6 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       .then((data) => {
         if (!cancelled && data && Array.isArray(data.stops)) {
           setLiveStops(data.stops as Stop[]);
-          setIsMayor(data.mayor === true);
         }
       })
       .catch(() => undefined);
@@ -107,6 +107,54 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       cancelled = true;
     };
   }, []);
+
+  const handlePopulate = useCallback(() => {
+    if (populating === "running") return;
+    // Synthesise a clock-tower bell via Web Audio
+    try {
+      type AudioCtxCtor = typeof AudioContext;
+      const Ctor: AudioCtxCtor =
+        window.AudioContext ??
+        (window as unknown as { webkitAudioContext: AudioCtxCtor })
+          .webkitAudioContext;
+      const ctx = new Ctor();
+      const partials = [
+        { mult: 1.0,   gain: 0.50 },
+        { mult: 2.756, gain: 0.28 },
+        { mult: 5.404, gain: 0.18 },
+        { mult: 8.933, gain: 0.09 },
+      ];
+      const base = 220;
+      const dur = 4;
+      const now = ctx.currentTime;
+      partials.forEach(({ mult, gain }) => {
+        const osc = ctx.createOscillator();
+        const g = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.value = base * mult;
+        g.gain.setValueAtTime(gain, now);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+        osc.connect(g);
+        g.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + dur);
+      });
+      setTimeout(() => ctx.close(), (dur + 0.5) * 1000);
+    } catch {
+      // audio not available — silent fail
+    }
+    setPopulating("running");
+    fetch("/api/manifests", { method: "POST" })
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then(() => {
+        setPopulating("done");
+        setTimeout(() => setPopulating("idle"), 3000);
+      })
+      .catch(() => {
+        setPopulating("error");
+        setTimeout(() => setPopulating("idle"), 4000);
+      });
+  }, [populating]);
 
   const handleSync = useCallback(() => {
     setSyncing(true);
@@ -340,9 +388,102 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               );
             })}
             <Canal boats={boats} />
+
+            {/* Town square — clock tower bell */}
+            <g
+              transform="translate(784, 456)"
+              style={{ cursor: populating === "running" ? "wait" : "pointer" }}
+              onMouseEnter={() => setBellHovered(true)}
+              onMouseLeave={() => setBellHovered(false)}
+              onClick={(e) => {
+                e.stopPropagation();
+                markSkipDrag();
+                handlePopulate();
+              }}
+            >
+              {/* large invisible hit area — generous polygon covering the full tower */}
+              <polygon
+                points="0,-155 42,-130 54,-88 58,-42 64,6 42,24 0,32 -42,24 -64,6 -58,-42 -54,-88 -42,-130"
+                fill="transparent"
+              />
+
+              {/* hover outline — traces the tower silhouette */}
+              {bellHovered && populating === "idle" && (
+                <polygon
+                  points="0,-145 38,-122 48,-80 50,-38 58,4 38,20 0,28 -38,20 -58,4 -50,-38 -48,-80 -38,-122"
+                  fill="none"
+                  stroke="rgba(230,198,106,0.55)"
+                  strokeWidth={2}
+                  strokeDasharray="6 4"
+                  strokeLinejoin="round"
+                />
+              )}
+
+              {/* running pulse outline */}
+              {populating === "running" && (
+                <polygon
+                  points="0,-145 38,-122 48,-80 50,-38 58,4 38,20 0,28 -38,20 -58,4 -50,-38 -48,-80 -38,-122"
+                  fill="none"
+                  stroke="rgba(230,198,106,0.8)"
+                  strokeWidth={2}
+                  strokeLinejoin="round"
+                />
+              )}
+
+              {/* tooltip */}
+              {bellHovered && populating === "idle" && (
+                <g style={{ pointerEvents: "none" }}>
+                  <rect
+                    x={-68} y={-88} width={136} height={24}
+                    rx={5}
+                    fill="rgba(12,7,22,0.88)"
+                    stroke="rgba(230,198,106,0.35)"
+                    strokeWidth={1}
+                  />
+                  <text
+                    x={0} y={-71}
+                    textAnchor="middle"
+                    fontSize={13}
+                    fill="#e6c66a"
+                    fontFamily="var(--font-sans, sans-serif)"
+                  >
+                    Ring the town bell
+                  </text>
+                </g>
+              )}
+            </g>
           </g>
         </motion.g>
       </svg>
+
+      {populating !== "idle" && (
+        <div
+          style={{
+            position: "absolute",
+            top: 16,
+            left: "50%",
+            transform: "translateX(-50%)",
+            background: "rgba(18,10,6,0.92)",
+            border: `1px solid ${
+              populating === "done"
+                ? "rgba(100,200,100,0.5)"
+                : populating === "error"
+                  ? "rgba(220,80,80,0.5)"
+                  : "rgba(230,198,106,0.4)"
+            }`,
+            borderRadius: 8,
+            padding: "8px 16px",
+            color: "var(--willville-paper)",
+            fontSize: 13,
+            pointerEvents: "none",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {populating === "running" && "🔔 The bell rings across Willville…"}
+          {populating === "done" && "✓ Manifests updated"}
+          {populating === "error" && "✕ Bell failed — check GITHUB_PAT"}
+        </div>
+      )}
 
       {selectedStop && (
         <ProjectHud
@@ -376,8 +517,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         </motion.div>
       )}
 
-      {isMayor && (
-        <button
+      <button
           onClick={handleSync}
           disabled={syncing}
           aria-label="Sync town data from GitHub"
@@ -413,7 +553,6 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             ↻
           </span>
         </button>
-      )}
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }

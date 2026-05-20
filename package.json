@@ -6,9 +6,11 @@
     "node": ">=22 <26"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3736",
+    "dev:cf": "wrangler pages dev --proxy 3736 --port 3737 --compatibility-date 2024-09-23",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "populate": "node scripts/populate-manifests.mjs"
   },
   "dependencies": {
     "@types/js-yaml": "^4.0.9",
