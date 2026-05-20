@@ -90,7 +90,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
   const [liveStops, setLiveStops] = useState<Stop[] | null>(null);
   const [syncing, setSyncing] = useState(false);
-  const [populating, setPopulating] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [populating, setPopulating] = useState<
+    "idle" | "running" | "done" | "error"
+  >("idle");
   const [bellHovered, setBellHovered] = useState(false);
 
   useEffect(() => {
@@ -119,7 +121,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           .webkitAudioContext;
       const ctx = new Ctor();
       const partials = [
-        { mult: 1.0,   gain: 0.50 },
+        { mult: 1.0, gain: 0.5 },
         { mult: 2.756, gain: 0.28 },
         { mult: 5.404, gain: 0.18 },
         { mult: 8.933, gain: 0.09 },
@@ -237,6 +239,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   );
 
   const closeHud = useCallback(() => {
+    transitioningToStopIdRef.current = null;
     hudDismissPendingRef.current = true;
     setSelectedStop(null);
     router.replace("/", { scroll: false });
@@ -244,6 +247,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
   const enterDistrict = useCallback(
     (district: (typeof DISTRICTS)[number]) => {
+      transitioningToStopIdRef.current = null;
       hudDismissPendingRef.current = true;
       setSelectedStop(null);
       router.push(`/${district.id}/`);
@@ -434,14 +438,18 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               {bellHovered && populating === "idle" && (
                 <g style={{ pointerEvents: "none" }}>
                   <rect
-                    x={-68} y={-88} width={136} height={24}
+                    x={-68}
+                    y={-88}
+                    width={136}
+                    height={24}
                     rx={5}
                     fill="rgba(12,7,22,0.88)"
                     stroke="rgba(230,198,106,0.35)"
                     strokeWidth={1}
                   />
                   <text
-                    x={0} y={-71}
+                    x={0}
+                    y={-71}
                     textAnchor="middle"
                     fontSize={13}
                     fill="#e6c66a"
@@ -518,41 +526,41 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       )}
 
       <button
-          onClick={handleSync}
-          disabled={syncing}
-          aria-label="Sync town data from GitHub"
-          title="Sync from GitHub"
+        onClick={handleSync}
+        disabled={syncing}
+        aria-label="Sync town data from GitHub"
+        title="Sync from GitHub"
+        style={{
+          position: "absolute",
+          bottom: 16,
+          right: 16,
+          width: 36,
+          height: 36,
+          borderRadius: "50%",
+          border: "1px solid rgba(230,198,106,0.45)",
+          background:
+            "linear-gradient(180deg, rgba(36,24,12,0.92) 0%, rgba(20,12,6,0.96) 100%)",
+          color: "var(--willville-paper)",
+          fontSize: 18,
+          cursor: syncing ? "wait" : "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow:
+            "0 4px 12px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(230,198,106,0.2)",
+          opacity: syncing ? 0.6 : 1,
+          transition: "opacity 0.2s",
+        }}
+      >
+        <span
           style={{
-            position: "absolute",
-            bottom: 16,
-            right: 16,
-            width: 36,
-            height: 36,
-            borderRadius: "50%",
-            border: "1px solid rgba(230,198,106,0.45)",
-            background:
-              "linear-gradient(180deg, rgba(36,24,12,0.92) 0%, rgba(20,12,6,0.96) 100%)",
-            color: "var(--willville-paper)",
-            fontSize: 18,
-            cursor: syncing ? "wait" : "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow:
-              "0 4px 12px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(230,198,106,0.2)",
-            opacity: syncing ? 0.6 : 1,
-            transition: "opacity 0.2s",
+            display: "inline-block",
+            animation: syncing ? "spin 1s linear infinite" : "none",
           }}
         >
-          <span
-            style={{
-              display: "inline-block",
-              animation: syncing ? "spin 1s linear infinite" : "none",
-            }}
-          >
-            ↻
-          </span>
-        </button>
+          ↻
+        </span>
+      </button>
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }

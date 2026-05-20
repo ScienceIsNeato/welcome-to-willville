@@ -111,7 +111,11 @@ export function MainLine({ stops }: Props) {
   const loopSeconds = Math.max(18, queue.length * 6);
 
   return (
-    <g id="willville-main-line" aria-label="The Mayor's Express">
+    <g
+      id="willville-main-line"
+      aria-label="The Mayor's Express"
+      style={{ pointerEvents: "none" }}
+    >
       {/* rail glow */}
       <path
         d={path}
