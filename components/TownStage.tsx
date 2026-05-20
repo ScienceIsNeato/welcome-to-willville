@@ -413,6 +413,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               <polygon
                 points="0,-155 42,-130 54,-88 58,-42 64,6 42,24 0,32 -42,24 -64,6 -58,-42 -54,-88 -42,-130"
                 fill="transparent"
+                pointerEvents="all"
               />
 
               {/* hover outline — traces the tower silhouette */}
