@@ -99,6 +99,7 @@ export function useTownCamera(
 
   const [isDragging, setIsDragging] = useState(false);
   const hudDragRef = useRef(false);
+  const didTriggerDragRef = useRef(false);
 
   // In-flight spring animations — cancelled when drag starts.
   const animsRef = useRef<AnimationPlaybackControls[]>([]);
@@ -138,11 +139,15 @@ export function useTownCamera(
         );
         if (!hudDragRef.current) {
           stopAnims();
-          setIsDragging(true);
+          didTriggerDragRef.current = false;
         }
       },
       onDrag: ({ delta: [dx, dy] }) => {
         if (hudDragRef.current) return;
+        if (!didTriggerDragRef.current) {
+          didTriggerDragRef.current = true;
+          setIsDragging(true);
+        }
         // vbScale: CSS pixels per SVG viewBox unit (accounts for letterboxing).
         const ctm = svgRef.current?.getScreenCTM();
         const vbScale = ctm ? ctm.a : 1;
@@ -159,6 +164,7 @@ export function useTownCamera(
       onDragEnd: () => {
         if (!hudDragRef.current) {
           setIsDragging(false);
+          didTriggerDragRef.current = false;
         }
         hudDragRef.current = false;
       },
