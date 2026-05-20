@@ -168,16 +168,37 @@ export function useTownCamera(
         }
         hudDragRef.current = false;
       },
-      onWheel: ({ delta: [, dy] }) => {
+      onWheel: ({ delta: [, dy], event }) => {
+        if (event && event.cancelable) {
+          event.preventDefault();
+        }
         stopAnims();
-        const s = clampScale(
-          dy < 0 ? mvScale.get() * ZOOM_FACTOR : mvScale.get() / ZOOM_FACTOR,
-        );
-        const clamped = clampCamera({
-          cx: mvCx.get(),
-          cy: mvCy.get(),
-          scale: s,
-        });
+
+        const snap = getCameraSnapshot();
+        const svg = svgRef.current;
+        const hasCoords = event && typeof (event as any).clientX === "number";
+        const mouseWorld =
+          svg && hasCoords
+            ? screenToWorld(
+                svg,
+                (event as any).clientX,
+                (event as any).clientY,
+                snap,
+              )
+            : null;
+
+        const factor = Math.min(1.2, Math.max(0.8, Math.exp(-dy * 0.001)));
+        const s = clampScale(snap.scale * factor);
+
+        let cx = snap.cx;
+        let cy = snap.cy;
+
+        if (mouseWorld) {
+          cx = mouseWorld.wx - (mouseWorld.wx - snap.cx) * (snap.scale / s);
+          cy = mouseWorld.wy - (mouseWorld.wy - snap.cy) * (snap.scale / s);
+        }
+
+        const clamped = clampCamera({ cx, cy, scale: s });
         mvCx.set(clamped.cx);
         mvCy.set(clamped.cy);
         mvScale.set(clamped.scale);

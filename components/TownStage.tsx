@@ -18,9 +18,9 @@ import { DistrictZone } from "./DistrictZone";
 import { BucolicMargin } from "./BucolicMargin";
 import { TransitLines } from "./TransitLines";
 import { StopMarker } from "./StopMarker";
-import { ProjectHud } from "./ProjectHud";
 import { MainLine } from "./MainLine";
-import { MayorsExpressHud } from "./MayorsExpressHud";
+import { CentralBoard } from "./CentralBoard";
+import { DigitalDetailBoard } from "./DigitalDetailBoard";
 import { Canal } from "./Canal";
 import { ChimneySmoke } from "./ChimneySmoke";
 import { DynamicWalls } from "./DynamicWalls";
@@ -206,6 +206,13 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const districtSlug = parts[0] ?? "";
   const pathDistrict = isKnownDistrict(districtSlug) ? districtSlug : null;
   const pathStopId = parts[1] ?? null;
+  const pathSelectedStop =
+    pathDistrict && pathStopId
+      ? (currentStops.find(
+          (s) => s.district === pathDistrict && s.id === pathStopId,
+        ) ?? null)
+      : null;
+  const boardStop = selectedStop ?? pathSelectedStop;
 
   // Deep link: open HUD without reframing camera.
   useEffect(() => {
@@ -307,269 +314,280 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     [openStopHud, zoomAtWorldPoint],
   );
 
-  const showWelcomeHint = !selectedStop && pathDistrict === null;
+  const showWelcomeHint = !boardStop && pathDistrict === null;
 
   return (
     <div
       id="willville-stage"
-      ref={stageRef}
       style={{
-        touchAction: "none",
-        cursor: isDragging ? "grabbing" : "default",
         background:
           "linear-gradient(180deg, #283b6d 0%, #283b6d 28%, #244631 72%, #244631 100%)",
       }}
-      onClick={handleStageClick}
-      onDoubleClick={handleStageDoubleClick}
-      {...stageHandlers}
     >
-      <svg
-        ref={svgRef}
-        viewBox={`0 0 ${WORLD.width} ${WORLD.height}`}
-        preserveAspectRatio="xMidYMid meet"
-        width="100%"
-        height="100%"
-        style={{ pointerEvents: isDragging ? "none" : "auto" }}
+      <CentralBoard
+        stops={currentStops}
+        selectedStop={boardStop}
+        activeDistrict={pathDistrict}
+        onSelectStop={openStopHud}
+      />
+
+      <div
+        ref={stageRef}
+        style={{
+          position: "relative",
+          minHeight: 0,
+          touchAction: "none",
+          cursor: isDragging ? "grabbing" : "default",
+          overflow: "hidden",
+        }}
+        onClick={handleStageClick}
+        onDoubleClick={handleStageDoubleClick}
+        {...stageHandlers}
       >
-        <defs>
-          <radialGradient id="ground" cx="50%" cy="42%" r="65%">
-            <stop offset="0%" stopColor="#3b2a5e" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#15102a" stopOpacity="0.95" />
-          </radialGradient>
-        </defs>
-
-        <motion.g
-          style={{
-            x: gX,
-            y: gY,
-            scale: mvScale,
-            transformOrigin: `${WORLD.width / 2}px ${WORLD.height / 2}px`,
-          }}
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${WORLD.width} ${WORLD.height}`}
+          preserveAspectRatio="xMidYMid meet"
+          width="100%"
+          height="100%"
+          style={{ pointerEvents: isDragging ? "none" : "auto" }}
         >
-          <BucolicMargin />
+          <defs>
+            <radialGradient id="ground" cx="50%" cy="42%" r="65%">
+              <stop offset="0%" stopColor="#3b2a5e" stopOpacity="0.6" />
+              <stop offset="100%" stopColor="#15102a" stopOpacity="0.95" />
+            </radialGradient>
+          </defs>
 
-          <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
-            <rect
-              x={0}
-              y={0}
-              width={TOWN.width}
-              height={TOWN.height}
-              fill="url(#ground)"
-            />
-            <image
-              href="/art/town/willville-v3-closed-loops-draft.png"
-              x={0}
-              y={0}
-              width={TOWN.width}
-              height={TOWN.height}
-              preserveAspectRatio="none"
-            />
-            <ChimneySmoke />
-            <DynamicWalls />
-            {DISTRICTS.map((d) => (
-              <DistrictZone
-                key={d.id}
-                district={d}
-                onEnterDistrict={enterDistrict}
+          <motion.g
+            style={{
+              x: gX,
+              y: gY,
+              scale: mvScale,
+              transformOrigin: `${WORLD.width / 2}px ${WORLD.height / 2}px`,
+            }}
+          >
+            <BucolicMargin />
+
+            <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
+              <rect
+                x={0}
+                y={0}
+                width={TOWN.width}
+                height={TOWN.height}
+                fill="url(#ground)"
               />
-            ))}
-            <TransitLines />
-            <MainLine stops={currentStops} />
-            {currentStops.map((stop) => {
-              const updated = stop.status.updated
-                ? Date.parse(stop.status.updated)
-                : NaN;
-              const recently =
-                isClient &&
-                now !== null &&
-                !Number.isNaN(updated) &&
-                now - updated < DAY_MS;
-              return (
-                <StopMarker
-                  key={`${stop.district}-${stop.id}`}
-                  stop={stop}
-                  isFocused={selectedStop?.id === stop.id}
-                  recentlyUpdated={recently}
-                  onClick={() => openStopHud(stop)}
-                  onDoubleClick={() => handleStopDoubleClick(stop)}
-                />
-              );
-            })}
-            <Canal boats={boats} />
-
-            {/* Town square — clock tower bell */}
-            <g
-              transform="translate(784, 456)"
-              style={{ cursor: populating === "running" ? "wait" : "pointer" }}
-              onMouseEnter={() => setBellHovered(true)}
-              onMouseLeave={() => setBellHovered(false)}
-              onClick={(e) => {
-                e.stopPropagation();
-                markSkipDrag();
-                handlePopulate();
-              }}
-            >
-              {/* large invisible hit area — generous polygon covering the full tower */}
-              <polygon
-                points="0,-155 42,-130 54,-88 58,-42 64,6 42,24 0,32 -42,24 -64,6 -58,-42 -54,-88 -42,-130"
-                fill="transparent"
-                pointerEvents="all"
+              <image
+                href="/art/town/willville-v3-closed-loops-draft.png"
+                x={0}
+                y={0}
+                width={TOWN.width}
+                height={TOWN.height}
+                preserveAspectRatio="none"
               />
-
-              {/* hover outline — traces the tower silhouette */}
-              {bellHovered && populating === "idle" && (
-                <polygon
-                  points="0,-145 38,-122 48,-80 50,-38 58,4 38,20 0,28 -38,20 -58,4 -50,-38 -48,-80 -38,-122"
-                  fill="none"
-                  stroke="rgba(230,198,106,0.55)"
-                  strokeWidth={2}
-                  strokeDasharray="6 4"
-                  strokeLinejoin="round"
+              <ChimneySmoke />
+              <DynamicWalls />
+              {DISTRICTS.map((d) => (
+                <DistrictZone
+                  key={d.id}
+                  district={d}
+                  onEnterDistrict={enterDistrict}
                 />
-              )}
-
-              {/* running pulse outline */}
-              {populating === "running" && (
-                <polygon
-                  points="0,-145 38,-122 48,-80 50,-38 58,4 38,20 0,28 -38,20 -58,4 -50,-38 -48,-80 -38,-122"
-                  fill="none"
-                  stroke="rgba(230,198,106,0.8)"
-                  strokeWidth={2}
-                  strokeLinejoin="round"
-                />
-              )}
-
-              {/* tooltip */}
-              {bellHovered && populating === "idle" && (
-                <g style={{ pointerEvents: "none" }}>
-                  <rect
-                    x={-68}
-                    y={-88}
-                    width={136}
-                    height={24}
-                    rx={5}
-                    fill="rgba(12,7,22,0.88)"
-                    stroke="rgba(230,198,106,0.35)"
-                    strokeWidth={1}
+              ))}
+              <TransitLines />
+              <MainLine stops={currentStops} />
+              {currentStops.map((stop) => {
+                const updated = stop.status.updated
+                  ? Date.parse(stop.status.updated)
+                  : NaN;
+                const recently =
+                  isClient &&
+                  now !== null &&
+                  !Number.isNaN(updated) &&
+                  now - updated < DAY_MS;
+                return (
+                  <StopMarker
+                    key={`${stop.district}-${stop.id}`}
+                    stop={stop}
+                    isFocused={boardStop?.id === stop.id}
+                    recentlyUpdated={recently}
+                    onClick={() => openStopHud(stop)}
+                    onDoubleClick={() => handleStopDoubleClick(stop)}
                   />
-                  <text
-                    x={0}
-                    y={-71}
-                    textAnchor="middle"
-                    fontSize={13}
-                    fill="#e6c66a"
-                    fontFamily="var(--font-sans, sans-serif)"
-                  >
-                    Ring the town bell
-                  </text>
-                </g>
-              )}
+                );
+              })}
+              <Canal boats={boats} />
+
+              {/* Town square — clock tower bell */}
+              <g
+                transform="translate(784, 456)"
+                style={{
+                  cursor: populating === "running" ? "wait" : "pointer",
+                }}
+                onMouseEnter={() => setBellHovered(true)}
+                onMouseLeave={() => setBellHovered(false)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  markSkipDrag();
+                  handlePopulate();
+                }}
+              >
+                {/* large invisible hit area — generous polygon covering the full tower */}
+                <polygon
+                  points="0,-155 42,-130 54,-88 58,-42 64,6 42,24 0,32 -42,24 -64,6 -58,-42 -54,-88 -42,-130"
+                  fill="transparent"
+                  pointerEvents="all"
+                />
+
+                {/* hover outline — traces the tower silhouette */}
+                {bellHovered && populating === "idle" && (
+                  <polygon
+                    points="0,-145 38,-122 48,-80 50,-38 58,4 38,20 0,28 -38,20 -58,4 -50,-38 -48,-80 -38,-122"
+                    fill="none"
+                    stroke="rgba(230,198,106,0.55)"
+                    strokeWidth={2}
+                    strokeDasharray="6 4"
+                    strokeLinejoin="round"
+                  />
+                )}
+
+                {/* running pulse outline */}
+                {populating === "running" && (
+                  <polygon
+                    points="0,-145 38,-122 48,-80 50,-38 58,4 38,20 0,28 -38,20 -58,4 -50,-38 -48,-80 -38,-122"
+                    fill="none"
+                    stroke="rgba(230,198,106,0.8)"
+                    strokeWidth={2}
+                    strokeLinejoin="round"
+                  />
+                )}
+
+                {/* tooltip */}
+                {bellHovered && populating === "idle" && (
+                  <g style={{ pointerEvents: "none" }}>
+                    <rect
+                      x={-68}
+                      y={-88}
+                      width={136}
+                      height={24}
+                      rx={5}
+                      fill="rgba(12,7,22,0.88)"
+                      stroke="rgba(230,198,106,0.35)"
+                      strokeWidth={1}
+                    />
+                    <text
+                      x={0}
+                      y={-71}
+                      textAnchor="middle"
+                      fontSize={13}
+                      fill="#e6c66a"
+                      fontFamily="var(--font-sans, sans-serif)"
+                    >
+                      Ring the town bell
+                    </text>
+                  </g>
+                )}
+              </g>
             </g>
-          </g>
-        </motion.g>
-      </svg>
+          </motion.g>
+        </svg>
 
-      {populating !== "idle" && (
-        <div
-          style={{
-            position: "absolute",
-            top: 16,
-            left: "50%",
-            transform: "translateX(-50%)",
-            background: "rgba(18,10,6,0.92)",
-            border: `1px solid ${
-              populating === "done"
-                ? "rgba(100,200,100,0.5)"
-                : populating === "error"
-                  ? "rgba(220,80,80,0.5)"
-                  : "rgba(230,198,106,0.4)"
-            }`,
-            borderRadius: 8,
-            padding: "8px 16px",
-            color: "var(--willville-paper)",
-            fontSize: 13,
-            pointerEvents: "none",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {populating === "running" && "🔔 The bell rings across Willville…"}
-          {populating === "done" && "✓ Manifests updated"}
-          {populating === "error" && "✕ Bell failed — check GITHUB_PAT"}
-        </div>
-      )}
+        {populating !== "idle" && (
+          <div
+            style={{
+              position: "absolute",
+              top: 16,
+              left: "50%",
+              transform: "translateX(-50%)",
+              background: "rgba(18,10,6,0.92)",
+              border: `1px solid ${
+                populating === "done"
+                  ? "rgba(100,200,100,0.5)"
+                  : populating === "error"
+                    ? "rgba(220,80,80,0.5)"
+                    : "rgba(230,198,106,0.4)"
+              }`,
+              borderRadius: 8,
+              padding: "8px 16px",
+              color: "var(--willville-paper)",
+              fontSize: 13,
+              pointerEvents: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {populating === "running" && "🔔 The bell rings across Willville…"}
+            {populating === "done" && "✓ Manifests updated"}
+            {populating === "error" && "✕ Bell failed — check GITHUB_PAT"}
+          </div>
+        )}
 
-      {selectedStop && (
-        <ProjectHud
-          stop={selectedStop}
-          boats={boats}
-          allStops={currentStops}
-          onClose={closeHud}
-        />
-      )}
+        {showWelcomeHint && (
+          <motion.div
+            style={{
+              position: "absolute",
+              bottom: 16,
+              left: 16,
+              color: "var(--willville-paper)",
+              opacity: 0.8,
+              fontSize: 14,
+              letterSpacing: 0.6,
+              pointerEvents: "none",
+              textShadow: "0 1px 4px rgba(0,0,0,0.6)",
+            }}
+          >
+            Welcome to Willville · scroll to zoom · drag to pan · double-click
+            to zoom in
+          </motion.div>
+        )}
 
-      {!selectedStop && (
-        <MayorsExpressHud stops={currentStops} onSelectStop={openStopHud} />
-      )}
-
-      {showWelcomeHint && (
-        <motion.div
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          aria-label="Sync town data from GitHub"
+          title="Sync from GitHub"
           style={{
             position: "absolute",
             bottom: 16,
-            left: 16,
+            right: 16,
+            width: 36,
+            height: 36,
+            borderRadius: "50%",
+            border: "1px solid rgba(230,198,106,0.45)",
+            background:
+              "linear-gradient(180deg, rgba(36,24,12,0.92) 0%, rgba(20,12,6,0.96) 100%)",
             color: "var(--willville-paper)",
-            opacity: 0.8,
-            fontSize: 14,
-            letterSpacing: 0.6,
-            pointerEvents: "none",
-            textShadow: "0 1px 4px rgba(0,0,0,0.6)",
+            fontSize: 18,
+            cursor: syncing ? "wait" : "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow:
+              "0 4px 12px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(230,198,106,0.2)",
+            opacity: syncing ? 0.6 : 1,
+            transition: "opacity 0.2s",
           }}
         >
-          Welcome to Willville · scroll to zoom · drag to pan · double-click to
-          zoom in
-        </motion.div>
-      )}
+          <span
+            style={{
+              display: "inline-block",
+              animation: syncing ? "spin 1s linear infinite" : "none",
+            }}
+          >
+            ↻
+          </span>
+        </button>
 
-      <button
-        onClick={handleSync}
-        disabled={syncing}
-        aria-label="Sync town data from GitHub"
-        title="Sync from GitHub"
-        style={{
-          position: "absolute",
-          bottom: 16,
-          right: 16,
-          width: 36,
-          height: 36,
-          borderRadius: "50%",
-          border: "1px solid rgba(230,198,106,0.45)",
-          background:
-            "linear-gradient(180deg, rgba(36,24,12,0.92) 0%, rgba(20,12,6,0.96) 100%)",
-          color: "var(--willville-paper)",
-          fontSize: 18,
-          cursor: syncing ? "wait" : "pointer",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          boxShadow:
-            "0 4px 12px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(230,198,106,0.2)",
-          opacity: syncing ? 0.6 : 1,
-          transition: "opacity 0.2s",
-        }}
-      >
-        <span
-          style={{
-            display: "inline-block",
-            animation: syncing ? "spin 1s linear infinite" : "none",
-          }}
-        >
-          ↻
-        </span>
-      </button>
-
-      <style>{`
+        <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
+      </div>
+
+      <DigitalDetailBoard
+        stop={boardStop}
+        allStops={currentStops}
+        boats={boats}
+        onClear={closeHud}
+      />
     </div>
   );
 }

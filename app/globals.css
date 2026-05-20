@@ -56,6 +56,9 @@ body {
   width: 100vw;
   height: 100vh;
   position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 10px;
   overflow: hidden;
   background:
     radial-gradient(
