@@ -149,10 +149,7 @@ async function putStatusMd(
 // Packet generation
 // ---------------------------------------------------------------------------
 
-function deriveState(
-  pushedAt: string,
-  hasOpenMilestone: boolean,
-): string {
+function deriveState(pushedAt: string, hasOpenMilestone: boolean): string {
   if (hasOpenMilestone) return "wip";
   const days = (Date.now() - Date.parse(pushedAt)) / 86_400_000;
   if (days <= 14) return "shipping";
@@ -161,10 +158,7 @@ function deriveState(
 }
 
 function buildPacket(meta: RepoMeta): string {
-  const state = deriveState(
-    meta.pushedAt,
-    meta.openMilestones.length > 0,
-  );
+  const state = deriveState(meta.pushedAt, meta.openMilestones.length > 0);
   const lines = ["<!-- willville", `status: ${state}`];
   if (meta.description) lines.push(`summary: ${meta.description}`);
   if (meta.openMilestones[0]) {
@@ -217,7 +211,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ env }) => {
           openMilestones: milestones,
         };
         const packet = buildPacket(meta);
-        const existing = await getStatusMd(r.full_name, r.default_branch, token);
+        const existing = await getStatusMd(
+          r.full_name,
+          r.default_branch,
+          token,
+        );
         const newBody = applyPacket(existing?.body ?? null, packet);
 
         // Skip if content is identical

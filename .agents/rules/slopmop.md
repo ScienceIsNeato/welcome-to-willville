@@ -2,12 +2,12 @@
 
 ## Slop-mop (`sm`) — substitution table for this repository
 
-`sm` wraps the tools you would normally reach for.  In this repository,
-run `sm`, not the underlying tool.  The table below is the redirect —
+`sm` wraps the tools you would normally reach for. In this repository,
+run `sm`, not the underlying tool. The table below is the redirect —
 when your impulse is the left column, run the right column instead.
 
 | Your impulse                                      | Run instead                                  |
-|---------------------------------------------------|----------------------------------------------|
+| ------------------------------------------------- | -------------------------------------------- |
 | `pytest`                                          | `sm swab`                                    |
 | `black .`, `isort .`, `ruff check`, `flake8`      | `sm swab`                                    |
 | `mypy .`, `pyright`                               | `sm swab`                                    |
@@ -30,17 +30,17 @@ when your impulse is the left column, run the right column instead.
 
 - **NEVER** run raw `pytest`, `black`, `mypy`, or `ruff` in this repo.
   `sm swab` runs them in dependency order, caches clean results across
-  commits, and auto-fixes what it can.  A bare `pytest` wastes a full
+  commits, and auto-fixes what it can. A bare `pytest` wastes a full
   run on things swab would have skipped from cache.
 - **NEVER** run `gh pr checks`, `gh run view`, or read CI logs
-  directly.  `sm buff` fetches the same data and converts it into a
+  directly. `sm buff` fetches the same data and converts it into a
   remediation plan — it knows which check failed and what you need to
   do next, not just that something is red.
 - **NEVER** open or update a PR without `sm scour` passing first.
 - **NEVER** file slop-mop tool-friction issues with raw `gh issue create`.
   `sm barnacle file` adds the correct labels, issue shape, and source context.
-- **NEVER** bypass or silence a failing check.  If a gate is wrong,
-  fix the gate.  If your env is wrong, `sm doctor` will tell you.
+- **NEVER** bypass or silence a failing check. If a gate is wrong,
+  fix the gate. If your env is wrong, `sm doctor` will tell you.
 
 ### The loop
 
@@ -57,14 +57,14 @@ Or just run `sm sail` repeatedly — it reads the workflow state and dispatches 
 ### Why you lose if you bypass `sm`
 
 - **Cache:** swab/scour skip gates whose inputs haven't changed since
-  the last clean run at this commit.  Raw tool invocations re-run
+  the last clean run at this commit. Raw tool invocations re-run
   everything every time.
 - **Ordering:** gates declare dependencies (`type-blindness` needs
-  `missing-annotations` needs `sloppy-formatting`).  `sm` runs them in
+  `missing-annotations` needs `sloppy-formatting`). `sm` runs them in
   order so a formatting fix doesn't invalidate a type-check you just
-  waited for.  You can't get this from raw tool calls.
-- **Remediation:** `sm` output tells you *what to do next*, not just
-  *what's broken*.  `gh pr checks` says "failed"; `sm buff` says "line
+  waited for. You can't get this from raw tool calls.
+- **Remediation:** `sm` output tells you _what to do next_, not just
+  _what's broken_. `gh pr checks` says "failed"; `sm buff` says "line
   42 has a stale mock — here's the fix".
 - **Auto-fix:** `sm swab` auto-applies formatters and safe rewrites.
   Running `black` by hand then `isort` by hand then `autoflake` by hand
@@ -100,6 +100,7 @@ issues in the slop-mop repo, tagged for maintainer triage. They are not a
 machine-local queue and they are not claimed or resolved from the target repo.
 
 #### When To File
+
 - Work in the target repository using normal `sm` rails.
 - File a barnacle when slop-mop gives invalid guidance, blocks valid work,
   produces a false positive/negative, or makes the next step unclear.
@@ -107,6 +108,7 @@ machine-local queue and they are not claimed or resolved from the target repo.
   failures. Fix those normally.
 
 #### How To File
+
 Run this from the affected repository:
 
 ```bash
@@ -130,10 +132,12 @@ structured issue body for a human. The generated body is written to
 need a specific retry artifact location.
 
 #### After Filing
+
 - If the barnacle is non-blocking, continue the target-repo rail.
 - If it blocks forward progress, stop that rail and report the issue URL.
 - Do not invent a local workaround that hides the slop-mop defect.
 
 #### Core Rule
+
 - Never push through genuine slop-mop friction. File a barnacle issue with
   reproduction steps and let the upstream fix improve the tool for everyone.
