@@ -1,27 +1,33 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import type { MouseEvent } from "react";
 import type { District } from "@/lib/willville";
 
 type Props = {
   district: District;
 };
 
-/** Visual district overlay — labels and tint only; no click navigation. */
 export function DistrictZone({ district }: Props) {
-  const color = `var(${district.colorVar})`;
+  const router = useRouter();
+  const enterDistrict = (event: MouseEvent<SVGElement>) => {
+    event.stopPropagation();
+    router.push(`/${district.id}/`);
+  };
+
   return (
     <g
       className={`district-${district.id.replace(/^the-/, "")}`}
-      style={{ pointerEvents: "none" }}
-      aria-hidden
+      style={{ cursor: "pointer" }}
+      aria-label={district.displayName}
     >
       <polygon
         points={district.polygon}
-        fill={color}
-        fillOpacity={0}
-        stroke={color}
-        strokeWidth={1.5}
-        strokeOpacity={0.35}
+        fill="none"
+        stroke="transparent"
+        strokeWidth={0}
+        pointerEvents="all"
+        onClick={enterDistrict}
       >
         <title>{district.displayName}</title>
       </polygon>

@@ -66,6 +66,79 @@ body {
   filter: drop-shadow(0 0 6px currentColor);
 }
 
+.dynamic-walls {
+  pointer-events: none;
+}
+
+.dynamic-wall-source-shadow {
+  fill: #2a2520;
+  opacity: 0.68;
+}
+
+.dynamic-wall-base {
+  fill: #756c5d;
+  opacity: 1;
+  filter:
+    drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6))
+    drop-shadow(0 0 2px rgba(230, 210, 170, 0.2));
+}
+
+.dynamic-wall-loop {
+  filter:
+    drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6))
+    drop-shadow(0 0 2px rgba(240, 220, 180, 0.16));
+}
+
+.dynamic-wall-loop-bed,
+.dynamic-wall-loop-stones,
+.dynamic-wall-loop-mortar,
+.dynamic-wall-loop-glints {
+  vector-effect: non-scaling-stroke;
+}
+
+.dynamic-wall-loop-bed {
+  stroke: #5b5348;
+  stroke-width: 34;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.98;
+}
+
+.dynamic-wall-loop-stones {
+  stroke-linecap: butt;
+  stroke-linejoin: round;
+}
+
+.dynamic-wall-loop-stones-a {
+  stroke: #a0927e;
+  stroke-width: 28;
+  stroke-dasharray: 9 3 14 4 7 3;
+  opacity: 1;
+}
+
+.dynamic-wall-loop-stones-b {
+  stroke: #6d6457;
+  stroke-width: 20;
+  stroke-dasharray: 13 5 8 3 16 4;
+  opacity: 0.96;
+}
+
+.dynamic-wall-loop-mortar {
+  stroke: #211b20;
+  stroke-width: 30;
+  stroke-dasharray: 1 11;
+  stroke-linecap: butt;
+  opacity: 0.62;
+}
+
+.dynamic-wall-loop-glints {
+  stroke: #eadabc;
+  stroke-width: 5;
+  stroke-dasharray: 8 54;
+  stroke-linecap: round;
+  opacity: 0.38;
+}
+
 @keyframes whistle-pulse {
   0% {
     transform: scale(1);

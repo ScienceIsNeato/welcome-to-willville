@@ -28,6 +28,7 @@ import { MainLine } from "./MainLine";
 import { MayorsExpressHud } from "./MayorsExpressHud";
 import { Canal } from "./Canal";
 import { ChimneySmoke } from "./ChimneySmoke";
+import { DynamicWalls } from "./DynamicWalls";
 import { screenToWorld, useTownCamera } from "@/hooks/useTownCamera";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
@@ -146,7 +147,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const currentStops = liveStops ?? stops;
 
   const parts = pathname.split("/").filter(Boolean);
-  const pathDistrict = isKnownDistrict(parts[0] ?? "") ? parts[0] : null;
+  const districtSlug = parts[0] ?? "";
+  const pathDistrict = isKnownDistrict(districtSlug) ? districtSlug : null;
   const pathStopId = parts[1] ?? null;
 
   // Deep link: open HUD without reframing camera.
@@ -277,7 +279,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               fill="url(#ground)"
             />
             <image
-              href="/art/town/willville.png"
+              href="/art/town/willville-v3-closed-loops-draft.png"
               x={0}
               y={0}
               width={TOWN.width}
@@ -285,6 +287,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               preserveAspectRatio="none"
             />
             <ChimneySmoke />
+            <DynamicWalls />
             {DISTRICTS.map((d) => (
               <DistrictZone key={d.id} district={d} />
             ))}
