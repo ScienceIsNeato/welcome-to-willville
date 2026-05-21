@@ -324,7 +324,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         backgroundColor: "#063755",
         backgroundImage: `linear-gradient(rgba(6, 55, 85, 0.32), rgba(8, 5, 21, 0.42)), url(${WATER_TILE_ART})`,
         backgroundPosition: "center",
-        backgroundSize: WATER_TILE_BACKGROUND_SIZE,
+        backgroundRepeat: "no-repeat, repeat",
+        backgroundSize: `cover, ${WATER_TILE_BACKGROUND_SIZE}`,
       }}
       onClick={handleStageClick}
       onDoubleClick={handleStageDoubleClick}
