@@ -15,7 +15,11 @@ import { type Stop } from "@/lib/town";
 import { isKnownDistrict } from "@/lib/slugs";
 import type { CanalBoat } from "@/lib/canal";
 import { DistrictZone } from "./DistrictZone";
-import { BucolicMargin } from "./BucolicMargin";
+import {
+  BucolicMargin,
+  WATER_TILE_ART,
+  WATER_TILE_BACKGROUND_SIZE,
+} from "./BucolicMargin";
 import { TransitLines } from "./TransitLines";
 import { StopMarker } from "./StopMarker";
 import { MainLine } from "./MainLine";
@@ -28,6 +32,7 @@ import { screenToWorld, useTownCamera } from "@/hooks/useTownCamera";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 const STOP_HIT_RADIUS = 24;
+const TOWN_ART_FEATHER = 76;
 
 function useIsClient(): boolean {
   return useSyncExternalStore(
@@ -321,8 +326,11 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     <div
       id="willville-stage"
       style={{
-        background:
-          "linear-gradient(180deg, #283b6d 0%, #283b6d 28%, #244631 72%, #244631 100%)",
+        backgroundColor: "#063755",
+        backgroundImage: `linear-gradient(rgba(6, 55, 85, 0.32), rgba(8, 5, 21, 0.42)), url(${WATER_TILE_ART})`,
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat, repeat",
+        backgroundSize: `cover, ${WATER_TILE_BACKGROUND_SIZE}`,
       }}
     >
       <CentralBoard
@@ -354,10 +362,148 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           style={{ pointerEvents: "auto" }}
         >
           <defs>
-            <radialGradient id="ground" cx="50%" cy="42%" r="65%">
-              <stop offset="0%" stopColor="#3b2a5e" stopOpacity="0.6" />
-              <stop offset="100%" stopColor="#15102a" stopOpacity="0.95" />
+            <linearGradient id="town-feather-top" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="black" />
+              <stop offset="100%" stopColor="white" />
+            </linearGradient>
+            <linearGradient
+              id="town-feather-bottom"
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="1"
+            >
+              <stop offset="0%" stopColor="white" />
+              <stop offset="100%" stopColor="black" />
+            </linearGradient>
+            <linearGradient
+              id="town-feather-left"
+              x1="0"
+              y1="0"
+              x2="1"
+              y2="0"
+            >
+              <stop offset="0%" stopColor="black" />
+              <stop offset="100%" stopColor="white" />
+            </linearGradient>
+            <linearGradient
+              id="town-feather-right"
+              x1="0"
+              y1="0"
+              x2="1"
+              y2="0"
+            >
+              <stop offset="0%" stopColor="white" />
+              <stop offset="100%" stopColor="black" />
+            </linearGradient>
+            <radialGradient
+              id="town-feather-corner-top-left"
+              gradientUnits="userSpaceOnUse"
+              cx={TOWN_ART_FEATHER}
+              cy={TOWN_ART_FEATHER}
+              r={TOWN_ART_FEATHER}
+            >
+              <stop offset="0%" stopColor="white" />
+              <stop offset="100%" stopColor="black" />
             </radialGradient>
+            <radialGradient
+              id="town-feather-corner-top-right"
+              gradientUnits="userSpaceOnUse"
+              cx={TOWN.width - TOWN_ART_FEATHER}
+              cy={TOWN_ART_FEATHER}
+              r={TOWN_ART_FEATHER}
+            >
+              <stop offset="0%" stopColor="white" />
+              <stop offset="100%" stopColor="black" />
+            </radialGradient>
+            <radialGradient
+              id="town-feather-corner-bottom-left"
+              gradientUnits="userSpaceOnUse"
+              cx={TOWN_ART_FEATHER}
+              cy={TOWN.height - TOWN_ART_FEATHER}
+              r={TOWN_ART_FEATHER}
+            >
+              <stop offset="0%" stopColor="white" />
+              <stop offset="100%" stopColor="black" />
+            </radialGradient>
+            <radialGradient
+              id="town-feather-corner-bottom-right"
+              gradientUnits="userSpaceOnUse"
+              cx={TOWN.width - TOWN_ART_FEATHER}
+              cy={TOWN.height - TOWN_ART_FEATHER}
+              r={TOWN_ART_FEATHER}
+            >
+              <stop offset="0%" stopColor="white" />
+              <stop offset="100%" stopColor="black" />
+            </radialGradient>
+            <mask
+              id="town-art-feather-mask"
+              maskUnits="userSpaceOnUse"
+              maskContentUnits="userSpaceOnUse"
+              x={0}
+              y={0}
+              width={TOWN.width}
+              height={TOWN.height}
+            >
+              <rect width={TOWN.width} height={TOWN.height} fill="black" />
+              <rect
+                x={TOWN_ART_FEATHER}
+                y={TOWN_ART_FEATHER}
+                width={TOWN.width - TOWN_ART_FEATHER * 2}
+                height={TOWN.height - TOWN_ART_FEATHER * 2}
+                fill="white"
+              />
+              <rect
+                x={TOWN_ART_FEATHER}
+                width={TOWN.width - TOWN_ART_FEATHER * 2}
+                height={TOWN_ART_FEATHER}
+                fill="url(#town-feather-top)"
+              />
+              <rect
+                x={TOWN_ART_FEATHER}
+                y={TOWN.height - TOWN_ART_FEATHER}
+                width={TOWN.width - TOWN_ART_FEATHER * 2}
+                height={TOWN_ART_FEATHER}
+                fill="url(#town-feather-bottom)"
+              />
+              <rect
+                y={TOWN_ART_FEATHER}
+                width={TOWN_ART_FEATHER}
+                height={TOWN.height - TOWN_ART_FEATHER * 2}
+                fill="url(#town-feather-left)"
+              />
+              <rect
+                x={TOWN.width - TOWN_ART_FEATHER}
+                y={TOWN_ART_FEATHER}
+                width={TOWN_ART_FEATHER}
+                height={TOWN.height - TOWN_ART_FEATHER * 2}
+                fill="url(#town-feather-right)"
+              />
+              <rect
+                width={TOWN_ART_FEATHER}
+                height={TOWN_ART_FEATHER}
+                fill="url(#town-feather-corner-top-left)"
+              />
+              <rect
+                x={TOWN.width - TOWN_ART_FEATHER}
+                width={TOWN_ART_FEATHER}
+                height={TOWN_ART_FEATHER}
+                fill="url(#town-feather-corner-top-right)"
+              />
+              <rect
+                y={TOWN.height - TOWN_ART_FEATHER}
+                width={TOWN_ART_FEATHER}
+                height={TOWN_ART_FEATHER}
+                fill="url(#town-feather-corner-bottom-left)"
+              />
+              <rect
+                x={TOWN.width - TOWN_ART_FEATHER}
+                y={TOWN.height - TOWN_ART_FEATHER}
+                width={TOWN_ART_FEATHER}
+                height={TOWN_ART_FEATHER}
+                fill="url(#town-feather-corner-bottom-right)"
+              />
+            </mask>
           </defs>
 
           <motion.g
@@ -371,13 +517,6 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             <BucolicMargin />
 
             <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
-              <rect
-                x={0}
-                y={0}
-                width={TOWN.width}
-                height={TOWN.height}
-                fill="url(#ground)"
-              />
               <image
                 href="/art/town/willville-v3-closed-loops-draft.png"
                 x={0}
@@ -385,6 +524,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                 width={TOWN.width}
                 height={TOWN.height}
                 preserveAspectRatio="none"
+                mask="url(#town-art-feather-mask)"
               />
               <ChimneySmoke />
               <DynamicWalls />
