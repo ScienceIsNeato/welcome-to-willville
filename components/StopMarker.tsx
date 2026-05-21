@@ -43,6 +43,7 @@ export function StopMarker({
       }}
       aria-label={stop.displayName}
     >
+      <circle r={32} fill="transparent" pointerEvents="all" />
       {recentlyUpdated && (
         <circle r={18} fill={color} fillOpacity={0.25} className="whistle" />
       )}
@@ -65,14 +66,16 @@ export function StopMarker({
       <text
         y={-18}
         textAnchor="middle"
-        fontSize={12}
+        fontSize={14}
+        fontWeight={600}
         fill="var(--willville-paper)"
         style={{
           pointerEvents: "none",
-          textShadow: "0 1px 4px rgba(0,0,0,0.7)",
+          textShadow:
+            "0 1px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5)",
         }}
       >
-        {stop.displayName}
+        {stop.repo?.split("/").pop() ?? stop.id}
       </text>
     </g>
   );

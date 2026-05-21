@@ -1,6 +1,6 @@
 "use client";
 
-import { activeQueue, type Stop } from "@/lib/town";
+import { mostActiveStops, type Stop } from "@/lib/town";
 
 /**
  * The Mayor's Express. A featured gilded train that visits only the active
@@ -105,7 +105,7 @@ function ExpressCar({
 }
 
 export function MainLine({ stops }: Props) {
-  const queue = activeQueue(stops);
+  const queue = mostActiveStops(stops);
   if (queue.length < 2) return null;
   const path = smoothLoopPath(queue.map((s) => s.position));
   const loopSeconds = Math.max(18, queue.length * 6);

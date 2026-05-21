@@ -182,18 +182,39 @@ export function ProjectHud({ stop, boats, allStops, onClose }: Props) {
             </div>
           )}
           <QueueSection stop={stop} expressPriority={expressPriority} />
-          {stop.status.blockers.length > 0 && (
+          {stop.status.doing && (
             <ItemSection
-              title="Blockers"
-              color="#f4a0a0"
-              items={stop.status.blockers.slice(0, 3)}
+              title="Doing"
+              color="#7bd389"
+              items={[stop.status.doing]}
             />
           )}
-          {stop.status.next.length > 0 && (
+          {stop.status.done && (
             <ItemSection
-              title="Next steps"
+              title="Done"
+              color="#b6b6b6"
+              items={[stop.status.done]}
+            />
+          )}
+          {stop.status.blocked && (
+            <ItemSection
+              title="Blocked"
+              color="#f4a0a0"
+              items={[stop.status.blocked]}
+            />
+          )}
+          {stop.status.next && (
+            <ItemSection
+              title="Next"
               color="#e6c66a"
-              items={stop.status.next.slice(0, 3)}
+              items={[stop.status.next]}
+            />
+          )}
+          {stop.status.risk && (
+            <ItemSection
+              title="Risk"
+              color="#ffa066"
+              items={[stop.status.risk]}
             />
           )}
           {openPrs.length > 0 && <PrSection prs={openPrs} />}

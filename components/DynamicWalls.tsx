@@ -14,7 +14,7 @@ type WallLoop = {
 const WALL_PATH_LENGTH = 3600;
 
 const CUSTOM_LOOP_POINTS: Partial<Record<District["id"], Point[]>> = {
-  "the-press-row": [
+  "mirrored-mile": [
     { x: 373, y: 49 },
     { x: 430, y: 44 },
     { x: 490, y: 47 },
@@ -39,7 +39,7 @@ const CUSTOM_LOOP_POINTS: Partial<Record<District["id"], Point[]>> = {
     { x: 264, y: 88 },
     { x: 320, y: 67 },
   ],
-  "web-row": [
+  "the-zeitgeist": [
     { x: 807, y: 43 },
     { x: 843, y: 43 },
     { x: 883, y: 44 },
@@ -73,7 +73,7 @@ const CUSTOM_LOOP_POINTS: Partial<Record<District["id"], Point[]>> = {
     { x: 739, y: 48 },
     { x: 773, y: 44 },
   ],
-  "the-foundry": [
+  "the-graveyard": [
     { x: 1137, y: 49 },
     { x: 1179, y: 49 },
     { x: 1219, y: 49 },
@@ -107,7 +107,7 @@ const CUSTOM_LOOP_POINTS: Partial<Record<District["id"], Point[]>> = {
     { x: 1048, y: 69 },
     { x: 1091, y: 51 },
   ],
-  "hallow-hollow": [
+  "gates-of-hell": [
     { x: 1002, y: 597 },
     { x: 1067, y: 599 },
     { x: 1133, y: 636 },
@@ -141,7 +141,7 @@ const CUSTOM_LOOP_POINTS: Partial<Record<District["id"], Point[]>> = {
     { x: 901, y: 673 },
     { x: 948, y: 628 },
   ],
-  "the-sawmill-district": [
+  "town-square": [
     { x: 534, y: 670 },
     { x: 645, y: 672 },
     { x: 744, y: 680 },
@@ -158,7 +158,7 @@ const CUSTOM_LOOP_POINTS: Partial<Record<District["id"], Point[]>> = {
     { x: 545, y: 890 },
     { x: 584, y: 791 },
   ],
-  "the-hearth": [
+  "dogwallow-ramble-ii": [
     { x: 582, y: 612 },
     { x: 639, y: 634 },
     { x: 681, y: 680 },

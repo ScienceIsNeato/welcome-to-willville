@@ -48,14 +48,14 @@ export const CANAL = {
 } as const;
 
 export type DistrictId =
-  | "the-press-row"
-  | "the-foundry"
+  | "mirrored-mile"
   | "slop-wharf"
-  | "the-audit-yard"
-  | "web-row"
-  | "the-sawmill-district"
-  | "hallow-hollow"
-  | "the-hearth";
+  | "halls-of-judgement"
+  | "the-zeitgeist"
+  | "gates-of-hell"
+  | "dogwallow-ramble-ii"
+  | "town-square"
+  | "the-graveyard";
 
 export type LineId =
   | "ai"
@@ -73,7 +73,7 @@ export type District = {
   polygon: string;
   /** Where to anchor floating labels / SPOG. */
   label: { x: number; y: number };
-  /** CSS color variable token, e.g. "--willville-press". */
+  /** CSS color variable token, e.g. "--willville-mirrored". */
   colorVar: string;
 };
 
@@ -98,69 +98,68 @@ export type Line = {
  */
 export const DISTRICTS: District[] = [
   {
-    id: "the-press-row",
-    displayName: "The Press Row",
-    blurb: "Where the ink dries and the words ship.",
+    id: "mirrored-mile",
+    displayName: "Mirrored Mile",
+    blurb: "Published works and reflective long-form projects.",
     polygon: "60,120 360,80 420,260 320,360 80,340",
     label: { x: 220, y: 220 },
-    colorVar: "--willville-press",
+    colorVar: "--willville-mirrored",
   },
   {
-    id: "web-row",
-    displayName: "Web Row",
-    blurb: "Storefronts, apps, customer-facing things.",
+    id: "the-zeitgeist",
+    displayName: "The Zeitgeist",
+    blurb: "Web-facing projects that interface with the people.",
     polygon: "440,80 760,90 800,300 540,320 420,260",
     label: { x: 600, y: 200 },
-    colorVar: "--willville-web",
+    colorVar: "--willville-zeitgeist",
   },
   {
-    id: "the-foundry",
-    displayName: "The Foundry",
-    blurb: "GANGLIA and its engines. Furnaces always lit.",
+    id: "the-graveyard",
+    displayName: "The Graveyard",
+    blurb: "Inactive projects, old experiments, and things kept for reference.",
     polygon: "820,100 1140,90 1200,300 1080,420 820,400 780,260",
     label: { x: 1000, y: 240 },
-    colorVar: "--willville-foundry",
+    colorVar: "--willville-graveyard",
   },
   {
-    id: "the-audit-yard",
-    displayName: "The Audit Yard",
-    blurb: "Where every claim is weighed and every trace replayed.",
+    id: "halls-of-judgement",
+    displayName: "The Halls of Judgement",
+    blurb: "AI evaluations and training work.",
     polygon: "1200,300 1540,260 1540,500 1300,540 1180,460",
     label: { x: 1360, y: 400 },
-    colorVar: "--willville-audit",
+    colorVar: "--willville-judgement",
   },
   {
     id: "slop-wharf",
     displayName: "Slop Wharf",
-    blurb: "Mops, buckets, and the rails that keep agents honest.",
+    blurb: "Central slop-mop orchestration and helpers.",
     polygon: "60,400 320,400 420,580 320,720 60,700",
     label: { x: 200, y: 560 },
     colorVar: "--willville-slop",
   },
   {
-    id: "hallow-hollow",
-    displayName: "Hallow Hollow",
-    blurb: "Lanterns, vampires, and a yearly pumpkin patch.",
+    id: "gates-of-hell",
+    displayName: "The Gates of Hell",
+    blurb: "Anything Halloween related.",
     polygon: "1280,560 1540,540 1540,900 1280,920 1220,720",
     label: { x: 1400, y: 740 },
-    colorVar: "--willville-hallow",
+    colorVar: "--willville-hell",
   },
   {
-    id: "the-sawmill-district",
-    displayName: "The Sawmill District",
-    blurb: "Hardware, side experiments, planters and physical things.",
-    polygon: "440,640 820,640 900,860 740,940 440,920 380,780",
-    label: { x: 640, y: 800 },
-    colorVar: "--willville-sawmill",
+    id: "town-square",
+    displayName: "Town Square",
+    blurb: "The central hub.",
+    polygon: "560,420 980,420 1060,560 980,720 700,740 540,620",
+    label: { x: 800, y: 560 },
+    colorVar: "--willville-town-square",
   },
   {
-    id: "the-hearth",
-    displayName: "The Hearth",
-    blurb:
-      "Family, parents, taxes, the household. The fire that keeps the town warm.",
+    id: "dogwallow-ramble-ii",
+    displayName: "Dogwallow Ramble II",
+    blurb: "Homesteading projects and household work.",
     polygon: "60,760 360,760 420,920 240,960 60,920",
     label: { x: 220, y: 860 },
-    colorVar: "--willville-hearth",
+    colorVar: "--willville-dogwallow",
   },
 ];
 
@@ -173,7 +172,7 @@ export const LINES: Line[] = [
   {
     id: "ai",
     displayName: "The AI Line",
-    colorVar: "--willville-foundry",
+    colorVar: "--willville-judgement",
     path: "M 1000,200 C 1200,140 1380,260 1400,400 C 1420,540 1240,540 1100,460 C 960,380 820,440 900,320 C 980,200 1000,200 1000,200 Z",
     loopSeconds: 28,
     vehicleCount: 3,
@@ -191,7 +190,7 @@ export const LINES: Line[] = [
   {
     id: "web",
     displayName: "The Web Line",
-    colorVar: "--willville-web",
+    colorVar: "--willville-zeitgeist",
     path: "M 600,180 C 760,220 800,300 700,360 C 540,400 380,300 320,200 C 260,120 440,80 600,180 Z",
     loopSeconds: 22,
     vehicleCount: 2,
@@ -200,7 +199,7 @@ export const LINES: Line[] = [
   {
     id: "writing",
     displayName: "The Writing Line",
-    colorVar: "--willville-press",
+    colorVar: "--willville-mirrored",
     path: "M 220,200 C 320,300 280,420 220,560 C 180,700 280,820 420,860 C 560,900 720,840 800,720 C 880,600 800,460 700,420 C 600,380 540,520 480,700 C 420,860 220,820 180,640 C 140,460 220,200 220,200 Z",
     loopSeconds: 44,
     vehicleCount: 4,
@@ -209,7 +208,7 @@ export const LINES: Line[] = [
   {
     id: "workshop",
     displayName: "The Workshop Line",
-    colorVar: "--willville-sawmill",
+    colorVar: "--willville-dogwallow",
     path: "M 240,820 C 380,760 540,840 700,820 C 880,800 1040,820 1240,820 C 1380,820 1400,720 1280,680 C 1100,640 900,720 700,720 C 540,720 380,680 240,720 C 120,760 100,860 240,820 Z",
     loopSeconds: 32,
     vehicleCount: 3,
@@ -218,7 +217,7 @@ export const LINES: Line[] = [
   {
     id: "halloween",
     displayName: "The Halloween Line",
-    colorVar: "--willville-hallow",
+    colorVar: "--willville-hell",
     path: "M 1400,700 C 1300,580 1100,560 900,620 C 720,680 580,820 700,860 C 820,900 1000,860 1180,820 C 1340,780 1500,820 1400,700 Z",
     loopSeconds: 26,
     vehicleCount: 3,
@@ -235,73 +234,18 @@ export type ManualStop = {
   position: { x: number; y: number };
   homepage?: string;
   blurb?: string;
+  glyph?: SiteGlyph;
   /** Explicit status state for non-repo stops. Defaults to "unknown" if omitted. */
   statusState?: import("./town").StatusState;
 };
 
-export const MANUAL_STOPS: ManualStop[] = [
-  {
-    id: "the-newsstand",
-    displayName: "The Newsstand",
-    district: "the-press-row",
-    lines: ["web", "writing"],
-    position: { x: 300, y: 240 },
-    homepage: "https://scienceisneato.substack.com",
-    blurb: "Will's Substack — essays, origin stories, and ledger entries.",
-    statusState: "shipping",
-  },
-  {
-    id: "the-planter-beds",
-    displayName: "The Planter Beds",
-    district: "the-sawmill-district",
-    lines: ["workshop"],
-    position: { x: 540, y: 780 },
-    blurb: "Hand-built planters scattered around the property.",
-    statusState: "maintenance",
-  },
-  {
-    id: "the-library-shelves",
-    displayName: "The Library Shelves",
-    district: "the-sawmill-district",
-    lines: ["workshop"],
-    position: { x: 720, y: 780 },
-    blurb: "Built-in shelving made of reclaimed lumber.",
-    statusState: "maintenance",
-  },
-  {
-    id: "the-pumpkin-patch",
-    displayName: "The Pumpkin Patch",
-    district: "hallow-hollow",
-    lines: ["halloween"],
-    position: { x: 1380, y: 780 },
-    blurb: "The annual Halloween showcase. Open one month a year.",
-    statusState: "dormant",
-  },
-  {
-    id: "the-tax-ledger",
-    displayName: "The Tax Ledger",
-    district: "the-hearth",
-    lines: [],
-    position: { x: 140, y: 820 },
-    blurb: "Quarterly estimates, returns, receipts.",
-    statusState: "maintenance",
-  },
-  {
-    id: "the-hearth-table",
-    displayName: "The Hearth Table",
-    district: "the-hearth",
-    lines: [],
-    position: { x: 240, y: 880 },
-    blurb: "Household ops: groceries, repairs, calendar.",
-    statusState: "wip",
-  },
-  {
-    id: "the-day-planner",
-    displayName: "The Day Planner",
-    district: "the-hearth",
-    lines: [],
-    position: { x: 320, y: 820 },
-    blurb: "Personal productivity, weekly review, the GDP loop.",
-    statusState: "wip",
-  },
-];
+export type SiteGlyph = {
+  /** Stable short noun used by future glyph-generation and masking passes. */
+  label: string;
+  /** Prompt seed for rendering the object in the town art style. */
+  prompt: string;
+  /** Whether this has been custom-designed or is still a registration placeholder. */
+  state: "placeholder" | "designed";
+};
+
+export const MANUAL_STOPS: ManualStop[] = [];
