@@ -3,7 +3,7 @@
 import { useEffect, useSyncExternalStore, type CSSProperties } from "react";
 import { DISTRICTS, LINES } from "@/lib/willville";
 import { LOCKS, type CanalBoat } from "@/lib/canal";
-import { mostActiveStops, type Stop } from "@/lib/town";
+import { expressRank, mostActiveStops, type Stop } from "@/lib/town";
 
 function useIsClient(): boolean {
   return useSyncExternalStore(
@@ -300,14 +300,6 @@ function MetaLine({
       {lineNames ? ` · ${lineNames}` : ""}
     </div>
   );
-}
-
-function expressRank(stop: Stop, allStops: Stop[]): number | null {
-  const queue = mostActiveStops(allStops, Infinity);
-  const idx = queue.findIndex(
-    (s) => s.id === stop.id && s.district === stop.district,
-  );
-  return idx >= 0 ? idx + 1 : null;
 }
 
 function TitleRow({

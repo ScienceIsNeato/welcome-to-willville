@@ -1,6 +1,9 @@
 name = "welcome-to-willville"
-compatibility_date = "2024-09-23"
+compatibility_date = "2026-05-01"
 pages_build_output_dir = "./out"
+
+[assets]
+directory = "./out"
 
 [vars]
 # GITHUB_PAT is set as a secret via: wrangler pages secret put GITHUB_PAT --project-name welcome-to-willville

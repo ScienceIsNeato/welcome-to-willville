@@ -2,7 +2,7 @@
 
 import type { CSSProperties, MouseEvent } from "react";
 import { LOCKS, type CanalBoat } from "@/lib/canal";
-import { mostActiveStops, type Stop } from "@/lib/town";
+import { expressRank, mostActiveStops, type Stop } from "@/lib/town";
 
 const STATE_LABEL: Record<Stop["status"]["state"], string> = {
   idea: "Idea",
@@ -200,15 +200,6 @@ function repoHref(repo: string): string {
   const trimmed = repo.trim();
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
   return `https://github.com/${trimmed.replace(/^\/+/, "")}`;
-}
-
-function expressRank(stop: Stop, allStops: Stop[]): number | null {
-  const queue = mostActiveStops(allStops, Infinity);
-  const idx = queue.findIndex(
-    (candidate) =>
-      candidate.id === stop.id && candidate.district === stop.district,
-  );
-  return idx >= 0 ? idx + 1 : null;
 }
 
 function etaLabel(days: number | undefined): string {
