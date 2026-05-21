@@ -104,12 +104,24 @@ export function compareQueue(a: Stop, b: Stop): number {
   return a.displayName.localeCompare(b.displayName);
 }
 
-/** Returns the active queue, sorted next-stop-first. */
+/** Returns the active queue, sorted next-stop-first (the 5 repos with the most commits in the last 7 days). */
 export function activeQueue(stops: Stop[]): Stop[] {
   return stops
-    .filter((s) => s.queue?.active)
     .slice()
-    .sort(compareQueue);
+    .sort((a, b) => {
+      const commitsA = a.commits7d ?? 0;
+      const commitsB = b.commits7d ?? 0;
+      if (commitsA !== commitsB) {
+        return commitsB - commitsA;
+      }
+      const starsA = a.stars ?? 0;
+      const starsB = b.stars ?? 0;
+      if (starsA !== starsB) {
+        return starsB - starsA;
+      }
+      return a.displayName.localeCompare(b.displayName);
+    })
+    .slice(0, 5);
 }
 
 export type OpenMilestone = {
