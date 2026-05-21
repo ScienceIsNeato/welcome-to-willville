@@ -15,7 +15,11 @@ import { type Stop } from "@/lib/town";
 import { isKnownDistrict } from "@/lib/slugs";
 import type { CanalBoat } from "@/lib/canal";
 import { DistrictZone } from "./DistrictZone";
-import { BucolicMargin, WATER_TILE_ART } from "./BucolicMargin";
+import {
+  BucolicMargin,
+  WATER_TILE_ART,
+  WATER_TILE_BACKGROUND_SIZE,
+} from "./BucolicMargin";
 import { TransitLines } from "./TransitLines";
 import { StopMarker } from "./StopMarker";
 import { ProjectHud } from "./ProjectHud";
@@ -28,6 +32,7 @@ import { screenToWorld, useTownCamera } from "@/hooks/useTownCamera";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 const STOP_HIT_RADIUS = 24;
+const TOWN_ART_FEATHER = 76;
 
 function useIsClient(): boolean {
   return useSyncExternalStore(
@@ -319,7 +324,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         backgroundColor: "#063755",
         backgroundImage: `linear-gradient(rgba(6, 55, 85, 0.32), rgba(8, 5, 21, 0.42)), url(${WATER_TILE_ART})`,
         backgroundPosition: "center",
-        backgroundSize: "520px 290px",
+        backgroundSize: WATER_TILE_BACKGROUND_SIZE,
       }}
       onClick={handleStageClick}
       onDoubleClick={handleStageDoubleClick}
@@ -350,29 +355,112 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             <stop offset="0%" stopColor="white" />
             <stop offset="100%" stopColor="black" />
           </linearGradient>
-          <mask id="town-art-feather-mask" maskUnits="userSpaceOnUse">
-            <rect width={TOWN.width} height={TOWN.height} fill="white" />
+          <radialGradient
+            id="town-feather-corner-top-left"
+            gradientUnits="userSpaceOnUse"
+            cx={TOWN_ART_FEATHER}
+            cy={TOWN_ART_FEATHER}
+            r={TOWN_ART_FEATHER}
+          >
+            <stop offset="0%" stopColor="white" />
+            <stop offset="100%" stopColor="black" />
+          </radialGradient>
+          <radialGradient
+            id="town-feather-corner-top-right"
+            gradientUnits="userSpaceOnUse"
+            cx={TOWN.width - TOWN_ART_FEATHER}
+            cy={TOWN_ART_FEATHER}
+            r={TOWN_ART_FEATHER}
+          >
+            <stop offset="0%" stopColor="white" />
+            <stop offset="100%" stopColor="black" />
+          </radialGradient>
+          <radialGradient
+            id="town-feather-corner-bottom-left"
+            gradientUnits="userSpaceOnUse"
+            cx={TOWN_ART_FEATHER}
+            cy={TOWN.height - TOWN_ART_FEATHER}
+            r={TOWN_ART_FEATHER}
+          >
+            <stop offset="0%" stopColor="white" />
+            <stop offset="100%" stopColor="black" />
+          </radialGradient>
+          <radialGradient
+            id="town-feather-corner-bottom-right"
+            gradientUnits="userSpaceOnUse"
+            cx={TOWN.width - TOWN_ART_FEATHER}
+            cy={TOWN.height - TOWN_ART_FEATHER}
+            r={TOWN_ART_FEATHER}
+          >
+            <stop offset="0%" stopColor="white" />
+            <stop offset="100%" stopColor="black" />
+          </radialGradient>
+          <mask
+            id="town-art-feather-mask"
+            maskUnits="userSpaceOnUse"
+            maskContentUnits="userSpaceOnUse"
+            x={0}
+            y={0}
+            width={TOWN.width}
+            height={TOWN.height}
+          >
+            <rect width={TOWN.width} height={TOWN.height} fill="black" />
             <rect
-              width={TOWN.width}
-              height={76}
+              x={TOWN_ART_FEATHER}
+              y={TOWN_ART_FEATHER}
+              width={TOWN.width - TOWN_ART_FEATHER * 2}
+              height={TOWN.height - TOWN_ART_FEATHER * 2}
+              fill="white"
+            />
+            <rect
+              x={TOWN_ART_FEATHER}
+              width={TOWN.width - TOWN_ART_FEATHER * 2}
+              height={TOWN_ART_FEATHER}
               fill="url(#town-feather-top)"
             />
             <rect
-              y={TOWN.height - 76}
-              width={TOWN.width}
-              height={76}
+              x={TOWN_ART_FEATHER}
+              y={TOWN.height - TOWN_ART_FEATHER}
+              width={TOWN.width - TOWN_ART_FEATHER * 2}
+              height={TOWN_ART_FEATHER}
               fill="url(#town-feather-bottom)"
             />
             <rect
-              width={76}
-              height={TOWN.height}
+              y={TOWN_ART_FEATHER}
+              width={TOWN_ART_FEATHER}
+              height={TOWN.height - TOWN_ART_FEATHER * 2}
               fill="url(#town-feather-left)"
             />
             <rect
-              x={TOWN.width - 76}
-              width={76}
-              height={TOWN.height}
+              x={TOWN.width - TOWN_ART_FEATHER}
+              y={TOWN_ART_FEATHER}
+              width={TOWN_ART_FEATHER}
+              height={TOWN.height - TOWN_ART_FEATHER * 2}
               fill="url(#town-feather-right)"
+            />
+            <rect
+              width={TOWN_ART_FEATHER}
+              height={TOWN_ART_FEATHER}
+              fill="url(#town-feather-corner-top-left)"
+            />
+            <rect
+              x={TOWN.width - TOWN_ART_FEATHER}
+              width={TOWN_ART_FEATHER}
+              height={TOWN_ART_FEATHER}
+              fill="url(#town-feather-corner-top-right)"
+            />
+            <rect
+              y={TOWN.height - TOWN_ART_FEATHER}
+              width={TOWN_ART_FEATHER}
+              height={TOWN_ART_FEATHER}
+              fill="url(#town-feather-corner-bottom-left)"
+            />
+            <rect
+              x={TOWN.width - TOWN_ART_FEATHER}
+              y={TOWN.height - TOWN_ART_FEATHER}
+              width={TOWN_ART_FEATHER}
+              height={TOWN_ART_FEATHER}
+              fill="url(#town-feather-corner-bottom-right)"
             />
           </mask>
         </defs>

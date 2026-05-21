@@ -2,10 +2,12 @@ import { WORLD } from "@/lib/willville";
 
 export const WATER_TILE_ART = "/art/town/willville-v3-water-tile.png";
 
-const WATER_TILE = {
+export const WATER_TILE = {
   width: 520,
   height: 290,
 } as const;
+
+export const WATER_TILE_BACKGROUND_SIZE = `${WATER_TILE.width}px ${WATER_TILE.height}px`;
 
 /**
  * World backdrop derived from the town painting itself. The water tile is

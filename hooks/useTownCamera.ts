@@ -11,6 +11,7 @@ import { useGesture } from "@use-gesture/react";
 import { WORLD, TOWN_CENTER } from "@/lib/willville";
 
 export type Camera = { cx: number; cy: number; scale: number };
+type VisibleWorld = { width: number; height: number };
 
 export const MIN_SCALE = 0.6;
 export const MAX_SCALE = 4;
@@ -34,9 +35,31 @@ function clampScale(s: number): number {
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, s));
 }
 
-function clampCamera(c: Camera): Camera {
-  const halfW = WORLD.width / (2 * c.scale);
-  const halfH = WORLD.height / (2 * c.scale);
+function getVisibleWorld(svg: SVGSVGElement | null): VisibleWorld {
+  const viewportWidth = svg?.clientWidth ?? 0;
+  const viewportHeight = svg?.clientHeight ?? 0;
+  if (viewportWidth <= 0 || viewportHeight <= 0) {
+    return WORLD;
+  }
+
+  const viewportAspect = viewportWidth / viewportHeight;
+  const worldAspect = WORLD.width / WORLD.height;
+  if (viewportAspect > worldAspect) {
+    return {
+      width: WORLD.width,
+      height: WORLD.width / viewportAspect,
+    };
+  }
+  return {
+    width: WORLD.height * viewportAspect,
+    height: WORLD.height,
+  };
+}
+
+function clampCamera(c: Camera, visibleWorld: VisibleWorld = WORLD): Camera {
+  const scale = clampScale(c.scale);
+  const halfW = visibleWorld.width / (2 * scale);
+  const halfH = visibleWorld.height / (2 * scale);
   const worldHalfW = WORLD.width / 2;
   const worldHalfH = WORLD.height / 2;
   // Zoomed out (world fits in viewport): lock camera to world centre.
@@ -49,7 +72,7 @@ function clampCamera(c: Camera): Camera {
     halfH >= worldHalfH
       ? worldHalfH
       : Math.min(WORLD.height - halfH, Math.max(halfH, c.cy));
-  return { cx, cy, scale: clampScale(c.scale) };
+  return { cx, cy, scale };
 }
 
 /** Map screen pixels → world coordinates under the current camera. */
@@ -108,17 +131,22 @@ export function useTownCamera(
     animsRef.current = [];
   }, []);
 
+  const getVisibleWorldSnapshot = useCallback(
+    () => getVisibleWorld(svgRef.current),
+    [svgRef],
+  );
+
   const animateTo = useCallback(
     (target: Camera) => {
       stopAnims();
-      const c = clampCamera(target);
+      const c = clampCamera(target, getVisibleWorldSnapshot());
       animsRef.current = [
         animate(mvCx, c.cx, SPRING_CONFIG),
         animate(mvCy, c.cy, SPRING_CONFIG),
         animate(mvScale, c.scale, SPRING_CONFIG),
       ];
     },
-    [stopAnims, mvCx, mvCy, mvScale],
+    [getVisibleWorldSnapshot, stopAnims, mvCx, mvCy, mvScale],
   );
 
   // Returns the current visual camera position (reads MotionValues, not React state).
@@ -152,11 +180,14 @@ export function useTownCamera(
         const ctm = svgRef.current?.getScreenCTM();
         const vbScale = ctm ? ctm.a : 1;
         const s = mvScale.get();
-        const clamped = clampCamera({
-          cx: mvCx.get() - dx / (vbScale * s),
-          cy: mvCy.get() - dy / (vbScale * s),
-          scale: s,
-        });
+        const clamped = clampCamera(
+          {
+            cx: mvCx.get() - dx / (vbScale * s),
+            cy: mvCy.get() - dy / (vbScale * s),
+            scale: s,
+          },
+          getVisibleWorldSnapshot(),
+        );
         mvCx.set(clamped.cx);
         mvCy.set(clamped.cy);
         // No setIsDragging / setState here — zero React renders mid-drag.
@@ -173,11 +204,14 @@ export function useTownCamera(
         const s = clampScale(
           dy < 0 ? mvScale.get() * ZOOM_FACTOR : mvScale.get() / ZOOM_FACTOR,
         );
-        const clamped = clampCamera({
-          cx: mvCx.get(),
-          cy: mvCy.get(),
-          scale: s,
-        });
+        const clamped = clampCamera(
+          {
+            cx: mvCx.get(),
+            cy: mvCy.get(),
+            scale: s,
+          },
+          getVisibleWorldSnapshot(),
+        );
         mvCx.set(clamped.cx);
         mvCy.set(clamped.cy);
         mvScale.set(clamped.scale);
