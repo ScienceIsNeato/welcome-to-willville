@@ -167,17 +167,6 @@ async function fetchCommitCounts(
   }
 }
 
-type GitHubBranch = {
-  name: string;
-};
-
-type GitHubCommit = {
-  commit?: {
-    author?: { date?: string } | null;
-    committer?: { date?: string } | null;
-  };
-};
-
 function compareUrl(
   fullName: string,
   baseBranch: string,
@@ -199,70 +188,43 @@ async function fetchActiveBranch(
   };
   if (token) headers.Authorization = `Bearer ${token}`;
 
+  const fallback = {
+    name: defaultBranch,
+    compareUrl: compareUrl(fullName, defaultBranch, defaultBranch),
+    isDefault: true,
+  };
+
   try {
-    const branchesResponse = await fetch(
-      `https://api.github.com/repos/${fullName}/branches?per_page=100`,
+    // One API call per repo: recent push events carry the branch name and
+    // timestamp directly. Replaces the old pattern of fetching all branches
+    // (up to 100) + one commit API call per branch.
+    type GitHubPushEvent = {
+      type: string;
+      created_at: string;
+      payload: { ref?: string };
+    };
+    const response = await fetch(
+      `https://api.github.com/repos/${fullName}/events?per_page=30`,
       { headers },
     );
-    const branches = branchesResponse.ok
-      ? ((await branchesResponse.json()) as GitHubBranch[])
-      : [];
-    const branchNames = Array.from(
-      new Set(
-        [
-          defaultBranch,
-          ...(Array.isArray(branches) ? branches.map((b) => b.name) : []),
-        ]
-          .filter(Boolean)
-          .slice(0, 100),
-      ),
-    );
+    if (!response.ok) return fallback;
 
-    const commits = await mapLimit(branchNames, 4, async (branch) => {
-      const commitResponse = await fetch(
-        `https://api.github.com/repos/${fullName}/commits?sha=${encodeURIComponent(
-          branch,
-        )}&per_page=1`,
-        { headers },
-      );
-      if (!commitResponse.ok) return null;
-      const data = (await commitResponse.json()) as GitHubCommit[];
-      const commit = Array.isArray(data) ? data[0] : undefined;
-      const pushedAt =
-        commit?.commit?.committer?.date ?? commit?.commit?.author?.date;
-      if (!pushedAt) return null;
-      return { name: branch, pushedAt };
-    });
+    const events = (await response.json()) as GitHubPushEvent[];
+    const latestPush = Array.isArray(events)
+      ? events.find((e) => e.type === "PushEvent" && e.payload?.ref)
+      : undefined;
 
-    const latest =
-      commits
-        .filter(
-          (commit): commit is { name: string; pushedAt: string } =>
-            commit !== null,
-        )
-        .sort((a, b) => Date.parse(b.pushedAt) - Date.parse(a.pushedAt))[0] ??
-      null;
+    if (!latestPush?.payload?.ref) return fallback;
 
-    if (!latest) {
-      return {
-        name: defaultBranch,
-        compareUrl: compareUrl(fullName, defaultBranch, defaultBranch),
-        isDefault: true,
-      };
-    }
-
+    const branchName = latestPush.payload.ref.replace(/^refs\/heads\//, "");
     return {
-      name: latest.name,
-      pushedAt: latest.pushedAt,
-      compareUrl: compareUrl(fullName, defaultBranch, latest.name),
-      isDefault: latest.name === defaultBranch,
+      name: branchName,
+      pushedAt: latestPush.created_at,
+      compareUrl: compareUrl(fullName, defaultBranch, branchName),
+      isDefault: branchName === defaultBranch,
     };
   } catch {
-    return {
-      name: defaultBranch,
-      compareUrl: compareUrl(fullName, defaultBranch, defaultBranch),
-      isDefault: true,
-    };
+    return fallback;
   }
 }
 

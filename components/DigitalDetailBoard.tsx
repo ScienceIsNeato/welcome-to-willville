@@ -2,7 +2,7 @@
 
 import type { CSSProperties, MouseEvent } from "react";
 import { LOCKS, type CanalBoat } from "@/lib/canal";
-import { expressRank, mostActiveStops, type Stop } from "@/lib/town";
+import { expressRank, type Stop } from "@/lib/town";
 
 const STATE_LABEL: Record<Stop["status"]["state"], string> = {
   idea: "Idea",
