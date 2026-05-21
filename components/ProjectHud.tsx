@@ -3,7 +3,7 @@
 import { useEffect, useSyncExternalStore, type CSSProperties } from "react";
 import { DISTRICTS, LINES } from "@/lib/willville";
 import { LOCKS, type CanalBoat } from "@/lib/canal";
-import { expressRank, mostActiveStops, type Stop } from "@/lib/town";
+import { expressRank, type Stop } from "@/lib/town";
 
 function useIsClient(): boolean {
   return useSyncExternalStore(
@@ -121,7 +121,6 @@ export function ProjectHud({ stop, boats, allStops, onClose }: Props) {
         <header style={headerStyle}>
           <TitleRow stop={stop} linkOut={linkOut} repoUrl={repoUrl} />
           <MetaLine district={district} lineNames={lineNames} stop={stop} />
-          <VisibilityBadge stop={stop} />
         </header>
 
         <div style={bodyStyle}>
@@ -356,10 +355,6 @@ function TitleRow({
       )}
     </div>
   );
-}
-
-function VisibilityBadge({ stop }: { stop: Stop }) {
-  return null;
 }
 
 function StatusRow({

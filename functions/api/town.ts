@@ -118,10 +118,6 @@ async function fetchMilestones(
   }
 }
 
-function isMayor(request: Request): boolean {
-  return true;
-}
-
 type CommitActivityWeek = {
   days: [number, number, number, number, number, number, number];
   total: number;

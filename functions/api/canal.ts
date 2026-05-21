@@ -73,10 +73,6 @@ query ($q: String!) {
   }
 }`;
 
-function isMayor(request: Request): boolean {
-  return true;
-}
-
 function repoToStop(repo: string) {
   const h = HEURISTICS.find((x) => x.repo.toLowerCase() === repo.toLowerCase());
   return h ? { district: h.district, stopId: h.stopId } : undefined;
