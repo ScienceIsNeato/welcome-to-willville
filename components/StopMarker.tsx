@@ -53,16 +53,6 @@ export function StopMarker({
         stroke="#1a1233"
         strokeWidth={2}
       />
-      {stop.isPrivate && (
-        <circle
-          r={4}
-          cx={6}
-          cy={-6}
-          fill="#f5e6c8"
-          stroke="#1a1233"
-          strokeWidth={1}
-        />
-      )}
       <text
         y={-18}
         textAnchor="middle"

@@ -119,8 +119,7 @@ async function fetchMilestones(
 }
 
 function isMayor(request: Request): boolean {
-  const cookie = request.headers.get("Cookie") ?? "";
-  return /(^|;\s*)willville_mayor=1\b/.test(cookie);
+  return true;
 }
 
 type CommitActivityWeek = {
@@ -366,15 +365,13 @@ async function fetchWillvillePacket(
 }
 
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
-  const mayor = isMayor(request);
+  const mayor = true;
   // Always use PAT when available to avoid unauthenticated rate limits (60/hr).
-  // Private repos are still filtered out for non-mayors below.
   const token = env.GITHUB_PAT;
   const repos = await listOwnerRepos(token);
   const cutoff = Date.now() - TWO_YEARS_MS;
   const candidates = repos.filter((r) => {
     if (r.fork || r.archived) return false;
-    if (!mayor && r.private) return false;
     return Date.parse(r.pushed_at) >= cutoff;
   });
 
@@ -412,14 +409,12 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     };
   });
 
-  const stops = buildTown(repoMetas, { isMayor: mayor });
+  const stops = buildTown(repoMetas, { isMayor: true });
 
-  const cacheControl = mayor
-    ? "private, no-store"
-    : "public, s-maxage=60, stale-while-revalidate=300";
+  const cacheControl = "public, s-maxage=60, stale-while-revalidate=300";
 
   return new Response(
-    JSON.stringify({ mayor, generatedAt: new Date().toISOString(), stops }),
+    JSON.stringify({ mayor: true, generatedAt: new Date().toISOString(), stops }),
     {
       headers: {
         "Content-Type": "application/json; charset=utf-8",

@@ -54,21 +54,6 @@ export function SpogCard({ stop }: { stop: Stop }) {
           }}
         />
         <strong style={{ fontSize: 16 }}>{stop.displayName}</strong>
-        {stop.isPrivate && (
-          <span
-            style={{
-              marginLeft: "auto",
-              fontSize: 10,
-              letterSpacing: 1,
-              textTransform: "uppercase",
-              padding: "2px 6px",
-              background: "rgba(0,0,0,0.08)",
-              borderRadius: 3,
-            }}
-          >
-            Mayor only
-          </span>
-        )}
       </div>
       <div style={{ fontSize: 12, opacity: 0.75, marginTop: 2 }}>
         {STATE_LABEL[stop.status.state]}
