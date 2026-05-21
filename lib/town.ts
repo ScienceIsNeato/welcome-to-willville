@@ -16,6 +16,7 @@ import {
   type District,
   type DistrictId,
   type LineId,
+  type SiteGlyph,
 } from "./willville";
 import { HEURISTICS, type Heuristic } from "./willville.heuristics";
 
@@ -34,6 +35,13 @@ export type QueueEntry = {
   priority?: number;
 };
 
+export type ActiveBranch = {
+  name: string;
+  compareUrl: string;
+  pushedAt?: string;
+  isDefault: boolean;
+};
+
 export type Stop = {
   id: string;
   displayName: string;
@@ -43,14 +51,24 @@ export type Stop = {
   repo?: string;
   homepage?: string;
   blurb?: string;
+  glyph?: SiteGlyph;
   visibility: "public" | "mayor";
   isPrivate?: boolean;
   isManual?: boolean;
   status: {
     state: StatusState;
+    /** What the agent is actively doing. */
+    doing?: string;
+    /** Recently completed work. */
+    done?: string;
+    /** What's coming next. */
+    next?: string;
+    /** Current blocker, if any. */
+    blocked?: string;
+    /** Risk level + reason. */
+    risk?: string;
+    /** Legacy summary (fallback if no doing/done). */
     summary?: string;
-    blockers: string[];
-    next: string[];
     updated?: string;
   };
   queue?: QueueEntry;
@@ -66,6 +84,8 @@ export type Stop = {
   commits7d?: number;
   /** Commit count over the last 21 calendar days (3 weekly buckets). */
   commits21d?: number;
+  /** Most recently committed branch in the repo. */
+  activeBranch?: ActiveBranch;
 };
 
 /**
@@ -124,6 +144,34 @@ export function activeQueue(stops: Stop[]): Stop[] {
     .slice(0, 5);
 }
 
+/** Top 5 most active repos by recent commit activity (3d > 7d > 21d). */
+export function mostActiveStops(stops: Stop[], limit = 5): Stop[] {
+  return stops
+    .filter((s) => s.repo && (s.commits3d ?? 0) + (s.commits7d ?? 0) > 0)
+    .slice()
+    .sort((a, b) => {
+      const a3 = a.commits3d ?? 0;
+      const b3 = b.commits3d ?? 0;
+      if (a3 !== b3) return b3 - a3;
+      const a7 = a.commits7d ?? 0;
+      const b7 = b.commits7d ?? 0;
+      if (a7 !== b7) return b7 - a7;
+      const a21 = a.commits21d ?? 0;
+      const b21 = b.commits21d ?? 0;
+      return b21 - a21;
+    })
+    .slice(0, limit);
+}
+
+/** Returns the 1-based rank of a stop in the Mayor's Express queue, or null. */
+export function expressRank(stop: Stop, allStops: Stop[]): number | null {
+  const queue = mostActiveStops(allStops);
+  const idx = queue.findIndex(
+    (s) => s.id === stop.id && s.district === stop.district,
+  );
+  return idx >= 0 ? idx + 1 : null;
+}
+
 export type OpenMilestone = {
   title: string;
   dueOn: string | null;
@@ -132,21 +180,33 @@ export type OpenMilestone = {
 
 /**
  * Structured data parsed from a `<!-- willville ... -->` block in STATUS.md.
- * Agents write this; Willville reads it.
+ * Agents write this; Willville reads it. Designed as a compressed standup:
+ * what's happening, what just happened, what's stuck, should I worry.
  */
 export type WillvillePacket = {
-  /** wip | shipping | maintenance | dormant | unknown */
-  status?: StatusState;
-  /** Short human-readable description of the project's current state. */
-  summary?: string;
+  /** What the agent is actively working on right now. */
+  doing?: string;
+  /** Most recent completed items (comma-separated). */
+  done?: string;
+  /** What comes after the current task. */
+  next?: string;
+  /** Single most important blocker, if any. */
+  blocked?: string;
+  /** low | medium | high — with brief reason if not low. */
+  risk?: string;
   /** Active milestone title. */
   milestone?: string;
   /** ISO date string (YYYY-MM-DD) for milestone target. */
+  eta?: string;
+  // ---- backward compat (old-format fields still parsed) ----
+  /** @deprecated Use `doing` instead. */
+  status?: StatusState;
+  /** @deprecated Use `doing` + `done` instead. */
+  summary?: string;
+  /** @deprecated Renamed to `eta`. */
   etaDate?: string;
-  /** Known blockers agents want to surface in Willville. */
+  /** @deprecated Use singular `blocked` instead. */
   blockers?: string[];
-  /** Immediate next actions the agent is tracking. */
-  next?: string[];
 };
 
 export type RepoMeta = {
@@ -177,6 +237,8 @@ export type RepoMeta = {
   commits7d?: number;
   /** Commit count over the last 21 calendar days (3 weekly buckets). */
   commits21d?: number;
+  /** Most recently committed branch in the repo. */
+  activeBranch?: ActiveBranch;
 };
 
 // ---------------------------------------------------------------------------
@@ -185,26 +247,26 @@ export type RepoMeta = {
 
 /** Maps GitHub topic strings to Willville district IDs. First match wins. */
 const TOPIC_DISTRICT: Partial<Record<string, DistrictId>> = {
-  // The Foundry
-  ai: "the-foundry",
-  "machine-learning": "the-foundry",
-  "deep-learning": "the-foundry",
-  llm: "the-foundry",
-  gpt: "the-foundry",
-  openai: "the-foundry",
-  ganglia: "the-foundry",
-  // Web Row
-  web: "web-row",
-  react: "web-row",
-  nextjs: "web-row",
-  "next-js": "web-row",
-  frontend: "web-row",
-  website: "web-row",
-  // The Press Row
-  writing: "the-press-row",
-  blog: "the-press-row",
-  novel: "the-press-row",
-  fiction: "the-press-row",
+  // The Graveyard (inactive AI/misc projects)
+  ai: "the-graveyard",
+  "machine-learning": "the-graveyard",
+  "deep-learning": "the-graveyard",
+  llm: "the-graveyard",
+  gpt: "the-graveyard",
+  openai: "the-graveyard",
+  ganglia: "the-graveyard",
+  // The Zeitgeist (web-facing)
+  web: "the-zeitgeist",
+  react: "the-zeitgeist",
+  nextjs: "the-zeitgeist",
+  "next-js": "the-zeitgeist",
+  frontend: "the-zeitgeist",
+  website: "the-zeitgeist",
+  // Mirrored Mile (published works)
+  writing: "mirrored-mile",
+  blog: "mirrored-mile",
+  novel: "mirrored-mile",
+  fiction: "mirrored-mile",
   // Slop Wharf
   quality: "slop-wharf",
   testing: "slop-wharf",
@@ -212,21 +274,21 @@ const TOPIC_DISTRICT: Partial<Record<string, DistrictId>> = {
   ci: "slop-wharf",
   "github-actions": "slop-wharf",
   "code-quality": "slop-wharf",
-  // The Sawmill District
-  hardware: "the-sawmill-district",
-  arduino: "the-sawmill-district",
-  "raspberry-pi": "the-sawmill-district",
-  iot: "the-sawmill-district",
-  electronics: "the-sawmill-district",
-  // Hallow Hollow
-  halloween: "hallow-hollow",
-  spooky: "hallow-hollow",
-  horror: "hallow-hollow",
-  // The Audit Yard
-  monitoring: "the-audit-yard",
-  observability: "the-audit-yard",
-  analytics: "the-audit-yard",
-  audit: "the-audit-yard",
+  // Dogwallow Ramble II (homesteading)
+  hardware: "dogwallow-ramble-ii",
+  arduino: "dogwallow-ramble-ii",
+  "raspberry-pi": "dogwallow-ramble-ii",
+  iot: "dogwallow-ramble-ii",
+  electronics: "dogwallow-ramble-ii",
+  // Gates of Hell (Halloween)
+  halloween: "gates-of-hell",
+  spooky: "gates-of-hell",
+  horror: "gates-of-hell",
+  // Halls of Judgement (evals/audit)
+  monitoring: "halls-of-judgement",
+  observability: "halls-of-judgement",
+  analytics: "halls-of-judgement",
+  audit: "halls-of-judgement",
 };
 
 /** Maps GitHub topic strings to Willville transit line IDs. All matches kept. */
@@ -254,7 +316,7 @@ function topicsToDistrict(topics: string[]): DistrictId {
     const d = TOPIC_DISTRICT[t.toLowerCase()];
     if (d) return d;
   }
-  return "the-hearth";
+  return "the-graveyard";
 }
 
 function topicsToLines(topics: string[]): LineId[] {
@@ -321,6 +383,19 @@ function autoPosition(
   };
 }
 
+function repoGlyphLabel(repo: string): string {
+  return repo.split("/").at(-1)!.replace(/[-_]+/g, " ").trim().toLowerCase();
+}
+
+function defaultGlyphForRepo(repo: string): SiteGlyph {
+  const label = repoGlyphLabel(repo);
+  return {
+    label,
+    prompt: `small labeled project marker for ${label} in the painted town style`,
+    state: "placeholder",
+  };
+}
+
 // ---------------------------------------------------------------------------
 
 /**
@@ -370,7 +445,7 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
   const district = heuristic?.district ?? topicsToDistrict(meta.topics ?? []);
   const lines = heuristic?.lines ?? topicsToLines(meta.topics ?? []);
   const stopId = heuristic?.stopId ?? meta.repo.split("/")[1]!.toLowerCase();
-  const displayName = repoDisplayName(meta.repo);
+  const displayName = heuristic?.displayName ?? repoDisplayName(meta.repo);
   const position = heuristic?.position ?? autoPosition(district, meta.repo);
   const queue = deriveQueue(meta.openMilestones, heuristic?.queue);
   return {
@@ -382,14 +457,19 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
     repo: meta.repo,
     homepage: meta.homepage,
     blurb: heuristic?.blurb,
+    glyph: heuristic?.glyph ?? defaultGlyphForRepo(meta.repo),
     visibility: "public",
     isPrivate: meta.isPrivate,
     status: {
-      // Packet fields take priority over GitHub-derived values
-      state: pkt?.status ?? deriveState(meta.pushedAt, hasOpenMilestone),
+      state: pkt?.doing
+        ? "wip"
+        : (pkt?.status ?? deriveState(meta.pushedAt, hasOpenMilestone)),
+      doing: pkt?.doing,
+      done: pkt?.done,
+      next: pkt?.next,
+      blocked: pkt?.blocked ?? pkt?.blockers?.[0],
+      risk: pkt?.risk,
       summary: pkt?.summary ?? meta.description,
-      blockers: pkt?.blockers ?? [],
-      next: pkt?.next ?? [],
       updated: meta.pushedAt,
     },
     queue,
@@ -399,6 +479,7 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
     commits3d: meta.commits3d,
     commits7d: meta.commits7d,
     commits21d: meta.commits21d,
+    activeBranch: meta.activeBranch,
   };
 }
 
@@ -419,12 +500,11 @@ export function buildTown(
       position: m.position,
       homepage: m.homepage,
       blurb: m.blurb,
+      glyph: m.glyph,
       visibility: "public",
       isManual: true,
       status: {
         state: m.statusState ?? "unknown",
-        blockers: [],
-        next: [],
       },
     });
   }
@@ -459,22 +539,24 @@ export function buildInitialStops(): Stop[] {
       position: m.position,
       homepage: m.homepage,
       blurb: m.blurb,
+      glyph: m.glyph,
       visibility: "public",
       isManual: true,
-      status: { state: m.statusState ?? "unknown", blockers: [], next: [] },
+      status: { state: m.statusState ?? "unknown" },
     });
   }
   for (const h of HEURISTICS) {
     stops.push({
       id: h.stopId,
-      displayName: repoDisplayName(h.repo),
+      displayName: h.displayName,
       district: h.district,
       lines: h.lines,
       position: h.position ?? { x: 800, y: 500 },
       repo: h.repo,
       blurb: h.blurb,
+      glyph: h.glyph ?? defaultGlyphForRepo(h.repo),
       visibility: "public",
-      status: { state: "unknown", blockers: [], next: [] },
+      status: { state: "unknown" },
       queue: h.queue,
     });
   }

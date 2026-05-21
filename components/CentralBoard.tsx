@@ -7,11 +7,15 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import { activeQueue, type Stop } from "@/lib/town";
+import { activeQueue, mostActiveStops, type Stop } from "@/lib/town";
 import { DISTRICTS } from "@/lib/willville";
 
 const BOARD_COLUMNS = 28;
 const BOARD_ROWS = 6;
+
+function stopLabel(stop: Stop): string {
+  return stop.repo?.split("/").pop() ?? stop.id;
+}
 const EMPTY_ROW = " ".repeat(BOARD_COLUMNS);
 
 type Props = {
@@ -30,7 +34,11 @@ export function CentralBoard({
   const didMountRef = useRef(false);
   const previousBoardRef = useRef<string[]>([]);
 
-  const queue = activeQueue(stops);
+  // Fall back to heuristics-based activeQueue until commit data arrives.
+  const queue = useMemo(() => {
+    const active = mostActiveStops(stops);
+    return active.length > 0 ? active : activeQueue(stops);
+  }, [stops]);
   const rows = useMemo(() => {
     if (selectedStop) {
       return selectedStopRows(selectedStop);
@@ -50,7 +58,12 @@ export function CentralBoard({
   useEffect(() => {
     const previous = previousBoardRef.current;
     if (didMountRef.current) {
-      playFlipTicks(previous, rows);
+      if (userHasInteracted) {
+        playFlipTicks(previous, rows);
+      } else {
+        // Stash so first user gesture can replay the flip sound
+        pendingFlip = { prev: previous, next: rows };
+      }
     }
     previousBoardRef.current = rows;
     didMountRef.current = true;
@@ -231,9 +244,7 @@ function SplitFlapCell({
   const prevCharRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Skip flipping cells that have not changed their character value
     if (prevCharRef.current !== null && prevCharRef.current === char) {
-      setDisplayChar(char);
       return;
     }
     prevCharRef.current = char;
@@ -300,7 +311,7 @@ function wrapText(text: string, maxLen: number): string[] {
 function selectedStopRows(stop: Stop): string[] {
   const district = DISTRICTS.find((d) => d.id === stop.district);
   const districtName = district?.displayName ?? stop.district;
-  const stopName = stop.displayName;
+  const stopName = stopLabel(stop);
   const descText = stop.status.summary ?? stop.blurb ?? "";
 
   const rows: string[] = [center(districtName), center(stopName)];
@@ -338,7 +349,7 @@ function districtRows(districtId: string, stops: Stop[]): string[] {
       continue;
     }
 
-    const leftPart = `${String(i + 1).padStart(2, "0")} ${stop.displayName}`;
+    const leftPart = `${String(i + 1).padStart(2, "0")} ${stopLabel(stop)}`;
 
     let rightPart = (stop.status.state || "IDEA").toUpperCase();
     if (stop.stars && stop.stars > 0) {
@@ -353,9 +364,9 @@ function districtRows(districtId: string, stops: Stop[]): string[] {
       rowStr = leftPart + " ".repeat(spaces) + rightPart;
     } else {
       const maxNameLen = BOARD_COLUMNS - 3 - rightPart.length - 2;
-      const nameSlice = stop.displayName.slice(0, Math.max(1, maxNameLen));
+      const nameSlice = stopLabel(stop).slice(0, Math.max(1, maxNameLen));
       const truncatedName =
-        nameSlice + (stop.displayName.length > maxNameLen ? "…" : "");
+        nameSlice + (stopLabel(stop).length > maxNameLen ? "…" : "");
       const truncatedLeft = `${String(i + 1).padStart(2, "0")} ${truncatedName}`;
       const spaces = Math.max(
         1,
@@ -379,26 +390,17 @@ function timetableRows(queue: Stop[]): string[] {
       rows.push(EMPTY_ROW);
       continue;
     }
+    const commits7d = stop.commits7d;
+    const commits3d = stop.commits3d;
+    const [commits, period] =
+      commits7d != null ? [commits7d, "7D"] : [commits3d ?? 0, "3D"];
+    const activity = commits > 0 ? `${commits}C/${period}` : "";
     rows.push(
-      fit(
-        `${String(i + 1).padStart(2, "0")} ${stop.displayName} ${etaLabel(
-          stop.queue?.etaDays,
-        )}`,
-      ),
+      fit(`${String(i + 1).padStart(2, "0")} ${stopLabel(stop)} ${activity}`),
     );
   }
 
   return rows.slice(0, BOARD_ROWS);
-}
-
-function etaLabel(days: number | undefined): string {
-  if (!Number.isFinite(days ?? NaN)) return "TBD";
-  const safeDays = days!;
-  if (safeDays <= 0) return "TODAY";
-  if (safeDays === 1) return "1 DAY";
-  if (safeDays < 14) return `${safeDays} DAYS`;
-  if (safeDays < 60) return `${Math.round(safeDays / 7)} WKS`;
-  return `${Math.round(safeDays / 30)} MOS`;
 }
 
 function padded(input: string): string {
@@ -433,9 +435,31 @@ function normalize(input: string): string {
 }
 
 let audioCtx: AudioContext | null = null;
+let userHasInteracted = false;
+let pendingFlip: { prev: string[]; next: string[] } | null = null;
+
+function onFirstInteraction() {
+  if (userHasInteracted) return;
+  userHasInteracted = true;
+  window.removeEventListener("click", onFirstInteraction, true);
+  window.removeEventListener("keydown", onFirstInteraction, true);
+  window.removeEventListener("pointerdown", onFirstInteraction, true);
+  // Replay the initial board flip sound that was blocked on load
+  if (pendingFlip) {
+    const { prev, next } = pendingFlip;
+    pendingFlip = null;
+    playFlipTicks(prev, next);
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("click", onFirstInteraction, true);
+  window.addEventListener("keydown", onFirstInteraction, true);
+  window.addEventListener("pointerdown", onFirstInteraction, true);
+}
 
 function getAudioContext(): AudioContext | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined" || !userHasInteracted) return null;
   try {
     type AudioCtxCtor = typeof AudioContext;
     const Ctor: AudioCtxCtor =
@@ -453,7 +477,7 @@ function getAudioContext(): AudioContext | null {
 function playButtonTick() {
   const ctx = getAudioContext();
   if (!ctx) return;
-  scheduleTick(ctx, ctx.currentTime, 0.18);
+  schedulePaperShuffle(ctx, ctx.currentTime, 0.09, 0.24);
 }
 
 function playFlipTicks(previousRows: string[], nextRows: string[]) {
@@ -471,59 +495,119 @@ function playFlipTicks(previousRows: string[], nextRows: string[]) {
     }
   });
 
-  changes.slice(0, 110).forEach((slotIndex) => {
+  if (changes.length === 0) return;
+
+  const now = ctx.currentTime;
+  scheduleRustleBed(ctx, now, 1, Math.min(0.2, 0.08 + changes.length * 0.001));
+
+  changes.slice(0, 80).forEach((slotIndex) => {
     const rowIndex = Math.floor(slotIndex / BOARD_COLUMNS);
     const colIndex = slotIndex % BOARD_COLUMNS;
-    const time = ctx.currentTime + rowIndex * 0.055 + colIndex * 0.018;
-    scheduleTick(ctx, time, 0.08 + ((rowIndex + colIndex) % 4) * 0.012);
+    const time = now + Math.min(0.86, rowIndex * 0.09 + colIndex * 0.019);
+    const gain = 0.018 + ((rowIndex + colIndex) % 4) * 0.004;
+    schedulePaperShuffle(
+      ctx,
+      time,
+      gain,
+      0.32 + ((rowIndex + colIndex) % 3) * 0.06,
+    );
   });
 }
 
-function scheduleTick(ctx: AudioContext, time: number, gainLevel: number) {
-  const duration = 0.135; // Tripled the length for each flip
-  const sampleCount = Math.max(1, Math.floor(ctx.sampleRate * duration));
-  const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
-  const channel = buffer.getChannelData(0);
-  for (let i = 0; i < sampleCount; i += 1) {
-    const t = i / sampleCount;
-    // Softer envelope with a gentle attack and smooth decay for rustling leaves
-    let envelope = 1;
-    if (t < 0.15) {
-      envelope = t / 0.15; // Gentle attack over 20ms
-    } else {
-      const decayT = (t - 0.15) / 0.85;
-      envelope = Math.pow(1 - decayT, 2.5); // Smooth organic decay
-    }
-    const scratch = Math.random() * 2 - 1;
-    channel[i] = scratch * envelope * 0.45;
-  }
+function scheduleRustleBed(
+  ctx: AudioContext,
+  time: number,
+  duration: number,
+  gainLevel: number,
+) {
+  const buffer = makeNoiseBuffer(ctx, duration, (t) => {
+    const attack = Math.min(1, t / 0.18);
+    const release = Math.min(1, (1 - t) / 0.35);
+    const slowWave = 0.58 + Math.sin(t * Math.PI * 6) * 0.18;
+    return Math.max(0, Math.min(1, attack, release)) * slowWave;
+  });
 
   const source = ctx.createBufferSource();
+  const hush = ctx.createBiquadFilter();
+  const air = ctx.createBiquadFilter();
   const gain = ctx.createGain();
-  const body = ctx.createBiquadFilter();
-  const paper = ctx.createBiquadFilter();
 
   source.buffer = buffer;
-
-  // Broader, softer bandpass filter for whisper-like foliage sound
-  body.type = "bandpass";
-  body.frequency.setValueAtTime(2400 + Math.random() * 800, time); // High shsh/whisper freq
-  body.Q.setValueAtTime(0.38, time); // Lower Q values represent a much wider, softer sound, removing high metallic rings
-
-  // Highpass to keep the breeze hiss and eliminate any mechanical clatter
-  paper.type = "highpass";
-  paper.frequency.setValueAtTime(1100 + Math.random() * 300, time);
+  hush.type = "lowpass";
+  hush.frequency.setValueAtTime(5200, time);
+  hush.Q.setValueAtTime(0.35, time);
+  air.type = "bandpass";
+  air.frequency.setValueAtTime(2100, time);
+  air.Q.setValueAtTime(0.55, time);
 
   gain.gain.setValueAtTime(0.0001, time);
-  gain.gain.linearRampToValueAtTime(gainLevel * 1.3, time + 0.022); // Longer linear ramp up (soft attack)
+  gain.gain.linearRampToValueAtTime(gainLevel, time + 0.18);
+  gain.gain.linearRampToValueAtTime(gainLevel * 0.72, time + 0.62);
   gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
 
-  source.connect(body);
-  body.connect(paper);
-  paper.connect(gain);
+  source.connect(hush);
+  hush.connect(air);
+  air.connect(gain);
   gain.connect(ctx.destination);
   source.start(time);
   source.stop(time + duration);
+}
+
+function schedulePaperShuffle(
+  ctx: AudioContext,
+  time: number,
+  gainLevel: number,
+  duration: number,
+) {
+  const buffer = makeNoiseBuffer(ctx, duration, (t) => {
+    const attack = Math.min(1, t / 0.08);
+    const release = Math.pow(Math.max(0, 1 - t), 2.2);
+    const fibers = 0.7 + Math.random() * 0.3;
+    return attack * release * fibers;
+  });
+
+  const source = ctx.createBufferSource();
+  const paper = ctx.createBiquadFilter();
+  const hush = ctx.createBiquadFilter();
+  const gain = ctx.createGain();
+
+  source.buffer = buffer;
+
+  paper.type = "bandpass";
+  paper.frequency.setValueAtTime(1500 + Math.random() * 850, time);
+  paper.Q.setValueAtTime(0.45, time);
+
+  hush.type = "lowpass";
+  hush.frequency.setValueAtTime(3800 + Math.random() * 900, time);
+  hush.Q.setValueAtTime(0.5, time);
+
+  gain.gain.setValueAtTime(0.0001, time);
+  gain.gain.linearRampToValueAtTime(gainLevel, time + 0.055);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+
+  source.connect(paper);
+  paper.connect(hush);
+  hush.connect(gain);
+  gain.connect(ctx.destination);
+  source.start(time);
+  source.stop(time + duration);
+}
+
+function makeNoiseBuffer(
+  ctx: AudioContext,
+  duration: number,
+  envelope: (progress: number) => number,
+) {
+  const sampleCount = Math.max(1, Math.floor(ctx.sampleRate * duration));
+  const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
+  const channel = buffer.getChannelData(0);
+  let previous = 0;
+  for (let i = 0; i < sampleCount; i += 1) {
+    const t = i / sampleCount;
+    previous = previous * 0.72 + (Math.random() * 2 - 1) * 0.28;
+    channel[i] = previous * envelope(t) * 0.62;
+  }
+  return buffer;
 }
 
 const shellStyle: CSSProperties = {

@@ -45,11 +45,17 @@ npm run build      # writes static export to out/
 
 ## Deploy
 
-Cloudflare Pages with Git auto-deploy:
+Cloudflare Pages is deployed from GitHub Actions with
+`.github/workflows/deploy-pages.yml`:
 
 - **Build command:** `npm run build`
 - **Output directory:** `out`
 - **Compatibility date:** `2026-05-01` or later
+- **GitHub Actions repository secret:**
+  - `CLOUDFLARE_API_TOKEN` — Cloudflare API token used by Wrangler for
+    `pages deploy ./out --project-name welcome-to-willville --branch main`.
+    Create a custom token scoped to your Cloudflare account
+    with `Cloudflare Pages: Edit`.
 - **Secrets to set in the Pages project:**
   - `GITHUB_PAT` — fine-grained PAT with `Contents: read` on the ScienceIsNeato
     repos you want surfaced. Used only when a Mayor cookie is present.

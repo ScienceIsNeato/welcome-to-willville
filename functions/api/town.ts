@@ -2,7 +2,7 @@
  * GET /api/town
  *
  * Discovers the town's live state by:
- *   1. Listing repos under ScienceIsNeato (non-fork, non-archived, <1y stale)
+ *   1. Listing repos under ScienceIsNeato (non-fork, non-archived, <2y stale)
  *   2. For each, fetching open GitHub milestones (queue + ETA data)
  *   3. Merging with baked-in heuristics for layout (position, district, lines)
  *
@@ -23,7 +23,29 @@ interface Env {
 }
 
 const OWNER = "ScienceIsNeato";
-const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
+
+async function mapLimit<T, R>(
+  items: T[],
+  limit: number,
+  mapper: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = [];
+  let index = 0;
+
+  async function worker() {
+    while (index < items.length) {
+      const current = index;
+      index += 1;
+      results[current] = await mapper(items[current]!);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => worker()),
+  );
+  return results;
+}
 
 type GitHubRepo = {
   full_name: string;
@@ -96,16 +118,6 @@ async function fetchMilestones(
   }
 }
 
-function isMayor(request: Request): boolean {
-  return true;
-}
-
-type CommitActivityWeek = {
-  days: [number, number, number, number, number, number, number];
-  total: number;
-  week: number;
-};
-
 /**
  * Fetch commit counts for the last 3, 7, and 21 days.
  * Uses the commits list endpoint (no async 202 / stats-compute delays).
@@ -149,6 +161,67 @@ async function fetchCommitCounts(
   }
 }
 
+function compareUrl(
+  fullName: string,
+  baseBranch: string,
+  branch: string,
+): string {
+  const safeBase = encodeURIComponent(baseBranch).replace(/%2F/g, "/");
+  const safeBranch = encodeURIComponent(branch).replace(/%2F/g, "/");
+  return `https://github.com/${fullName}/compare/${safeBase}...${safeBranch}`;
+}
+
+async function fetchActiveBranch(
+  fullName: string,
+  defaultBranch: string,
+  token?: string,
+): Promise<RepoMeta["activeBranch"]> {
+  const headers: Record<string, string> = {
+    "User-Agent": "willville-edge",
+    Accept: "application/vnd.github+json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const fallback = {
+    name: defaultBranch,
+    compareUrl: compareUrl(fullName, defaultBranch, defaultBranch),
+    isDefault: true,
+  };
+
+  try {
+    // One API call per repo: recent push events carry the branch name and
+    // timestamp directly. Replaces the old pattern of fetching all branches
+    // (up to 100) + one commit API call per branch.
+    type GitHubPushEvent = {
+      type: string;
+      created_at: string;
+      payload: { ref?: string };
+    };
+    const response = await fetch(
+      `https://api.github.com/repos/${fullName}/events?per_page=30`,
+      { headers },
+    );
+    if (!response.ok) return fallback;
+
+    const events = (await response.json()) as GitHubPushEvent[];
+    const latestPush = Array.isArray(events)
+      ? events.find((e) => e.type === "PushEvent" && e.payload?.ref)
+      : undefined;
+
+    if (!latestPush?.payload?.ref) return fallback;
+
+    const branchName = latestPush.payload.ref.replace(/^refs\/heads\//, "");
+    return {
+      name: branchName,
+      pushedAt: latestPush.created_at,
+      compareUrl: compareUrl(fullName, defaultBranch, branchName),
+      isDefault: branchName === defaultBranch,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
 const PACKET_RE = /<!--\s*willville\b([\s\S]*?)-->/;
 
 /** Parse a raw STATUS.md string into a WillvillePacket, or return undefined. */
@@ -166,6 +239,30 @@ function parseWillvillePacket(body: string): WillvillePacket | undefined {
     if (!val) continue;
 
     switch (key) {
+      // New-format fields
+      case "doing":
+        pkt.doing = val;
+        break;
+      case "done":
+        pkt.done = val;
+        break;
+      case "next":
+        pkt.next = val;
+        break;
+      case "blocked":
+        pkt.blocked = val;
+        break;
+      case "risk":
+        pkt.risk = val;
+        break;
+      case "eta":
+        pkt.eta = val;
+        break;
+      // Shared
+      case "milestone":
+        pkt.milestone = val;
+        break;
+      // Legacy fields (backward compat)
       case "status":
         if (
           ["wip", "shipping", "maintenance", "dormant", "unknown"].includes(val)
@@ -175,24 +272,23 @@ function parseWillvillePacket(body: string): WillvillePacket | undefined {
       case "summary":
         pkt.summary = val;
         break;
-      case "milestone":
-        pkt.milestone = val;
-        break;
       case "eta_date":
         pkt.etaDate = val;
+        pkt.eta ??= val;
         break;
     }
   }
 
-  // Parse YAML-style list fields (blockers / next)
-  for (const field of ["blockers", "next"] as const) {
-    const listRe = new RegExp(`\\b${field}:[\\s\\S]*?(?=\\n\\w|$)`);
-    const listMatch = listRe.exec(inner);
-    if (listMatch) {
-      const items = [...listMatch[0].matchAll(/^\s*-\s*(.+)/gm)]
-        .map((m) => m[1]!.trim())
-        .filter(Boolean);
-      if (items.length) pkt[field] = items;
+  // Legacy: parse YAML-style list fields (blockers)
+  const blockersRe = /\bblockers:[\s\S]*?(?=\n\w|$)/;
+  const blockersMatch = blockersRe.exec(inner);
+  if (blockersMatch) {
+    const items = [...blockersMatch[0].matchAll(/^\s*-\s*(.+)/gm)]
+      .map((m) => m[1]!.trim())
+      .filter(Boolean);
+    if (items.length) {
+      pkt.blockers = items;
+      pkt.blocked ??= items[0];
     }
   }
 
@@ -225,56 +321,69 @@ async function fetchWillvillePacket(
   }
 }
 
-export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
-  const mayor = true;
+export const onRequestGet: PagesFunction<Env> = async ({
+  request: _request,
+  env,
+}) => {
   // Always use PAT when available to avoid unauthenticated rate limits (60/hr).
   const token = env.GITHUB_PAT;
   const repos = await listOwnerRepos(token);
-  const cutoff = Date.now() - ONE_YEAR_MS;
+  const cutoff = Date.now() - TWO_YEARS_MS;
   const candidates = repos.filter((r) => {
     if (r.fork || r.archived) return false;
     return Date.parse(r.pushed_at) >= cutoff;
   });
 
-  const repoMetas: RepoMeta[] = await Promise.all(
-    candidates.map(async (r) => {
-      const [milestones, willvillePacket, commitCounts] = await Promise.all([
-        fetchMilestones(OWNER, r.name, token),
-        fetchWillvillePacket(r.full_name, r.default_branch, token),
-        fetchCommitCounts(r.full_name, token),
-      ]);
-      return {
-        repo: r.full_name,
-        isPrivate: r.private,
-        isFork: r.fork,
-        isArchived: r.archived,
-        pushedAt: r.pushed_at,
-        defaultBranch: r.default_branch,
-        homepage: r.homepage ?? undefined,
-        description: r.description ?? undefined,
-        topics: r.topics ?? [],
-        openMilestones: milestones.map((m) => ({
-          title: m.title,
-          dueOn: m.due_on,
-          openIssues: m.open_issues,
-        })),
-        willvillePacket,
-        openIssuesCount: r.open_issues_count,
-        stars: r.stargazers_count,
-        language: r.language ?? undefined,
-        commits3d: commitCounts?.d3,
-        commits7d: commitCounts?.d7,
-        commits21d: commitCounts?.d21,
-      };
-    }),
-  );
+  const repoMetas: RepoMeta[] = await mapLimit(candidates, 8, async (r) => {
+    const [milestones, commitCounts, activeBranch] = await Promise.all([
+      fetchMilestones(OWNER, r.name, token),
+      fetchCommitCounts(r.full_name, token),
+      fetchActiveBranch(r.full_name, r.default_branch, token),
+    ]);
+    // Fetch the packet from whichever branch had the most recent commit, so
+    // work-in-progress STATUS.md entries actually appear in the UI.
+    const packetBranch = activeBranch?.name ?? r.default_branch;
+    const willvillePacket = await fetchWillvillePacket(
+      r.full_name,
+      packetBranch,
+      token,
+    );
+    return {
+      repo: r.full_name,
+      isPrivate: r.private,
+      isFork: r.fork,
+      isArchived: r.archived,
+      pushedAt: r.pushed_at,
+      defaultBranch: r.default_branch,
+      homepage: r.homepage ?? undefined,
+      description: r.description ?? undefined,
+      topics: r.topics ?? [],
+      openMilestones: milestones.map((m) => ({
+        title: m.title,
+        dueOn: m.due_on,
+        openIssues: m.open_issues,
+      })),
+      willvillePacket,
+      openIssuesCount: r.open_issues_count,
+      stars: r.stargazers_count,
+      language: r.language ?? undefined,
+      commits3d: commitCounts?.d3,
+      commits7d: commitCounts?.d7,
+      commits21d: commitCounts?.d21,
+      activeBranch,
+    };
+  });
 
   const stops = buildTown(repoMetas, { isMayor: true });
 
   const cacheControl = "public, s-maxage=60, stale-while-revalidate=300";
 
   return new Response(
-    JSON.stringify({ mayor: true, generatedAt: new Date().toISOString(), stops }),
+    JSON.stringify({
+      mayor: true,
+      generatedAt: new Date().toISOString(),
+      stops,
+    }),
     {
       headers: {
         "Content-Type": "application/json; charset=utf-8",

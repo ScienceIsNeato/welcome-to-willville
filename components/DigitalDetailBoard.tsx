@@ -1,9 +1,8 @@
 "use client";
 
-import type { CSSProperties } from "react";
-import { DISTRICTS, LINES } from "@/lib/willville";
+import type { CSSProperties, MouseEvent } from "react";
 import { LOCKS, type CanalBoat } from "@/lib/canal";
-import { activeQueue, type Stop } from "@/lib/town";
+import { expressRank, type Stop } from "@/lib/town";
 
 const STATE_LABEL: Record<Stop["status"]["state"], string> = {
   idea: "Idea",
@@ -14,15 +13,6 @@ const STATE_LABEL: Record<Stop["status"]["state"], string> = {
   unknown: "No manifest",
 };
 
-const STATE_COLOR: Record<Stop["status"]["state"], string> = {
-  idea: "#8fb3ff",
-  wip: "#ffd37a",
-  shipping: "#7ee6a6",
-  maintenance: "#c8d0dc",
-  dormant: "#8790a0",
-  unknown: "#b7c2d4",
-};
-
 type Props = {
   stop: Stop | null;
   allStops: Stop[];
@@ -31,13 +21,6 @@ type Props = {
 };
 
 export function DigitalDetailBoard({ stop, allStops, boats, onClear }: Props) {
-  const district = stop
-    ? DISTRICTS.find((candidate) => candidate.id === stop.district)
-    : null;
-  const lineNames =
-    stop?.lines
-      .map((id) => LINES.find((line) => line.id === id)?.displayName ?? id)
-      .join(" / ") ?? "";
   const rank = stop ? expressRank(stop, allStops) : null;
   const repoUrl = stop?.repo ? repoHref(stop.repo) : null;
   const linkOut = stop ? (stop.homepage ?? repoUrl) : null;
@@ -71,20 +54,26 @@ export function DigitalDetailBoard({ stop, allStops, boats, onClear }: Props) {
 
           <div style={notesColumnStyle}>
             <NoteList
+              title="Doing"
+              items={stop.status.doing ? [stop.status.doing] : []}
+              fallback="No active work logged."
+            />
+            <NoteList
               title="Next"
-              items={stop.status.next}
+              items={stop.status.next ? [stop.status.next] : []}
               fallback="No next steps logged."
             />
             <NoteList
-              title="Blockers"
-              items={stop.status.blockers}
-              fallback="No blockers logged."
+              title="Blocked"
+              items={stop.status.blocked ? [stop.status.blocked] : []}
+              fallback=""
             />
           </div>
 
           <div style={actionsColumnStyle}>
             <div style={signalGridStyle}>
               <Signal label="Language" value={stop.language ?? "Mixed"} />
+              <BranchSignal stop={stop} />
               <Signal
                 label="7d commits"
                 value={stop.commits7d != null ? String(stop.commits7d) : "n/a"}
@@ -111,8 +100,7 @@ export function DigitalDetailBoard({ stop, allStops, boats, onClear }: Props) {
                     <a
                       key={`${pr.repo}-${pr.prNumber}`}
                       href={pr.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      onClick={followLink}
                       style={softLinkStyle}
                     >
                       {pr.title}
@@ -127,22 +115,12 @@ export function DigitalDetailBoard({ stop, allStops, boats, onClear }: Props) {
             )}
             <div style={buttonRowStyle}>
               {repoUrl && (
-                <a
-                  href={repoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={buttonStyle}
-                >
+                <a href={repoUrl} onClick={followLink} style={buttonStyle}>
                   Repo
                 </a>
               )}
               {linkOut && linkOut !== repoUrl && (
-                <a
-                  href={linkOut}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={buttonStyle}
-                >
+                <a href={linkOut} onClick={followLink} style={buttonStyle}>
                   Site
                 </a>
               )}
@@ -175,6 +153,32 @@ function Signal({ label, value }: { label: string; value: string }) {
   );
 }
 
+function BranchSignal({ stop }: { stop: Stop }) {
+  const branch = stop.activeBranch;
+  return (
+    <div style={signalStyle}>
+      <span style={smallLabelStyle}>Branch</span>
+      {branch ? (
+        <a
+          href={branch.compareUrl}
+          onClick={followLink}
+          style={branchLinkStyle}
+          title={`Compare main to ${branch.name}`}
+        >
+          {branch.name}
+        </a>
+      ) : (
+        <span style={signalValueStyle}>n/a</span>
+      )}
+    </div>
+  );
+}
+
+function followLink(e: MouseEvent<HTMLAnchorElement>) {
+  e.preventDefault();
+  window.location.assign(e.currentTarget.href);
+}
+
 function NoteList({
   title,
   items,
@@ -198,15 +202,6 @@ function repoHref(repo: string): string {
   return `https://github.com/${trimmed.replace(/^\/+/, "")}`;
 }
 
-function expressRank(stop: Stop, allStops: Stop[]): number | null {
-  const queue = activeQueue(allStops);
-  const idx = queue.findIndex(
-    (candidate) =>
-      candidate.id === stop.id && candidate.district === stop.district,
-  );
-  return idx >= 0 ? idx + 1 : null;
-}
-
 function etaLabel(days: number | undefined): string {
   if (!Number.isFinite(days ?? NaN)) return "TBD";
   const safeDays = days!;
@@ -228,16 +223,14 @@ const shellStyle: CSSProperties = {
     "minmax(230px, 0.85fr) minmax(260px, 1fr) minmax(220px, 0.8fr)",
   gap: 14,
   padding: "15px 16px",
-  borderRadius: 12,
-  border: "1px solid rgba(157, 216, 255, 0.28)",
+  borderRadius: 3,
+  border: "1px solid rgba(51, 255, 87, 0.28)",
   background:
-    "linear-gradient(180deg, rgba(20,45,62,0.86) 0%, rgba(11,24,35,0.9) 100%)",
+    "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 3px), linear-gradient(180deg, #020d02 0%, #000400 100%)",
   boxShadow:
-    "0 -12px 42px rgba(61,183,255,0.14), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 38px rgba(82,188,255,0.08)",
-  color: "#eaf7ff",
-  fontFamily: "var(--font-sans), Arial, Helvetica, sans-serif",
-  backdropFilter: "blur(14px)",
-  WebkitBackdropFilter: "blur(14px)",
+    "0 0 32px rgba(51, 255, 87, 0.09), inset 0 0 60px rgba(51, 255, 87, 0.05)",
+  color: "#33ff57",
+  fontFamily: '"Courier New", Courier, monospace',
 };
 
 const emptyStateStyle: CSSProperties = {
@@ -252,62 +245,26 @@ const emptyStateStyle: CSSProperties = {
 
 const emptyTitleStyle: CSSProperties = {
   fontSize: 20,
-  letterSpacing: 0,
+  letterSpacing: 0.5,
+  textShadow: "0 0 10px rgba(51, 255, 87, 0.5)",
 };
 
 const emptyCopyStyle: CSSProperties = {
   maxWidth: 520,
-  color: "rgba(234,247,255,0.7)",
+  color: "rgba(51, 255, 87, 0.6)",
   fontSize: 13,
   lineHeight: 1.4,
 };
 
-const titleColumnStyle: CSSProperties = {
-  minWidth: 0,
-  display: "grid",
-  alignContent: "start",
-  gap: 7,
-};
-
-const titleRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  minWidth: 0,
-};
-
 const eyebrowStyle: CSSProperties = {
-  color: "rgba(178,225,255,0.78)",
+  color: "rgba(51, 255, 87, 0.5)",
   fontSize: 11,
   fontWeight: 700,
-  letterSpacing: 1.1,
+  letterSpacing: 1.5,
   textTransform: "uppercase",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
-};
-
-const statusLightStyle: CSSProperties = {
-  flex: "0 0 auto",
-  width: 9,
-  height: 9,
-  borderRadius: 9,
-  boxShadow: "0 0 16px currentColor",
-};
-
-const titleStyle: CSSProperties = {
-  margin: 0,
-  color: "#f8fcff",
-  fontSize: "clamp(20px, 2.3vw, 28px)",
-  lineHeight: 1.02,
-  letterSpacing: 0,
-};
-
-const summaryStyle: CSSProperties = {
-  margin: 0,
-  color: "rgba(234,247,255,0.78)",
-  fontSize: 13,
-  lineHeight: 1.38,
 };
 
 const metricsGridStyle: CSSProperties = {
@@ -319,29 +276,30 @@ const metricsGridStyle: CSSProperties = {
 const metricStyle: CSSProperties = {
   minWidth: 0,
   padding: "9px 10px",
-  borderRadius: 9,
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(190,230,255,0.14)",
+  borderRadius: 2,
+  background: "rgba(51, 255, 87, 0.04)",
+  border: "1px solid rgba(51, 255, 87, 0.18)",
 };
 
 const smallLabelStyle: CSSProperties = {
   display: "block",
   marginBottom: 3,
-  color: "rgba(178,225,255,0.68)",
+  color: "rgba(51, 255, 87, 0.5)",
   fontSize: 10,
-  fontWeight: 800,
-  letterSpacing: 1,
+  fontWeight: 700,
+  letterSpacing: 1.5,
   textTransform: "uppercase",
 };
 
 const metricValueStyle: CSSProperties = {
   display: "block",
-  color: "#f8fcff",
+  color: "#33ff57",
   fontSize: 14,
   lineHeight: 1.2,
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
+  textShadow: "0 0 8px rgba(51, 255, 87, 0.55)",
 };
 
 const notesColumnStyle: CSSProperties = {
@@ -353,14 +311,14 @@ const notesColumnStyle: CSSProperties = {
 const noteStyle: CSSProperties = {
   minWidth: 0,
   padding: "9px 10px",
-  borderRadius: 9,
-  background: "rgba(255,255,255,0.07)",
-  border: "1px solid rgba(190,230,255,0.12)",
+  borderRadius: 2,
+  background: "rgba(51, 255, 87, 0.03)",
+  border: "1px solid rgba(51, 255, 87, 0.14)",
 };
 
 const noteTextStyle: CSSProperties = {
   margin: 0,
-  color: "rgba(234,247,255,0.82)",
+  color: "rgba(51, 255, 87, 0.82)",
   fontSize: 12,
   lineHeight: 1.35,
 };
@@ -380,14 +338,26 @@ const signalGridStyle: CSSProperties = {
 const signalStyle: CSSProperties = {
   minWidth: 0,
   padding: "7px 8px",
-  borderRadius: 8,
-  background: "rgba(10,24,36,0.48)",
+  borderRadius: 2,
+  background: "rgba(51, 255, 87, 0.03)",
+  border: "1px solid rgba(51, 255, 87, 0.12)",
 };
 
 const signalValueStyle: CSSProperties = {
-  color: "#f8fcff",
+  color: "#33ff57",
   fontSize: 13,
   fontWeight: 700,
+  textShadow: "0 0 6px rgba(51, 255, 87, 0.5)",
+};
+
+const branchLinkStyle: CSSProperties = {
+  ...signalValueStyle,
+  display: "block",
+  color: "#33ff57",
+  textDecoration: "none",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 };
 
 const prStyle: CSSProperties = {
@@ -397,12 +367,12 @@ const prStyle: CSSProperties = {
 };
 
 const mutedInlineStyle: CSSProperties = {
-  color: "rgba(234,247,255,0.52)",
+  color: "rgba(51, 255, 87, 0.45)",
 };
 
 const softLinkStyle: CSSProperties = {
   minWidth: 0,
-  color: "#dff5ff",
+  color: "rgba(51, 255, 87, 0.8)",
   fontSize: 12,
   lineHeight: 1.35,
   textDecoration: "none",
@@ -419,13 +389,16 @@ const buttonRowStyle: CSSProperties = {
 };
 
 const buttonStyle: CSSProperties = {
-  border: "1px solid rgba(190,230,255,0.22)",
-  borderRadius: 999,
-  background: "rgba(255,255,255,0.1)",
-  color: "#f8fcff",
+  border: "1px solid rgba(51, 255, 87, 0.35)",
+  borderRadius: 2,
+  background: "rgba(51, 255, 87, 0.08)",
+  color: "#33ff57",
   padding: "7px 11px",
   fontSize: 12,
-  fontWeight: 750,
+  fontWeight: 700,
   textDecoration: "none",
   cursor: "pointer",
+  fontFamily: '"Courier New", Courier, monospace',
+  letterSpacing: 0.5,
+  textShadow: "0 0 6px rgba(51, 255, 87, 0.35)",
 };
