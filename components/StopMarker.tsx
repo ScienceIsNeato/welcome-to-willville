@@ -43,6 +43,7 @@ export function StopMarker({
       }}
       aria-label={stop.displayName}
     >
+      <circle r={32} fill="transparent" pointerEvents="all" />
       {recentlyUpdated && (
         <circle r={18} fill={color} fillOpacity={0.25} className="whistle" />
       )}

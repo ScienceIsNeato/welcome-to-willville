@@ -154,7 +154,11 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     setPopulating("running");
     fetch("/api/manifests", { method: "POST" })
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-      .then(() => {
+      .then(() => fetch("/api/town").then((r) => (r.ok ? r.json() : null)))
+      .then((data) => {
+        if (data && Array.isArray(data.stops)) {
+          setLiveStops(data.stops as Stop[]);
+        }
         setPopulating("done");
         setTimeout(() => setPopulating("idle"), 3000);
       })
@@ -207,6 +211,11 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   }, []);
 
   const currentStops = liveStops ?? stops;
+  const hydratedSelectedStop = selectedStop
+    ? (currentStops.find(
+        (s) => s.district === selectedStop.district && s.id === selectedStop.id,
+      ) ?? selectedStop)
+    : null;
 
   const parts = pathname.split("/").filter(Boolean);
   const districtSlug = parts[0] ?? "";
@@ -218,7 +227,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           (s) => s.district === pathDistrict && s.id === pathStopId,
         ) ?? null)
       : null;
-  const boardStop = selectedStop ?? pathSelectedStop;
+  const boardStop = hydratedSelectedStop ?? pathSelectedStop;
 
   // Deep link: open HUD without reframing camera.
   useEffect(() => {
@@ -376,23 +385,11 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               <stop offset="0%" stopColor="white" />
               <stop offset="100%" stopColor="black" />
             </linearGradient>
-            <linearGradient
-              id="town-feather-left"
-              x1="0"
-              y1="0"
-              x2="1"
-              y2="0"
-            >
+            <linearGradient id="town-feather-left" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor="black" />
               <stop offset="100%" stopColor="white" />
             </linearGradient>
-            <linearGradient
-              id="town-feather-right"
-              x1="0"
-              y1="0"
-              x2="1"
-              y2="0"
-            >
+            <linearGradient id="town-feather-right" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor="white" />
               <stop offset="100%" stopColor="black" />
             </linearGradient>

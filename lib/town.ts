@@ -34,6 +34,13 @@ export type QueueEntry = {
   priority?: number;
 };
 
+export type ActiveBranch = {
+  name: string;
+  compareUrl: string;
+  pushedAt?: string;
+  isDefault: boolean;
+};
+
 export type Stop = {
   id: string;
   displayName: string;
@@ -66,6 +73,8 @@ export type Stop = {
   commits7d?: number;
   /** Commit count over the last 21 calendar days (3 weekly buckets). */
   commits21d?: number;
+  /** Most recently committed branch in the repo. */
+  activeBranch?: ActiveBranch;
 };
 
 /**
@@ -165,6 +174,8 @@ export type RepoMeta = {
   commits7d?: number;
   /** Commit count over the last 21 calendar days (3 weekly buckets). */
   commits21d?: number;
+  /** Most recently committed branch in the repo. */
+  activeBranch?: ActiveBranch;
 };
 
 // ---------------------------------------------------------------------------
@@ -387,6 +398,7 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
     commits3d: meta.commits3d,
     commits7d: meta.commits7d,
     commits21d: meta.commits21d,
+    activeBranch: meta.activeBranch,
   };
 }
 

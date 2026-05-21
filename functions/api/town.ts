@@ -25,6 +25,28 @@ interface Env {
 const OWNER = "ScienceIsNeato";
 const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
 
+async function mapLimit<T, R>(
+  items: T[],
+  limit: number,
+  mapper: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = [];
+  let index = 0;
+
+  async function worker() {
+    while (index < items.length) {
+      const current = index;
+      index += 1;
+      results[current] = await mapper(items[current]!);
+    }
+  }
+
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => worker()),
+  );
+  return results;
+}
+
 type GitHubRepo = {
   full_name: string;
   name: string;
@@ -150,6 +172,100 @@ async function fetchCommitCounts(
   }
 }
 
+type GitHubBranch = {
+  name: string;
+};
+
+type GitHubCommit = {
+  commit?: {
+    author?: { date?: string } | null;
+    committer?: { date?: string } | null;
+  };
+};
+
+function compareUrl(fullName: string, branch: string): string {
+  const safeBranch = encodeURIComponent(branch).replace(/%2F/g, "/");
+  return `https://github.com/${fullName}/compare/main...${safeBranch}`;
+}
+
+async function fetchActiveBranch(
+  fullName: string,
+  defaultBranch: string,
+  token?: string,
+): Promise<RepoMeta["activeBranch"]> {
+  const headers: Record<string, string> = {
+    "User-Agent": "willville-edge",
+    Accept: "application/vnd.github+json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  try {
+    const branchesResponse = await fetch(
+      `https://api.github.com/repos/${fullName}/branches?per_page=100`,
+      { headers },
+    );
+    const branches = branchesResponse.ok
+      ? ((await branchesResponse.json()) as GitHubBranch[])
+      : [];
+    const branchNames = Array.from(
+      new Set(
+        [
+          defaultBranch,
+          ...(Array.isArray(branches) ? branches.map((b) => b.name) : []),
+        ]
+          .filter(Boolean)
+          .slice(0, 100),
+      ),
+    );
+
+    const commits = await mapLimit(branchNames, 4, async (branch) => {
+      const commitResponse = await fetch(
+        `https://api.github.com/repos/${fullName}/commits?sha=${encodeURIComponent(
+          branch,
+        )}&per_page=1`,
+        { headers },
+      );
+      if (!commitResponse.ok) return null;
+      const data = (await commitResponse.json()) as GitHubCommit[];
+      const commit = Array.isArray(data) ? data[0] : undefined;
+      const pushedAt =
+        commit?.commit?.committer?.date ?? commit?.commit?.author?.date;
+      if (!pushedAt) return null;
+      return { name: branch, pushedAt };
+    });
+
+    const latest =
+      commits
+        .filter(
+          (commit): commit is { name: string; pushedAt: string } =>
+            commit !== null,
+        )
+        .sort((a, b) => Date.parse(b.pushedAt) - Date.parse(a.pushedAt))[0] ??
+      null;
+
+    if (!latest) {
+      return {
+        name: defaultBranch,
+        compareUrl: compareUrl(fullName, defaultBranch),
+        isDefault: true,
+      };
+    }
+
+    return {
+      name: latest.name,
+      pushedAt: latest.pushedAt,
+      compareUrl: compareUrl(fullName, latest.name),
+      isDefault: latest.name === defaultBranch,
+    };
+  } catch {
+    return {
+      name: defaultBranch,
+      compareUrl: compareUrl(fullName, defaultBranch),
+      isDefault: true,
+    };
+  }
+}
+
 const PACKET_RE = /<!--\s*willville\b([\s\S]*?)-->/;
 
 /** Parse a raw STATUS.md string into a WillvillePacket, or return undefined. */
@@ -239,38 +355,39 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     return Date.parse(r.pushed_at) >= cutoff;
   });
 
-  const repoMetas: RepoMeta[] = await Promise.all(
-    candidates.map(async (r) => {
-      const [milestones, willvillePacket, commitCounts] = await Promise.all([
+  const repoMetas: RepoMeta[] = await mapLimit(candidates, 8, async (r) => {
+    const [milestones, willvillePacket, commitCounts, activeBranch] =
+      await Promise.all([
         fetchMilestones(OWNER, r.name, token),
         fetchWillvillePacket(r.full_name, r.default_branch, token),
         fetchCommitCounts(r.full_name, token),
+        fetchActiveBranch(r.full_name, r.default_branch, token),
       ]);
-      return {
-        repo: r.full_name,
-        isPrivate: r.private,
-        isFork: r.fork,
-        isArchived: r.archived,
-        pushedAt: r.pushed_at,
-        defaultBranch: r.default_branch,
-        homepage: r.homepage ?? undefined,
-        description: r.description ?? undefined,
-        topics: r.topics ?? [],
-        openMilestones: milestones.map((m) => ({
-          title: m.title,
-          dueOn: m.due_on,
-          openIssues: m.open_issues,
-        })),
-        willvillePacket,
-        openIssuesCount: r.open_issues_count,
-        stars: r.stargazers_count,
-        language: r.language ?? undefined,
-        commits3d: commitCounts?.d3,
-        commits7d: commitCounts?.d7,
-        commits21d: commitCounts?.d21,
-      };
-    }),
-  );
+    return {
+      repo: r.full_name,
+      isPrivate: r.private,
+      isFork: r.fork,
+      isArchived: r.archived,
+      pushedAt: r.pushed_at,
+      defaultBranch: r.default_branch,
+      homepage: r.homepage ?? undefined,
+      description: r.description ?? undefined,
+      topics: r.topics ?? [],
+      openMilestones: milestones.map((m) => ({
+        title: m.title,
+        dueOn: m.due_on,
+        openIssues: m.open_issues,
+      })),
+      willvillePacket,
+      openIssuesCount: r.open_issues_count,
+      stars: r.stargazers_count,
+      language: r.language ?? undefined,
+      commits3d: commitCounts?.d3,
+      commits7d: commitCounts?.d7,
+      commits21d: commitCounts?.d21,
+      activeBranch,
+    };
+  });
 
   const stops = buildTown(repoMetas, { isMayor: mayor });
 

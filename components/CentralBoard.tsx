@@ -231,9 +231,7 @@ function SplitFlapCell({
   const prevCharRef = useRef<string | null>(null);
 
   useEffect(() => {
-    // Skip flipping cells that have not changed their character value
     if (prevCharRef.current !== null && prevCharRef.current === char) {
-      setDisplayChar(char);
       return;
     }
     prevCharRef.current = char;
@@ -453,7 +451,7 @@ function getAudioContext(): AudioContext | null {
 function playButtonTick() {
   const ctx = getAudioContext();
   if (!ctx) return;
-  scheduleTick(ctx, ctx.currentTime, 0.18);
+  schedulePaperShuffle(ctx, ctx.currentTime, 0.09, 0.24);
 }
 
 function playFlipTicks(previousRows: string[], nextRows: string[]) {
@@ -471,59 +469,119 @@ function playFlipTicks(previousRows: string[], nextRows: string[]) {
     }
   });
 
-  changes.slice(0, 110).forEach((slotIndex) => {
+  if (changes.length === 0) return;
+
+  const now = ctx.currentTime;
+  scheduleRustleBed(ctx, now, 1, Math.min(0.2, 0.08 + changes.length * 0.001));
+
+  changes.slice(0, 80).forEach((slotIndex) => {
     const rowIndex = Math.floor(slotIndex / BOARD_COLUMNS);
     const colIndex = slotIndex % BOARD_COLUMNS;
-    const time = ctx.currentTime + rowIndex * 0.055 + colIndex * 0.018;
-    scheduleTick(ctx, time, 0.08 + ((rowIndex + colIndex) % 4) * 0.012);
+    const time = now + Math.min(0.86, rowIndex * 0.09 + colIndex * 0.019);
+    const gain = 0.018 + ((rowIndex + colIndex) % 4) * 0.004;
+    schedulePaperShuffle(
+      ctx,
+      time,
+      gain,
+      0.32 + ((rowIndex + colIndex) % 3) * 0.06,
+    );
   });
 }
 
-function scheduleTick(ctx: AudioContext, time: number, gainLevel: number) {
-  const duration = 0.135; // Tripled the length for each flip
-  const sampleCount = Math.max(1, Math.floor(ctx.sampleRate * duration));
-  const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
-  const channel = buffer.getChannelData(0);
-  for (let i = 0; i < sampleCount; i += 1) {
-    const t = i / sampleCount;
-    // Softer envelope with a gentle attack and smooth decay for rustling leaves
-    let envelope = 1;
-    if (t < 0.15) {
-      envelope = t / 0.15; // Gentle attack over 20ms
-    } else {
-      const decayT = (t - 0.15) / 0.85;
-      envelope = Math.pow(1 - decayT, 2.5); // Smooth organic decay
-    }
-    const scratch = Math.random() * 2 - 1;
-    channel[i] = scratch * envelope * 0.45;
-  }
+function scheduleRustleBed(
+  ctx: AudioContext,
+  time: number,
+  duration: number,
+  gainLevel: number,
+) {
+  const buffer = makeNoiseBuffer(ctx, duration, (t) => {
+    const attack = Math.min(1, t / 0.18);
+    const release = Math.min(1, (1 - t) / 0.35);
+    const slowWave = 0.58 + Math.sin(t * Math.PI * 6) * 0.18;
+    return Math.max(0, Math.min(1, attack, release)) * slowWave;
+  });
 
   const source = ctx.createBufferSource();
+  const hush = ctx.createBiquadFilter();
+  const air = ctx.createBiquadFilter();
   const gain = ctx.createGain();
-  const body = ctx.createBiquadFilter();
-  const paper = ctx.createBiquadFilter();
 
   source.buffer = buffer;
-
-  // Broader, softer bandpass filter for whisper-like foliage sound
-  body.type = "bandpass";
-  body.frequency.setValueAtTime(2400 + Math.random() * 800, time); // High shsh/whisper freq
-  body.Q.setValueAtTime(0.38, time); // Lower Q values represent a much wider, softer sound, removing high metallic rings
-
-  // Highpass to keep the breeze hiss and eliminate any mechanical clatter
-  paper.type = "highpass";
-  paper.frequency.setValueAtTime(1100 + Math.random() * 300, time);
+  hush.type = "lowpass";
+  hush.frequency.setValueAtTime(5200, time);
+  hush.Q.setValueAtTime(0.35, time);
+  air.type = "bandpass";
+  air.frequency.setValueAtTime(2100, time);
+  air.Q.setValueAtTime(0.55, time);
 
   gain.gain.setValueAtTime(0.0001, time);
-  gain.gain.linearRampToValueAtTime(gainLevel * 1.3, time + 0.022); // Longer linear ramp up (soft attack)
+  gain.gain.linearRampToValueAtTime(gainLevel, time + 0.18);
+  gain.gain.linearRampToValueAtTime(gainLevel * 0.72, time + 0.62);
   gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
 
-  source.connect(body);
-  body.connect(paper);
-  paper.connect(gain);
+  source.connect(hush);
+  hush.connect(air);
+  air.connect(gain);
   gain.connect(ctx.destination);
   source.start(time);
   source.stop(time + duration);
+}
+
+function schedulePaperShuffle(
+  ctx: AudioContext,
+  time: number,
+  gainLevel: number,
+  duration: number,
+) {
+  const buffer = makeNoiseBuffer(ctx, duration, (t) => {
+    const attack = Math.min(1, t / 0.08);
+    const release = Math.pow(Math.max(0, 1 - t), 2.2);
+    const fibers = 0.7 + Math.random() * 0.3;
+    return attack * release * fibers;
+  });
+
+  const source = ctx.createBufferSource();
+  const paper = ctx.createBiquadFilter();
+  const hush = ctx.createBiquadFilter();
+  const gain = ctx.createGain();
+
+  source.buffer = buffer;
+
+  paper.type = "bandpass";
+  paper.frequency.setValueAtTime(1500 + Math.random() * 850, time);
+  paper.Q.setValueAtTime(0.45, time);
+
+  hush.type = "lowpass";
+  hush.frequency.setValueAtTime(3800 + Math.random() * 900, time);
+  hush.Q.setValueAtTime(0.5, time);
+
+  gain.gain.setValueAtTime(0.0001, time);
+  gain.gain.linearRampToValueAtTime(gainLevel, time + 0.055);
+  gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+
+  source.connect(paper);
+  paper.connect(hush);
+  hush.connect(gain);
+  gain.connect(ctx.destination);
+  source.start(time);
+  source.stop(time + duration);
+}
+
+function makeNoiseBuffer(
+  ctx: AudioContext,
+  duration: number,
+  envelope: (progress: number) => number,
+) {
+  const sampleCount = Math.max(1, Math.floor(ctx.sampleRate * duration));
+  const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
+  const channel = buffer.getChannelData(0);
+  let previous = 0;
+  for (let i = 0; i < sampleCount; i += 1) {
+    const t = i / sampleCount;
+    previous = previous * 0.72 + (Math.random() * 2 - 1) * 0.28;
+    channel[i] = previous * envelope(t) * 0.62;
+  }
+  return buffer;
 }
 
 const shellStyle: CSSProperties = {

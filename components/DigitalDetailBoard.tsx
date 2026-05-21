@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import type { CSSProperties, MouseEvent } from "react";
 import { DISTRICTS, LINES } from "@/lib/willville";
 import { LOCKS, type CanalBoat } from "@/lib/canal";
 import { activeQueue, type Stop } from "@/lib/town";
@@ -85,6 +85,7 @@ export function DigitalDetailBoard({ stop, allStops, boats, onClear }: Props) {
           <div style={actionsColumnStyle}>
             <div style={signalGridStyle}>
               <Signal label="Language" value={stop.language ?? "Mixed"} />
+              <BranchSignal stop={stop} />
               <Signal
                 label="7d commits"
                 value={stop.commits7d != null ? String(stop.commits7d) : "n/a"}
@@ -111,8 +112,7 @@ export function DigitalDetailBoard({ stop, allStops, boats, onClear }: Props) {
                     <a
                       key={`${pr.repo}-${pr.prNumber}`}
                       href={pr.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      onClick={followLink}
                       style={softLinkStyle}
                     >
                       {pr.title}
@@ -127,22 +127,12 @@ export function DigitalDetailBoard({ stop, allStops, boats, onClear }: Props) {
             )}
             <div style={buttonRowStyle}>
               {repoUrl && (
-                <a
-                  href={repoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={buttonStyle}
-                >
+                <a href={repoUrl} onClick={followLink} style={buttonStyle}>
                   Repo
                 </a>
               )}
               {linkOut && linkOut !== repoUrl && (
-                <a
-                  href={linkOut}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={buttonStyle}
-                >
+                <a href={linkOut} onClick={followLink} style={buttonStyle}>
                   Site
                 </a>
               )}
@@ -173,6 +163,32 @@ function Signal({ label, value }: { label: string; value: string }) {
       <span style={signalValueStyle}>{value}</span>
     </div>
   );
+}
+
+function BranchSignal({ stop }: { stop: Stop }) {
+  const branch = stop.activeBranch;
+  return (
+    <div style={signalStyle}>
+      <span style={smallLabelStyle}>Branch</span>
+      {branch ? (
+        <a
+          href={branch.compareUrl}
+          onClick={followLink}
+          style={branchLinkStyle}
+          title={`Compare main to ${branch.name}`}
+        >
+          {branch.name}
+        </a>
+      ) : (
+        <span style={signalValueStyle}>n/a</span>
+      )}
+    </div>
+  );
+}
+
+function followLink(e: MouseEvent<HTMLAnchorElement>) {
+  e.preventDefault();
+  window.location.assign(e.currentTarget.href);
 }
 
 function NoteList({
@@ -388,6 +404,16 @@ const signalValueStyle: CSSProperties = {
   color: "#f8fcff",
   fontSize: 13,
   fontWeight: 700,
+};
+
+const branchLinkStyle: CSSProperties = {
+  ...signalValueStyle,
+  display: "block",
+  color: "#bfe9ff",
+  textDecoration: "none",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 };
 
 const prStyle: CSSProperties = {

@@ -1,5 +1,6 @@
 "use client";
 
+import type { MouseEvent } from "react";
 import type { CanalBoat as CanalBoatType } from "@/lib/canal";
 
 const DISTRICT_HULL: Record<string, string> = {
@@ -21,20 +22,35 @@ type Props = {
 export function CanalBoat({ boat, position }: Props) {
   const hull = (boat.district && DISTRICT_HULL[boat.district]) ?? "#888";
   const sailColor = boat.draft ? "#888" : "var(--willville-paper)";
+  const label = `Open PR #${boat.prNumber}: ${boat.title}`;
+
+  const stopStageClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    window.location.assign(boat.url);
+  };
+
   return (
     <a
       href={boat.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={(e) => e.stopPropagation()}
+      onClick={stopStageClick}
+      style={{ cursor: "pointer", pointerEvents: "all" }}
+      role="link"
+      tabIndex={0}
+      aria-label={label}
     >
-      <g
-        transform={`translate(${position.x}, ${position.y})`}
-        style={{ cursor: "pointer" }}
-      >
+      <g transform={`translate(${position.x}, ${position.y})`}>
         <title>
           {`#${boat.prNumber} · ${boat.title}\n${boat.repo} · ${boat.author}`}
         </title>
+        <rect
+          x={-30}
+          y={-34}
+          width={64}
+          height={52}
+          fill="transparent"
+          pointerEvents="all"
+        />
         {/* hull */}
         <path
           d="M -22 0 Q -16 10 -10 12 L 16 12 Q 22 10 26 0 Z"
@@ -66,7 +82,10 @@ export function CanalBoat({ boat, position }: Props) {
           fontSize={9}
           fontWeight={700}
           fill="var(--willville-paper)"
-          style={{ textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}
+          style={{
+            pointerEvents: "none",
+            textShadow: "0 1px 3px rgba(0,0,0,0.8)",
+          }}
         >
           #{boat.prNumber}
         </text>
