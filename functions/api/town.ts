@@ -381,13 +381,19 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   });
 
   const repoMetas: RepoMeta[] = await mapLimit(candidates, 8, async (r) => {
-    const [milestones, willvillePacket, commitCounts, activeBranch] =
-      await Promise.all([
-        fetchMilestones(OWNER, r.name, token),
-        fetchWillvillePacket(r.full_name, r.default_branch, token),
-        fetchCommitCounts(r.full_name, token),
-        fetchActiveBranch(r.full_name, r.default_branch, token),
-      ]);
+    const [milestones, commitCounts, activeBranch] = await Promise.all([
+      fetchMilestones(OWNER, r.name, token),
+      fetchCommitCounts(r.full_name, token),
+      fetchActiveBranch(r.full_name, r.default_branch, token),
+    ]);
+    // Fetch the packet from whichever branch had the most recent commit, so
+    // work-in-progress STATUS.md entries actually appear in the UI.
+    const packetBranch = activeBranch?.name ?? r.default_branch;
+    const willvillePacket = await fetchWillvillePacket(
+      r.full_name,
+      packetBranch,
+      token,
+    );
     return {
       repo: r.full_name,
       isPrivate: r.private,

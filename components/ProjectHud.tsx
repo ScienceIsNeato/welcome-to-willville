@@ -3,7 +3,7 @@
 import { useEffect, useSyncExternalStore, type CSSProperties } from "react";
 import { DISTRICTS, LINES } from "@/lib/willville";
 import { LOCKS, type CanalBoat } from "@/lib/canal";
-import { activeQueue, type Stop } from "@/lib/town";
+import { mostActiveStops, type Stop } from "@/lib/town";
 
 function useIsClient(): boolean {
   return useSyncExternalStore(
@@ -98,8 +98,7 @@ export function ProjectHud({ stop, boats, allStops, onClose }: Props) {
       b.repo === stop.repo ||
       (b.stopId === stop.id && b.district === stop.district),
   );
-  const expressPriority =
-    isClient && stop.queue?.active ? expressRank(stop, allStops) : null;
+  const expressPriority = isClient ? expressRank(stop, allStops) : null;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -304,7 +303,7 @@ function MetaLine({
 }
 
 function expressRank(stop: Stop, allStops: Stop[]): number | null {
-  const queue = activeQueue(allStops);
+  const queue = mostActiveStops(allStops, Infinity);
   const idx = queue.findIndex(
     (s) => s.id === stop.id && s.district === stop.district,
   );

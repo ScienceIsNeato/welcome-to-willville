@@ -232,16 +232,14 @@ const shellStyle: CSSProperties = {
     "minmax(230px, 0.85fr) minmax(260px, 1fr) minmax(220px, 0.8fr)",
   gap: 14,
   padding: "15px 16px",
-  borderRadius: 12,
-  border: "1px solid rgba(157, 216, 255, 0.28)",
+  borderRadius: 3,
+  border: "1px solid rgba(51, 255, 87, 0.28)",
   background:
-    "linear-gradient(180deg, rgba(20,45,62,0.86) 0%, rgba(11,24,35,0.9) 100%)",
+    "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 3px), linear-gradient(180deg, #020d02 0%, #000400 100%)",
   boxShadow:
-    "0 -12px 42px rgba(61,183,255,0.14), inset 0 1px 0 rgba(255,255,255,0.16), inset 0 0 38px rgba(82,188,255,0.08)",
-  color: "#eaf7ff",
-  fontFamily: "var(--font-sans), Arial, Helvetica, sans-serif",
-  backdropFilter: "blur(14px)",
-  WebkitBackdropFilter: "blur(14px)",
+    "0 0 32px rgba(51, 255, 87, 0.09), inset 0 0 60px rgba(51, 255, 87, 0.05)",
+  color: "#33ff57",
+  fontFamily: '"Courier New", Courier, monospace',
 };
 
 const emptyStateStyle: CSSProperties = {
@@ -256,21 +254,22 @@ const emptyStateStyle: CSSProperties = {
 
 const emptyTitleStyle: CSSProperties = {
   fontSize: 20,
-  letterSpacing: 0,
+  letterSpacing: 0.5,
+  textShadow: "0 0 10px rgba(51, 255, 87, 0.5)",
 };
 
 const emptyCopyStyle: CSSProperties = {
   maxWidth: 520,
-  color: "rgba(234,247,255,0.7)",
+  color: "rgba(51, 255, 87, 0.6)",
   fontSize: 13,
   lineHeight: 1.4,
 };
 
 const eyebrowStyle: CSSProperties = {
-  color: "rgba(178,225,255,0.78)",
+  color: "rgba(51, 255, 87, 0.5)",
   fontSize: 11,
   fontWeight: 700,
-  letterSpacing: 1.1,
+  letterSpacing: 1.5,
   textTransform: "uppercase",
   overflow: "hidden",
   textOverflow: "ellipsis",
@@ -286,29 +285,30 @@ const metricsGridStyle: CSSProperties = {
 const metricStyle: CSSProperties = {
   minWidth: 0,
   padding: "9px 10px",
-  borderRadius: 9,
-  background: "rgba(255,255,255,0.08)",
-  border: "1px solid rgba(190,230,255,0.14)",
+  borderRadius: 2,
+  background: "rgba(51, 255, 87, 0.04)",
+  border: "1px solid rgba(51, 255, 87, 0.18)",
 };
 
 const smallLabelStyle: CSSProperties = {
   display: "block",
   marginBottom: 3,
-  color: "rgba(178,225,255,0.68)",
+  color: "rgba(51, 255, 87, 0.5)",
   fontSize: 10,
-  fontWeight: 800,
-  letterSpacing: 1,
+  fontWeight: 700,
+  letterSpacing: 1.5,
   textTransform: "uppercase",
 };
 
 const metricValueStyle: CSSProperties = {
   display: "block",
-  color: "#f8fcff",
+  color: "#33ff57",
   fontSize: 14,
   lineHeight: 1.2,
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
+  textShadow: "0 0 8px rgba(51, 255, 87, 0.55)",
 };
 
 const notesColumnStyle: CSSProperties = {
@@ -320,14 +320,14 @@ const notesColumnStyle: CSSProperties = {
 const noteStyle: CSSProperties = {
   minWidth: 0,
   padding: "9px 10px",
-  borderRadius: 9,
-  background: "rgba(255,255,255,0.07)",
-  border: "1px solid rgba(190,230,255,0.12)",
+  borderRadius: 2,
+  background: "rgba(51, 255, 87, 0.03)",
+  border: "1px solid rgba(51, 255, 87, 0.14)",
 };
 
 const noteTextStyle: CSSProperties = {
   margin: 0,
-  color: "rgba(234,247,255,0.82)",
+  color: "rgba(51, 255, 87, 0.82)",
   fontSize: 12,
   lineHeight: 1.35,
 };
@@ -347,20 +347,22 @@ const signalGridStyle: CSSProperties = {
 const signalStyle: CSSProperties = {
   minWidth: 0,
   padding: "7px 8px",
-  borderRadius: 8,
-  background: "rgba(10,24,36,0.48)",
+  borderRadius: 2,
+  background: "rgba(51, 255, 87, 0.03)",
+  border: "1px solid rgba(51, 255, 87, 0.12)",
 };
 
 const signalValueStyle: CSSProperties = {
-  color: "#f8fcff",
+  color: "#33ff57",
   fontSize: 13,
   fontWeight: 700,
+  textShadow: "0 0 6px rgba(51, 255, 87, 0.5)",
 };
 
 const branchLinkStyle: CSSProperties = {
   ...signalValueStyle,
   display: "block",
-  color: "#bfe9ff",
+  color: "#33ff57",
   textDecoration: "none",
   overflow: "hidden",
   textOverflow: "ellipsis",
@@ -374,12 +376,12 @@ const prStyle: CSSProperties = {
 };
 
 const mutedInlineStyle: CSSProperties = {
-  color: "rgba(234,247,255,0.52)",
+  color: "rgba(51, 255, 87, 0.45)",
 };
 
 const softLinkStyle: CSSProperties = {
   minWidth: 0,
-  color: "#dff5ff",
+  color: "rgba(51, 255, 87, 0.8)",
   fontSize: 12,
   lineHeight: 1.35,
   textDecoration: "none",
@@ -396,13 +398,16 @@ const buttonRowStyle: CSSProperties = {
 };
 
 const buttonStyle: CSSProperties = {
-  border: "1px solid rgba(190,230,255,0.22)",
-  borderRadius: 999,
-  background: "rgba(255,255,255,0.1)",
-  color: "#f8fcff",
+  border: "1px solid rgba(51, 255, 87, 0.35)",
+  borderRadius: 2,
+  background: "rgba(51, 255, 87, 0.08)",
+  color: "#33ff57",
   padding: "7px 11px",
   fontSize: 12,
-  fontWeight: 750,
+  fontWeight: 700,
   textDecoration: "none",
   cursor: "pointer",
+  fontFamily: '"Courier New", Courier, monospace',
+  letterSpacing: 0.5,
+  textShadow: "0 0 6px rgba(51, 255, 87, 0.35)",
 };

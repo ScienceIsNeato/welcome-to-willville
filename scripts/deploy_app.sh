@@ -242,9 +242,17 @@ done
 
 # 7. Write lockfile
 NOW=$(date +%s)
-printf '{"dir":"%s","branch":"%s","wranglerPort":%s,"pid":%s,"startedAt":%s}\n' \
-  "$ROOT" "$BRANCH" "$WRANGLER_PORT" "$WRANGLER_PID" "$NOW" \
-  > "$(lockfile_for "$ROOT")"
+ROOT="$ROOT" BRANCH="$BRANCH" PORT="$WRANGLER_PORT" PID="$WRANGLER_PID" NOW="$NOW" \
+  node -e "
+    const o = {
+      dir: process.env.ROOT,
+      branch: process.env.BRANCH,
+      wranglerPort: Number(process.env.PORT),
+      pid: Number(process.env.PID),
+      startedAt: Number(process.env.NOW),
+    };
+    process.stdout.write(JSON.stringify(o) + '\\n');
+  " > "$(lockfile_for "$ROOT")"
 
 echo ""
 echo "════════════════════════════════════════"
