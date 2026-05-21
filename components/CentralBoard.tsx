@@ -7,7 +7,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import { mostActiveStops, type Stop } from "@/lib/town";
+import { activeQueue, mostActiveStops, type Stop } from "@/lib/town";
 import { DISTRICTS } from "@/lib/willville";
 
 const BOARD_COLUMNS = 28;
@@ -34,7 +34,11 @@ export function CentralBoard({
   const didMountRef = useRef(false);
   const previousBoardRef = useRef<string[]>([]);
 
-  const queue = useMemo(() => mostActiveStops(stops), [stops]);
+  // Fall back to heuristics-based activeQueue until commit data arrives.
+  const queue = useMemo(() => {
+    const active = mostActiveStops(stops);
+    return active.length > 0 ? active : activeQueue(stops);
+  }, [stops]);
   const rows = useMemo(() => {
     if (selectedStop) {
       return selectedStopRows(selectedStop);
@@ -386,8 +390,11 @@ function timetableRows(queue: Stop[]): string[] {
       rows.push(EMPTY_ROW);
       continue;
     }
-    const commits = stop.commits7d ?? stop.commits3d ?? 0;
-    const activity = commits > 0 ? `${commits}C/7D` : "";
+    const commits7d = stop.commits7d;
+    const commits3d = stop.commits3d;
+    const [commits, period] =
+      commits7d != null ? [commits7d, "7D"] : [commits3d ?? 0, "3D"];
+    const activity = commits > 0 ? `${commits}C/${period}` : "";
     rows.push(
       fit(`${String(i + 1).padStart(2, "0")} ${stopLabel(stop)} ${activity}`),
     );

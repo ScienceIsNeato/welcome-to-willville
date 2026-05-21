@@ -22,14 +22,14 @@
   --color-sky-3: var(--willville-sky-3);
   --color-paper: var(--willville-paper);
   --color-ink: var(--willville-ink);
-  --color-press: var(--willville-mirrored);
-  --color-foundry: var(--willville-graveyard);
+  --color-mirrored: var(--willville-mirrored);
+  --color-graveyard: var(--willville-graveyard);
   --color-slop: var(--willville-slop);
-  --color-audit: var(--willville-judgement);
+  --color-judgement: var(--willville-judgement);
   --color-web: var(--willville-zeitgeist);
-  --color-sawmill: var(--willville-town-square);
-  --color-hallow: var(--willville-hell);
-  --color-hearth: var(--willville-dogwallow);
+  --color-town-square: var(--willville-town-square);
+  --color-hell: var(--willville-hell);
+  --color-dogwallow: var(--willville-dogwallow);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

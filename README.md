@@ -54,8 +54,8 @@ Cloudflare Pages is deployed from GitHub Actions with
 - **GitHub Actions repository secret:**
   - `CLOUDFLARE_API_TOKEN` — Cloudflare API token used by Wrangler for
     `pages deploy ./out --project-name welcome-to-willville --branch main`.
-    Create a custom token scoped to account
-    `4c2341810414766ae8cbf672785e82c5` with `Cloudflare Pages: Edit`.
+    Create a custom token scoped to your Cloudflare account
+    with `Cloudflare Pages: Edit`.
 - **Secrets to set in the Pages project:**
   - `GITHUB_PAT` — fine-grained PAT with `Contents: read` on the ScienceIsNeato
     repos you want surfaced. Used only when a Mayor cookie is present.
