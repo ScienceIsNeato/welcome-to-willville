@@ -228,7 +228,7 @@ echo ""
 echo "Allocated port: $WRANGLER_PORT"
 
 # 6. Start wrangler (serves static build + API functions, no next dev needed)
-wrangler pages dev --port "$WRANGLER_PORT" --compatibility-date 2024-09-23 &
+wrangler pages dev --port "$WRANGLER_PORT" --compatibility-date 2026-05-01 &
 WRANGLER_PID=$!
 
 # Wait for wrangler to be ready
