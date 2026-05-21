@@ -405,7 +405,7 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
 /** Build the full Stop array including manual stops + repo-driven stops. */
 export function buildTown(
   repoMetas: RepoMeta[],
-  options: { isMayor: boolean } = { isMayor: false },
+  _options: { isMayor: boolean } = { isMayor: true },
 ): Stop[] {
   const stops: Stop[] = [];
 
@@ -435,8 +435,6 @@ export function buildTown(
       (h) => h.repo.toLowerCase() === meta.repo.toLowerCase(),
     );
     const stop = buildStop(meta, heuristic);
-    if (stop.visibility === "mayor" && !options.isMayor) continue;
-    if (stop.isPrivate && !options.isMayor) continue;
     stops.push(stop);
   }
 

@@ -347,25 +347,7 @@ function TitleRow({
 }
 
 function VisibilityBadge({ stop }: { stop: Stop }) {
-  if (!stop.isPrivate && stop.visibility !== "mayor") return null;
-  const label = stop.isPrivate ? "Mayor only" : "Mayor visibility";
-  return (
-    <span
-      style={{
-        display: "inline-block",
-        marginTop: 8,
-        fontSize: 10,
-        letterSpacing: 1,
-        textTransform: "uppercase",
-        padding: "3px 8px",
-        background: "rgba(230,198,106,0.2)",
-        borderRadius: 4,
-        color: "#e6c66a",
-      }}
-    >
-      {label}
-    </span>
-  );
+  return null;
 }
 
 function StatusRow({
