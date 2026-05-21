@@ -374,9 +374,9 @@ export const onRequestGet: PagesFunction<Env> = async ({
     };
   });
 
-  const stops = buildTown(repoMetas, { isMayor: true });
+  const stops = buildTown(repoMetas);
 
-  const cacheControl = "public, s-maxage=60, stale-while-revalidate=300";
+  const cacheControl = "private, no-store";
 
   return new Response(
     JSON.stringify({

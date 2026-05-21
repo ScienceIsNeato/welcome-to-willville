@@ -113,17 +113,6 @@ export function deriveEtaDays(
   return Number.POSITIVE_INFINITY;
 }
 
-/** Sorts active queue stops: smallest ETA first; priority then displayName tiebreak. */
-export function compareQueue(a: Stop, b: Stop): number {
-  const aEta = a.queue?.etaDays ?? Number.POSITIVE_INFINITY;
-  const bEta = b.queue?.etaDays ?? Number.POSITIVE_INFINITY;
-  if (aEta !== bEta) return aEta - bEta;
-  const aP = a.queue?.priority ?? 9999;
-  const bP = b.queue?.priority ?? 9999;
-  if (aP !== bP) return aP - bP;
-  return a.displayName.localeCompare(b.displayName);
-}
-
 /** Returns the active queue, sorted next-stop-first (the 5 repos with the most commits in the last 7 days). */
 export function activeQueue(stops: Stop[]): Stop[] {
   return stops
@@ -484,10 +473,7 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
 }
 
 /** Build the full Stop array including manual stops + repo-driven stops. */
-export function buildTown(
-  repoMetas: RepoMeta[],
-  _options: { isMayor: boolean } = { isMayor: true },
-): Stop[] {
+export function buildTown(repoMetas: RepoMeta[]): Stop[] {
   const stops: Stop[] = [];
 
   // Manual stops first.

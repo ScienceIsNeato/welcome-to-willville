@@ -138,7 +138,7 @@ export const onRequestGet: PagesFunction<Env> = async ({
         status: 200,
         headers: {
           "Content-Type": "application/json; charset=utf-8",
-          "Cache-Control": "public, s-maxage=30",
+          "Cache-Control": "private, no-store",
         },
       },
     );
@@ -188,7 +188,7 @@ export const onRequestGet: PagesFunction<Env> = async ({
     return Date.parse(b.updatedAt) > cutoff;
   });
 
-  const cacheControl = "public, s-maxage=45, stale-while-revalidate=180";
+  const cacheControl = "private, no-store";
 
   return new Response(
     JSON.stringify({

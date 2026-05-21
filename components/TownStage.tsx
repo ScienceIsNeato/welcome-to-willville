@@ -555,7 +555,10 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                   <StopMarker
                     key={`${stop.district}-${stop.id}`}
                     stop={stop}
-                    isFocused={boardStop?.id === stop.id}
+                    isFocused={
+                      boardStop?.district === stop.district &&
+                      boardStop?.id === stop.id
+                    }
                     recentlyUpdated={recently}
                     onClick={() => openStopHud(stop)}
                     onDoubleClick={() => handleStopDoubleClick(stop)}
