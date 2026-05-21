@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { activeQueue, type Stop } from "@/lib/town";
+import { type Stop } from "@/lib/town";
 
 function useIsClient(): boolean {
   return useSyncExternalStore(
@@ -29,11 +29,21 @@ export function MayorsExpressHud({
 
   if (!isClient) return null;
 
-  // Only surface stops that have an explicit Mayor's Express queue entry.
-  // activeQueue() sorts by commit activity but most stops won't have milestone
-  // or ETA data; filtering here prevents the HUD from showing "milestone TBD"
-  // for every slot.
-  const queue = activeQueue(stops).filter((s) => s.queue?.active);
+  // Only surface stops with an explicit Mayor's Express queue entry, sorted
+  // by ETA (soonest first) then priority. Filter happens on the full stops
+  // array so active-queue stops are never dropped by the commit-activity
+  // truncation inside activeQueue().
+  const queue = stops
+    .filter((s) => s.queue?.active)
+    .sort((a, b) => {
+      const aEta = a.queue?.etaDays ?? Number.POSITIVE_INFINITY;
+      const bEta = b.queue?.etaDays ?? Number.POSITIVE_INFINITY;
+      if (aEta !== bEta) return aEta - bEta;
+      const aP = a.queue?.priority ?? 9999;
+      const bP = b.queue?.priority ?? 9999;
+      if (aP !== bP) return aP - bP;
+      return a.displayName.localeCompare(b.displayName);
+    });
   if (queue.length === 0) return null;
 
   const next = queue[0]!;
