@@ -29,7 +29,11 @@ export function MayorsExpressHud({
 
   if (!isClient) return null;
 
-  const queue = activeQueue(stops);
+  // Only surface stops that have an explicit Mayor's Express queue entry.
+  // activeQueue() sorts by commit activity but most stops won't have milestone
+  // or ETA data; filtering here prevents the HUD from showing "milestone TBD"
+  // for every slot.
+  const queue = activeQueue(stops).filter((s) => s.queue?.active);
   if (queue.length === 0) return null;
 
   const next = queue[0]!;

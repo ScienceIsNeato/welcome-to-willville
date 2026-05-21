@@ -118,12 +118,6 @@ async function fetchMilestones(
   }
 }
 
-type CommitActivityWeek = {
-  days: [number, number, number, number, number, number, number];
-  total: number;
-  week: number;
-};
-
 /**
  * Fetch commit counts for the last 3, 7, and 21 days.
  * Uses the commits list endpoint (no async 202 / stats-compute delays).
@@ -327,8 +321,10 @@ async function fetchWillvillePacket(
   }
 }
 
-export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
-  const mayor = true;
+export const onRequestGet: PagesFunction<Env> = async ({
+  request: _request,
+  env,
+}) => {
   // Always use PAT when available to avoid unauthenticated rate limits (60/hr).
   const token = env.GITHUB_PAT;
   const repos = await listOwnerRepos(token);
@@ -378,7 +374,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     };
   });
 
-  const stops = buildTown(repoMetas, { isMayor: true });
+  const stops = buildTown(repoMetas);
 
   const cacheControl = "public, s-maxage=60, stale-while-revalidate=300";
 

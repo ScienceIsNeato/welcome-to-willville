@@ -119,8 +119,10 @@ function mapPr(pr: GraphQLPR): CanalBoat {
   };
 }
 
-export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
-  const mayor = true;
+export const onRequestGet: PagesFunction<Env> = async ({
+  request: _request,
+  env,
+}) => {
   const token = env.GITHUB_PAT;
 
   if (!token) {

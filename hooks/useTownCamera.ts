@@ -14,7 +14,6 @@ export type Camera = { cx: number; cy: number; scale: number };
 
 export const MIN_SCALE = 0.6;
 export const MAX_SCALE = 4;
-const ZOOM_FACTOR = 1.12;
 const DOUBLE_CLICK_ZOOM = 1.4;
 
 const INITIAL_CAMERA: Camera = {

@@ -113,23 +113,24 @@ export function deriveEtaDays(
   return Number.POSITIVE_INFINITY;
 }
 
-/** Sorts active queue stops: smallest ETA first; priority then displayName tiebreak. */
-export function compareQueue(a: Stop, b: Stop): number {
-  const aEta = a.queue?.etaDays ?? Number.POSITIVE_INFINITY;
-  const bEta = b.queue?.etaDays ?? Number.POSITIVE_INFINITY;
-  if (aEta !== bEta) return aEta - bEta;
-  const aP = a.queue?.priority ?? 9999;
-  const bP = b.queue?.priority ?? 9999;
-  if (aP !== bP) return aP - bP;
-  return a.displayName.localeCompare(b.displayName);
-}
-
-/** Returns the active queue, sorted next-stop-first. */
+/** Returns the active queue, sorted next-stop-first (the 5 repos with the most commits in the last 7 days). */
 export function activeQueue(stops: Stop[]): Stop[] {
   return stops
-    .filter((s) => s.queue?.active)
     .slice()
-    .sort(compareQueue);
+    .sort((a, b) => {
+      const commitsA = a.commits7d ?? 0;
+      const commitsB = b.commits7d ?? 0;
+      if (commitsA !== commitsB) {
+        return commitsB - commitsA;
+      }
+      const starsA = a.stars ?? 0;
+      const starsB = b.stars ?? 0;
+      if (starsA !== starsB) {
+        return starsB - starsA;
+      }
+      return a.displayName.localeCompare(b.displayName);
+    })
+    .slice(0, 5);
 }
 
 /** Top 5 most active repos by recent commit activity (3d > 7d > 21d). */
@@ -472,10 +473,7 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
 }
 
 /** Build the full Stop array including manual stops + repo-driven stops. */
-export function buildTown(
-  repoMetas: RepoMeta[],
-  _options: { isMayor: boolean } = { isMayor: true },
-): Stop[] {
+export function buildTown(repoMetas: RepoMeta[]): Stop[] {
   const stops: Stop[] = [];
 
   // Manual stops first.
