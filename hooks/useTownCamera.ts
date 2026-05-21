@@ -11,7 +11,6 @@ import { useGesture } from "@use-gesture/react";
 import { WORLD, TOWN_CENTER } from "@/lib/willville";
 
 export type Camera = { cx: number; cy: number; scale: number };
-type VisibleWorld = { width: number; height: number };
 
 export const MIN_SCALE = 0.6;
 export const MAX_SCALE = 4;
@@ -35,31 +34,10 @@ function clampScale(s: number): number {
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, s));
 }
 
-function getVisibleWorld(svg: SVGSVGElement | null): VisibleWorld {
-  const viewportWidth = svg?.clientWidth ?? 0;
-  const viewportHeight = svg?.clientHeight ?? 0;
-  if (viewportWidth <= 0 || viewportHeight <= 0) {
-    return WORLD;
-  }
-
-  const viewportAspect = viewportWidth / viewportHeight;
-  const worldAspect = WORLD.width / WORLD.height;
-  if (viewportAspect > worldAspect) {
-    return {
-      width: WORLD.width,
-      height: WORLD.width / viewportAspect,
-    };
-  }
-  return {
-    width: WORLD.height * viewportAspect,
-    height: WORLD.height,
-  };
-}
-
-function clampCamera(c: Camera, visibleWorld: VisibleWorld = WORLD): Camera {
+function clampCamera(c: Camera): Camera {
   const scale = clampScale(c.scale);
-  const halfW = visibleWorld.width / (2 * scale);
-  const halfH = visibleWorld.height / (2 * scale);
+  const halfW = WORLD.width / (2 * scale);
+  const halfH = WORLD.height / (2 * scale);
   const worldHalfW = WORLD.width / 2;
   const worldHalfH = WORLD.height / 2;
   // Zoomed out (world fits in viewport): lock camera to world centre.
@@ -123,6 +101,7 @@ export function useTownCamera(
   const [isDragging, setIsDragging] = useState(false);
   const hudDragRef = useRef(false);
   const didTriggerDragRef = useRef(false);
+  const wasDraggingRef = useRef(false);
 
   // In-flight spring animations — cancelled when drag starts.
   const animsRef = useRef<AnimationPlaybackControls[]>([]);
@@ -131,22 +110,17 @@ export function useTownCamera(
     animsRef.current = [];
   }, []);
 
-  const getVisibleWorldSnapshot = useCallback(
-    () => getVisibleWorld(svgRef.current),
-    [svgRef],
-  );
-
   const animateTo = useCallback(
     (target: Camera) => {
       stopAnims();
-      const c = clampCamera(target, getVisibleWorldSnapshot());
+      const c = clampCamera(target);
       animsRef.current = [
         animate(mvCx, c.cx, SPRING_CONFIG),
         animate(mvCy, c.cy, SPRING_CONFIG),
         animate(mvScale, c.scale, SPRING_CONFIG),
       ];
     },
-    [getVisibleWorldSnapshot, stopAnims, mvCx, mvCy, mvScale],
+    [stopAnims, mvCx, mvCy, mvScale],
   );
 
   // Returns the current visual camera position (reads MotionValues, not React state).
@@ -168,6 +142,7 @@ export function useTownCamera(
         if (!hudDragRef.current) {
           stopAnims();
           didTriggerDragRef.current = false;
+          wasDraggingRef.current = false;
         }
       },
       onDrag: ({ delta: [dx, dy] }) => {
@@ -175,19 +150,20 @@ export function useTownCamera(
         if (!didTriggerDragRef.current) {
           didTriggerDragRef.current = true;
           setIsDragging(true);
+          if (svgRef.current) {
+            svgRef.current.style.pointerEvents = "none";
+          }
         }
+        wasDraggingRef.current = true;
         // vbScale: CSS pixels per SVG viewBox unit (accounts for letterboxing).
         const ctm = svgRef.current?.getScreenCTM();
         const vbScale = ctm ? ctm.a : 1;
         const s = mvScale.get();
-        const clamped = clampCamera(
-          {
-            cx: mvCx.get() - dx / (vbScale * s),
-            cy: mvCy.get() - dy / (vbScale * s),
-            scale: s,
-          },
-          getVisibleWorldSnapshot(),
-        );
+        const clamped = clampCamera({
+          cx: mvCx.get() - dx / (vbScale * s),
+          cy: mvCy.get() - dy / (vbScale * s),
+          scale: s,
+        });
         mvCx.set(clamped.cx);
         mvCy.set(clamped.cy);
         // No setIsDragging / setState here — zero React renders mid-drag.
@@ -196,22 +172,46 @@ export function useTownCamera(
         if (!hudDragRef.current) {
           setIsDragging(false);
           didTriggerDragRef.current = false;
+          if (svgRef.current) {
+            svgRef.current.style.pointerEvents = "auto";
+          }
         }
         hudDragRef.current = false;
+        setTimeout(() => {
+          wasDraggingRef.current = false;
+        }, 50);
       },
-      onWheel: ({ delta: [, dy] }) => {
+      onWheel: ({ delta: [, dy], event }) => {
+        if (event && event.cancelable) {
+          event.preventDefault();
+        }
         stopAnims();
-        const s = clampScale(
-          dy < 0 ? mvScale.get() * ZOOM_FACTOR : mvScale.get() / ZOOM_FACTOR,
-        );
-        const clamped = clampCamera(
-          {
-            cx: mvCx.get(),
-            cy: mvCy.get(),
-            scale: s,
-          },
-          getVisibleWorldSnapshot(),
-        );
+
+        const snap = getCameraSnapshot();
+        const svg = svgRef.current;
+        const hasCoords = event && typeof (event as any).clientX === "number";
+        const mouseWorld =
+          svg && hasCoords
+            ? screenToWorld(
+                svg,
+                (event as any).clientX,
+                (event as any).clientY,
+                snap,
+              )
+            : null;
+
+        const factor = Math.min(1.2, Math.max(0.8, Math.exp(-dy * 0.001)));
+        const s = clampScale(snap.scale * factor);
+
+        let cx = snap.cx;
+        let cy = snap.cy;
+
+        if (mouseWorld) {
+          cx = mouseWorld.wx - (mouseWorld.wx - snap.cx) * (snap.scale / s);
+          cy = mouseWorld.wy - (mouseWorld.wy - snap.cy) * (snap.scale / s);
+        }
+
+        const clamped = clampCamera({ cx, cy, scale: s });
         mvCx.set(clamped.cx);
         mvCy.set(clamped.cy);
         mvScale.set(clamped.scale);
@@ -261,5 +261,6 @@ export function useTownCamera(
     zoomAtWorldPoint,
     markSkipDrag: () => {},
     stageHandlers: {},
+    wasDragging: () => wasDraggingRef.current,
   };
 }

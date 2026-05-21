@@ -1,8 +1,27 @@
 <!-- willville
-status: shipping
+doing: Restructuring district map and repo coverage audit per new CSV mapping
+done: District rename (8 regions), hallucinated stop removal, split-flap board merge, packet format v2
+next: Rebuild static export, verify all 33 repos render on map
+risk: low
+milestone: Repo coverage audit
+eta: 2026-05-22
 -->
 
 # Status
+
+## Done (2026-05-21) — Unified Public Portfolio & Auth Elimination
+
+- **Auth Removal & Unified Page Experience:** Dropped restriction layers, custom cookies, and `isMayor` verification checks across the entire domain. All visitors now securely see the unified set of all 33 repositories and manual stops (including private ones like `welcome-to-willville`, `fogofdog-frontend`, etc.), turning this into a completely open, read-only public portfolio website.
+- **Canal Streamlining:** Updated [functions/api/canal.ts](functions/api/canal.ts) to aggregate both private and public pull requests side-by-side with public edge caching headers.
+- **Cleanup of Mayor Visibility Flags:** Cleaned up elements displaying special permissions: removed private markers, "Mayor only" badges, and "Mayor visibility" tags from [components/ProjectHud.tsx](components/ProjectHud.tsx), [components/SpogCard.tsx](components/SpogCard.tsx), and [components/StopMarker.tsx](components/StopMarker.tsx) to align with the streamlined site strategy.
+- `npm run build` passes flawlessly.
+
+## Done (2026-05-19) — Split-Flap Audio + Cell Transitions + Click Repair
+
+- **Whispery Audio:** Re-engineered the click synthesis in [components/CentralBoard.tsx](components/CentralBoard.tsx) to triple the flip sound duration to 135ms, introduce a slow, soft attack onset, and broaden the bandpass Q filter from 0.9 to 0.38 to replicate whispering autumn leaves.
+- **Smart Cell Transitions:** Refactored `SplitFlapCell` in [components/CentralBoard.tsx](components/CentralBoard.tsx) with character-value tracking via `prevCharRef` to bypass trigger/flip animations on any letters or blank cells that maintain identical character values across updates.
+- **Click Restoration & Race-Condition Repair:** Restored map site interaction by replacing the React-state based `isDragging` logic for pointer events. Enabled DOM-direct synchronous styling updates for `style.pointerEvents` in [hooks/useTownCamera.ts](hooks/useTownCamera.ts) and leveraged a synchronous `wasDragging()` micro-delay helper to cleanly separate standard mouse clicks from drag panning operations.
+- `npm run build` passes flawlessly.
 
 ## Done (2026-05-19) — Interaction + bucolic world
 

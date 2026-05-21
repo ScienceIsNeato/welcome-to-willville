@@ -6,14 +6,14 @@
   --willville-sky-3: #4a2872;
   --willville-paper: #f5e6c8;
   --willville-ink: #2a1d10;
-  --willville-press: #d4a574;
-  --willville-foundry: #d97757;
+  --willville-mirrored: #d4a574;
+  --willville-graveyard: #d97757;
   --willville-slop: #2da89c;
-  --willville-audit: #8a1c3b;
-  --willville-web: #4a90d9;
-  --willville-sawmill: #8b6f47;
-  --willville-hallow: #7a3da6;
-  --willville-hearth: #c97c5d;
+  --willville-judgement: #8a1c3b;
+  --willville-zeitgeist: #4a90d9;
+  --willville-town-square: #8b6f47;
+  --willville-hell: #7a3da6;
+  --willville-dogwallow: #c97c5d;
 }
 
 @theme inline {
@@ -22,14 +22,14 @@
   --color-sky-3: var(--willville-sky-3);
   --color-paper: var(--willville-paper);
   --color-ink: var(--willville-ink);
-  --color-press: var(--willville-press);
-  --color-foundry: var(--willville-foundry);
+  --color-mirrored: var(--willville-mirrored);
+  --color-graveyard: var(--willville-graveyard);
   --color-slop: var(--willville-slop);
-  --color-audit: var(--willville-audit);
-  --color-web: var(--willville-web);
-  --color-sawmill: var(--willville-sawmill);
-  --color-hallow: var(--willville-hallow);
-  --color-hearth: var(--willville-hearth);
+  --color-judgement: var(--willville-judgement);
+  --color-zeitgeist: var(--willville-zeitgeist);
+  --color-town-square: var(--willville-town-square);
+  --color-hell: var(--willville-hell);
+  --color-dogwallow: var(--willville-dogwallow);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -56,6 +56,9 @@ body {
   width: 100vw;
   height: 100vh;
   position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 10px;
   overflow: hidden;
   background:
     radial-gradient(
@@ -173,7 +176,7 @@ body {
 
 .is-october .district-hallow {
   animation: hallow-flicker 3.5s ease-in-out infinite;
-  filter: drop-shadow(0 0 12px var(--willville-hallow));
+  filter: drop-shadow(0 0 12px var(--willville-hell));
 }
 
 .chimney-smoke {

@@ -1,26 +1,26 @@
 /**
  * POST /api/manifests
  *
- * For every non-fork, non-archived repo under ScienceIsNeato (pushed within
- * the last year) this endpoint:
- *   1. Builds a `<!-- willville ... -->` packet from current GitHub data
- *   2. GETs the repo's STATUS.md (if it exists)
- *   3. Replaces the existing packet block, or prepends one if absent
- *   4. PUTs the updated file back via the GitHub Contents API
+ * Tolling the town bell:
+ *   1. Query GitHub for the active ScienceIsNeato repo list
+ *   2. Register every discovered repo as a Willville site
+ *   3. Populate a `<!-- willville ... -->` packet for each registered site
+ *   4. PUT the updated STATUS.md file back via the GitHub Contents API
  *
- * Returns { updated: string[], skipped: string[], errors: string[] }
+ * Returns discovered, registered, newlyRegistered, updated, skipped, errors.
  *
  * Requires GITHUB_PAT in env (write scope). Returns 403 without it.
  */
 
 import type { PagesFunction } from "../types";
+import { heuristicForRepo } from "../../lib/willville.heuristics";
 
 interface Env {
   GITHUB_PAT?: string;
 }
 
 const OWNER = "ScienceIsNeato";
-const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
 
 // Matches the existing willville packet block (greedy-safe with [\s\S]*?)
 const PACKET_RE = /<!--\s*willville\b[\s\S]*?-->/;
@@ -48,6 +48,12 @@ type RepoMeta = {
   description: string | null;
   pushedAt: string;
   openMilestones: { title: string; dueOn: string | null }[];
+};
+
+type RegisteredRepo = {
+  fullName: string;
+  source: "registry" | "auto";
+  stopId: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -176,6 +182,31 @@ function applyPacket(existing: string | null, packet: string): string {
   return packet + "\n\n" + existing;
 }
 
+function repoStopId(fullName: string): string {
+  return fullName
+    .split("/")
+    .at(-1)!
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function registerRepo(repo: GitHubRepo): RegisteredRepo {
+  const heuristic = heuristicForRepo(repo.full_name);
+  if (heuristic) {
+    return {
+      fullName: repo.full_name,
+      source: "registry",
+      stopId: heuristic.stopId,
+    };
+  }
+  return {
+    fullName: repo.full_name,
+    source: "auto",
+    stopId: repoStopId(repo.full_name),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Handler
 // ---------------------------------------------------------------------------
@@ -190,10 +221,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ env }) => {
   }
 
   const repos = await listRepos(token);
-  const cutoff = Date.now() - ONE_YEAR_MS;
+  const cutoff = Date.now() - TWO_YEARS_MS;
   const candidates = repos.filter(
     (r) => !r.fork && !r.archived && Date.parse(r.pushed_at) >= cutoff,
   );
+  const registered = candidates.map(registerRepo);
+  const newlyRegistered = registered
+    .filter((r) => r.source === "auto")
+    .map((r) => r.fullName);
 
   const updated: string[] = [];
   const skipped: string[] = [];
@@ -246,6 +281,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ env }) => {
       updated,
       skipped,
       errors,
+      discovered: candidates.map((r) => r.full_name),
+      registered,
+      newlyRegistered,
       total: candidates.length,
     }),
     {

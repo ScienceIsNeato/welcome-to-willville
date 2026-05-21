@@ -73,11 +73,6 @@ query ($q: String!) {
   }
 }`;
 
-function isMayor(request: Request): boolean {
-  const cookie = request.headers.get("Cookie") ?? "";
-  return /(^|;\s*)willville_mayor=1\b/.test(cookie);
-}
-
 function repoToStop(repo: string) {
   const h = HEURISTICS.find((x) => x.repo.toLowerCase() === repo.toLowerCase());
   return h ? { district: h.district, stopId: h.stopId } : undefined;
@@ -125,14 +120,14 @@ function mapPr(pr: GraphQLPR): CanalBoat {
 }
 
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
-  const mayor = isMayor(request);
+  const mayor = true;
   const token = env.GITHUB_PAT;
 
   if (!token) {
     // Without a token we can't query GraphQL. Return an empty canal.
     return new Response(
       JSON.stringify({
-        mayor,
+        mayor: true,
         generatedAt: new Date().toISOString(),
         boats: [],
         warning: "GITHUB_PAT not configured — canal is empty.",
@@ -162,7 +157,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   if (!r.ok) {
     return new Response(
       JSON.stringify({
-        mayor,
+        mayor: true,
         generatedAt: new Date().toISOString(),
         boats: [],
         warning: `GitHub GraphQL returned ${r.status}`,
@@ -182,14 +177,6 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   );
 
   let boats = nodes.map(mapPr);
-  if (!mayor) {
-    boats = boats.filter((b) => {
-      const pr = nodes.find(
-        (n) => n.number === b.prNumber && n.repository.nameWithOwner === b.repo,
-      );
-      return pr && !pr.repository.isPrivate;
-    });
-  }
 
   // Recent open-sea boats keep their visibility short — only show items merged
   // within the last 24h so the lock doesn't fill up forever.
@@ -199,12 +186,14 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     return Date.parse(b.updatedAt) > cutoff;
   });
 
-  const cacheControl = mayor
-    ? "private, no-store"
-    : "public, s-maxage=45, stale-while-revalidate=180";
+  const cacheControl = "public, s-maxage=45, stale-while-revalidate=180";
 
   return new Response(
-    JSON.stringify({ mayor, generatedAt: new Date().toISOString(), boats }),
+    JSON.stringify({
+      mayor: true,
+      generatedAt: new Date().toISOString(),
+      boats,
+    }),
     {
       headers: {
         "Content-Type": "application/json; charset=utf-8",

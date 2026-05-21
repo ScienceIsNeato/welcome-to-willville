@@ -54,21 +54,6 @@ export function SpogCard({ stop }: { stop: Stop }) {
           }}
         />
         <strong style={{ fontSize: 16 }}>{stop.displayName}</strong>
-        {stop.isPrivate && (
-          <span
-            style={{
-              marginLeft: "auto",
-              fontSize: 10,
-              letterSpacing: 1,
-              textTransform: "uppercase",
-              padding: "2px 6px",
-              background: "rgba(0,0,0,0.08)",
-              borderRadius: 3,
-            }}
-          >
-            Mayor only
-          </span>
-        )}
       </div>
       <div style={{ fontSize: 12, opacity: 0.75, marginTop: 2 }}>
         {STATE_LABEL[stop.status.state]}
@@ -81,15 +66,24 @@ export function SpogCard({ stop }: { stop: Stop }) {
           {stop.status.summary}
         </p>
       )}
-      {stop.status.blockers.length > 0 && (
+      {stop.status.doing && (
+        <Section title="Doing" color="#7bd389" items={[stop.status.doing]} />
+      )}
+      {stop.status.done && (
+        <Section title="Done" color="#b6b6b6" items={[stop.status.done]} />
+      )}
+      {stop.status.blocked && (
         <Section
-          title="Blockers"
+          title="Blocked"
           color="#9b2c2c"
-          items={stop.status.blockers}
+          items={[stop.status.blocked]}
         />
       )}
-      {stop.status.next.length > 0 && (
-        <Section title="Next" color="#7a5a16" items={stop.status.next} />
+      {stop.status.next && (
+        <Section title="Next" color="#7a5a16" items={[stop.status.next]} />
+      )}
+      {stop.status.risk && (
+        <Section title="Risk" color="#ffa066" items={[stop.status.risk]} />
       )}
       {stop.blurb && stop.status.state === "unknown" && (
         <p style={{ marginTop: 10, fontSize: 12, opacity: 0.75 }}>

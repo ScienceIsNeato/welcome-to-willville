@@ -3,7 +3,7 @@
 import { useEffect, useSyncExternalStore, type CSSProperties } from "react";
 import { DISTRICTS, LINES } from "@/lib/willville";
 import { LOCKS, type CanalBoat } from "@/lib/canal";
-import { activeQueue, type Stop } from "@/lib/town";
+import { expressRank, type Stop } from "@/lib/town";
 
 function useIsClient(): boolean {
   return useSyncExternalStore(
@@ -98,8 +98,7 @@ export function ProjectHud({ stop, boats, allStops, onClose }: Props) {
       b.repo === stop.repo ||
       (b.stopId === stop.id && b.district === stop.district),
   );
-  const expressPriority =
-    isClient && stop.queue?.active ? expressRank(stop, allStops) : null;
+  const expressPriority = isClient ? expressRank(stop, allStops) : null;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -122,7 +121,6 @@ export function ProjectHud({ stop, boats, allStops, onClose }: Props) {
         <header style={headerStyle}>
           <TitleRow stop={stop} linkOut={linkOut} repoUrl={repoUrl} />
           <MetaLine district={district} lineNames={lineNames} stop={stop} />
-          <VisibilityBadge stop={stop} />
         </header>
 
         <div style={bodyStyle}>
@@ -182,18 +180,39 @@ export function ProjectHud({ stop, boats, allStops, onClose }: Props) {
             </div>
           )}
           <QueueSection stop={stop} expressPriority={expressPriority} />
-          {stop.status.blockers.length > 0 && (
+          {stop.status.doing && (
             <ItemSection
-              title="Blockers"
-              color="#f4a0a0"
-              items={stop.status.blockers.slice(0, 3)}
+              title="Doing"
+              color="#7bd389"
+              items={[stop.status.doing]}
             />
           )}
-          {stop.status.next.length > 0 && (
+          {stop.status.done && (
             <ItemSection
-              title="Next steps"
+              title="Done"
+              color="#b6b6b6"
+              items={[stop.status.done]}
+            />
+          )}
+          {stop.status.blocked && (
+            <ItemSection
+              title="Blocked"
+              color="#f4a0a0"
+              items={[stop.status.blocked]}
+            />
+          )}
+          {stop.status.next && (
+            <ItemSection
+              title="Next"
               color="#e6c66a"
-              items={stop.status.next.slice(0, 3)}
+              items={[stop.status.next]}
+            />
+          )}
+          {stop.status.risk && (
+            <ItemSection
+              title="Risk"
+              color="#ffa066"
+              items={[stop.status.risk]}
             />
           )}
           {openPrs.length > 0 && <PrSection prs={openPrs} />}
@@ -282,14 +301,6 @@ function MetaLine({
   );
 }
 
-function expressRank(stop: Stop, allStops: Stop[]): number | null {
-  const queue = activeQueue(allStops);
-  const idx = queue.findIndex(
-    (s) => s.id === stop.id && s.district === stop.district,
-  );
-  return idx >= 0 ? idx + 1 : null;
-}
-
 function TitleRow({
   stop,
   linkOut,
@@ -343,28 +354,6 @@ function TitleRow({
         </a>
       )}
     </div>
-  );
-}
-
-function VisibilityBadge({ stop }: { stop: Stop }) {
-  if (!stop.isPrivate && stop.visibility !== "mayor") return null;
-  const label = stop.isPrivate ? "Mayor only" : "Mayor visibility";
-  return (
-    <span
-      style={{
-        display: "inline-block",
-        marginTop: 8,
-        fontSize: 10,
-        letterSpacing: 1,
-        textTransform: "uppercase",
-        padding: "3px 8px",
-        background: "rgba(230,198,106,0.2)",
-        borderRadius: 4,
-        color: "#e6c66a",
-      }}
-    >
-      {label}
-    </span>
   );
 }
 

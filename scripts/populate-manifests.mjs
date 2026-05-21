@@ -13,7 +13,7 @@
 import { spawnSync } from "child_process";
 
 const OWNER = "ScienceIsNeato";
-const ONE_YEAR_MS = 365 * 24 * 60 * 60 * 1000;
+const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
 const PACKET_RE = /<!--\s*willville\b[\s\S]*?-->/;
 
 // ─── Auth strategy detection ───────────────────────────────────────────────
@@ -251,7 +251,7 @@ async function main() {
 
   console.log("\nListing repos…");
   const allRepos = await listRepos(strategy);
-  const cutoff = Date.now() - ONE_YEAR_MS;
+  const cutoff = Date.now() - TWO_YEARS_MS;
   const candidates = allRepos.filter(
     (r) => !r.fork && !r.archived && Date.parse(r.pushed_at) >= cutoff,
   );
