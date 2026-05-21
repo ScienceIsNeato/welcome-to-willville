@@ -73,7 +73,11 @@ export function SpogCard({ stop }: { stop: Stop }) {
         <Section title="Done" color="#b6b6b6" items={[stop.status.done]} />
       )}
       {stop.status.blocked && (
-        <Section title="Blocked" color="#9b2c2c" items={[stop.status.blocked]} />
+        <Section
+          title="Blocked"
+          color="#9b2c2c"
+          items={[stop.status.blocked]}
+        />
       )}
       {stop.status.next && (
         <Section title="Next" color="#7a5a16" items={[stop.status.next]} />

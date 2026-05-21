@@ -18,15 +18,15 @@ eta: 2026-06-01
 
 ## Fields
 
-| Field | Purpose | Example |
-|-------|---------|---------|
-| `doing` | What you're actively working on right now. Be specific. | `Rewriting the PR diff parser to handle renames` |
-| `done` | What you just shipped. Comma-separated, most recent first. | `Rename detection, binary file filter, test harness` |
-| `next` | What comes after `doing` is finished. | `Add GitHub Actions integration, write docs` |
-| `blocked` | The single most important blocker, if any. Omit if clear. | `Waiting on upstream API to expose commit signatures` |
-| `risk` | `low`, `medium`, or `high` with a brief reason if not low. | `high — auth token rotation breaks all existing integrations` |
-| `milestone` | Active milestone name. | `v2.0 release` |
-| `eta` | Target date, `YYYY-MM-DD`. | `2026-06-15` |
+| Field       | Purpose                                                    | Example                                                       |
+| ----------- | ---------------------------------------------------------- | ------------------------------------------------------------- |
+| `doing`     | What you're actively working on right now. Be specific.    | `Rewriting the PR diff parser to handle renames`              |
+| `done`      | What you just shipped. Comma-separated, most recent first. | `Rename detection, binary file filter, test harness`          |
+| `next`      | What comes after `doing` is finished.                      | `Add GitHub Actions integration, write docs`                  |
+| `blocked`   | The single most important blocker, if any. Omit if clear.  | `Waiting on upstream API to expose commit signatures`         |
+| `risk`      | `low`, `medium`, or `high` with a brief reason if not low. | `high — auth token rotation breaks all existing integrations` |
+| `milestone` | Active milestone name.                                     | `v2.0 release`                                                |
+| `eta`       | Target date, `YYYY-MM-DD`.                                 | `2026-06-15`                                                  |
 
 ## Guidelines
 
@@ -39,6 +39,7 @@ eta: 2026-06-01
 **`risk` is your judgment call.** Low means on track. Medium means there's a known concern that could cause delay. High means the manager should pay attention now. Always include a reason for medium/high.
 
 **Update the packet whenever you:**
+
 - Start a new task (change `doing`, move old `doing` to `done`)
 - Hit or clear a blocker
 - Finish a milestone

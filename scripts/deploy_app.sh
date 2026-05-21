@@ -17,7 +17,6 @@ DEPLOY_DIR="/tmp/willville-deploys"
 MAX_AGE_SECONDS=3600  # kill deployments older than 1 hour
 PORT_RANGE_START=3740
 PORT_RANGE_END=3800
-MAIN_REPO_ROOT="/Users/pacey/Documents/SourceCode/welcome-to-willville"
 
 mkdir -p "$DEPLOY_DIR"
 
@@ -51,8 +50,9 @@ read_lockfile() {
 
 jq_field() {
   # Lightweight JSON field extraction without requiring jq
+  # Only strips leading/trailing whitespace, not spaces inside values
   local json="$1" field="$2"
-  echo "$json" | grep -o "\"$field\":[^,}]*" | head -1 | sed "s/\"$field\"://;s/\"//g;s/ //g"
+  echo "$json" | grep -o "\"$field\":[^,}]*" | head -1 | sed "s/\"$field\"://;s/^[[:space:]]*\"//;s/\"[[:space:]]*$//"
 }
 
 # ── stale cleanup ────────────────────────────────────────────────────────────
@@ -208,9 +208,13 @@ cleanup_stale
 stop_deployment "$ROOT"
 
 # 3. Copy .dev.vars if missing
-if [[ ! -f "$ROOT/.dev.vars" ]] && [[ -f "$MAIN_REPO_ROOT/.dev.vars" ]]; then
-  echo "Copying .dev.vars from main repo..."
-  cp "$MAIN_REPO_ROOT/.dev.vars" "$ROOT/.dev.vars"
+if [[ ! -f "$ROOT/.dev.vars" ]]; then
+  # Look for .dev.vars in the git repo root of the main worktree
+  MAIN_ROOT=$(git worktree list --porcelain | grep -m1 'worktree' | awk '{print $2}')
+  if [[ -n "$MAIN_ROOT" ]] && [[ -f "$MAIN_ROOT/.dev.vars" ]]; then
+    echo "Copying .dev.vars from main worktree..."
+    cp "$MAIN_ROOT/.dev.vars" "$ROOT/.dev.vars"
+  fi
 fi
 
 # 4. Build static export
@@ -238,9 +242,9 @@ done
 
 # 7. Write lockfile
 NOW=$(date +%s)
-cat > "$(lockfile_for "$ROOT")" <<EOF
-{"dir":"$ROOT","branch":"$BRANCH","wranglerPort":$WRANGLER_PORT,"pid":$WRANGLER_PID,"startedAt":$NOW}
-EOF
+printf '{"dir":"%s","branch":"%s","wranglerPort":%s,"pid":%s,"startedAt":%s}\n' \
+  "$ROOT" "$BRANCH" "$WRANGLER_PORT" "$WRANGLER_PID" "$NOW" \
+  > "$(lockfile_for "$ROOT")"
 
 echo ""
 echo "════════════════════════════════════════"

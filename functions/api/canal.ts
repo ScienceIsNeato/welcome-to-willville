@@ -193,7 +193,11 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const cacheControl = "public, s-maxage=45, stale-while-revalidate=180";
 
   return new Response(
-    JSON.stringify({ mayor: true, generatedAt: new Date().toISOString(), boats }),
+    JSON.stringify({
+      mayor: true,
+      generatedAt: new Date().toISOString(),
+      boats,
+    }),
     {
       headers: {
         "Content-Type": "application/json; charset=utf-8",

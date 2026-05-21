@@ -1,9 +1,8 @@
 "use client";
 
 import type { CSSProperties, MouseEvent } from "react";
-import { DISTRICTS, LINES } from "@/lib/willville";
 import { LOCKS, type CanalBoat } from "@/lib/canal";
-import { activeQueue, type Stop } from "@/lib/town";
+import { mostActiveStops, type Stop } from "@/lib/town";
 
 const STATE_LABEL: Record<Stop["status"]["state"], string> = {
   idea: "Idea",
@@ -14,15 +13,6 @@ const STATE_LABEL: Record<Stop["status"]["state"], string> = {
   unknown: "No manifest",
 };
 
-const STATE_COLOR: Record<Stop["status"]["state"], string> = {
-  idea: "#8fb3ff",
-  wip: "#ffd37a",
-  shipping: "#7ee6a6",
-  maintenance: "#c8d0dc",
-  dormant: "#8790a0",
-  unknown: "#b7c2d4",
-};
-
 type Props = {
   stop: Stop | null;
   allStops: Stop[];
@@ -31,13 +21,6 @@ type Props = {
 };
 
 export function DigitalDetailBoard({ stop, allStops, boats, onClear }: Props) {
-  const district = stop
-    ? DISTRICTS.find((candidate) => candidate.id === stop.district)
-    : null;
-  const lineNames =
-    stop?.lines
-      .map((id) => LINES.find((line) => line.id === id)?.displayName ?? id)
-      .join(" / ") ?? "";
   const rank = stop ? expressRank(stop, allStops) : null;
   const repoUrl = stop?.repo ? repoHref(stop.repo) : null;
   const linkOut = stop ? (stop.homepage ?? repoUrl) : null;
@@ -220,7 +203,7 @@ function repoHref(repo: string): string {
 }
 
 function expressRank(stop: Stop, allStops: Stop[]): number | null {
-  const queue = activeQueue(allStops);
+  const queue = mostActiveStops(allStops, Infinity);
   const idx = queue.findIndex(
     (candidate) =>
       candidate.id === stop.id && candidate.district === stop.district,
@@ -283,20 +266,6 @@ const emptyCopyStyle: CSSProperties = {
   lineHeight: 1.4,
 };
 
-const titleColumnStyle: CSSProperties = {
-  minWidth: 0,
-  display: "grid",
-  alignContent: "start",
-  gap: 7,
-};
-
-const titleRowStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: 8,
-  minWidth: 0,
-};
-
 const eyebrowStyle: CSSProperties = {
   color: "rgba(178,225,255,0.78)",
   fontSize: 11,
@@ -306,29 +275,6 @@ const eyebrowStyle: CSSProperties = {
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
-};
-
-const statusLightStyle: CSSProperties = {
-  flex: "0 0 auto",
-  width: 9,
-  height: 9,
-  borderRadius: 9,
-  boxShadow: "0 0 16px currentColor",
-};
-
-const titleStyle: CSSProperties = {
-  margin: 0,
-  color: "#f8fcff",
-  fontSize: "clamp(20px, 2.3vw, 28px)",
-  lineHeight: 1.02,
-  letterSpacing: 0,
-};
-
-const summaryStyle: CSSProperties = {
-  margin: 0,
-  color: "rgba(234,247,255,0.78)",
-  fontSize: 13,
-  lineHeight: 1.38,
 };
 
 const metricsGridStyle: CSSProperties = {

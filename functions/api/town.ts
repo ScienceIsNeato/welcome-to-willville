@@ -182,9 +182,14 @@ type GitHubCommit = {
   };
 };
 
-function compareUrl(fullName: string, branch: string): string {
+function compareUrl(
+  fullName: string,
+  baseBranch: string,
+  branch: string,
+): string {
+  const safeBase = encodeURIComponent(baseBranch).replace(/%2F/g, "/");
   const safeBranch = encodeURIComponent(branch).replace(/%2F/g, "/");
-  return `https://github.com/${fullName}/compare/main...${safeBranch}`;
+  return `https://github.com/${fullName}/compare/${safeBase}...${safeBranch}`;
 }
 
 async function fetchActiveBranch(
@@ -245,7 +250,7 @@ async function fetchActiveBranch(
     if (!latest) {
       return {
         name: defaultBranch,
-        compareUrl: compareUrl(fullName, defaultBranch),
+        compareUrl: compareUrl(fullName, defaultBranch, defaultBranch),
         isDefault: true,
       };
     }
@@ -253,13 +258,13 @@ async function fetchActiveBranch(
     return {
       name: latest.name,
       pushedAt: latest.pushedAt,
-      compareUrl: compareUrl(fullName, latest.name),
+      compareUrl: compareUrl(fullName, defaultBranch, latest.name),
       isDefault: latest.name === defaultBranch,
     };
   } catch {
     return {
       name: defaultBranch,
-      compareUrl: compareUrl(fullName, defaultBranch),
+      compareUrl: compareUrl(fullName, defaultBranch, defaultBranch),
       isDefault: true,
     };
   }
@@ -414,7 +419,11 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const cacheControl = "public, s-maxage=60, stale-while-revalidate=300";
 
   return new Response(
-    JSON.stringify({ mayor: true, generatedAt: new Date().toISOString(), stops }),
+    JSON.stringify({
+      mayor: true,
+      generatedAt: new Date().toISOString(),
+      stops,
+    }),
     {
       headers: {
         "Content-Type": "application/json; charset=utf-8",

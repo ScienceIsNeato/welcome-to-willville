@@ -17,6 +17,7 @@ scripts/deploy_app.sh --status # show all running deployments
 ```
 
 The script handles everything:
+
 - Kills stale deployments older than 1 hour (across all agents/worktrees)
 - Stops any existing deployment from the current worktree before starting a new one
 - Copies `.dev.vars` (API secrets) into the worktree automatically
@@ -25,6 +26,7 @@ The script handles everything:
 - Prints the URL to browse
 
 Do NOT:
+
 - Run `next dev` or `wrangler pages dev` manually
 - Hardcode ports (3736, 3737, etc.)
 - Kill processes on ports you didn't start

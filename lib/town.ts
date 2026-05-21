@@ -484,7 +484,7 @@ export function buildTown(
       isManual: true,
       status: {
         state: m.statusState ?? "unknown",
-              },
+      },
     });
   }
 

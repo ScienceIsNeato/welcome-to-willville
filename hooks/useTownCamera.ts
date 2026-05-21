@@ -35,8 +35,9 @@ function clampScale(s: number): number {
 }
 
 function clampCamera(c: Camera): Camera {
-  const halfW = WORLD.width / (2 * c.scale);
-  const halfH = WORLD.height / (2 * c.scale);
+  const scale = clampScale(c.scale);
+  const halfW = WORLD.width / (2 * scale);
+  const halfH = WORLD.height / (2 * scale);
   const worldHalfW = WORLD.width / 2;
   const worldHalfH = WORLD.height / 2;
   // Zoomed out (world fits in viewport): lock camera to world centre.
@@ -49,7 +50,7 @@ function clampCamera(c: Camera): Camera {
     halfH >= worldHalfH
       ? worldHalfH
       : Math.min(WORLD.height - halfH, Math.max(halfH, c.cy));
-  return { cx, cy, scale: clampScale(c.scale) };
+  return { cx, cy, scale };
 }
 
 /** Map screen pixels → world coordinates under the current camera. */

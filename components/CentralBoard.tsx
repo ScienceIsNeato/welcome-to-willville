@@ -34,7 +34,7 @@ export function CentralBoard({
   const didMountRef = useRef(false);
   const previousBoardRef = useRef<string[]>([]);
 
-  const queue = mostActiveStops(stops);
+  const queue = useMemo(() => mostActiveStops(stops), [stops]);
   const rows = useMemo(() => {
     if (selectedStop) {
       return selectedStopRows(selectedStop);
@@ -389,23 +389,11 @@ function timetableRows(queue: Stop[]): string[] {
     const commits = stop.commits7d ?? stop.commits3d ?? 0;
     const activity = commits > 0 ? `${commits}C/7D` : "";
     rows.push(
-      fit(
-        `${String(i + 1).padStart(2, "0")} ${stopLabel(stop)} ${activity}`,
-      ),
+      fit(`${String(i + 1).padStart(2, "0")} ${stopLabel(stop)} ${activity}`),
     );
   }
 
   return rows.slice(0, BOARD_ROWS);
-}
-
-function etaLabel(days: number | undefined): string {
-  if (!Number.isFinite(days ?? NaN)) return "TBD";
-  const safeDays = days!;
-  if (safeDays <= 0) return "TODAY";
-  if (safeDays === 1) return "1 DAY";
-  if (safeDays < 14) return `${safeDays} DAYS`;
-  if (safeDays < 60) return `${Math.round(safeDays / 7)} WKS`;
-  return `${Math.round(safeDays / 30)} MOS`;
 }
 
 function padded(input: string): string {

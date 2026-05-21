@@ -61,8 +61,7 @@ export function StopMarker({
         fill="var(--willville-paper)"
         style={{
           pointerEvents: "none",
-          textShadow:
-            "0 1px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5)",
+          textShadow: "0 1px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5)",
         }}
       >
         {stop.repo?.split("/").pop() ?? stop.id}
