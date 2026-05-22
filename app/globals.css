@@ -80,12 +80,12 @@ body {
 
 .dynamic-wall-source-shadow {
   fill: #2a2520;
-  opacity: 0.68;
+  opacity: 0.46;
 }
 
 .dynamic-wall-base {
   fill: #756c5d;
-  opacity: 1;
+  opacity: 0.78;
   filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.6))
     drop-shadow(0 0 2px rgba(230, 210, 170, 0.2));
 }
@@ -104,45 +104,109 @@ body {
 
 .dynamic-wall-loop-bed {
   stroke: #5b5348;
-  stroke-width: 34;
+  stroke-width: 17;
   stroke-linecap: round;
   stroke-linejoin: round;
-  opacity: 0.98;
+  opacity: 0.9;
 }
 
 .dynamic-wall-loop-stones {
-  stroke-linecap: butt;
+  stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 .dynamic-wall-loop-stones-a {
-  stroke: #a0927e;
-  stroke-width: 28;
-  stroke-dasharray: 9 3 14 4 7 3;
-  opacity: 1;
+  stroke: #b5a58d;
+  stroke-width: 12;
+  stroke-dasharray: 9 8 13 10 7 9;
+  opacity: 0.84;
 }
 
 .dynamic-wall-loop-stones-b {
-  stroke: #6d6457;
-  stroke-width: 20;
-  stroke-dasharray: 13 5 8 3 16 4;
-  opacity: 0.96;
+  stroke: #776d5f;
+  stroke-width: 8;
+  stroke-dasharray: 15 12 8 11 17 13;
+  opacity: 0.78;
+}
+
+.dynamic-wall-loop-rainbow-bricks {
+  stroke-width: 7;
+  stroke-dasharray: 11 84;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0.9;
+  mix-blend-mode: normal;
+}
+
+.rainbow-bricks-red {
+  stroke: #d96354;
+}
+
+.rainbow-bricks-gold {
+  stroke: #f1b94d;
+}
+
+.rainbow-bricks-green {
+  stroke: #68c17a;
+}
+
+.rainbow-bricks-blue {
+  stroke: #4bb6d8;
+}
+
+.rainbow-bricks-violet {
+  stroke: #a979e8;
 }
 
 .dynamic-wall-loop-mortar {
-  stroke: #211b20;
-  stroke-width: 30;
-  stroke-dasharray: 1 11;
-  stroke-linecap: butt;
-  opacity: 0.62;
+  stroke: #302920;
+  stroke-width: 12;
+  stroke-dasharray: 2 16;
+  stroke-linecap: round;
+  opacity: 0.5;
 }
 
 .dynamic-wall-loop-glints {
   stroke: #eadabc;
-  stroke-width: 5;
-  stroke-dasharray: 8 54;
+  stroke-width: 2.5;
+  stroke-dasharray: 5 84;
   stroke-linecap: round;
-  opacity: 0.38;
+  opacity: 0.28;
+}
+
+.canal-bank-walls .dynamic-wall-loop {
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.72))
+    drop-shadow(0 0 3px rgba(30, 22, 14, 0.36));
+}
+
+.canal-bank-wall-bed {
+  stroke-width: 23;
+  opacity: 1;
+}
+
+.canal-bank-wall-stones.dynamic-wall-loop-stones-a {
+  stroke-width: 15;
+  opacity: 0.94;
+}
+
+.canal-bank-wall-stones.dynamic-wall-loop-stones-b {
+  stroke-width: 10;
+  opacity: 0.86;
+}
+
+.canal-bank-wall-rainbow-bricks {
+  stroke-width: 9;
+  opacity: 0.96;
+}
+
+.canal-bank-wall-mortar {
+  stroke-width: 14;
+  opacity: 0.58;
+}
+
+.canal-bank-wall-glints {
+  stroke-width: 3;
+  opacity: 0.34;
 }
 
 @keyframes whistle-pulse {

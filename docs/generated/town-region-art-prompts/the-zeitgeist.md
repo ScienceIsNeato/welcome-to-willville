@@ -1,0 +1,33 @@
+# The Zeitgeist Region Art Prompt
+
+Use case: stylized-concept
+Asset type: masked raster district layer for Welcome to Willville
+
+Region id: `the-zeitgeist`
+Output target: `public/art/town/districts/the-zeitgeist.png`
+Mask to use: `/art/town/masks/district-art/the-zeitgeist.png`
+Raw district mask: `/art/town/masks/districts/the-zeitgeist.png`
+Art ROI components: the-zeitgeist-1: 416x310+672+156
+Recommended authoring plates: the-zeitgeist-1: author at 1888x1464 pixels for 472x366+644+128 map units
+Canvas: 1600x1240
+
+Primary request:
+Create richly detailed raster illustration art for only the The Zeitgeist district of Willville. Author each ROI at 4x its map-unit size, then let the pipeline downsample it into the final map layer. This layer will be clipped by the exact district art mask, so fill the whole masked region with dense, miniature, hand-drawn town detail while keeping all important content inside the mask.
+
+Style:
+Dense Magic Maze-like hidden-object board-game diorama, elevated three-quarter top-down view, crisp tiny shapes, wobbly hand-drawn contours, saturated but readable colors, lively masonry and roof detail, many small repeated objects, playful puzzle-map density. Do not copy any specific existing game artwork.
+
+Palette:
+bright civic blue, glass cyan, white trim, warm shop lights
+
+Motifs:
+blue roofs, storefronts, kiosks, rooftop antennas, cable runs, glass windows, awnings, public-facing shopfronts
+
+Geometry contract:
+The supplied mask is authoritative. Do not redraw the district as a circle, wedge, rectangle, or standalone island. Do not paint across the canal cutouts. Any disconnected ROI component should feel like the same district continuing on the other side of the canal, but the canal itself remains empty for the shared canal layer.
+
+Composition:
+No labels, no readable text, no UI, no map pins, no logos, no watermarks. Leave breathing room around the label anchor at 810, 300 so the app's SVG label remains readable. Avoid putting critical detail under expected repo marker locations.
+
+Avoid:
+Flat icon glyphs, primitive SVG-like symbols, photorealism, cinematic blur, low-detail blocks, muddy dark grading, huge single focal objects, readable signs, or important objects outside the mask.

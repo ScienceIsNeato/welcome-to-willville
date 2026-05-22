@@ -15,7 +15,12 @@
  * Mayors: private, no-store.
  */
 
-import { buildTown, type RepoMeta, type WillvillePacket } from "../../lib/town";
+import {
+  buildTown,
+  type RepoMeta,
+  type WillvilleManifest,
+  type WillvillePacket,
+} from "../../lib/town";
 
 interface Env {
   GITHUB_PAT?: string;
@@ -321,6 +326,91 @@ async function fetchWillvillePacket(
   }
 }
 
+function parseWillvilleManifest(raw: unknown): WillvilleManifest | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const source = raw as {
+    schema_version?: unknown;
+    agent?: {
+      status?: unknown;
+      direction?: unknown;
+      difficulties?: unknown;
+      needs_human?: unknown;
+      last_update?: unknown;
+      actions?: unknown;
+    };
+  };
+  if (!source.agent || typeof source.agent !== "object") return undefined;
+  const actions = Array.isArray(source.agent.actions)
+    ? source.agent.actions
+        .map((action) => {
+          if (!action || typeof action !== "object") return undefined;
+          const item = action as { name?: unknown; status?: unknown };
+          if (typeof item.name !== "string") return undefined;
+          return {
+            name: item.name,
+            status: typeof item.status === "string" ? item.status : "planned",
+          };
+        })
+        .filter((action) => action !== undefined)
+    : undefined;
+
+  return {
+    schemaVersion:
+      typeof source.schema_version === "number"
+        ? source.schema_version
+        : undefined,
+    agent: {
+      status:
+        typeof source.agent.status === "string"
+          ? source.agent.status
+          : undefined,
+      direction:
+        typeof source.agent.direction === "string"
+          ? source.agent.direction
+          : undefined,
+      difficulties:
+        typeof source.agent.difficulties === "string"
+          ? source.agent.difficulties
+          : undefined,
+      needsHuman:
+        typeof source.agent.needs_human === "string"
+          ? source.agent.needs_human
+          : undefined,
+      lastUpdate:
+        typeof source.agent.last_update === "string"
+          ? source.agent.last_update
+          : undefined,
+      actions,
+    },
+  };
+}
+
+/** Fetch .willville.json and parse the committed agent packet. */
+async function fetchWillvilleManifest(
+  fullName: string,
+  branch: string,
+  token?: string,
+): Promise<WillvilleManifest | undefined> {
+  const headers: Record<string, string> = {
+    "User-Agent": "willville-edge",
+    Accept: "application/vnd.github+json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  try {
+    const r = await fetch(
+      `https://api.github.com/repos/${fullName}/contents/.willville.json?ref=${branch}`,
+      { headers },
+    );
+    if (!r.ok) return undefined;
+    const data = (await r.json()) as { content?: string; encoding?: string };
+    if (!data.content || data.encoding !== "base64") return undefined;
+    const body = atob(data.content.replace(/\s/g, ""));
+    return parseWillvilleManifest(JSON.parse(body));
+  } catch {
+    return undefined;
+  }
+}
+
 export const onRequestGet: PagesFunction<Env> = async ({
   request: _request,
   env,
@@ -343,11 +433,10 @@ export const onRequestGet: PagesFunction<Env> = async ({
     // Fetch the packet from whichever branch had the most recent commit, so
     // work-in-progress STATUS.md entries actually appear in the UI.
     const packetBranch = activeBranch?.name ?? r.default_branch;
-    const willvillePacket = await fetchWillvillePacket(
-      r.full_name,
-      packetBranch,
-      token,
-    );
+    const [willvilleManifest, willvillePacket] = await Promise.all([
+      fetchWillvilleManifest(r.full_name, packetBranch, token),
+      fetchWillvillePacket(r.full_name, packetBranch, token),
+    ]);
     return {
       repo: r.full_name,
       isPrivate: r.private,
@@ -363,6 +452,7 @@ export const onRequestGet: PagesFunction<Env> = async ({
         dueOn: m.due_on,
         openIssues: m.open_issues,
       })),
+      willvilleManifest,
       willvillePacket,
       openIssuesCount: r.open_issues_count,
       stars: r.stargazers_count,

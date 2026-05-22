@@ -7,6 +7,7 @@
  * from each repo's .willville.json manifest (with heuristic fallbacks).
  */
 import { CANAL_PATH_D } from "./canal-path";
+import { GENERATED_TOWN_LAYOUT, pointsToPolygon } from "./town-layout";
 
 /** Inner town map coordinate space (districts, stops, canal). */
 export const TOWN = { width: 1600, height: 1240 } as const;
@@ -39,10 +40,10 @@ export const CANAL = {
   /** Centerline path (Bezier) from southwest inlet to open sea on the east. */
   pathD: CANAL_PATH_D,
   /** Loose bounds for labels and fallback hit areas. */
-  top: 1080,
-  bottom: 1240,
-  left: 50,
-  right: 1590,
+  top: GENERATED_TOWN_LAYOUT.canal.bounds.top,
+  bottom: GENERATED_TOWN_LAYOUT.canal.bounds.bottom,
+  left: GENERATED_TOWN_LAYOUT.canal.bounds.left,
+  right: GENERATED_TOWN_LAYOUT.canal.bounds.right,
   waterColor: "#1f4f7a",
   waterHighlight: "#3a82b8",
 } as const;
@@ -91,76 +92,87 @@ export type Line = {
   vehicle: "trolley" | "steam" | "hearse" | "cart" | "paperboy";
 };
 
+const DISTRICT_BLURBS: Record<DistrictId, string> = {
+  "mirrored-mile": "Published works and reflective long-form projects.",
+  "slop-wharf": "Central slop-mop orchestration and helpers.",
+  "halls-of-judgement": "AI evaluations and training work.",
+  "the-zeitgeist": "Web-facing projects that interface with the people.",
+  "gates-of-hell": "Anything Halloween related.",
+  "dogwallow-ramble-ii": "Homesteading projects and household work.",
+  "town-square": "The central hub.",
+  "the-graveyard": "Inactive projects, old experiments, and reference work.",
+};
+
+const DISTRICT_COLOR_VARS: Record<DistrictId, string> = {
+  "mirrored-mile": "--willville-mirrored",
+  "slop-wharf": "--willville-slop",
+  "halls-of-judgement": "--willville-judgement",
+  "the-zeitgeist": "--willville-zeitgeist",
+  "gates-of-hell": "--willville-hell",
+  "dogwallow-ramble-ii": "--willville-dogwallow",
+  "town-square": "--willville-town-square",
+  "the-graveyard": "--willville-graveyard",
+};
+
+const LINE_META: Record<LineId, Omit<Line, "id" | "path">> = {
+  ai: {
+    displayName: "The AI Line",
+    colorVar: "--willville-judgement",
+    loopSeconds: 28,
+    vehicleCount: 3,
+    vehicle: "steam",
+  },
+  quality: {
+    displayName: "The Quality Line",
+    colorVar: "--willville-slop",
+    loopSeconds: 36,
+    vehicleCount: 3,
+    vehicle: "cart",
+  },
+  web: {
+    displayName: "The Web Line",
+    colorVar: "--willville-zeitgeist",
+    loopSeconds: 22,
+    vehicleCount: 2,
+    vehicle: "trolley",
+  },
+  writing: {
+    displayName: "The Writing Line",
+    colorVar: "--willville-mirrored",
+    loopSeconds: 44,
+    vehicleCount: 4,
+    vehicle: "paperboy",
+  },
+  workshop: {
+    displayName: "The Workshop Line",
+    colorVar: "--willville-dogwallow",
+    loopSeconds: 32,
+    vehicleCount: 3,
+    vehicle: "cart",
+  },
+  halloween: {
+    displayName: "The Halloween Line",
+    colorVar: "--willville-hell",
+    loopSeconds: 26,
+    vehicleCount: 3,
+    vehicle: "hearse",
+  },
+};
+
 /**
  * Districts laid out roughly clockwise around a central plaza.
  * Polygons are intentionally non-rectangular so the camera + transit lines
  * have organic edges to rub against.
  */
 export const DISTRICTS: District[] = [
-  {
-    id: "mirrored-mile",
-    displayName: "Mirrored Mile",
-    blurb: "Published works and reflective long-form projects.",
-    polygon: "60,120 360,80 420,260 320,360 80,340",
-    label: { x: 220, y: 220 },
-    colorVar: "--willville-mirrored",
-  },
-  {
-    id: "the-zeitgeist",
-    displayName: "The Zeitgeist",
-    blurb: "Web-facing projects that interface with the people.",
-    polygon: "440,80 760,90 800,300 540,320 420,260",
-    label: { x: 600, y: 200 },
-    colorVar: "--willville-zeitgeist",
-  },
-  {
-    id: "the-graveyard",
-    displayName: "The Graveyard",
-    blurb: "Inactive projects, old experiments, and things kept for reference.",
-    polygon: "820,100 1140,90 1200,300 1080,420 820,400 780,260",
-    label: { x: 1000, y: 240 },
-    colorVar: "--willville-graveyard",
-  },
-  {
-    id: "halls-of-judgement",
-    displayName: "The Halls of Judgement",
-    blurb: "AI evaluations and training work.",
-    polygon: "1200,300 1540,260 1540,500 1300,540 1180,460",
-    label: { x: 1360, y: 400 },
-    colorVar: "--willville-judgement",
-  },
-  {
-    id: "slop-wharf",
-    displayName: "Slop Wharf",
-    blurb: "Central slop-mop orchestration and helpers.",
-    polygon: "60,400 320,400 420,580 320,720 60,700",
-    label: { x: 200, y: 560 },
-    colorVar: "--willville-slop",
-  },
-  {
-    id: "gates-of-hell",
-    displayName: "The Gates of Hell",
-    blurb: "Anything Halloween related.",
-    polygon: "1280,560 1540,540 1540,900 1280,920 1220,720",
-    label: { x: 1400, y: 740 },
-    colorVar: "--willville-hell",
-  },
-  {
-    id: "town-square",
-    displayName: "Town Square",
-    blurb: "The central hub.",
-    polygon: "560,420 980,420 1060,560 980,720 700,740 540,620",
-    label: { x: 800, y: 560 },
-    colorVar: "--willville-town-square",
-  },
-  {
-    id: "dogwallow-ramble-ii",
-    displayName: "Dogwallow Ramble II",
-    blurb: "Homesteading projects and household work.",
-    polygon: "60,760 360,760 420,920 240,960 60,920",
-    label: { x: 220, y: 860 },
-    colorVar: "--willville-dogwallow",
-  },
+  ...GENERATED_TOWN_LAYOUT.districts.map((district) => ({
+    id: district.id as DistrictId,
+    displayName: district.displayName,
+    blurb: DISTRICT_BLURBS[district.id as DistrictId],
+    polygon: pointsToPolygon(district.polygon),
+    label: district.label,
+    colorVar: DISTRICT_COLOR_VARS[district.id as DistrictId],
+  })),
 ];
 
 /**
@@ -169,60 +181,15 @@ export const DISTRICTS: District[] = [
  * different combinations as the camera pans/zooms.
  */
 export const LINES: Line[] = [
-  {
-    id: "ai",
-    displayName: "The AI Line",
-    colorVar: "--willville-judgement",
-    path: "M 1000,200 C 1200,140 1380,260 1400,400 C 1420,540 1240,540 1100,460 C 960,380 820,440 900,320 C 980,200 1000,200 1000,200 Z",
-    loopSeconds: 28,
-    vehicleCount: 3,
-    vehicle: "steam",
-  },
-  {
-    id: "quality",
-    displayName: "The Quality Line",
-    colorVar: "--willville-slop",
-    path: "M 200,500 C 80,580 200,720 360,640 C 520,560 700,640 900,520 C 1080,420 1280,420 1380,380 C 1240,540 1100,560 900,620 C 700,680 520,720 360,720 C 200,720 80,640 200,500 Z",
-    loopSeconds: 36,
-    vehicleCount: 3,
-    vehicle: "cart",
-  },
-  {
-    id: "web",
-    displayName: "The Web Line",
-    colorVar: "--willville-zeitgeist",
-    path: "M 600,180 C 760,220 800,300 700,360 C 540,400 380,300 320,200 C 260,120 440,80 600,180 Z",
-    loopSeconds: 22,
-    vehicleCount: 2,
-    vehicle: "trolley",
-  },
-  {
-    id: "writing",
-    displayName: "The Writing Line",
-    colorVar: "--willville-mirrored",
-    path: "M 220,200 C 320,300 280,420 220,560 C 180,700 280,820 420,860 C 560,900 720,840 800,720 C 880,600 800,460 700,420 C 600,380 540,520 480,700 C 420,860 220,820 180,640 C 140,460 220,200 220,200 Z",
-    loopSeconds: 44,
-    vehicleCount: 4,
-    vehicle: "paperboy",
-  },
-  {
-    id: "workshop",
-    displayName: "The Workshop Line",
-    colorVar: "--willville-dogwallow",
-    path: "M 240,820 C 380,760 540,840 700,820 C 880,800 1040,820 1240,820 C 1380,820 1400,720 1280,680 C 1100,640 900,720 700,720 C 540,720 380,680 240,720 C 120,760 100,860 240,820 Z",
-    loopSeconds: 32,
-    vehicleCount: 3,
-    vehicle: "cart",
-  },
-  {
-    id: "halloween",
-    displayName: "The Halloween Line",
-    colorVar: "--willville-hell",
-    path: "M 1400,700 C 1300,580 1100,560 900,620 C 720,680 580,820 700,860 C 820,900 1000,860 1180,820 C 1340,780 1500,820 1400,700 Z",
-    loopSeconds: 26,
-    vehicleCount: 3,
-    vehicle: "hearse",
-  },
+  ...GENERATED_TOWN_LAYOUT.lines.map((line) => ({
+    id: line.id as LineId,
+    displayName: LINE_META[line.id as LineId].displayName,
+    colorVar: LINE_META[line.id as LineId].colorVar,
+    path: line.path,
+    loopSeconds: LINE_META[line.id as LineId].loopSeconds,
+    vehicleCount: LINE_META[line.id as LineId].vehicleCount,
+    vehicle: LINE_META[line.id as LineId].vehicle,
+  })),
 ];
 
 /** Manual stops have no repo but still occupy a place on the map. */

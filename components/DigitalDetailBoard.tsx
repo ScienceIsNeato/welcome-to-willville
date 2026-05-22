@@ -54,19 +54,24 @@ export function DigitalDetailBoard({ stop, allStops, boats, onClear }: Props) {
 
           <div style={notesColumnStyle}>
             <NoteList
-              title="Doing"
+              title="Status"
               items={stop.status.doing ? [stop.status.doing] : []}
               fallback="No active work logged."
             />
             <NoteList
-              title="Next"
+              title="Direction"
               items={stop.status.next ? [stop.status.next] : []}
-              fallback="No next steps logged."
+              fallback="No direction logged."
             />
             <NoteList
-              title="Blocked"
-              items={stop.status.blocked ? [stop.status.blocked] : []}
-              fallback=""
+              title="Difficulties"
+              items={stop.agent?.difficulties ? [stop.agent.difficulties] : []}
+              fallback="None"
+            />
+            <NoteList
+              title="Needs human"
+              items={stop.agent?.needsHuman ? [stop.agent.needsHuman] : []}
+              fallback="None"
             />
           </div>
 
@@ -113,6 +118,15 @@ export function DigitalDetailBoard({ stop, allStops, boats, onClear }: Props) {
                 })}
               </div>
             )}
+            <NoteList
+              title="Activity Log"
+              items={
+                stop.agent?.actions?.map(
+                  (action) => `${action.status}: ${action.name}`,
+                ) ?? []
+              }
+              fallback="No recent agent actions."
+            />
             <div style={buttonRowStyle}>
               {repoUrl && (
                 <a href={repoUrl} onClick={followLink} style={buttonStyle}>
@@ -216,7 +230,7 @@ const shellStyle: CSSProperties = {
   position: "relative",
   zIndex: 2,
   width: "min(880px, calc(100vw - 20px))",
-  minHeight: 150,
+  minHeight: 188,
   margin: "0 auto 10px",
   display: "grid",
   gridTemplateColumns:

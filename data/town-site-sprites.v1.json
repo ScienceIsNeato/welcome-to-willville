@@ -1,0 +1,342 @@
+{
+  "version": "town-site-sprites-v1",
+  "frame": {
+    "width": 100,
+    "height": 100,
+    "anchorX": 50,
+    "anchorY": 78
+  },
+  "generatedFrom": "lib/willville.heuristics.ts",
+  "sprites": [
+    {
+      "stopId": "the-solitude-stacks",
+      "district": "mirrored-mile",
+      "kind": "library",
+      "src": "/art/stops/the-solitude-stacks.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-furnace",
+      "district": "the-graveyard",
+      "kind": "monument",
+      "src": "/art/stops/the-furnace.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-suno-organ",
+      "district": "the-graveyard",
+      "kind": "tower",
+      "src": "/art/stops/the-suno-organ.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-kennel",
+      "district": "the-graveyard",
+      "kind": "workshop",
+      "src": "/art/stops/the-kennel.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-compilers-forge",
+      "district": "the-graveyard",
+      "kind": "forge",
+      "src": "/art/stops/the-compilers-forge.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-gene-greenhouse",
+      "district": "the-graveyard",
+      "kind": "greenhouse",
+      "src": "/art/stops/the-gene-greenhouse.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-go-workbench",
+      "district": "the-graveyard",
+      "kind": "workshop",
+      "src": "/art/stops/the-go-workbench.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-dotfile-cabinet",
+      "district": "the-graveyard",
+      "kind": "workshop",
+      "src": "/art/stops/the-dotfile-cabinet.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-reactor",
+      "district": "gates-of-hell",
+      "kind": "workshop",
+      "src": "/art/stops/the-reactor.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-atelier",
+      "district": "gates-of-hell",
+      "kind": "workshop",
+      "src": "/art/stops/the-atelier.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-toolworks",
+      "district": "gates-of-hell",
+      "kind": "workshop",
+      "src": "/art/stops/the-toolworks.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-watchful-pumpkin",
+      "district": "gates-of-hell",
+      "kind": "workshop",
+      "src": "/art/stops/the-watchful-pumpkin.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-mop-bucket",
+      "district": "slop-wharf",
+      "kind": "depot",
+      "src": "/art/stops/the-mop-bucket.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-action-dock",
+      "district": "slop-wharf",
+      "kind": "workshop",
+      "src": "/art/stops/the-action-dock.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-slop-bucket",
+      "district": "slop-wharf",
+      "kind": "depot",
+      "src": "/art/stops/the-slop-bucket.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-rulebook",
+      "district": "slop-wharf",
+      "kind": "library",
+      "src": "/art/stops/the-rulebook.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-audit-house",
+      "district": "halls-of-judgement",
+      "kind": "workshop",
+      "src": "/art/stops/the-audit-house.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-trace-station",
+      "district": "halls-of-judgement",
+      "kind": "workshop",
+      "src": "/art/stops/the-trace-station.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-task-forge",
+      "district": "halls-of-judgement",
+      "kind": "forge",
+      "src": "/art/stops/the-task-forge.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-colosseum",
+      "district": "halls-of-judgement",
+      "kind": "workshop",
+      "src": "/art/stops/the-colosseum.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-apertus-drafting-desk",
+      "district": "halls-of-judgement",
+      "kind": "workshop",
+      "src": "/art/stops/the-apertus-drafting-desk.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-pr-scaffold",
+      "district": "halls-of-judgement",
+      "kind": "civic",
+      "src": "/art/stops/the-pr-scaffold.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-map-room",
+      "district": "halls-of-judgement",
+      "kind": "workshop",
+      "src": "/art/stops/the-map-room.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-mystery-manor",
+      "district": "halls-of-judgement",
+      "kind": "workshop",
+      "src": "/art/stops/the-mystery-manor.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-chroniclers-tower",
+      "district": "the-zeitgeist",
+      "kind": "workshop",
+      "src": "/art/stops/the-chroniclers-tower.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-kennel-storefront",
+      "district": "the-zeitgeist",
+      "kind": "workshop",
+      "src": "/art/stops/the-kennel-storefront.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-vampires-crypt",
+      "district": "the-zeitgeist",
+      "kind": "monument",
+      "src": "/art/stops/the-vampires-crypt.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-roundabout",
+      "district": "the-zeitgeist",
+      "kind": "workshop",
+      "src": "/art/stops/the-roundabout.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-light-mill",
+      "district": "the-zeitgeist",
+      "kind": "workshop",
+      "src": "/art/stops/the-light-mill.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "willville-town-hall",
+      "district": "town-square",
+      "kind": "workshop",
+      "src": "/art/stops/willville-town-hall.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-pantry-bot",
+      "district": "dogwallow-ramble-ii",
+      "kind": "workshop",
+      "src": "/art/stops/the-pantry-bot.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "randy-sharons-cottage",
+      "district": "dogwallow-ramble-ii",
+      "kind": "workshop",
+      "src": "/art/stops/randy-sharons-cottage.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    },
+    {
+      "stopId": "the-wallow",
+      "district": "dogwallow-ramble-ii",
+      "kind": "workshop",
+      "src": "/art/stops/the-wallow.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
+    }
+  ]
+}

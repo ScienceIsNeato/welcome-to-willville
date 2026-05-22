@@ -1,0 +1,324 @@
+{
+  "version": "isthmus-rio-v2-topology-district-art-kits",
+  "scale": 4,
+  "padding": 28,
+  "size": {
+    "width": 1600,
+    "height": 1240
+  },
+  "districts": [
+    {
+      "id": "mirrored-mile",
+      "displayName": "Mirrored Mile",
+      "label": {
+        "x": 420,
+        "y": 270
+      },
+      "artMask": "/art/town/masks/district-art/mirrored-mile.png",
+      "components": [
+        {
+          "id": "mirrored-mile-1",
+          "sourceRect": {
+            "x": 326,
+            "y": 117,
+            "width": 427,
+            "height": 355
+          },
+          "authoringSize": {
+            "width": 1708,
+            "height": 1420
+          },
+          "mapBounds": {
+            "x": 354,
+            "y": 145,
+            "width": 371,
+            "height": 299
+          },
+          "centroid": {
+            "x": 507.4,
+            "y": 270.3
+          },
+          "area": 61599,
+          "mask": "/art/town/art-kits/mirrored-mile/mirrored-mile-1-mask.png"
+        }
+      ]
+    },
+    {
+      "id": "the-zeitgeist",
+      "displayName": "The Zeitgeist",
+      "label": {
+        "x": 810,
+        "y": 300
+      },
+      "artMask": "/art/town/masks/district-art/the-zeitgeist.png",
+      "components": [
+        {
+          "id": "the-zeitgeist-1",
+          "sourceRect": {
+            "x": 644,
+            "y": 128,
+            "width": 472,
+            "height": 366
+          },
+          "authoringSize": {
+            "width": 1888,
+            "height": 1464
+          },
+          "mapBounds": {
+            "x": 672,
+            "y": 156,
+            "width": 416,
+            "height": 310
+          },
+          "centroid": {
+            "x": 879,
+            "y": 300.1
+          },
+          "area": 89857,
+          "mask": "/art/town/art-kits/the-zeitgeist/the-zeitgeist-1-mask.png"
+        }
+      ]
+    },
+    {
+      "id": "the-graveyard",
+      "displayName": "The Graveyard",
+      "label": {
+        "x": 1210,
+        "y": 350
+      },
+      "artMask": "/art/town/masks/district-art/the-graveyard.png",
+      "components": [
+        {
+          "id": "the-graveyard-1",
+          "sourceRect": {
+            "x": 944,
+            "y": 127,
+            "width": 371,
+            "height": 529
+          },
+          "authoringSize": {
+            "width": 1484,
+            "height": 2116
+          },
+          "mapBounds": {
+            "x": 972,
+            "y": 155,
+            "width": 315,
+            "height": 473
+          },
+          "centroid": {
+            "x": 1155.9,
+            "y": 387.6
+          },
+          "area": 80163,
+          "mask": "/art/town/art-kits/the-graveyard/the-graveyard-1-mask.png"
+        }
+      ]
+    },
+    {
+      "id": "halls-of-judgement",
+      "displayName": "The Halls of Judgement",
+      "label": {
+        "x": 1045,
+        "y": 610
+      },
+      "artMask": "/art/town/masks/district-art/halls-of-judgement.png",
+      "components": [
+        {
+          "id": "halls-of-judgement-1",
+          "sourceRect": {
+            "x": 830,
+            "y": 438,
+            "width": 438,
+            "height": 348
+          },
+          "authoringSize": {
+            "width": 1752,
+            "height": 1392
+          },
+          "mapBounds": {
+            "x": 858,
+            "y": 466,
+            "width": 382,
+            "height": 292
+          },
+          "centroid": {
+            "x": 1041.5,
+            "y": 613.6
+          },
+          "area": 75491,
+          "mask": "/art/town/art-kits/halls-of-judgement/halls-of-judgement-1-mask.png"
+        }
+      ]
+    },
+    {
+      "id": "town-square",
+      "displayName": "Town Square",
+      "label": {
+        "x": 725,
+        "y": 565
+      },
+      "artMask": "/art/town/masks/district-art/town-square.png",
+      "components": [
+        {
+          "id": "town-square-1",
+          "sourceRect": {
+            "x": 392,
+            "y": 320,
+            "width": 512,
+            "height": 468
+          },
+          "authoringSize": {
+            "width": 2048,
+            "height": 1872
+          },
+          "mapBounds": {
+            "x": 420,
+            "y": 348,
+            "width": 456,
+            "height": 412
+          },
+          "centroid": {
+            "x": 655.9,
+            "y": 544.9
+          },
+          "area": 117774,
+          "mask": "/art/town/art-kits/town-square/town-square-1-mask.png"
+        }
+      ]
+    },
+    {
+      "id": "slop-wharf",
+      "displayName": "Slop Wharf",
+      "label": {
+        "x": 350,
+        "y": 815
+      },
+      "artMask": "/art/town/masks/district-art/slop-wharf.png",
+      "components": [
+        {
+          "id": "slop-wharf-1",
+          "sourceRect": {
+            "x": 310,
+            "y": 532,
+            "width": 303,
+            "height": 368
+          },
+          "authoringSize": {
+            "width": 1212,
+            "height": 1472
+          },
+          "mapBounds": {
+            "x": 338,
+            "y": 560,
+            "width": 247,
+            "height": 312
+          },
+          "centroid": {
+            "x": 461.3,
+            "y": 709.7
+          },
+          "area": 50115,
+          "mask": "/art/town/art-kits/slop-wharf/slop-wharf-1-mask.png"
+        }
+      ]
+    },
+    {
+      "id": "dogwallow-ramble-ii",
+      "displayName": "Dogwallow Ramble II",
+      "label": {
+        "x": 640,
+        "y": 985
+      },
+      "artMask": "/art/town/masks/district-art/dogwallow-ramble-ii.png",
+      "components": [
+        {
+          "id": "dogwallow-ramble-ii-1",
+          "sourceRect": {
+            "x": 465,
+            "y": 885,
+            "width": 374,
+            "height": 238
+          },
+          "authoringSize": {
+            "width": 1496,
+            "height": 952
+          },
+          "mapBounds": {
+            "x": 493,
+            "y": 913,
+            "width": 318,
+            "height": 182
+          },
+          "centroid": {
+            "x": 679.3,
+            "y": 1006.5
+          },
+          "area": 23196,
+          "mask": "/art/town/art-kits/dogwallow-ramble-ii/dogwallow-ramble-ii-1-mask.png"
+        },
+        {
+          "id": "dogwallow-ramble-ii-2",
+          "sourceRect": {
+            "x": 553,
+            "y": 732,
+            "width": 268,
+            "height": 174
+          },
+          "authoringSize": {
+            "width": 1072,
+            "height": 696
+          },
+          "mapBounds": {
+            "x": 581,
+            "y": 760,
+            "width": 212,
+            "height": 118
+          },
+          "centroid": {
+            "x": 701.7,
+            "y": 826.4
+          },
+          "area": 9765,
+          "mask": "/art/town/art-kits/dogwallow-ramble-ii/dogwallow-ramble-ii-2-mask.png"
+        }
+      ]
+    },
+    {
+      "id": "gates-of-hell",
+      "displayName": "The Gates of Hell",
+      "label": {
+        "x": 1210,
+        "y": 955
+      },
+      "artMask": "/art/town/masks/district-art/gates-of-hell.png",
+      "components": [
+        {
+          "id": "gates-of-hell-1",
+          "sourceRect": {
+            "x": 730,
+            "y": 798,
+            "width": 486,
+            "height": 336
+          },
+          "authoringSize": {
+            "width": 1944,
+            "height": 1344
+          },
+          "mapBounds": {
+            "x": 758,
+            "y": 826,
+            "width": 430,
+            "height": 280
+          },
+          "centroid": {
+            "x": 949.7,
+            "y": 953.8
+          },
+          "area": 72404,
+          "mask": "/art/town/art-kits/gates-of-hell/gates-of-hell-1-mask.png"
+        }
+      ]
+    }
+  ]
+}

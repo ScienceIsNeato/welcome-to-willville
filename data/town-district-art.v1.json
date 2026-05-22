@@ -1,0 +1,266 @@
+{
+  "version": "isthmus-rio-v2-topology-district-art-placeholders",
+  "source": "/art/town/willville-isthmus-v1.png",
+  "layers": [
+    {
+      "id": "mirrored-mile",
+      "displayName": "Mirrored Mile",
+      "src": "/art/town/districts/mirrored-mile.png",
+      "contentHash": "district-art-mirrored-mile-custom-20260522",
+      "mask": "/art/town/masks/district-art/mirrored-mile.png",
+      "components": [
+        {
+          "id": "mirrored-mile-1",
+          "bounds": {
+            "x": 225,
+            "y": 144,
+            "width": 509,
+            "height": 300
+          },
+          "centroid": {
+            "x": 467,
+            "y": 288.1
+          },
+          "area": 79775
+        }
+      ],
+      "scale": 4,
+      "pixelSize": {
+        "width": 6400,
+        "height": 4960
+      },
+      "artKind": "custom"
+    },
+    {
+      "id": "the-zeitgeist",
+      "displayName": "The Zeitgeist",
+      "src": "/art/town/districts/the-zeitgeist.png",
+      "contentHash": "district-art-the-zeitgeist-custom-20260522",
+      "mask": "/art/town/masks/district-art/the-zeitgeist.png",
+      "components": [
+        {
+          "id": "the-zeitgeist-1",
+          "bounds": {
+            "x": 672,
+            "y": 140,
+            "width": 416,
+            "height": 326
+          },
+          "centroid": {
+            "x": 877.2,
+            "y": 294.9
+          },
+          "area": 93261
+        }
+      ],
+      "scale": 4,
+      "pixelSize": {
+        "width": 6400,
+        "height": 4960
+      },
+      "artKind": "custom"
+    },
+    {
+      "id": "the-graveyard",
+      "displayName": "The Graveyard",
+      "src": "/art/town/districts/the-graveyard.png",
+      "contentHash": "district-art-the-graveyard-custom-20260522",
+      "mask": "/art/town/masks/district-art/the-graveyard.png",
+      "components": [
+        {
+          "id": "the-graveyard-1",
+          "bounds": {
+            "x": 967,
+            "y": 151,
+            "width": 411,
+            "height": 477
+          },
+          "centroid": {
+            "x": 1192.3,
+            "y": 403.1
+          },
+          "area": 104657
+        }
+      ],
+      "scale": 4,
+      "pixelSize": {
+        "width": 6400,
+        "height": 4960
+      },
+      "artKind": "custom"
+    },
+    {
+      "id": "halls-of-judgement",
+      "displayName": "The Halls of Judgement",
+      "src": "/art/town/districts/halls-of-judgement.png",
+      "contentHash": "district-art-halls-of-judgement-custom-20260522",
+      "mask": "/art/town/masks/district-art/halls-of-judgement.png",
+      "components": [
+        {
+          "id": "halls-of-judgement-1",
+          "bounds": {
+            "x": 858,
+            "y": 466,
+            "width": 382,
+            "height": 292
+          },
+          "centroid": {
+            "x": 1041.5,
+            "y": 613.6
+          },
+          "area": 75491
+        }
+      ],
+      "scale": 4,
+      "pixelSize": {
+        "width": 6400,
+        "height": 4960
+      },
+      "artKind": "custom"
+    },
+    {
+      "id": "town-square",
+      "displayName": "Town Square",
+      "src": "/art/town/districts/town-square.png",
+      "contentHash": "district-art-town-square-custom-20260522",
+      "mask": "/art/town/masks/district-art/town-square.png",
+      "components": [
+        {
+          "id": "town-square-1",
+          "bounds": {
+            "x": 420,
+            "y": 348,
+            "width": 456,
+            "height": 412
+          },
+          "centroid": {
+            "x": 655.9,
+            "y": 544.9
+          },
+          "area": 117774
+        }
+      ],
+      "scale": 4,
+      "pixelSize": {
+        "width": 6400,
+        "height": 4960
+      },
+      "artKind": "custom"
+    },
+    {
+      "id": "slop-wharf",
+      "displayName": "Slop Wharf",
+      "src": "/art/town/districts/slop-wharf.png",
+      "contentHash": "district-art-slop-wharf-custom-20260522",
+      "mask": "/art/town/masks/district-art/slop-wharf.png",
+      "components": [
+        {
+          "id": "slop-wharf-1",
+          "bounds": {
+            "x": 220,
+            "y": 560,
+            "width": 365,
+            "height": 312
+          },
+          "centroid": {
+            "x": 411.6,
+            "y": 712.1
+          },
+          "area": 72605
+        },
+        {
+          "id": "slop-wharf-2",
+          "bounds": {
+            "x": 364,
+            "y": 900,
+            "width": 128,
+            "height": 53
+          },
+          "centroid": {
+            "x": 430.7,
+            "y": 926
+          },
+          "area": 1285
+        }
+      ],
+      "scale": 4,
+      "pixelSize": {
+        "width": 6400,
+        "height": 4960
+      },
+      "artKind": "custom"
+    },
+    {
+      "id": "dogwallow-ramble-ii",
+      "displayName": "Dogwallow Ramble II",
+      "src": "/art/town/districts/dogwallow-ramble-ii.png",
+      "contentHash": "district-art-dogwallow-ramble-ii-custom-20260522",
+      "mask": "/art/town/masks/district-art/dogwallow-ramble-ii.png",
+      "components": [
+        {
+          "id": "dogwallow-ramble-ii-1",
+          "bounds": {
+            "x": 478,
+            "y": 913,
+            "width": 333,
+            "height": 182
+          },
+          "centroid": {
+            "x": 675.2,
+            "y": 1005.7
+          },
+          "area": 23774
+        },
+        {
+          "id": "dogwallow-ramble-ii-2",
+          "bounds": {
+            "x": 581,
+            "y": 760,
+            "width": 212,
+            "height": 118
+          },
+          "centroid": {
+            "x": 701.7,
+            "y": 826.4
+          },
+          "area": 9765
+        }
+      ],
+      "scale": 4,
+      "pixelSize": {
+        "width": 6400,
+        "height": 4960
+      },
+      "artKind": "custom"
+    },
+    {
+      "id": "gates-of-hell",
+      "displayName": "The Gates of Hell",
+      "src": "/art/town/districts/gates-of-hell.png",
+      "contentHash": "district-art-gates-of-hell-custom-20260522",
+      "mask": "/art/town/masks/district-art/gates-of-hell.png",
+      "components": [
+        {
+          "id": "gates-of-hell-1",
+          "bounds": {
+            "x": 758,
+            "y": 826,
+            "width": 534,
+            "height": 280
+          },
+          "centroid": {
+            "x": 978.9,
+            "y": 950.1
+          },
+          "area": 82913
+        }
+      ],
+      "scale": 4,
+      "pixelSize": {
+        "width": 6400,
+        "height": 4960
+      },
+      "artKind": "custom"
+    }
+  ]
+}
