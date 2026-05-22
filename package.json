@@ -9,6 +9,7 @@
     "dev": "next dev -p 3736",
     "dev:cf": "wrangler pages dev --proxy 3736 --port 3737 --compatibility-date 2026-05-01",
     "build": "next build",
+    "type-check": "tsc --noEmit",
     "start": "next start",
     "populate": "node scripts/populate-manifests.mjs"
   },
