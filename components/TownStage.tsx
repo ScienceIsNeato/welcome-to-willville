@@ -16,7 +16,7 @@ import { type Stop } from "@/lib/town";
 import { isKnownDistrict } from "@/lib/slugs";
 import type { CanalBoat } from "@/lib/canal";
 import { DistrictZone } from "./DistrictZone";
-import { BucolicMargin, WORLD_BACKDROP_ART } from "./BucolicMargin";
+import { BucolicMargin } from "./BucolicMargin";
 import { TransitLines } from "./TransitLines";
 import { StopMarker } from "./StopMarker";
 import { MainLine } from "./MainLine";
@@ -351,10 +351,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       id="willville-stage"
       style={{
         backgroundColor: "#063755",
-        backgroundImage: `linear-gradient(rgba(6, 55, 85, 0.32), rgba(8, 5, 21, 0.42)), url(${WORLD_BACKDROP_ART})`,
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundSize: "cover",
+        backgroundImage:
+          "linear-gradient(rgba(6, 55, 85, 0.32), rgba(8, 5, 21, 0.42))",
       }}
     >
       <CentralBoard
