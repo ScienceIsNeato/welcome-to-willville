@@ -24,7 +24,9 @@ jobs:
         run: npm ci
 
       - name: Install slop-mop
-        run: pip install slopmop==1.2.0
+        run: |
+          pip install slopmop==1.2.0
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Quality gates
         run: sm scour
