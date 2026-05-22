@@ -6,9 +6,6 @@ type Props = {
   stops: Stop[];
 };
 
-const ISTHMUS_LAND_PATH =
-  "M -154 -1700 C 120 -1240, 402 -890, 330 -520 C 292 -326, 312 -72, 274 324 C 212 480, 230 628, 330 774 C 438 934, 405 1084, 332 1380 C 260 1830, 302 2210, 380 2920 L 1048 2920 C 1136 2200, 1214 1806, 1118 1380 C 1052 1110, 1042 956, 1140 810 C 1266 622, 1234 490, 1165 334 C 1105 198, 1168 66, 1328 -140 C 1426 -560, 1480 -1010, 1710 -1700 Z";
-
 const ISTHMUS_LEFT_COAST_PATH =
   "M -154 -1700 C 120 -1240, 402 -890, 330 -520 C 292 -326, 312 -72, 274 324 C 212 480, 230 628, 330 774 C 438 934, 405 1084, 332 1380 C 260 1830, 302 2210, 380 2920";
 
@@ -50,9 +47,9 @@ export function GeneratedTownBase({ stops }: Props) {
           />
         </pattern>
       </defs>
-      <path d={ISTHMUS_LAND_PATH} fill="#5f9658" opacity={0.92} />
+      <path d={GENERATED_TOWN_LAYOUT.landPath} fill="#5f9658" opacity={0.92} />
       <path
-        d={ISTHMUS_LAND_PATH}
+        d={GENERATED_TOWN_LAYOUT.landPath}
         fill="url(#isthmus-field-texture)"
         opacity={0.26}
       />
@@ -110,7 +107,7 @@ export function GeneratedTownBase({ stops }: Props) {
           width={GENERATED_TOWN_LAYOUT.size.width}
           height={GENERATED_TOWN_LAYOUT.size.height}
           preserveAspectRatio="none"
-          clipPath="url(#generated-town-footprint-clip)"
+          clipPath="url(#generated-town-land-clip)"
         />
       ))}
 

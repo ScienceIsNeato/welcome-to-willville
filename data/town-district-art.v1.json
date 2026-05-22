@@ -6,7 +6,7 @@
       "id": "mirrored-mile",
       "displayName": "Mirrored Mile",
       "src": "/art/town/districts/mirrored-mile.png",
-      "contentHash": "district-art-mirrored-mile-custom-20260522",
+      "contentHash": "district-art-mirrored-mile-2026-05-22-1747",
       "mask": "/art/town/masks/district-art/mirrored-mile.png",
       "components": [
         {
@@ -35,7 +35,7 @@
       "id": "the-zeitgeist",
       "displayName": "The Zeitgeist",
       "src": "/art/town/districts/the-zeitgeist.png",
-      "contentHash": "district-art-the-zeitgeist-custom-20260522",
+      "contentHash": "district-art-the-zeitgeist-2026-05-22-1747",
       "mask": "/art/town/masks/district-art/the-zeitgeist.png",
       "components": [
         {
@@ -64,7 +64,7 @@
       "id": "the-graveyard",
       "displayName": "The Graveyard",
       "src": "/art/town/districts/the-graveyard.png",
-      "contentHash": "district-art-the-graveyard-custom-20260522",
+      "contentHash": "district-art-the-graveyard-2026-05-22-1747",
       "mask": "/art/town/masks/district-art/the-graveyard.png",
       "components": [
         {
@@ -93,7 +93,7 @@
       "id": "halls-of-judgement",
       "displayName": "The Halls of Judgement",
       "src": "/art/town/districts/halls-of-judgement.png",
-      "contentHash": "district-art-halls-of-judgement-custom-20260522",
+      "contentHash": "district-art-halls-of-judgement-2026-05-22-1747",
       "mask": "/art/town/masks/district-art/halls-of-judgement.png",
       "components": [
         {
@@ -122,7 +122,7 @@
       "id": "town-square",
       "displayName": "Town Square",
       "src": "/art/town/districts/town-square.png",
-      "contentHash": "district-art-town-square-custom-20260522",
+      "contentHash": "district-art-town-square-2026-05-22-1747",
       "mask": "/art/town/masks/district-art/town-square.png",
       "components": [
         {
@@ -151,7 +151,7 @@
       "id": "slop-wharf",
       "displayName": "Slop Wharf",
       "src": "/art/town/districts/slop-wharf.png",
-      "contentHash": "district-art-slop-wharf-custom-20260522",
+      "contentHash": "district-art-slop-wharf-2026-05-22-1747",
       "mask": "/art/town/masks/district-art/slop-wharf.png",
       "components": [
         {
@@ -194,7 +194,7 @@
       "id": "dogwallow-ramble-ii",
       "displayName": "Dogwallow Ramble II",
       "src": "/art/town/districts/dogwallow-ramble-ii.png",
-      "contentHash": "district-art-dogwallow-ramble-ii-custom-20260522",
+      "contentHash": "district-art-dogwallow-ramble-ii-2026-05-22-1747",
       "mask": "/art/town/masks/district-art/dogwallow-ramble-ii.png",
       "components": [
         {
@@ -237,7 +237,7 @@
       "id": "gates-of-hell",
       "displayName": "The Gates of Hell",
       "src": "/art/town/districts/gates-of-hell.png",
-      "contentHash": "district-art-gates-of-hell-custom-20260522",
+      "contentHash": "district-art-gates-of-hell-2026-05-22-1747",
       "mask": "/art/town/masks/district-art/gates-of-hell.png",
       "components": [
         {

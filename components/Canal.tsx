@@ -48,8 +48,8 @@ export function Canal({ boats, layer = "all" }: Props) {
             <clipPath id="willville-canal-section-clip">
               <path d={pointsToPath(CANAL_SECTION.polygon)} />
             </clipPath>
-            <clipPath id="willville-canal-town-footprint-clip">
-              <path d={GENERATED_TOWN_LAYOUT.townFootprintPath} />
+            <clipPath id="willville-canal-land-clip">
+              <path d={GENERATED_TOWN_LAYOUT.landPath} />
             </clipPath>
           </defs>
 
@@ -81,7 +81,7 @@ export function Canal({ boats, layer = "all" }: Props) {
             strokeWidth={52}
             strokeLinecap="round"
             strokeLinejoin="round"
-            clipPath="url(#willville-canal-section-clip)"
+            clipPath="url(#willville-canal-shore-clip)"
             aria-hidden
           />
           <path
@@ -93,7 +93,7 @@ export function Canal({ boats, layer = "all" }: Props) {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeDasharray="24 32"
-            clipPath="url(#willville-canal-section-clip)"
+            clipPath="url(#willville-canal-shore-clip)"
             aria-hidden
           />
 
@@ -102,7 +102,7 @@ export function Canal({ boats, layer = "all" }: Props) {
               <g
                 key={bank.id}
                 className="dynamic-wall-loop"
-                clipPath="url(#willville-canal-town-footprint-clip)"
+                clipPath="url(#willville-canal-land-clip)"
               >
                 <path
                   d={bank.path}

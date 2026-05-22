@@ -38,8 +38,8 @@ export function DynamicWalls() {
   return (
     <g className="dynamic-walls" aria-hidden="true">
       <defs>
-        <clipPath id="willville-wall-town-footprint-clip">
-          <path d={GENERATED_TOWN_LAYOUT.townFootprintPath} />
+        <clipPath id="willville-wall-land-clip">
+          <path d={GENERATED_TOWN_LAYOUT.landPath} />
         </clipPath>
         <mask
           id="willville-wall-pixel-mask"
@@ -79,7 +79,7 @@ export function DynamicWalls() {
       </defs>
 
       <g
-        clipPath="url(#willville-wall-town-footprint-clip)"
+        clipPath="url(#willville-wall-land-clip)"
         mask="url(#willville-wall-pixel-mask)"
       >
         <rect

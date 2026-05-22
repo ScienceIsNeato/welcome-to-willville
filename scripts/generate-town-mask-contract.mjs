@@ -39,14 +39,14 @@ function svgMask(path, options = {}) {
 `;
 }
 
-function svgFootprintClippedMask(basePath, options = {}) {
+function svgLandClippedMask(basePath, options = {}) {
   const subtractPath = options.subtractPath;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${layout.size.width}" height="${layout.size.height}" viewBox="0 0 ${layout.size.width} ${layout.size.height}">
   <defs>
-    <clipPath id="town-footprint-clip"><path d="${layout.townFootprintPath}" /></clipPath>
+    <clipPath id="town-land-clip"><path d="${layout.landPath}" /></clipPath>
   </defs>
   <rect width="${layout.size.width}" height="${layout.size.height}" fill="black" />
-  <path d="${basePath}" fill="white" clip-path="url(#town-footprint-clip)" />
+  <path d="${basePath}" fill="white" clip-path="url(#town-land-clip)" />
   ${subtractPath ? `<path d="${subtractPath}" fill="black" />` : ""}
 </svg>
 `;
@@ -145,12 +145,12 @@ for (const district of layout.districts) {
   const districtPath = pointsToPath(district.polygon);
   const mask = await writeMask(
     `districts/${district.id}.png`,
-    svgFootprintClippedMask(districtPath),
+    svgLandClippedMask(districtPath),
   );
   const artMaskRelativePath = `district-art/${district.id}.png`;
   const artMask = await writeMask(
     artMaskRelativePath,
-    svgFootprintClippedMask(districtPath, {
+    svgLandClippedMask(districtPath, {
       subtractPath: pointsToPath(canalSection.polygon),
     }),
   );
@@ -169,22 +169,22 @@ const globalMasks = {
   ),
   shoreWall: await writeMask(
     "shore-wall.png",
-    svgStrokeMask(layout.townFootprintPath, { width: 24 }),
+    svgStrokeMask(layout.landPath, { width: 24 }),
   ),
   canal: await writeMask(
     "canal.png",
-    svgStrokeMask(layout.canal.pathD, { width: 86 }),
+    svgStrokeMask(layout.canal.pathD, { clipPath: layout.landPath, width: 86 }),
   ),
   canalSection: await writeMask(
     "canal-section.png",
-    svgMask(pointsToPath(canalSection.polygon)),
+    svgLandClippedMask(pointsToPath(canalSection.polygon)),
   ),
   canalBanks: await writeMask(
     "canal-banks.png",
     svgStrokeMask(
       `${canalSection.northBankPath} ${canalSection.southBankPath}`,
       {
-        clipPath: layout.townFootprintPath,
+        clipPath: layout.landPath,
         width: 10,
       },
     ),
@@ -196,7 +196,7 @@ const globalMasks = {
         .map((district) => pointsToPath(district.wallLoop))
         .join(" "),
       {
-        clipPath: layout.townFootprintPath,
+        clipPath: layout.landPath,
         subtractPath: pointsToPath(canalSection.polygon),
         width: 24,
       },
