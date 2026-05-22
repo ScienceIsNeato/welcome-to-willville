@@ -1,0 +1,13 @@
+{
+  "name": "willville",
+  "version": "1.0.0",
+  "description": "Update committed .willville.json agent packets in each repo to keep live status current on the Willville map.",
+  "author": {
+    "name": "ScienceIsNeato",
+    "url": "https://github.com/ScienceIsNeato"
+  },
+  "homepage": "https://github.com/ScienceIsNeato/welcome-to-willville",
+  "repository": "https://github.com/ScienceIsNeato/welcome-to-willville",
+  "license": "MIT",
+  "keywords": ["willville", "status", "agent", "stop-packet", "dashboard"]
+}

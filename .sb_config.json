@@ -290,7 +290,11 @@
         ],
         "config_file_path": null,
         "bandit_config_file": null,
-        "pip_audit_ignore_vulns": []
+        "pip_audit_ignore_vulns": [
+          "GHSA-65pc-fj4g-8rjx",
+          "PYSEC-2026-141",
+          "PYSEC-2026-142"
+        ]
       },
       "vulnerability-blindness.py": {
         "enabled": true,

@@ -30,6 +30,9 @@
 # wrangler dev artifacts
 .wrangler/
 
+# Python venv
+.venv/
+
 # temp files
 .tmp/
 

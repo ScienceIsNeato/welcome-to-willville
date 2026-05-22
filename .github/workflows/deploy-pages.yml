@@ -31,5 +31,5 @@ jobs:
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: 4c2341810414766ae8cbf672785e82c5
+          accountId: 4c2341810414766ae8cbf672785e82c5 # pragma: allowlist secret
           command: pages deploy ./out --project-name welcome-to-willville --branch main
