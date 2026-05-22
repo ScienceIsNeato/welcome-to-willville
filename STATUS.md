@@ -1,10 +1,5 @@
 <!-- willville
-doing: Restructuring district map and repo coverage audit per new CSV mapping
-done: District rename (8 regions), hallucinated stop removal, split-flap board merge, packet format v2
-next: Rebuild static export, verify all 33 repos render on map
-risk: low
-milestone: Repo coverage audit
-eta: 2026-05-22
+status: shipping
 -->
 
 # Status
