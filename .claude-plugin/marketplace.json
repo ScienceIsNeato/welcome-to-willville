@@ -1,0 +1,29 @@
+{
+  "name": "willville",
+  "owner": {
+    "name": "ScienceIsNeato",
+    "url": "https://github.com/ScienceIsNeato"
+  },
+  "description": "Willville stop packets — keep your project's live status current on the Willville map.",
+  "metadata": {
+    "description": "Willville stop packets — keep your project's live status current on the Willville map."
+  },
+  "plugins": [
+    {
+      "name": "willville",
+      "source": {
+        "source": "github",
+        "repo": "ScienceIsNeato/welcome-to-willville"
+      },
+      "description": "Update committed .willville.json whenever status, direction, blockers, or actions change in any ScienceIsNeato repo. Willville reads it directly and renders live agent status on the DigitalDetailBoard.",
+      "category": "productivity",
+      "keywords": ["willville", "status", "agent", "stop-packet", "dashboard"],
+      "homepage": "https://github.com/ScienceIsNeato/welcome-to-willville",
+      "license": "MIT",
+      "author": {
+        "name": "ScienceIsNeato",
+        "url": "https://github.com/ScienceIsNeato"
+      }
+    }
+  ]
+}
