@@ -1,17 +1,8 @@
 "use client";
 
-import type { CSSProperties, MouseEvent } from "react";
+import type { CSSProperties, MouseEvent, ReactNode } from "react";
 import { LOCKS, type CanalBoat } from "@/lib/canal";
-import { expressRank, type Stop } from "@/lib/town";
-
-const STATE_LABEL: Record<Stop["status"]["state"], string> = {
-  idea: "Idea",
-  wip: "Work in progress",
-  shipping: "Shipping",
-  maintenance: "Maintenance",
-  dormant: "Dormant",
-  unknown: "No manifest",
-};
+import type { Stop } from "@/lib/town";
 
 type Props = {
   stop: Stop | null;
@@ -20,8 +11,12 @@ type Props = {
   onClear: () => void;
 };
 
-export function DigitalDetailBoard({ stop, allStops, boats, onClear }: Props) {
-  const rank = stop ? expressRank(stop, allStops) : null;
+export function DigitalDetailBoard({
+  stop,
+  allStops: _allStops,
+  boats,
+  onClear,
+}: Props) {
   const repoUrl = stop?.repo ? repoHref(stop.repo) : null;
   const linkOut = stop ? (stop.homepage ?? repoUrl) : null;
   const prs = stop
@@ -45,89 +40,106 @@ export function DigitalDetailBoard({ stop, allStops, boats, onClear }: Props) {
         </div>
       ) : (
         <>
-          <div style={metricsGridStyle}>
-            <Metric label="Status" value={STATE_LABEL[stop.status.state]} />
-            <Metric label="Express" value={rank ? `#${rank}` : "Not queued"} />
-            <Metric label="ETA" value={etaLabel(stop.queue?.etaDays)} />
-            <Metric label="Milestone" value={stop.queue?.milestone ?? "TBD"} />
-          </div>
-
-          <div style={notesColumnStyle}>
-            <NoteList
-              title="Status"
-              items={stop.status.doing ? [stop.status.doing] : []}
-              fallback="No active work logged."
-            />
-            <NoteList
-              title="Direction"
-              items={stop.status.next ? [stop.status.next] : []}
-              fallback="No direction logged."
-            />
-            <NoteList
-              title="Difficulties"
-              items={stop.agent?.difficulties ? [stop.agent.difficulties] : []}
-              fallback="None"
-            />
-            <NoteList
-              title="Needs human"
-              items={stop.agent?.needsHuman ? [stop.agent.needsHuman] : []}
-              fallback="None"
-            />
-          </div>
-
-          <div style={actionsColumnStyle}>
-            <div style={signalGridStyle}>
-              <Signal label="Language" value={stop.language ?? "Mixed"} />
-              <BranchSignal stop={stop} />
-              <Signal
-                label="7d commits"
-                value={stop.commits7d != null ? String(stop.commits7d) : "n/a"}
-              />
-              <Signal
-                label="Open"
-                value={
-                  stop.openIssues != null ? String(stop.openIssues) : "n/a"
-                }
-              />
-              <Signal
-                label="Stars"
-                value={stop.stars != null ? stop.stars.toLocaleString() : "n/a"}
-              />
-            </div>
-            {prs.length > 0 && (
-              <div style={prStyle}>
-                <span style={smallLabelStyle}>Canal</span>
-                {prs.slice(0, 2).map((pr) => {
-                  const lock = LOCKS.find(
-                    (candidate) => candidate.id === pr.lock,
-                  );
-                  return (
-                    <a
-                      key={`${pr.repo}-${pr.prNumber}`}
-                      href={pr.url}
-                      onClick={followLink}
-                      style={softLinkStyle}
-                    >
-                      {pr.title}
-                      <span style={mutedInlineStyle}>
-                        {" "}
-                        / {lock?.displayName ?? pr.lock}
-                      </span>
-                    </a>
-                  );
-                })}
+          <div style={topGridStyle}>
+            <Panel title="Primary Metrics">
+              <div style={metricClusterStyle}>
+                <Metric label="Repo" value={repoShortName(stop.repo)} />
+                <Metric label="Language" value={stop.language ?? "Mixed"} />
+                <Metric label="Branches" value="n/a" />
+                <Metric
+                  label="Issues"
+                  value={
+                    stop.openIssues != null ? String(stop.openIssues) : "n/a"
+                  }
+                />
+                <Metric label="Open PRs" value={String(prs.length)} />
               </div>
-            )}
-            <NoteList
-              title="Activity Log"
-              items={
-                stop.agent?.actions?.map(
-                  (action) => `${action.status}: ${action.name}`,
-                ) ?? []
-              }
-              fallback="No recent agent actions."
-            />
-            <div style={buttonRowStyle}>
+            </Panel>
+
+            <Panel title="Temporal Data">
+              <div style={metricClusterStyle}>
+                <Metric
+                  label="Commits 3d/7d/21d"
+                  value={`${stop.commits3d ?? 0} / ${stop.commits7d ?? 0} / ${
+                    stop.commits21d ?? 0
+                  }`}
+                  wide
+                />
+                <Metric
+                  label="Last Commit"
+                  value={timeAgo(stop.status.updated)}
+                />
+                <Metric label="Oldest PR" value={oldestPrAge(prs)} />
+                <Metric label="Last Merge" value="n/a" />
+                <Metric label="Release" value="n/a" />
+              </div>
+            </Panel>
+
+            <Panel title="Active Branch">
+              <div style={metricClusterStyle}>
+                <BranchSignal stop={stop} />
+                <Metric
+                  label="Milestone"
+                  value={stop.queue?.milestone ?? "n/a"}
+                  wide
+                />
+                <Metric label="ETA" value={etaLabel(stop.queue?.etaDays)} />
+              </div>
+            </Panel>
+          </div>
+
+          <div style={bottomGridStyle}>
+            <Panel title="Status">
+              <TextBlock
+                value={stop.status.doing}
+                fallback="No active work logged."
+              />
+            </Panel>
+            <Panel title="Direction">
+              <TextBlock
+                value={stop.status.next}
+                fallback="No direction logged."
+              />
+            </Panel>
+            <Panel title="Activity Log">
+              <ActionList stop={stop} />
+            </Panel>
+            <Panel title="Difficulties">
+              <TextBlock value={stop.agent?.difficulties} fallback="None" />
+            </Panel>
+            <Panel title="Needs Human">
+              <TextBlock value={stop.agent?.needsHuman} fallback="None" />
+            </Panel>
+          </div>
+
+          {prs.length > 0 && (
+            <div style={canalRowStyle}>
+              <span style={smallLabelStyle}>Canal</span>
+              {prs.slice(0, 3).map((pr) => {
+                const lock = LOCKS.find(
+                  (candidate) => candidate.id === pr.lock,
+                );
+                return (
+                  <a
+                    key={`${pr.repo}-${pr.prNumber}`}
+                    href={pr.url}
+                    onClick={followLink}
+                    style={softLinkStyle}
+                  >
+                    {pr.title}
+                    <span style={mutedInlineStyle}>
+                      {" "}
+                      / {lock?.displayName ?? pr.lock}
+                    </span>
+                  </a>
+                );
+              })}
+            </div>
+          )}
+
+          <div style={buttonRowStyle}>
+            <div style={buttonSpacerStyle} />
+            <div style={buttonGroupStyle}>
               {repoUrl && (
                 <a href={repoUrl} onClick={followLink} style={buttonStyle}>
                   Repo
@@ -149,20 +161,28 @@ export function DigitalDetailBoard({ stop, allStops, boats, onClear }: Props) {
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div style={metricStyle}>
-      <span style={smallLabelStyle}>{label}</span>
-      <strong style={metricValueStyle}>{value}</strong>
+    <div style={panelStyle}>
+      <span style={panelTitleStyle}>{title}</span>
+      {children}
     </div>
   );
 }
 
-function Signal({ label, value }: { label: string; value: string }) {
+function Metric({
+  label,
+  value,
+  wide,
+}: {
+  label: string;
+  value: string;
+  wide?: boolean;
+}) {
   return (
-    <div style={signalStyle}>
+    <div style={wide ? wideMetricStyle : metricStyle}>
       <span style={smallLabelStyle}>{label}</span>
-      <span style={signalValueStyle}>{value}</span>
+      <strong style={metricValueStyle}>{value}</strong>
     </div>
   );
 }
@@ -170,7 +190,7 @@ function Signal({ label, value }: { label: string; value: string }) {
 function BranchSignal({ stop }: { stop: Stop }) {
   const branch = stop.activeBranch;
   return (
-    <div style={signalStyle}>
+    <div style={metricStyle}>
       <span style={smallLabelStyle}>Branch</span>
       {branch ? (
         <a
@@ -182,9 +202,39 @@ function BranchSignal({ stop }: { stop: Stop }) {
           {branch.name}
         </a>
       ) : (
-        <span style={signalValueStyle}>n/a</span>
+        <span style={metricValueStyle}>n/a</span>
       )}
     </div>
+  );
+}
+
+function TextBlock({
+  value,
+  fallback,
+}: {
+  value: string | undefined;
+  fallback: string;
+}) {
+  return <p style={noteTextStyle}>{normalizePanelText(value, fallback)}</p>;
+}
+
+function ActionList({ stop }: { stop: Stop }) {
+  const actions = stop.agent?.actions ?? [];
+  if (actions.length === 0) {
+    return <p style={noteTextStyle}>No recent agent actions.</p>;
+  }
+  return (
+    <ul style={actionListStyle}>
+      {actions.slice(0, 4).map((action, index) => (
+        <li
+          key={`${action.status}-${action.name}-${index}`}
+          style={actionItemStyle}
+        >
+          <span style={actionStatusStyle}>{actionSymbol(action.status)}</span>
+          <span>{action.name}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -193,27 +243,14 @@ function followLink(e: MouseEvent<HTMLAnchorElement>) {
   window.location.assign(e.currentTarget.href);
 }
 
-function NoteList({
-  title,
-  items,
-  fallback,
-}: {
-  title: string;
-  items: string[];
-  fallback: string;
-}) {
-  return (
-    <div style={noteStyle}>
-      <span style={smallLabelStyle}>{title}</span>
-      <p style={noteTextStyle}>{items.slice(0, 2).join(" / ") || fallback}</p>
-    </div>
-  );
-}
-
 function repoHref(repo: string): string {
   const trimmed = repo.trim();
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
   return `https://github.com/${trimmed.replace(/^\/+/, "")}`;
+}
+
+function repoShortName(repo: string | undefined): string {
+  return repo?.split("/").at(-1) ?? "n/a";
 }
 
 function etaLabel(days: number | undefined): string {
@@ -226,17 +263,54 @@ function etaLabel(days: number | undefined): string {
   return `${Math.round(safeDays / 30)} months`;
 }
 
+function oldestPrAge(prs: CanalBoat[]): string {
+  if (prs.length === 0) return "n/a";
+  const oldest = prs.reduce((min, pr) =>
+    Date.parse(pr.createdAt) < Date.parse(min.createdAt) ? pr : min,
+  );
+  return timeAgo(oldest.createdAt);
+}
+
+function timeAgo(value: string | undefined): string {
+  if (!value) return "n/a";
+  const time = Date.parse(value);
+  if (Number.isNaN(time)) return "n/a";
+  const seconds = Math.max(0, Math.round((Date.now() - time) / 1000));
+  if (seconds < 90) return "now";
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 90) return `${minutes}m`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 48) return `${hours}h`;
+  const days = Math.round(hours / 24);
+  if (days < 60) return `${days}d`;
+  const months = Math.round(days / 30);
+  return `${months}mo`;
+}
+
+function normalizePanelText(
+  value: string | undefined,
+  fallback: string,
+): string {
+  if (!value || value.trim().toLowerCase() === "none") return fallback;
+  return value;
+}
+
+function actionSymbol(status: string): string {
+  if (status === "done") return "+";
+  if (status === "in_progress") return ">";
+  if (status === "failed") return "!";
+  return "o";
+}
+
 const shellStyle: CSSProperties = {
   position: "relative",
   zIndex: 2,
-  width: "min(880px, calc(100vw - 20px))",
-  minHeight: 188,
+  width: "min(960px, calc(100vw - 20px))",
+  minHeight: 300,
   margin: "0 auto 10px",
   display: "grid",
-  gridTemplateColumns:
-    "minmax(230px, 0.85fr) minmax(260px, 1fr) minmax(220px, 0.8fr)",
-  gap: 14,
-  padding: "15px 16px",
+  gap: 10,
+  padding: "14px 18px 16px",
   borderRadius: 3,
   border: "1px solid rgba(51, 255, 87, 0.28)",
   background:
@@ -281,18 +355,69 @@ const eyebrowStyle: CSSProperties = {
   whiteSpace: "nowrap",
 };
 
-const metricsGridStyle: CSSProperties = {
+const topGridStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: 8,
+  gridTemplateColumns: "1fr 1fr 1fr",
+  gap: 10,
+};
+
+const bottomGridStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr 1fr",
+  gap: 10,
+};
+
+const panelStyle: CSSProperties = {
+  position: "relative",
+  minWidth: 0,
+  minHeight: 78,
+  padding: "23px 10px 10px",
+  borderRadius: 2,
+  background:
+    "linear-gradient(180deg, rgba(51,255,87,0.055), rgba(51,255,87,0.025))",
+  border: "1px solid rgba(51, 255, 87, 0.42)",
+  boxShadow: "inset 0 0 22px rgba(51, 255, 87, 0.035)",
+};
+
+const panelTitleStyle: CSSProperties = {
+  position: "absolute",
+  top: 9,
+  left: 10,
+  maxWidth: "calc(100% - 20px)",
+  padding: "2px 8px",
+  borderRadius: 2,
+  background: "rgba(190, 255, 196, 0.95)",
+  color: "#052505",
+  fontSize: 10,
+  lineHeight: 1.1,
+  fontWeight: 900,
+  letterSpacing: 1.6,
+  textTransform: "uppercase",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
+};
+
+const metricClusterStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(3, minmax(0, max-content))",
+  alignContent: "start",
+  gap: 6,
 };
 
 const metricStyle: CSSProperties = {
   minWidth: 0,
-  padding: "9px 10px",
+  maxWidth: 124,
+  padding: "7px 8px",
   borderRadius: 2,
   background: "rgba(51, 255, 87, 0.04)",
   border: "1px solid rgba(51, 255, 87, 0.18)",
+};
+
+const wideMetricStyle: CSSProperties = {
+  ...metricStyle,
+  gridColumn: "span 2",
+  maxWidth: 190,
 };
 
 const smallLabelStyle: CSSProperties = {
@@ -308,7 +433,7 @@ const smallLabelStyle: CSSProperties = {
 const metricValueStyle: CSSProperties = {
   display: "block",
   color: "#33ff57",
-  fontSize: 14,
+  fontSize: 13,
   lineHeight: 1.2,
   overflow: "hidden",
   textOverflow: "ellipsis",
@@ -316,56 +441,15 @@ const metricValueStyle: CSSProperties = {
   textShadow: "0 0 8px rgba(51, 255, 87, 0.55)",
 };
 
-const notesColumnStyle: CSSProperties = {
-  minWidth: 0,
-  display: "grid",
-  gap: 8,
-};
-
-const noteStyle: CSSProperties = {
-  minWidth: 0,
-  padding: "9px 10px",
-  borderRadius: 2,
-  background: "rgba(51, 255, 87, 0.03)",
-  border: "1px solid rgba(51, 255, 87, 0.14)",
-};
-
 const noteTextStyle: CSSProperties = {
   margin: 0,
   color: "rgba(51, 255, 87, 0.82)",
   fontSize: 12,
-  lineHeight: 1.35,
-};
-
-const actionsColumnStyle: CSSProperties = {
-  minWidth: 0,
-  display: "grid",
-  gap: 8,
-};
-
-const signalGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-  gap: 6,
-};
-
-const signalStyle: CSSProperties = {
-  minWidth: 0,
-  padding: "7px 8px",
-  borderRadius: 2,
-  background: "rgba(51, 255, 87, 0.03)",
-  border: "1px solid rgba(51, 255, 87, 0.12)",
-};
-
-const signalValueStyle: CSSProperties = {
-  color: "#33ff57",
-  fontSize: 13,
-  fontWeight: 700,
-  textShadow: "0 0 6px rgba(51, 255, 87, 0.5)",
+  lineHeight: 1.45,
 };
 
 const branchLinkStyle: CSSProperties = {
-  ...signalValueStyle,
+  ...metricValueStyle,
   display: "block",
   color: "#33ff57",
   textDecoration: "none",
@@ -374,10 +458,35 @@ const branchLinkStyle: CSSProperties = {
   whiteSpace: "nowrap",
 };
 
-const prStyle: CSSProperties = {
+const actionListStyle: CSSProperties = {
+  margin: 0,
+  padding: 0,
+  listStyle: "none",
+  display: "grid",
+  gap: 5,
+};
+
+const actionItemStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "18px 1fr",
+  gap: 5,
+  paddingBottom: 5,
+  borderBottom: "1px solid rgba(51, 255, 87, 0.13)",
+  color: "rgba(51, 255, 87, 0.82)",
+  fontSize: 12,
+  lineHeight: 1.35,
+};
+
+const actionStatusStyle: CSSProperties = {
+  color: "rgba(51, 255, 87, 0.7)",
+  fontWeight: 900,
+};
+
+const canalRowStyle: CSSProperties = {
   display: "grid",
   gap: 3,
   minWidth: 0,
+  padding: "4px 0",
 };
 
 const mutedInlineStyle: CSSProperties = {
@@ -397,9 +506,18 @@ const softLinkStyle: CSSProperties = {
 
 const buttonRowStyle: CSSProperties = {
   display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+};
+
+const buttonSpacerStyle: CSSProperties = {
+  minWidth: 0,
+};
+
+const buttonGroupStyle: CSSProperties = {
+  display: "flex",
   gap: 8,
   flexWrap: "wrap",
-  alignSelf: "end",
 };
 
 const buttonStyle: CSSProperties = {
