@@ -45,9 +45,6 @@ export function Canal({ boats, layer = "all" }: Props) {
             <clipPath id="willville-canal-shore-clip">
               <path d={GENERATED_TOWN_LAYOUT.landPath} />
             </clipPath>
-            <clipPath id="willville-canal-section-clip">
-              <path d={pointsToPath(CANAL_SECTION.polygon)} />
-            </clipPath>
             <clipPath id="willville-canal-land-clip">
               <path d={GENERATED_TOWN_LAYOUT.landPath} />
             </clipPath>

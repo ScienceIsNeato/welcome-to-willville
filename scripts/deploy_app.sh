@@ -44,7 +44,7 @@ screen_session_for() {
 }
 
 is_pid_alive() {
-  kill -0 "$1" 2>/dev/null
+  [[ "$1" =~ ^[1-9][0-9]*$ ]] && kill -0 "$1" 2>/dev/null
 }
 
 is_screen_alive() {
@@ -85,11 +85,11 @@ cleanup_stale() {
     local session
     session=$(jq_field "$data" "screenSession")
 
-    # Remove if PID is dead
+    # Remove if PID is dead and no live screen session owns the deployment.
     if [[ -n "$session" ]] && is_screen_alive "$session"; then
       :
-    elif [[ -n "$pid" ]] && ! is_pid_alive "$pid"; then
-      echo "  Removing dead deployment: $dir (pid $pid)"
+    elif [[ -z "$pid" ]] || ! is_pid_alive "$pid"; then
+      echo "  Removing dead deployment: $dir (pid ${pid:-none})"
       rm -f "$lockfile"
       continue
     fi
@@ -99,9 +99,12 @@ cleanup_stale() {
       local age=$(( now - started_at ))
       if (( age > MAX_AGE_SECONDS )); then
         echo "  Killing stale deployment: $dir (${age}s old, pid $pid)"
-        kill "$pid" 2>/dev/null || true
-        # Also kill any child wrangler/workerd/esbuild processes
-        pkill -P "$pid" 2>/dev/null || true
+        if [[ -n "$session" ]] && is_screen_alive "$session"; then
+          screen -S "$session" -X quit 2>/dev/null || true
+        elif is_pid_alive "$pid"; then
+          kill "$pid" 2>/dev/null || true
+          pkill -P "$pid" 2>/dev/null || true
+        fi
         rm -f "$lockfile"
       fi
     fi

@@ -102,8 +102,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const [bellHovered, setBellHovered] = useState(false);
 
   const loadTown = useCallback((signal?: AbortSignal) => {
-    return fetch(`/api/town?ts=${Date.now()}`, {
-      cache: "no-store",
+    return fetch("/api/town", {
       signal,
     })
       .then((r) => (r.ok ? r.json() : null))
@@ -736,12 +735,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       `}</style>
       </div>
 
-      <DigitalDetailBoard
-        stop={boardStop}
-        allStops={currentStops}
-        boats={boats}
-        onClear={closeHud}
-      />
+      <DigitalDetailBoard stop={boardStop} boats={boats} onClear={closeHud} />
     </div>
   );
 }

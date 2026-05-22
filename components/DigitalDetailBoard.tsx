@@ -6,17 +6,11 @@ import type { Stop } from "@/lib/town";
 
 type Props = {
   stop: Stop | null;
-  allStops: Stop[];
   boats: CanalBoat[];
   onClear: () => void;
 };
 
-export function DigitalDetailBoard({
-  stop,
-  allStops: _allStops,
-  boats,
-  onClear,
-}: Props) {
+export function DigitalDetailBoard({ stop, boats, onClear }: Props) {
   const repoUrl = stop?.repo ? repoHref(stop.repo) : null;
   const linkOut = stop ? (stop.homepage ?? repoUrl) : null;
   const prs = stop

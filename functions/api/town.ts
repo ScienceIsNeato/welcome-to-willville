@@ -260,6 +260,7 @@ async function fetchMostRecentPrRef(
     const headFullName = head?.repo?.full_name;
     const headRef = head?.ref ?? head?.sha;
     if (!headFullName || !headRef) return undefined;
+    if (headFullName.toLowerCase() !== fullName.toLowerCase()) return undefined;
     return { fullName: headFullName, ref: headRef };
   } catch {
     return undefined;
@@ -540,7 +541,7 @@ export const onRequestGet: PagesFunction<Env> = async ({
 
   const stops = buildTown(repoMetas);
 
-  const cacheControl = "no-store";
+  const cacheControl = "public, s-maxage=45, stale-while-revalidate=180";
 
   return new Response(
     JSON.stringify({
