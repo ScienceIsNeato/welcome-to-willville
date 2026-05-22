@@ -16,7 +16,7 @@ import { type Stop } from "@/lib/town";
 import { isKnownDistrict } from "@/lib/slugs";
 import type { CanalBoat } from "@/lib/canal";
 import { DistrictZone } from "./DistrictZone";
-import { BucolicMargin } from "./BucolicMargin";
+import { WorldSubstrate } from "./WorldSubstrate";
 import { TransitLines } from "./TransitLines";
 import { StopMarker } from "./StopMarker";
 import { MainLine } from "./MainLine";
@@ -102,7 +102,10 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const [bellHovered, setBellHovered] = useState(false);
 
   const loadTown = useCallback((signal?: AbortSignal) => {
-    return fetch("/api/town", { signal })
+    return fetch(`/api/town?ts=${Date.now()}`, {
+      cache: "no-store",
+      signal,
+    })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data && Array.isArray(data.stops)) {
@@ -517,7 +520,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           </defs>
 
           <g ref={cameraGroupRef}>
-            <BucolicMargin />
+            <WorldSubstrate />
 
             <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
               <GeneratedTownBase stops={currentStops} />

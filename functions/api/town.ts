@@ -68,6 +68,11 @@ type GitHubRepo = {
   topics: string[];
 };
 
+type RepoRef = {
+  fullName: string;
+  ref: string;
+};
+
 async function listOwnerRepos(token?: string): Promise<GitHubRepo[]> {
   const repos: GitHubRepo[] = [];
   const headers: Record<string, string> = {
@@ -227,6 +232,64 @@ async function fetchActiveBranch(
   }
 }
 
+async function fetchMostRecentPrRef(
+  fullName: string,
+  token?: string,
+): Promise<RepoRef | undefined> {
+  const headers: Record<string, string> = {
+    "User-Agent": "willville-edge",
+    Accept: "application/vnd.github+json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  try {
+    type GitHubPull = {
+      head?: {
+        ref?: string;
+        sha?: string;
+        repo?: { full_name?: string } | null;
+      };
+    };
+    const r = await fetch(
+      `https://api.github.com/repos/${fullName}/pulls?state=open&sort=updated&direction=desc&per_page=1`,
+      { headers },
+    );
+    if (!r.ok) return undefined;
+    const pulls = (await r.json()) as GitHubPull[];
+    const head = Array.isArray(pulls) ? pulls[0]?.head : undefined;
+    const headFullName = head?.repo?.full_name;
+    const headRef = head?.ref ?? head?.sha;
+    if (!headFullName || !headRef) return undefined;
+    return { fullName: headFullName, ref: headRef };
+  } catch {
+    return undefined;
+  }
+}
+
+function uniqueRefs(refs: Array<RepoRef | undefined>): RepoRef[] {
+  const seen = new Set<string>();
+  const result: RepoRef[] = [];
+  for (const ref of refs) {
+    if (!ref) continue;
+    const key = `${ref.fullName}:${ref.ref}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(ref);
+  }
+  return result;
+}
+
+async function firstResolved<T>(
+  refs: RepoRef[],
+  fetcher: (ref: RepoRef) => Promise<T | undefined>,
+): Promise<T | undefined> {
+  for (const ref of refs) {
+    const value = await fetcher(ref);
+    if (value !== undefined) return value;
+  }
+  return undefined;
+}
+
 const PACKET_RE = /<!--\s*willville\b([\s\S]*?)-->/;
 
 /** Parse a raw STATUS.md string into a WillvillePacket, or return undefined. */
@@ -303,7 +366,7 @@ function parseWillvillePacket(body: string): WillvillePacket | undefined {
 /** Fetch STATUS.md and parse the willville packet. Returns undefined on miss. */
 async function fetchWillvillePacket(
   fullName: string,
-  branch: string,
+  ref: string,
   token?: string,
 ): Promise<WillvillePacket | undefined> {
   const headers: Record<string, string> = {
@@ -313,7 +376,7 @@ async function fetchWillvillePacket(
   if (token) headers.Authorization = `Bearer ${token}`;
   try {
     const r = await fetch(
-      `https://api.github.com/repos/${fullName}/contents/STATUS.md?ref=${branch}`,
+      `https://api.github.com/repos/${fullName}/contents/STATUS.md?ref=${encodeURIComponent(ref)}`,
       { headers },
     );
     if (!r.ok) return undefined;
@@ -388,7 +451,7 @@ function parseWillvilleManifest(raw: unknown): WillvilleManifest | undefined {
 /** Fetch .willville.json and parse the committed agent packet. */
 async function fetchWillvilleManifest(
   fullName: string,
-  branch: string,
+  ref: string,
   token?: string,
 ): Promise<WillvilleManifest | undefined> {
   const headers: Record<string, string> = {
@@ -398,7 +461,7 @@ async function fetchWillvilleManifest(
   if (token) headers.Authorization = `Bearer ${token}`;
   try {
     const r = await fetch(
-      `https://api.github.com/repos/${fullName}/contents/.willville.json?ref=${branch}`,
+      `https://api.github.com/repos/${fullName}/contents/.willville.json?ref=${encodeURIComponent(ref)}`,
       { headers },
     );
     if (!r.ok) return undefined;
@@ -425,17 +488,28 @@ export const onRequestGet: PagesFunction<Env> = async ({
   });
 
   const repoMetas: RepoMeta[] = await mapLimit(candidates, 8, async (r) => {
-    const [milestones, commitCounts, activeBranch] = await Promise.all([
+    const [milestones, commitCounts, activeBranch, prRef] = await Promise.all([
       fetchMilestones(OWNER, r.name, token),
       fetchCommitCounts(r.full_name, token),
       fetchActiveBranch(r.full_name, r.default_branch, token),
+      fetchMostRecentPrRef(r.full_name, token),
     ]);
-    // Fetch the packet from whichever branch had the most recent commit, so
-    // work-in-progress STATUS.md entries actually appear in the UI.
-    const packetBranch = activeBranch?.name ?? r.default_branch;
+    // Agent packets resolve in priority order: current active branch, then the
+    // most recently updated PR branch, then the repo default branch.
+    const packetRefs = uniqueRefs([
+      activeBranch?.name
+        ? { fullName: r.full_name, ref: activeBranch.name }
+        : undefined,
+      prRef,
+      { fullName: r.full_name, ref: r.default_branch },
+    ]);
     const [willvilleManifest, willvillePacket] = await Promise.all([
-      fetchWillvilleManifest(r.full_name, packetBranch, token),
-      fetchWillvillePacket(r.full_name, packetBranch, token),
+      firstResolved(packetRefs, (ref) =>
+        fetchWillvilleManifest(ref.fullName, ref.ref, token),
+      ),
+      firstResolved(packetRefs, (ref) =>
+        fetchWillvillePacket(ref.fullName, ref.ref, token),
+      ),
     ]);
     return {
       repo: r.full_name,
@@ -466,7 +540,7 @@ export const onRequestGet: PagesFunction<Env> = async ({
 
   const stops = buildTown(repoMetas);
 
-  const cacheControl = "public, s-maxage=60, stale-while-revalidate=300";
+  const cacheControl = "no-store";
 
   return new Response(
     JSON.stringify({

@@ -1,5 +1,5 @@
 {
-  "version": "willville-world-backdrop-v2-simple-land-mask",
+  "version": "willville-world-landscape-v1",
   "size": {
     "width": 2400,
     "height": 1800
@@ -13,8 +13,12 @@
     "height": 1240
   },
   "assets": {
-    "landSvg": "/art/town/willville-land-v1.svg",
-    "landPng": "/art/town/willville-land-v1.png"
+    "landPng": "/art/town/willville-landscape-v1.png",
+    "source": "tmp/ganglia-world-landscape/world-landscape-ganglia-wide-raw.png",
+    "appliedBy": "scripts/apply-town-world-landscape-art.mjs"
+  },
+  "prompts": {
+    "worldLandscape": "docs/generated/town-region-art-prompts/world-landscape.md"
   },
   "sourceGeometry": {
     "townLayoutVersion": "isthmus-rio-v2-topology",

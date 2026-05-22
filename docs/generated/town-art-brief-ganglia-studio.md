@@ -10,9 +10,11 @@ Willville is a Rio-inspired coastal project town on a narrow isthmus: bright mas
 
 The generated layout in `data/town-layout.v1.json` is the source of truth. Art may add texture, detail, lighting, and personality, but must preserve land shape, district boundaries, canal path, wall loops, site anchor intent, and the sign location.
 
-The world backdrop contract in `docs/generated/town-world-backdrop.v1.json` defines the outer isthmus, west/east coastlines, river, and registered town offset. Use it for any paintover that extends beyond the town proper; do not fall back to a repeated water tile.
+The world backdrop contract in `docs/generated/town-world-backdrop.v1.json` defines the registered whole-land mask for the visible isthmus. Use `docs/generated/town-region-art-prompts/world-landscape.md` for the Ganglia Studio prompt: South American coastal topography, mountains on the west coast, beaches on the east, and a style match to the existing district art. Do not fall back to procedural grids, repeated tiles, or generic countryside.
 
 The canal is its own generated section, not leftover paint inside neighboring districts. Use `canalSection` and the `canal-section` / `canal-banks` masks from `docs/generated/town-mask-contract.v1.json`; do not place site structures inside that corridor.
+
+District art is authored from `docs/generated/town-district-art-kits.v1.json`. Each component has a cropped 4x mask under `public/art/town/art-kits/`; generate or paint to that authoring size, then apply the result with `npm run town:apply-district-art -- --district=<id> --source=<image>`.
 
 ## Required Outputs
 
@@ -26,7 +28,7 @@ The canal is its own generated section, not leftover paint inside neighboring di
 
 ## Asset Contracts
 
-- `world-backdrop` -> `public/art/town/willville-world-v1.png`: World-scale backdrop with sea on both sides, continuous isthmus countryside, river, terrain texture, and town/canal geometry registered to the app canvas.
+- `world-backdrop` -> `public/art/town/willville-landscape-v1.png`: Single masked land-region image for the world isthmus, authored from the Ganglia Studio world-landscape prompt and composited over simple water.
 - `town-base` -> `public/art/town/willville-isthmus-v1.png`: Painted full-town background that follows the generated land, canal, district, and sign masks.
 - `district-mask` -> `public/art/town/masks/districts/<district-id>.png`: One precise mask per district, generated from layout polygons.
 - `global-mask` -> `public/art/town/masks/<land|canal|canal-section|canal-banks|shore-wall|district-walls>.png`: Global town masks for the land footprint, canal centerline ROI, canal section, canal banks, shoreline wall, and generated district-wall layer.
