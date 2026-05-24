@@ -209,6 +209,62 @@ export function serviceLoopRouteForStop(position: Point): string {
   ].join(" ");
 }
 
+function cubicPointAt(
+  p0: Point,
+  p1: Point,
+  p2: Point,
+  p3: Point,
+  t: number,
+): Point {
+  const mt = 1 - t;
+  const mt2 = mt * mt;
+  const t2 = t * t;
+  return {
+    x:
+      mt2 * mt * p0.x + 3 * mt2 * t * p1.x + 3 * mt * t2 * p2.x + t2 * t * p3.x,
+    y:
+      mt2 * mt * p0.y + 3 * mt2 * t * p1.y + 3 * mt * t2 * p2.y + t2 * t * p3.y,
+  };
+}
+
+function approximateCubicLength(
+  p0: Point,
+  p1: Point,
+  p2: Point,
+  p3: Point,
+  steps = 32,
+): number {
+  let length = 0;
+  let previous = p0;
+  for (let step = 1; step <= steps; step += 1) {
+    const point = cubicPointAt(p0, p1, p2, p3, step / steps);
+    length += Math.hypot(point.x - previous.x, point.y - previous.y);
+    previous = point;
+  }
+  return length;
+}
+
+export function serviceLoopSiteKeyPointForStop(position: Point): number {
+  const depot = GENERATED_TOWN_LAYOUT.landmarks.slopDepot;
+  const midX = Math.round((depot.x + position.x) / 2);
+  const canalBias = Math.max(760, Math.min(960, position.y + 80));
+  const returnBias = Math.max(730, Math.min(940, position.y + 120));
+  const outboundLength = approximateCubicLength(
+    depot,
+    { x: midX, y: canalBias },
+    { x: midX, y: position.y },
+    position,
+  );
+  const returnLength = approximateCubicLength(
+    position,
+    { x: midX, y: position.y },
+    { x: midX, y: returnBias },
+    depot,
+  );
+  const total = outboundLength + returnLength;
+  return total > 0 ? outboundLength / total : 0.5;
+}
+
 export function wallLoopPathForDistrict(districtId: string): string {
   const district = GENERATED_TOWN_LAYOUT.districts.find(
     (d) => d.id === districtId,

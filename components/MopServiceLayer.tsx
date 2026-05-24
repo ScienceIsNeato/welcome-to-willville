@@ -1,5 +1,6 @@
 import townAnimation from "@/data/town-animation.v1.json";
 import {
+  serviceLoopSiteKeyPointForStop,
   serviceLoopRouteForStop,
   serviceRouteForStop,
 } from "@/lib/town-layout";
@@ -50,6 +51,37 @@ const MOP_SPRITE = townAnimation.sprites.find(
 ) as SpriteConfig | undefined;
 const MOP_VISUAL_SCALE = 2.2;
 
+function pct(value: number): string {
+  return `${(value * 100).toFixed(2)}%`;
+}
+
+function spriteFrameXValues(sprite: SpriteConfig, animation: SpriteAnimation) {
+  return Array.from(
+    { length: animation.frames },
+    (_item, frame) => -sprite.frameWidth / 2 - frame * sprite.frameWidth,
+  ).join(";");
+}
+
+function routeStateVisibilityStyles(system: MopSystemConfig): string {
+  return system.routeStates
+    .map((state) => {
+      const before = Math.max(0, state.from - 0.0001);
+      const after = Math.min(1, state.to + 0.0001);
+      return `
+        .mop-agent__sprite--${state.id} {
+          animation: mop-agent-state-${state.id} ${system.secondsPerRoute}s linear infinite;
+          animation-delay: var(--mop-route-delay);
+        }
+        @keyframes mop-agent-state-${state.id} {
+          0%, ${pct(before)} { opacity: 0; }
+          ${pct(state.from)}, ${pct(state.to)} { opacity: 1; }
+          ${pct(after)}, 100% { opacity: 0; }
+        }
+      `;
+    })
+    .join("\n");
+}
+
 export function MopServiceLayer({ stops }: Props) {
   if (!MOP_SYSTEM || !MOP_SPRITE) return null;
   const activeStops = stops
@@ -62,7 +94,10 @@ export function MopServiceLayer({ stops }: Props) {
     MOP_SYSTEM.routeStates.find((state) => state.id === "outbound") ??
     MOP_SYSTEM.routeStates[0];
   const keyTimes = `0;${outboundState.to};${moppingState.to};1`;
-  const keyPoints = "0;0.5;0.5;1";
+  const routeStates = MOP_SYSTEM.routeStates.flatMap((state) => {
+    const animation = MOP_SPRITE.animations[state.animation];
+    return animation ? [{ ...state, animation }] : [];
+  });
 
   return (
     <g
@@ -83,6 +118,9 @@ export function MopServiceLayer({ stops }: Props) {
         .mop-agent__sheet {
           opacity: 1;
         }
+        .mop-agent__sprite {
+          opacity: 0;
+        }
         .mop-agent__site-suds {
           animation: mop-site-suds ${MOP_SYSTEM.secondsPerRoute}s linear infinite;
           animation-delay: var(--mop-route-delay);
@@ -93,10 +131,13 @@ export function MopServiceLayer({ stops }: Props) {
           ${Math.round(moppingState.from * 100)}%, ${Math.round(moppingState.to * 100)}% { opacity: 0.72; }
           ${Math.min(100, Math.round(moppingState.to * 100) + 1)}%, 100% { opacity: 0; }
         }
+        ${routeStateVisibilityStyles(MOP_SYSTEM)}
       `}</style>
       {activeStops.map((stop, index) => {
         const serviceRoute = serviceRouteForStop(stop.position);
         const loopRoute = serviceLoopRouteForStop(stop.position);
+        const siteKeyPoint = serviceLoopSiteKeyPointForStop(stop.position);
+        const keyPoints = `0;${siteKeyPoint.toFixed(4)};${siteKeyPoint.toFixed(4)};1`;
         const delay = -(
           (index / activeStops.length) *
           MOP_SYSTEM.secondsPerRoute
@@ -139,17 +180,34 @@ export function MopServiceLayer({ stops }: Props) {
             </g>
             <g className="mop-agent__traveler">
               <circle className="mop-agent__visibility-ring" r={13} />
-              <g transform={`scale(${MOP_VISUAL_SCALE})`}>
-                <image
-                  className="mop-agent__sheet"
-                  href={MOP_SPRITE.src}
-                  x={-MOP_SPRITE.frameWidth / 2}
-                  y={-MOP_SPRITE.frameHeight / 2}
-                  width={MOP_SPRITE.sheetWidth}
-                  height={MOP_SPRITE.sheetHeight}
-                  clipPath={`url(#${clipId})`}
-                />
-              </g>
+              {routeStates.map((state) => (
+                <g
+                  key={`${stop.id}-${state.id}`}
+                  className={`mop-agent__sprite mop-agent__sprite--${state.id}`}
+                  transform={`scale(${MOP_VISUAL_SCALE})`}
+                >
+                  <image
+                    className="mop-agent__sheet"
+                    href={MOP_SPRITE.src}
+                    x={-MOP_SPRITE.frameWidth / 2}
+                    y={
+                      -MOP_SPRITE.frameHeight / 2 -
+                      state.animation.row * MOP_SPRITE.frameHeight
+                    }
+                    width={MOP_SPRITE.sheetWidth}
+                    height={MOP_SPRITE.sheetHeight}
+                    clipPath={`url(#${clipId})`}
+                  >
+                    <animate
+                      attributeName="x"
+                      values={spriteFrameXValues(MOP_SPRITE, state.animation)}
+                      dur={`${(state.animation.frames / state.animation.fps).toFixed(3)}s`}
+                      repeatCount="indefinite"
+                      calcMode="discrete"
+                    />
+                  </image>
+                </g>
+              ))}
               <animateMotion
                 dur={`${MOP_SYSTEM.secondsPerRoute}s`}
                 repeatCount="indefinite"
