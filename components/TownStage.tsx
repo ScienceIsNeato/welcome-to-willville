@@ -317,11 +317,13 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       if (!svg) return;
       const snap = getCameraSnapshot();
       const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
-      zoomAtWorldPoint(wx, wy);
       const hit = findStopAt(currentStops, wx, wy, snap.scale);
       if (hit) {
         openStopHud(hit);
-      } else if (selectedStop) {
+        return;
+      }
+      zoomAtWorldPoint(wx, wy);
+      if (selectedStop) {
         closeHud();
       }
     },
@@ -336,14 +338,22 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     ],
   );
 
-  const handleStopDoubleClick = useCallback(
-    (stop: Stop) => {
-      const wx = TOWN_OFFSET.x + stop.position.x;
-      const wy = TOWN_OFFSET.y + stop.position.y;
-      zoomAtWorldPoint(wx, wy);
+  const handleStopClick = useCallback(
+    (e: MouseEvent<SVGGElement>, stop: Stop) => {
+      e.stopPropagation();
+      markSkipDrag();
       openStopHud(stop);
     },
-    [openStopHud, zoomAtWorldPoint],
+    [markSkipDrag, openStopHud],
+  );
+
+  const handleStopDoubleClick = useCallback(
+    (e: MouseEvent<SVGGElement>, stop: Stop) => {
+      e.stopPropagation();
+      markSkipDrag();
+      openStopHud(stop);
+    },
+    [markSkipDrag, openStopHud],
   );
 
   const showWelcomeHint = !boardStop && pathDistrict === null;
@@ -556,8 +566,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                       boardStop?.id === stop.id
                     }
                     recentlyUpdated={recently}
-                    onClick={() => openStopHud(stop)}
-                    onDoubleClick={() => handleStopDoubleClick(stop)}
+                    onClick={(e) => handleStopClick(e, stop)}
+                    onDoubleClick={(e) => handleStopDoubleClick(e, stop)}
                   />
                 );
               })}
