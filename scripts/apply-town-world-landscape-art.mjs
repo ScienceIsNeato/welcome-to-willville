@@ -33,10 +33,18 @@ const output =
   resolve(root, "public", contract.assets.landPng.replace(/^\//, ""));
 
 const outputSize = contract.size;
+const sourceGeometry = contract.sourceGeometry;
+const landPath = sourceGeometry.landPath ?? sourceGeometry.worldLandPath;
+const landTransform = sourceGeometry.landTransform
+  ? ` transform="${sourceGeometry.landTransform}"`
+  : "";
+if (!landPath) {
+  throw new Error("World backdrop contract is missing land path geometry");
+}
 const maskSvg =
   Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${outputSize.width}" height="${outputSize.height}" viewBox="0 0 ${outputSize.width} ${outputSize.height}">
   <rect width="${outputSize.width}" height="${outputSize.height}" fill="black" />
-  <path d="${contract.sourceGeometry.worldLandPath}" fill="white" />
+  <path d="${landPath}"${landTransform} fill="white" />
 </svg>`);
 const { data: alpha, info: alphaInfo } = await sharp(maskSvg)
   .extractChannel(0)
@@ -78,11 +86,15 @@ const result = await sharp(rgba, {
   .png()
   .toFile(output);
 
-contract.assets.source = source;
-delete contract.assets.zoomOut;
-contract.assets.landPng = output.replace(root, "").replace(/^\/public\//, "/");
-contract.assets.appliedBy = "scripts/apply-town-world-landscape-art.mjs";
-await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`);
+if (!outputArg) {
+  contract.assets.source = source;
+  delete contract.assets.zoomOut;
+  contract.assets.landPng = output
+    .replace(root, "")
+    .replace(/^\/public\//, "/");
+  contract.assets.appliedBy = "scripts/apply-town-world-landscape-art.mjs";
+  await writeFile(contractPath, `${JSON.stringify(contract, null, 2)}\n`);
+}
 
 console.log(
   JSON.stringify(

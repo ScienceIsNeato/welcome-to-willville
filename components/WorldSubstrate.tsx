@@ -4,19 +4,6 @@ import { TOWN_OFFSET, WORLD } from "@/lib/willville";
 const LANDSCAPE_ART =
   "/art/town/willville-landscape-v1.png?v=ganglia-world-landscape-wide-20260522";
 
-function translatePath(pathD: string, dx: number, dy: number): string {
-  return pathD.replace(
-    /(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g,
-    (_match, x, y) => `${Number(x) + dx} ${Number(y) + dy}`,
-  );
-}
-
-const WORLD_LAND_PATH = translatePath(
-  GENERATED_TOWN_LAYOUT.landPath,
-  TOWN_OFFSET.x,
-  TOWN_OFFSET.y,
-);
-
 export function WorldSubstrate() {
   return (
     <g aria-hidden>
@@ -48,8 +35,11 @@ export function WorldSubstrate() {
             opacity={0.08}
           />
         </pattern>
-        <clipPath id="willville-world-land-mask">
-          <path d={WORLD_LAND_PATH} />
+        <clipPath id="willville-world-land-mask" clipPathUnits="userSpaceOnUse">
+          <path
+            d={GENERATED_TOWN_LAYOUT.landPath}
+            transform={`translate(${TOWN_OFFSET.x} ${TOWN_OFFSET.y})`}
+          />
         </clipPath>
         <radialGradient id="town-world-vignette" cx="50%" cy="47%" r="73%">
           <stop offset="56%" stopColor="#000000" stopOpacity="0" />

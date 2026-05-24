@@ -24,19 +24,13 @@ const contractOutput = resolve(
   "docs/generated/town-world-backdrop.v1.json",
 );
 
-function translatePath(pathD, dx, dy) {
-  return pathD.replace(
-    /(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/g,
-    (_match, x, y) =>
-      `${(Number(x) + dx).toFixed(1)} ${(Number(y) + dy).toFixed(1)}`,
-  );
+const landTransform = `translate(${townOffset.x} ${townOffset.y})`;
+let existingContract = {};
+try {
+  existingContract = JSON.parse(await readFile(contractOutput, "utf8"));
+} catch {
+  existingContract = {};
 }
-
-const worldLandPath = translatePath(
-  layout.landPath,
-  townOffset.x,
-  townOffset.y,
-);
 
 const prompt = `# World Landscape Region Art Prompt
 
@@ -62,6 +56,7 @@ Composition:
 The town districts and canal will be composited above this layer. Put the highest visual detail and strongest terrain character in the visible land outside and between the districts, but avoid fighting the town art. Preserve a coherent north-south isthmus silhouette. Keep the western and eastern coastlines visually different. Make the top and bottom land feel like it continues beyond the viewport.
 
 Reference assets:
+
 - Existing district art: \`public/art/town/districts/*.png\`
 - Land mask: \`public/art/town/masks/land.png\`
 - World geometry: \`docs/generated/town-world-backdrop.v1.json\`
@@ -79,6 +74,7 @@ const contract = {
   townOffset,
   townSize: layout.size,
   assets: {
+    ...existingContract.assets,
     landPng: "/art/town/willville-landscape-v1.png",
   },
   prompts: {
@@ -86,7 +82,8 @@ const contract = {
   },
   sourceGeometry: {
     townLayoutVersion: layout.version,
-    worldLandPath,
+    landPath: layout.landPath,
+    landTransform,
   },
 };
 
