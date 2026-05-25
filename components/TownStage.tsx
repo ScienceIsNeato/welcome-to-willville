@@ -217,6 +217,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     } catch {
       // audio not available — silent fail
     }
+    const previousStops = currentStops;
     setPopulating("running");
     setBellErrorMessage("✕ Bell failed");
     fetch("/api/manifests", { method: "POST" })
@@ -231,10 +232,10 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       .then((data) => {
         const nextStops =
           data && Array.isArray(data.stops)
-            ? mergeStops(stops, data.stops as Stop[])
-            : currentStops;
+            ? mergeStops(previousStops, data.stops as Stop[])
+            : previousStops;
         const announcement = buildBellBoardAnnouncement(
-          currentStops,
+          previousStops,
           nextStops,
         );
         if (boardAnnouncementTimerRef.current !== null) {
@@ -257,7 +258,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         setPopulating("error");
         setTimeout(() => setPopulating("idle"), 4000);
       });
-  }, [currentStops, loadTown, populating, stops]);
+  }, [currentStops, loadTown, populating]);
 
   const handleSync = useCallback(() => {
     setSyncing(true);

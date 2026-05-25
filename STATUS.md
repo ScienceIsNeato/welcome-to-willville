@@ -9,6 +9,12 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-25) — PR #10 Final Review Fix: Bell Announcement Snapshot Baseline
+
+- Fixed `handlePopulate` in `components/TownStage.tsx` so the bell announcement compares a frozen pre-refresh `currentStops` snapshot against refreshed data merged onto that same baseline.
+- This removes the stale-data mismatch where the "before" side used prior live state while the "after" side merged the fresh payload against the original static `stops` prop.
+- Validation: `activate && sm swab --no-cache --json --output-file .slopmop/last_swab_bell_snapshot_fix.json` passed.
+
 ## Done (2026-05-25) — PR #10 Final Review Fix: Shared CentralBoard Dimensions
 
 - Removed the duplicated split-flap board dimension constants by introducing `components/centralBoardConstants.ts` as the shared source of truth for board columns, rows, and the empty row string.

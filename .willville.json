@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Closing the last PR #10 review thread by sharing the CentralBoard dimensions across the renderer and announcement formatter",
-    "direction": "Get PR #10 back to CI-only by removing the split-flap constant drift risk while keeping the workflow-run contract fix in place",
-    "last_update": "2026-05-25T09:13:51Z"
+    "status": "Closing the latest PR #10 review thread by fixing the bell announcement before/after snapshot baseline",
+    "direction": "Get PR #10 back to CI-only by making bell refresh announcements compare old and new stop state from the same frozen baseline",
+    "last_update": "2026-05-25T09:16:28Z"
   }
 }
