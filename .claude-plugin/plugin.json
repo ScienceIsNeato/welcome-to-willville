@@ -1,7 +1,7 @@
 {
   "name": "willville",
   "version": "1.0.0",
-  "description": "Update committed .willville.json agent packets in each repo to keep live status current on the Willville map.",
+  "description": "Update committed .willville.json packets with terse repo-owner status deltas so Willville shows current live work without README-style repetition.",
   "author": {
     "name": "ScienceIsNeato",
     "url": "https://github.com/ScienceIsNeato"

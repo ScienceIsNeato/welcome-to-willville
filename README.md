@@ -49,6 +49,7 @@ Cloudflare Pages is deployed from GitHub Actions with
 `.github/workflows/deploy-pages.yml`:
 
 - **Build command:** `npm run build`
+- **Functions build command:** `npx wrangler pages functions build functions --project-directory . --outfile out/_worker.js --output-routes-path out/_routes.json --build-output-directory out`
 - **Output directory:** `out`
 - **Compatibility date:** `2026-05-01` or later
 - **GitHub Actions repository secret:**
@@ -63,9 +64,9 @@ Cloudflare Pages is deployed from GitHub Actions with
     `https://willville.ai/keys-to-the-city/?key=<value>` sets the Mayor
     cookie.
 
-Cloudflare Pages bundles the `functions/` directory into a Worker that runs
-alongside the static site, so `/api/town` and `/api/auth/*` are served from
-the edge with no extra configuration.
+GitHub Actions compiles `functions/` into `out/_worker.js` and
+`out/_routes.json` before `pages deploy ./out ...`, so the deployed artifact
+contains both the static export and the Pages Worker routes for `/api/*`.
 
 ## How the town is built
 

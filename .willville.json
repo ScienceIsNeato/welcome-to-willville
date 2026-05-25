@@ -1,25 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Merging origin/main into the isthmus town-generation branch and wiring committed Willville packets into the town API",
-    "direction": "Make .willville.json the explicit source for agent status, direction, difficulties, human needs, and action logs",
-    "difficulties": "None",
-    "needs_human": "None",
-    "last_update": "2026-05-22T10:06:36Z",
-    "actions": [
-      {
-        "name": "Fetched and merged origin/main after detecting stale local main",
-        "status": "done"
-      },
-      { "name": "Resolved STATUS.md packet conflict", "status": "done" },
-      {
-        "name": "Wire .willville.json into /api/town and the detail board",
-        "status": "in_progress"
-      },
-      {
-        "name": "Redeploy and smoke-check the updated data flow",
-        "status": "planned"
-      }
-    ]
+    "status": "Final PR #10 ship pass: local token-backed town data is restored and the canal fallback patch is ready to push",
+    "direction": "Land the last branch-local fixes and merge PR #10 so production finally serves live Pages Functions data instead of 404ing /api/town",
+    "last_update": "2026-05-25T10:05:00Z"
   }
 }

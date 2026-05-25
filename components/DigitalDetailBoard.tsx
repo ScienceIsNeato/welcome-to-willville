@@ -1,25 +1,24 @@
 "use client";
 
 import type { CSSProperties, MouseEvent, ReactNode } from "react";
-import { LOCKS, type CanalBoat } from "@/lib/canal";
-import type { Stop } from "@/lib/town";
+import type { CanalBoat } from "@/lib/canal";
+import type { GitHubWorkflowRun, Stop } from "@/lib/town";
 
 type Props = {
   stop: Stop | null;
   boats: CanalBoat[];
-  onClear: () => void;
 };
 
-export function DigitalDetailBoard({ stop, boats, onClear }: Props) {
-  const repoUrl = stop?.repo ? repoHref(stop.repo) : null;
-  const linkOut = stop ? (stop.homepage ?? repoUrl) : null;
-  const prs = stop
+export function DigitalDetailBoard({ stop, boats }: Props) {
+  const stopPrs = stop
     ? boats.filter(
         (boat) =>
           boat.repo === stop.repo ||
           (boat.stopId === stop.id && boat.district === stop.district),
       )
     : [];
+  const openPrs = stopPrs.filter((pr) => pr.lock !== "open-sea");
+  const openPrCount = stop?.openPrCount ?? openPrs.length;
 
   return (
     <section aria-label="Willville site detail display" style={shellStyle}>
@@ -39,14 +38,15 @@ export function DigitalDetailBoard({ stop, boats, onClear }: Props) {
               <div style={metricClusterStyle}>
                 <Metric label="Repo" value={repoShortName(stop.repo)} />
                 <Metric label="Language" value={stop.language ?? "Mixed"} />
-                <Metric label="Branches" value="n/a" />
+                <BranchSignal stop={stop} />
+                <Metric label="Branches" value={countLabel(stop.branchCount)} />
                 <Metric
                   label="Issues"
                   value={
                     stop.openIssues != null ? String(stop.openIssues) : "n/a"
                   }
                 />
-                <Metric label="Open PRs" value={String(prs.length)} />
+                <Metric label="Open PRs" value={String(openPrCount)} />
               </div>
             </Panel>
 
@@ -63,22 +63,14 @@ export function DigitalDetailBoard({ stop, boats, onClear }: Props) {
                   label="Last Commit"
                   value={timeAgo(stop.lastCommitAt)}
                 />
-                <Metric label="Oldest PR" value={oldestPrAge(prs)} />
-                <Metric label="Last Merge" value="n/a" />
-                <Metric label="Release" value="n/a" />
+                <Metric label="Oldest PR" value={oldestPrAge(openPrs)} />
+                <Metric label="Last Merge" value={timeAgo(stop.lastMergeAt)} />
+                <Metric label="Release" value={releaseLabel(stop)} />
               </div>
             </Panel>
 
-            <Panel title="Active Branch">
-              <div style={metricClusterStyle}>
-                <BranchSignal stop={stop} />
-                <Metric
-                  label="Milestone"
-                  value={stop.queue?.milestone ?? "n/a"}
-                  wide
-                />
-                <Metric label="ETA" value={etaLabel(stop.queue?.etaDays)} />
-              </div>
+            <Panel title="Recent Commits">
+              <RecentCommitList stop={stop} />
             </Panel>
           </div>
 
@@ -95,59 +87,9 @@ export function DigitalDetailBoard({ stop, boats, onClear }: Props) {
                 fallback="No direction logged."
               />
             </Panel>
-            <Panel title="Activity Log">
-              <ActionList stop={stop} />
+            <Panel title="GitHub Actions">
+              <WorkflowRunList stop={stop} />
             </Panel>
-            <Panel title="Difficulties">
-              <TextBlock value={stop.agent?.difficulties} fallback="None" />
-            </Panel>
-            <Panel title="Needs Human">
-              <TextBlock value={stop.agent?.needsHuman} fallback="None" />
-            </Panel>
-          </div>
-
-          {prs.length > 0 && (
-            <div style={canalRowStyle}>
-              <span style={smallLabelStyle}>Canal</span>
-              {prs.slice(0, 3).map((pr) => {
-                const lock = LOCKS.find(
-                  (candidate) => candidate.id === pr.lock,
-                );
-                return (
-                  <a
-                    key={`${pr.repo}-${pr.prNumber}`}
-                    href={pr.url}
-                    onClick={followLink}
-                    style={softLinkStyle}
-                  >
-                    {pr.title}
-                    <span style={mutedInlineStyle}>
-                      {" "}
-                      / {lock?.displayName ?? pr.lock}
-                    </span>
-                  </a>
-                );
-              })}
-            </div>
-          )}
-
-          <div style={buttonRowStyle}>
-            <div style={buttonSpacerStyle} />
-            <div style={buttonGroupStyle}>
-              {repoUrl && (
-                <a href={repoUrl} onClick={followLink} style={buttonStyle}>
-                  Repo
-                </a>
-              )}
-              {linkOut && linkOut !== repoUrl && (
-                <a href={linkOut} onClick={followLink} style={buttonStyle}>
-                  Site
-                </a>
-              )}
-              <button type="button" onClick={onClear} style={buttonStyle}>
-                Clear
-              </button>
-            </div>
           </div>
         </>
       )}
@@ -212,20 +154,42 @@ function TextBlock({
   return <p style={noteTextStyle}>{normalizePanelText(value, fallback)}</p>;
 }
 
-function ActionList({ stop }: { stop: Stop }) {
-  const actions = stop.agent?.actions ?? [];
-  if (actions.length === 0) {
-    return <p style={noteTextStyle}>No recent agent actions.</p>;
+function WorkflowRunList({ stop }: { stop: Stop }) {
+  const runs = stop.workflowRuns ?? [];
+  if (runs.length === 0) {
+    return <p style={noteTextStyle}>No recent GitHub Actions runs.</p>;
   }
   return (
     <ul style={actionListStyle}>
-      {actions.slice(0, 4).map((action, index) => (
-        <li
-          key={`${action.status}-${action.name}-${index}`}
-          style={actionItemStyle}
-        >
-          <span style={actionStatusStyle}>{actionSymbol(action.status)}</span>
-          <span>{action.name}</span>
+      {runs.slice(0, 3).map((run, index) => (
+        <li key={`${run.url}-${index}`} style={actionItemStyle}>
+          <span style={workflowRunStatusStyle(run.status)}>
+            {workflowRunStatusLabel(run.status)}
+          </span>
+          <a href={run.url} onClick={followLink} style={actionLinkStyle}>
+            {run.name}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function RecentCommitList({ stop }: { stop: Stop }) {
+  const commits = stop.recentCommits ?? [];
+  if (commits.length === 0) {
+    return <p style={noteTextStyle}>No recent commits.</p>;
+  }
+  return (
+    <ul style={actionListStyle}>
+      {commits.slice(0, 3).map((commit, index) => (
+        <li key={`${commit.url}-${index}`} style={actionItemStyle}>
+          <span style={recentCommitAgeStyle}>
+            {timeAgo(commit.committedAt)}
+          </span>
+          <a href={commit.url} onClick={followLink} style={actionLinkStyle}>
+            {commit.message}
+          </a>
         </li>
       ))}
     </ul>
@@ -237,24 +201,16 @@ function followLink(e: MouseEvent<HTMLAnchorElement>) {
   window.location.assign(e.currentTarget.href);
 }
 
-function repoHref(repo: string): string {
-  const trimmed = repo.trim();
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  return `https://github.com/${trimmed.replace(/^\/+/, "")}`;
-}
-
 function repoShortName(repo: string | undefined): string {
   return repo?.split("/").at(-1) ?? "n/a";
 }
 
-function etaLabel(days: number | undefined): string {
-  if (!Number.isFinite(days ?? NaN)) return "TBD";
-  const safeDays = days!;
-  if (safeDays <= 0) return "Today";
-  if (safeDays === 1) return "1 day";
-  if (safeDays < 14) return `${safeDays} days`;
-  if (safeDays < 60) return `${Math.round(safeDays / 7)} weeks`;
-  return `${Math.round(safeDays / 30)} months`;
+function countLabel(value: number | undefined): string {
+  return Number.isFinite(value ?? NaN) ? String(value) : "n/a";
+}
+
+function releaseLabel(stop: Stop): string {
+  return stop.latestRelease?.tagName ?? stop.latestRelease?.name ?? "n/a";
 }
 
 function oldestPrAge(prs: CanalBoat[]): string {
@@ -289,22 +245,57 @@ function normalizePanelText(
   return value;
 }
 
-function actionSymbol(status: string): string {
-  if (status === "done") return "+";
-  if (status === "in_progress") return ">";
-  if (status === "failed") return "!";
-  return "o";
+function workflowRunStatusLabel(status: GitHubWorkflowRun["status"]): string {
+  if (status === "success") return "success";
+  if (status === "running") return "running";
+  if (status === "failed") return "failed";
+  return "neutral";
+}
+
+function workflowRunStatusStyle(
+  status: GitHubWorkflowRun["status"],
+): CSSProperties {
+  if (status === "success") {
+    return {
+      ...actionStatusStyle,
+      color: "#9bffb4",
+      borderColor: "rgba(155, 255, 180, 0.38)",
+      background: "rgba(28, 96, 42, 0.45)",
+    };
+  }
+  if (status === "running") {
+    return {
+      ...actionStatusStyle,
+      color: "#ffe27d",
+      borderColor: "rgba(255, 226, 125, 0.34)",
+      background: "rgba(97, 74, 18, 0.45)",
+    };
+  }
+  if (status === "failed") {
+    return {
+      ...actionStatusStyle,
+      color: "#ff9c9c",
+      borderColor: "rgba(255, 156, 156, 0.34)",
+      background: "rgba(115, 28, 28, 0.42)",
+    };
+  }
+  return {
+    ...actionStatusStyle,
+    color: "rgba(51, 255, 87, 0.72)",
+    borderColor: "rgba(51, 255, 87, 0.22)",
+    background: "rgba(51, 255, 87, 0.08)",
+  };
 }
 
 const shellStyle: CSSProperties = {
   position: "relative",
   zIndex: 2,
   width: "min(960px, calc(100vw - 20px))",
-  minHeight: 300,
+  minHeight: 220,
   margin: "0 auto 10px",
   display: "grid",
-  gap: 10,
-  padding: "14px 18px 16px",
+  gap: 8,
+  padding: "12px 18px 12px",
   borderRadius: 3,
   border: "1px solid rgba(51, 255, 87, 0.28)",
   background:
@@ -364,8 +355,9 @@ const bottomGridStyle: CSSProperties = {
 const panelStyle: CSSProperties = {
   position: "relative",
   minWidth: 0,
-  minHeight: 78,
-  padding: "23px 10px 10px",
+  minHeight: 68,
+  marginTop: 10,
+  padding: "14px 10px 10px",
   borderRadius: 2,
   background:
     "linear-gradient(180deg, rgba(51,255,87,0.055), rgba(51,255,87,0.025))",
@@ -375,8 +367,8 @@ const panelStyle: CSSProperties = {
 
 const panelTitleStyle: CSSProperties = {
   position: "absolute",
-  top: 9,
-  left: 10,
+  top: -8,
+  left: 8,
   maxWidth: "calc(100% - 20px)",
   padding: "2px 8px",
   borderRadius: 2,
@@ -462,7 +454,8 @@ const actionListStyle: CSSProperties = {
 
 const actionItemStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "18px 1fr",
+  gridTemplateColumns: "70px minmax(0, 1fr)",
+  alignItems: "center",
   gap: 5,
   paddingBottom: 5,
   borderBottom: "1px solid rgba(51, 255, 87, 0.13)",
@@ -472,59 +465,33 @@ const actionItemStyle: CSSProperties = {
 };
 
 const actionStatusStyle: CSSProperties = {
-  color: "rgba(51, 255, 87, 0.7)",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "2px 6px",
+  border: "1px solid rgba(51, 255, 87, 0.22)",
+  borderRadius: 999,
+  fontSize: 10,
   fontWeight: 900,
+  letterSpacing: 0.8,
+  lineHeight: 1.1,
+  textTransform: "uppercase",
 };
 
-const canalRowStyle: CSSProperties = {
-  display: "grid",
-  gap: 3,
+const recentCommitAgeStyle: CSSProperties = {
+  ...actionStatusStyle,
+  color: "rgba(51, 255, 87, 0.78)",
+  borderColor: "rgba(51, 255, 87, 0.2)",
+  background: "rgba(51, 255, 87, 0.08)",
+};
+
+const actionLinkStyle: CSSProperties = {
   minWidth: 0,
-  padding: "4px 0",
-};
-
-const mutedInlineStyle: CSSProperties = {
-  color: "rgba(51, 255, 87, 0.45)",
-};
-
-const softLinkStyle: CSSProperties = {
-  minWidth: 0,
-  color: "rgba(51, 255, 87, 0.8)",
+  color: "rgba(51, 255, 87, 0.82)",
   fontSize: 12,
   lineHeight: 1.35,
   textDecoration: "none",
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
-};
-
-const buttonRowStyle: CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "center",
-};
-
-const buttonSpacerStyle: CSSProperties = {
-  minWidth: 0,
-};
-
-const buttonGroupStyle: CSSProperties = {
-  display: "flex",
-  gap: 8,
-  flexWrap: "wrap",
-};
-
-const buttonStyle: CSSProperties = {
-  border: "1px solid rgba(51, 255, 87, 0.35)",
-  borderRadius: 2,
-  background: "rgba(51, 255, 87, 0.08)",
-  color: "#33ff57",
-  padding: "7px 11px",
-  fontSize: 12,
-  fontWeight: 700,
-  textDecoration: "none",
-  cursor: "pointer",
-  fontFamily: '"Courier New", Courier, monospace',
-  letterSpacing: 0.5,
-  textShadow: "0 0 6px rgba(51, 255, 87, 0.35)",
 };

@@ -9,20 +9,19 @@ import {
 } from "react";
 import { activeQueue, mostActiveStops, type Stop } from "@/lib/town";
 import { DISTRICTS } from "@/lib/willville";
-
-const BOARD_COLUMNS = 28;
-const BOARD_ROWS = 6;
+import { BOARD_COLUMNS, BOARD_ROWS, EMPTY_ROW } from "./centralBoardConstants";
 
 function stopLabel(stop: Stop): string {
   return stop.repo?.split("/").pop() ?? stop.id;
 }
-const EMPTY_ROW = " ".repeat(BOARD_COLUMNS);
 
 type Props = {
   stops: Stop[];
   selectedStop?: Stop | null;
   activeDistrict?: string | null;
   onSelectStop: (stop: Stop) => void;
+  announcementRows?: string[] | null;
+  announcementLabel?: string;
 };
 
 export function CentralBoard({
@@ -30,6 +29,8 @@ export function CentralBoard({
   selectedStop,
   activeDistrict,
   onSelectStop,
+  announcementRows,
+  announcementLabel,
 }: Props) {
   const didMountRef = useRef(false);
   const previousBoardRef = useRef<string[]>([]);
@@ -40,6 +41,9 @@ export function CentralBoard({
     return active.length > 0 ? active : activeQueue(stops);
   }, [stops]);
   const rows = useMemo(() => {
+    if (announcementRows && announcementRows.length > 0) {
+      return normalizeRows(announcementRows);
+    }
     if (selectedStop) {
       return selectedStopRows(selectedStop);
     }
@@ -47,13 +51,15 @@ export function CentralBoard({
       return districtRows(activeDistrict, stops);
     }
     return timetableRows(queue);
-  }, [selectedStop, activeDistrict, queue, stops]);
+  }, [announcementRows, selectedStop, activeDistrict, queue, stops]);
 
-  const selectedKey = selectedStop
-    ? `stop-${selectedStop.district}-${selectedStop.id}`
-    : activeDistrict
-      ? `district-${activeDistrict}`
-      : "timetable";
+  const selectedKey = announcementRows?.length
+    ? `announcement-${announcementLabel ?? "status"}-${announcementRows.join("|")}`
+    : selectedStop
+      ? `stop-${selectedStop.district}-${selectedStop.id}`
+      : activeDistrict
+        ? `district-${activeDistrict}`
+        : "timetable";
 
   useEffect(() => {
     const previous = previousBoardRef.current;
@@ -70,6 +76,9 @@ export function CentralBoard({
   }, [rows]);
 
   const buttonsToDisplay = useMemo(() => {
+    if (announcementRows && announcementRows.length > 0) {
+      return [];
+    }
     if (activeDistrict) {
       const dbStops = stops.filter((s) => s.district === activeDistrict);
       return [...dbStops]
@@ -85,7 +94,7 @@ export function CentralBoard({
         .slice(0, 6);
     }
     return queue.slice(0, 6);
-  }, [activeDistrict, stops, queue]);
+  }, [announcementRows, activeDistrict, stops, queue]);
 
   return (
     <section
@@ -95,7 +104,13 @@ export function CentralBoard({
     >
       <div style={headerStyle}>
         <span>Time Central Station</span>
-        <span>{activeDistrict ? "Local Metro" : "Mayor's Express"}</span>
+        <span>
+          {announcementRows?.length
+            ? (announcementLabel ?? "Status Update")
+            : activeDistrict
+              ? "Local Metro"
+              : "Mayor's Express"}
+        </span>
       </div>
 
       <div style={boardStyle}>
@@ -120,6 +135,9 @@ export function CentralBoard({
             <button
               key={`${stop.district}-${stop.id}`}
               type="button"
+              data-central-board-button
+              data-stop-id={stop.id}
+              aria-label={`Open ${stopLabel(stop)}`}
               onClick={(e) => {
                 e.stopPropagation();
                 playButtonTick();
@@ -198,6 +216,14 @@ export function CentralBoard({
   );
 }
 
+function normalizeRows(rows: string[]): string[] {
+  const normalized = rows.slice(0, BOARD_ROWS);
+  while (normalized.length < BOARD_ROWS) {
+    normalized.push(EMPTY_ROW);
+  }
+  return normalized;
+}
+
 function SplitFlapRow({
   row,
   rowIndex,
@@ -212,7 +238,7 @@ function SplitFlapRow({
     <div
       style={{
         ...rowStyle,
-        gridTemplateColumns: `repeat(${BOARD_COLUMNS}, minmax(0, 1fr))`,
+        gridTemplateColumns: `repeat(${BOARD_COLUMNS}, clamp(15px, 2.25vw, 23px))`,
       }}
     >
       {chars.map((char, index) => (
@@ -613,7 +639,7 @@ function makeNoiseBuffer(
 const shellStyle: CSSProperties = {
   position: "relative",
   zIndex: 2,
-  width: "min(880px, calc(100vw - 20px))",
+  width: "min(760px, calc(100vw - 16px))",
   margin: "10px auto 0",
   color: "var(--willville-paper)",
   fontFamily: "var(--font-geist-mono), monospace",
@@ -641,8 +667,8 @@ const headerStyle: CSSProperties = {
 
 const boardStyle: CSSProperties = {
   display: "grid",
-  gap: 3,
-  padding: 9,
+  gap: 2,
+  padding: 6,
   background:
     "linear-gradient(180deg, rgba(15,15,15,0.99) 0%, rgba(3,3,3,0.99) 100%)",
   border: "1px solid rgba(245,230,200,0.18)",
@@ -653,12 +679,13 @@ const boardStyle: CSSProperties = {
 
 const rowStyle: CSSProperties = {
   display: "grid",
-  gap: 3,
+  gap: 2,
+  justifyContent: "center",
 };
 
 const cellStyle: CSSProperties = {
   position: "relative",
-  aspectRatio: "1 / 1",
+  aspectRatio: "0.82 / 1",
   minWidth: 0,
   display: "grid",
   placeItems: "center",
@@ -674,12 +701,12 @@ const characterStyle: CSSProperties = {
   position: "relative",
   zIndex: 4,
   color: "#f6f0de",
-  fontSize: "clamp(17px, 2.2vw, 29px)",
+  fontSize: "clamp(15px, 1.95vw, 25px)",
   fontWeight: 900,
   lineHeight: 0.82,
   letterSpacing: 0,
   textShadow: "0 1px 0 #000",
-  transform: "scaleX(1.12)",
+  transform: "none",
 };
 
 const creaseStyle: CSSProperties = {

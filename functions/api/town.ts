@@ -15,7 +15,11 @@
  * Mayors: private, no-store.
  */
 
-import { buildTown, type RepoMeta } from "../../lib/town";
+import {
+  buildTown,
+  type GitHubWorkflowRun,
+  type RepoMeta,
+} from "../../lib/town";
 import { WillvilleManifestClient } from "./town-manifests";
 
 interface Env {
@@ -98,6 +102,125 @@ type GitHubMilestone = {
   state: "open" | "closed";
 };
 
+type GitHubWorkflowRunEntry = {
+  name?: string | null;
+  display_title?: string | null;
+  html_url?: string | null;
+  status?: string | null;
+  conclusion?: string | null;
+  head_branch?: string | null;
+};
+
+function workflowRunStatus(
+  run: GitHubWorkflowRunEntry,
+): GitHubWorkflowRun["status"] {
+  if (run.status !== "completed") return "running";
+  if (run.conclusion === "success") return "success";
+  if (
+    run.conclusion === "failure" ||
+    run.conclusion === "cancelled" ||
+    run.conclusion === "timed_out" ||
+    run.conclusion === "action_required" ||
+    run.conclusion === "startup_failure" ||
+    run.conclusion === "stale"
+  ) {
+    return "failed";
+  }
+  return "neutral";
+}
+
+function workflowRunName(run: GitHubWorkflowRunEntry): string {
+  const label =
+    typeof run.name === "string" && run.name.trim().length > 0
+      ? run.name.trim()
+      : typeof run.display_title === "string" &&
+          run.display_title.trim().length > 0
+        ? run.display_title.trim()
+        : "Workflow run";
+
+  if (
+    typeof run.head_branch === "string" &&
+    run.head_branch.trim().length > 0
+  ) {
+    return `${label} (${run.head_branch.trim()})`;
+  }
+
+  return label;
+}
+
+async function fetchWorkflowRuns(
+  fullName: string,
+  token?: string,
+): Promise<RepoMeta["workflowRuns"]> {
+  const headers: Record<string, string> = {
+    "User-Agent": "willville-edge",
+    Accept: "application/vnd.github+json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  try {
+    const response = await fetch(
+      `https://api.github.com/repos/${fullName}/actions/runs?per_page=3`,
+      { headers },
+    );
+    if (!response.ok) return undefined;
+
+    const payload = (await response.json()) as {
+      workflow_runs?: GitHubWorkflowRunEntry[];
+    };
+    if (!Array.isArray(payload.workflow_runs)) return [];
+
+    return payload.workflow_runs.flatMap((run) => {
+      if (typeof run.html_url !== "string" || run.html_url.length === 0) {
+        return [];
+      }
+
+      return [
+        {
+          name: workflowRunName(run),
+          status: workflowRunStatus(run),
+          url: run.html_url,
+        },
+      ];
+    });
+  } catch {
+    return undefined;
+  }
+}
+
+type RepoSignals = {
+  openPrCount?: number;
+  branchCount?: number;
+  lastMergeAt?: string;
+  latestRelease?: RepoMeta["latestRelease"];
+};
+
+const REPO_SIGNALS_QUERY = `
+query ($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    refs(refPrefix: "refs/heads/", first: 1) {
+      totalCount
+    }
+    pullRequests(states: OPEN, first: 1) {
+      totalCount
+    }
+    mergedPulls: pullRequests(
+      states: MERGED
+      first: 1
+      orderBy: { field: UPDATED_AT, direction: DESC }
+    ) {
+      nodes {
+        mergedAt
+      }
+    }
+    latestRelease {
+      name
+      tagName
+      publishedAt
+    }
+  }
+}`;
+
 async function fetchMilestones(
   owner: string,
   name: string,
@@ -128,7 +251,14 @@ async function fetchCommitCounts(
   fullName: string,
   token?: string,
 ): Promise<
-  { d3: number; d7: number; d21: number; latestCommitAt?: string } | undefined
+  | {
+      d3: number;
+      d7: number;
+      d21: number;
+      latestCommitAt?: string;
+      recentCommits?: RepoMeta["recentCommits"];
+    }
+  | undefined
 > {
   const headers: Record<string, string> = {
     "User-Agent": "willville-edge",
@@ -142,7 +272,14 @@ async function fetchCommitCounts(
       { headers },
     );
     if (!r.ok) return undefined;
-    type CommitEntry = { commit: { author: { date: string } | null } };
+    type CommitEntry = {
+      html_url?: string | null;
+      commit?: {
+        message?: string | null;
+        author?: { date?: string | null } | null;
+        committer?: { date?: string | null } | null;
+      } | null;
+    };
     const commits = (await r.json()) as CommitEntry[];
     if (!Array.isArray(commits)) return undefined;
 
@@ -152,8 +289,30 @@ async function fetchCommitCounts(
       d21 = 0;
     let latestCommitAt: string | undefined;
     let latestCommitTime = 0;
+    const recentCommits = commits
+      .flatMap((commit) => {
+        const message = commit.commit?.message?.split("\n")[0]?.trim();
+        const committedAt =
+          commit.commit?.author?.date ?? commit.commit?.committer?.date;
+        if (
+          typeof commit.html_url !== "string" ||
+          commit.html_url.length === 0 ||
+          !message ||
+          !committedAt
+        ) {
+          return [];
+        }
+        return [
+          {
+            message,
+            url: commit.html_url,
+            committedAt,
+          },
+        ];
+      })
+      .slice(0, 3);
     for (const c of commits) {
-      const rawDate = c.commit?.author?.date ?? "";
+      const rawDate = c.commit?.author?.date ?? c.commit?.committer?.date ?? "";
       const t = Date.parse(rawDate);
       if (Number.isNaN(t)) continue;
       if (t > latestCommitTime) {
@@ -165,7 +324,71 @@ async function fetchCommitCounts(
       if (daysAgo <= 7) d7++;
       d21++; // all commits from the `since` window count
     }
-    return { d3, d7, d21, latestCommitAt };
+    return { d3, d7, d21, latestCommitAt, recentCommits };
+  } catch {
+    return undefined;
+  }
+}
+
+async function fetchRepoSignals(
+  owner: string,
+  name: string,
+  token?: string,
+): Promise<RepoSignals | undefined> {
+  if (!token) return undefined;
+
+  try {
+    const response = await fetch("https://api.github.com/graphql", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "User-Agent": "willville-edge",
+      },
+      body: JSON.stringify({
+        query: REPO_SIGNALS_QUERY,
+        variables: { owner, name },
+      }),
+    });
+    if (!response.ok) return undefined;
+
+    const payload = (await response.json()) as {
+      data?: {
+        repository?: {
+          refs?: { totalCount?: number | null } | null;
+          pullRequests?: { totalCount?: number | null } | null;
+          mergedPulls?: {
+            nodes?: Array<{ mergedAt?: string | null } | null> | null;
+          } | null;
+          latestRelease?: {
+            name?: string | null;
+            tagName?: string | null;
+            publishedAt?: string | null;
+          } | null;
+        } | null;
+      };
+    };
+
+    const repository = payload.data?.repository;
+    if (!repository) return undefined;
+
+    const latestRelease = repository.latestRelease
+      ? {
+          name:
+            repository.latestRelease.name ??
+            repository.latestRelease.tagName ??
+            "release",
+          tagName: repository.latestRelease.tagName ?? undefined,
+          publishedAt: repository.latestRelease.publishedAt ?? undefined,
+        }
+      : undefined;
+
+    return {
+      openPrCount: repository.pullRequests?.totalCount ?? undefined,
+      branchCount: repository.refs?.totalCount ?? undefined,
+      lastMergeAt: repository.mergedPulls?.nodes?.[0]?.mergedAt ?? undefined,
+      latestRelease,
+    };
   } catch {
     return undefined;
   }
@@ -247,11 +470,14 @@ export const onRequestGet: PagesFunction<Env> = async ({
   });
 
   const repoMetas: RepoMeta[] = await mapLimit(candidates, 8, async (r) => {
-    const [milestones, commitCounts, activeBranch] = await Promise.all([
-      fetchMilestones(OWNER, r.name, token),
-      fetchCommitCounts(r.full_name, token),
-      fetchActiveBranch(r.full_name, r.default_branch, token),
-    ]);
+    const [milestones, commitCounts, activeBranch, repoSignals, workflowRuns] =
+      await Promise.all([
+        fetchMilestones(OWNER, r.name, token),
+        fetchCommitCounts(r.full_name, token),
+        fetchActiveBranch(r.full_name, r.default_branch, token),
+        fetchRepoSignals(OWNER, r.name, token),
+        fetchWorkflowRuns(r.full_name, token),
+      ]);
     const { willvilleManifest, willvillePacket } =
       await manifestClient.fetchRepoPackets(
         r.full_name,
@@ -275,14 +501,23 @@ export const onRequestGet: PagesFunction<Env> = async ({
       })),
       willvilleManifest,
       willvillePacket,
-      openIssuesCount: r.open_issues_count,
+      openIssuesCount: Math.max(
+        0,
+        r.open_issues_count - (repoSignals?.openPrCount ?? 0),
+      ),
       stars: r.stargazers_count,
       language: r.language ?? undefined,
+      openPrCount: repoSignals?.openPrCount,
+      branchCount: repoSignals?.branchCount,
       commits3d: commitCounts?.d3,
       commits7d: commitCounts?.d7,
       commits21d: commitCounts?.d21,
       lastCommitAt: commitCounts?.latestCommitAt,
+      lastMergeAt: repoSignals?.lastMergeAt,
+      latestRelease: repoSignals?.latestRelease,
       activeBranch,
+      recentCommits: commitCounts?.recentCommits,
+      workflowRuns,
     };
   });
 
