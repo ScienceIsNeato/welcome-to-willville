@@ -48,6 +48,12 @@ export type ReleaseInfo = {
   publishedAt?: string;
 };
 
+export type GitHubWorkflowRun = {
+  name: string;
+  status: "success" | "running" | "failed" | "neutral";
+  url: string;
+};
+
 export type WillvilleManifestProject = {
   name?: string;
   displayName?: string;
@@ -129,6 +135,8 @@ export type Stop = {
   latestRelease?: ReleaseInfo;
   /** Most recently committed branch in the repo. */
   activeBranch?: ActiveBranch;
+  /** Last 3 GitHub Actions workflow runs for the repo. */
+  workflowRuns?: GitHubWorkflowRun[];
   /** Committed Willville agent packet from .willville.json, if present. */
   agent?: WillvilleAgentPacket;
 };
@@ -243,18 +251,12 @@ export type WillvillePacket = {
   blockers?: string[];
 };
 
-export type WillvilleAgentAction = {
-  name: string;
-  status: "done" | "in_progress" | "planned" | "failed" | string;
-};
-
 export type WillvilleAgentPacket = {
   status?: string;
   direction?: string;
   difficulties?: string;
   needsHuman?: string;
   lastUpdate?: string;
-  actions?: WillvilleAgentAction[];
 };
 
 export type WillvilleManifest = {
@@ -307,6 +309,8 @@ export type RepoMeta = {
   latestRelease?: ReleaseInfo;
   /** Most recently committed branch in the repo. */
   activeBranch?: ActiveBranch;
+  /** Last 3 GitHub Actions workflow runs for the repo. */
+  workflowRuns?: GitHubWorkflowRun[];
 };
 
 // ---------------------------------------------------------------------------
@@ -571,6 +575,7 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
     lastMergeAt: meta.lastMergeAt,
     latestRelease: meta.latestRelease,
     activeBranch: meta.activeBranch,
+    workflowRuns: meta.workflowRuns,
     agent,
   };
 }

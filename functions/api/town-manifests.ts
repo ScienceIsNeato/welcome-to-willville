@@ -145,10 +145,6 @@ export class WillvilleManifestClient {
       difficulties: preferred.difficulties ?? fallback.difficulties,
       needsHuman: preferred.needsHuman ?? fallback.needsHuman,
       lastUpdate: preferred.lastUpdate ?? fallback.lastUpdate,
-      actions:
-        preferred.actions && preferred.actions.length > 0
-          ? preferred.actions
-          : fallback.actions,
     };
   }
 

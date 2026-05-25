@@ -1,8 +1,4 @@
-import type {
-  WillvilleAgentAction,
-  WillvilleManifest,
-  WillvillePacket,
-} from "../../lib/town";
+import type { WillvilleManifest, WillvillePacket } from "../../lib/town";
 
 const PACKET_RE = /<!--\s*willville\b([\s\S]*?)-->/;
 
@@ -112,7 +108,6 @@ export class WillvilleManifestParser {
         difficulties?: unknown;
         needs_human?: unknown;
         last_update?: unknown;
-        actions?: unknown;
       };
     };
 
@@ -195,7 +190,6 @@ export class WillvilleManifestParser {
           }
         : undefined;
 
-    const actions = this.parseActions(source.agent?.actions);
     const agent =
       source.agent && typeof source.agent === "object"
         ? {
@@ -219,7 +213,6 @@ export class WillvilleManifestParser {
               typeof source.agent.last_update === "string"
                 ? source.agent.last_update
                 : undefined,
-            actions,
           }
         : undefined;
 
@@ -257,22 +250,5 @@ export class WillvilleManifestParser {
       return rawValue as NonNullable<WillvilleManifest["status"]>["state"];
     }
     return undefined;
-  }
-
-  private parseActions(
-    rawActions: unknown,
-  ): WillvilleAgentAction[] | undefined {
-    if (!Array.isArray(rawActions)) return undefined;
-    return rawActions.flatMap((action) => {
-      if (!action || typeof action !== "object") return [];
-      const item = action as { name?: unknown; status?: unknown };
-      if (typeof item.name !== "string") return [];
-      return [
-        {
-          name: item.name,
-          status: typeof item.status === "string" ? item.status : "planned",
-        },
-      ];
-    });
   }
 }

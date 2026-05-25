@@ -9,6 +9,14 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-25) — GitHub Workflow Runs Replace Manifest Actions
+
+- Corrected the Willville packet contract so `.willville.json` only carries owner-facing `agent.status` and `agent.direction`, not an authored actions list.
+- Updated the Digital Detail Board Activity Log to render the last 3 GitHub Actions workflow runs with status chips and links from `/api/town` instead of reading manifest `agent.actions`.
+- Added workflow-run fetching in `functions/api/town.ts`, threaded `workflowRuns` through `lib/town.ts`, and kept the bell refresh path aligned because the bell already reloads `/api/town` after sync.
+- Updated the repo-local Willville skill guidance to stop teaching `actions` in committed packets.
+- Validation: `activate && sm swab --no-cache --json --output-file .slopmop/last_swab_actions_runtime_fix.json` passed.
+
 ## Done (2026-05-25) — PR #10 Review Fixes: Preview Output + Manifest Overrides
 
 - Fixed the preview generator regression in `scripts/generate-town-layout-preview.mjs` by restoring the resolved SVG output path so the script no longer throws a `ReferenceError` on `output`.
@@ -30,7 +38,7 @@ eta: 2026-05-22
 - Installed the canonical workspace skill under `.github/skills/willville/SKILL.md` and wired repo `CLAUDE.md` to include that repo-local skill.
 - Updated the global Copilot and Claude Willville guidance, repo Claude plugin metadata, and the repo's own `.willville.json` packet to the leaner owner-facing shape.
 - Removed the stale root-level `skills/willville/SKILL.md` copy so the repo has one canonical skill path instead of a dead duplicate.
-- Validation: confirmed `.github/skills/willville/SKILL.md` is the only repo-local Willville skill file, `CLAUDE.md` references it, `.willville.json` parses through `WillvilleManifestParser`, and the parsed agent packet reports `actionCount: 3` with no `difficulties` or `needs_human` keys present in the raw JSON.
+- Validation: confirmed `.github/skills/willville/SKILL.md` is the only repo-local Willville skill file, `CLAUDE.md` references it, and `.willville.json` parses through `WillvilleManifestParser` with only the owner-facing `agent.status` / `agent.direction` metadata present.
 
 ## Done (2026-05-25) — Split-Flap Tightening + Canal Slot Restore
 
@@ -56,12 +64,12 @@ eta: 2026-05-22
 - Removed the Digital Detail Board Milestone, Difficulties, and Needs Human fields from the board UI.
 - Validation: `./scripts/deploy_app.sh` passes and serves on `http://127.0.0.1:3750/`; `activate && sm swab --no-cache --json --output-file .slopmop/last_swab_pane_toggle_controls.json` passed.
 
-## Done (2026-05-25) — Manifest Ref Merge For Activity Log
+## Done (2026-05-25) — Manifest Ref Merge For Repo Status
 
 - Updated the town manifest client to merge `.willville.json` sections across active-branch, PR, and default-branch refs instead of stopping at the first manifest file found.
-- This preserves current `project/status/queue` data from the active branch while backfilling missing `agent` fields such as `actions` from later refs.
+- This preserves current `project/status/queue` data from the active branch while backfilling missing owner-facing `agent` status/direction fields from later refs.
 - Corrected stop status precedence so fallback `agent.status` does not overwrite newer `status.summary` and `status.next` text from the active branch manifest.
-- Validation: `./scripts/deploy_app.sh` passes; live `/api/town` for `ScienceIsNeato/slop-mop` now returns queue milestone `v1.1 release`, current summary/next text dated `2026-05-25`, and restored `agent.actions` for the Activity Log.
+- Validation: `./scripts/deploy_app.sh` passes; live `/api/town` for `ScienceIsNeato/slop-mop` now returns queue milestone `v1.1 release` plus current summary/next text dated `2026-05-25` from the merged manifest path.
 
 ## Done (2026-05-25) — Repo Display Data + Perf Overlay Fixes
 

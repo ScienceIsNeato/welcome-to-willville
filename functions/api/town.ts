@@ -15,7 +15,11 @@
  * Mayors: private, no-store.
  */
 
-import { buildTown, type RepoMeta } from "../../lib/town";
+import {
+  buildTown,
+  type GitHubWorkflowRun,
+  type RepoMeta,
+} from "../../lib/town";
 import { WillvilleManifestClient } from "./town-manifests";
 
 interface Env {
@@ -97,6 +101,92 @@ type GitHubMilestone = {
   open_issues: number;
   state: "open" | "closed";
 };
+
+type GitHubWorkflowRunEntry = {
+  name?: string | null;
+  display_title?: string | null;
+  html_url?: string | null;
+  status?: string | null;
+  conclusion?: string | null;
+  head_branch?: string | null;
+};
+
+function workflowRunStatus(
+  run: GitHubWorkflowRunEntry,
+): GitHubWorkflowRun["status"] {
+  if (run.status !== "completed") return "running";
+  if (run.conclusion === "success") return "success";
+  if (
+    run.conclusion === "failure" ||
+    run.conclusion === "cancelled" ||
+    run.conclusion === "timed_out" ||
+    run.conclusion === "action_required" ||
+    run.conclusion === "startup_failure" ||
+    run.conclusion === "stale"
+  ) {
+    return "failed";
+  }
+  return "neutral";
+}
+
+function workflowRunName(run: GitHubWorkflowRunEntry): string {
+  const label =
+    typeof run.name === "string" && run.name.trim().length > 0
+      ? run.name.trim()
+      : typeof run.display_title === "string" &&
+          run.display_title.trim().length > 0
+        ? run.display_title.trim()
+        : "Workflow run";
+
+  if (
+    typeof run.head_branch === "string" &&
+    run.head_branch.trim().length > 0
+  ) {
+    return `${label} (${run.head_branch.trim()})`;
+  }
+
+  return label;
+}
+
+async function fetchWorkflowRuns(
+  fullName: string,
+  token?: string,
+): Promise<RepoMeta["workflowRuns"]> {
+  const headers: Record<string, string> = {
+    "User-Agent": "willville-edge",
+    Accept: "application/vnd.github+json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  try {
+    const response = await fetch(
+      `https://api.github.com/repos/${fullName}/actions/runs?per_page=3`,
+      { headers },
+    );
+    if (!response.ok) return undefined;
+
+    const payload = (await response.json()) as {
+      workflow_runs?: GitHubWorkflowRunEntry[];
+    };
+    if (!Array.isArray(payload.workflow_runs)) return [];
+
+    return payload.workflow_runs.flatMap((run) => {
+      if (typeof run.html_url !== "string" || run.html_url.length === 0) {
+        return [];
+      }
+
+      return [
+        {
+          name: workflowRunName(run),
+          status: workflowRunStatus(run),
+          url: run.html_url,
+        },
+      ];
+    });
+  } catch {
+    return undefined;
+  }
+}
 
 type RepoSignals = {
   openPrCount?: number;
@@ -344,12 +434,13 @@ export const onRequestGet: PagesFunction<Env> = async ({
   });
 
   const repoMetas: RepoMeta[] = await mapLimit(candidates, 8, async (r) => {
-    const [milestones, commitCounts, activeBranch, repoSignals] =
+    const [milestones, commitCounts, activeBranch, repoSignals, workflowRuns] =
       await Promise.all([
         fetchMilestones(OWNER, r.name, token),
         fetchCommitCounts(r.full_name, token),
         fetchActiveBranch(r.full_name, r.default_branch, token),
         fetchRepoSignals(OWNER, r.name, token),
+        fetchWorkflowRuns(r.full_name, token),
       ]);
     const { willvilleManifest, willvillePacket } =
       await manifestClient.fetchRepoPackets(
@@ -389,6 +480,7 @@ export const onRequestGet: PagesFunction<Env> = async ({
       lastMergeAt: repoSignals?.lastMergeAt,
       latestRelease: repoSignals?.latestRelease,
       activeBranch,
+      workflowRuns,
     };
   });
 

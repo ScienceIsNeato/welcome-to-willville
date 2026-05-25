@@ -1,22 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Addressing PR #10 review comments around preview generation and manifest-driven stop overrides",
-    "direction": "Close the current review threads cleanly so the branch can return to CI-only waiting",
-    "last_update": "2026-05-25T08:57:10Z",
-    "actions": [
-      {
-        "name": "Fixed the preview generator output regression and manifest override precedence gaps raised in review",
-        "status": "done"
-      },
-      {
-        "name": "Commit the PR #10 review fixes and resolve the affected threads",
-        "status": "in_progress"
-      },
-      {
-        "name": "Re-run buff and wait for CI to settle once the review threads are cleared",
-        "status": "planned"
-      }
-    ]
+    "status": "Packaging the PR #10 follow-up that moves the board activity log to GitHub workflow runs",
+    "direction": "Ship the workflow-run contract fix so committed packets stay owner-facing while the bell refresh pulls the last 3 GitHub Actions runs with links",
+    "last_update": "2026-05-25T09:11:03Z"
   }
 }

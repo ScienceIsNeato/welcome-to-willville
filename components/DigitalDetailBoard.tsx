@@ -2,7 +2,7 @@
 
 import type { CSSProperties, MouseEvent, ReactNode } from "react";
 import { LOCKS, type CanalBoat } from "@/lib/canal";
-import type { Stop } from "@/lib/town";
+import type { GitHubWorkflowRun, Stop } from "@/lib/town";
 
 type Props = {
   stop: Stop | null;
@@ -114,8 +114,8 @@ export function DigitalDetailBoard({ stop, boats, onClear }: Props) {
                 fallback="No direction logged."
               />
             </Panel>
-            <Panel title="Activity Log">
-              <ActionList stop={stop} />
+            <Panel title="GitHub Actions">
+              <WorkflowRunList stop={stop} />
             </Panel>
           </div>
 
@@ -200,20 +200,21 @@ function TextBlock({
   return <p style={noteTextStyle}>{normalizePanelText(value, fallback)}</p>;
 }
 
-function ActionList({ stop }: { stop: Stop }) {
-  const actions = stop.agent?.actions ?? [];
-  if (actions.length === 0) {
-    return <p style={noteTextStyle}>No recent agent actions.</p>;
+function WorkflowRunList({ stop }: { stop: Stop }) {
+  const runs = stop.workflowRuns ?? [];
+  if (runs.length === 0) {
+    return <p style={noteTextStyle}>No recent GitHub Actions runs.</p>;
   }
   return (
     <ul style={actionListStyle}>
-      {actions.slice(0, 4).map((action, index) => (
-        <li
-          key={`${action.status}-${action.name}-${index}`}
-          style={actionItemStyle}
-        >
-          <span style={actionStatusStyle}>{actionSymbol(action.status)}</span>
-          <span>{action.name}</span>
+      {runs.slice(0, 3).map((run, index) => (
+        <li key={`${run.url}-${index}`} style={actionItemStyle}>
+          <span style={workflowRunStatusStyle(run.status)}>
+            {workflowRunStatusLabel(run.status)}
+          </span>
+          <a href={run.url} onClick={followLink} style={actionLinkStyle}>
+            {run.name}
+          </a>
         </li>
       ))}
     </ul>
@@ -275,11 +276,46 @@ function normalizePanelText(
   return value;
 }
 
-function actionSymbol(status: string): string {
-  if (status === "done") return "+";
-  if (status === "in_progress") return ">";
-  if (status === "failed") return "!";
-  return "o";
+function workflowRunStatusLabel(status: GitHubWorkflowRun["status"]): string {
+  if (status === "success") return "success";
+  if (status === "running") return "running";
+  if (status === "failed") return "failed";
+  return "neutral";
+}
+
+function workflowRunStatusStyle(
+  status: GitHubWorkflowRun["status"],
+): CSSProperties {
+  if (status === "success") {
+    return {
+      ...actionStatusStyle,
+      color: "#9bffb4",
+      borderColor: "rgba(155, 255, 180, 0.38)",
+      background: "rgba(28, 96, 42, 0.45)",
+    };
+  }
+  if (status === "running") {
+    return {
+      ...actionStatusStyle,
+      color: "#ffe27d",
+      borderColor: "rgba(255, 226, 125, 0.34)",
+      background: "rgba(97, 74, 18, 0.45)",
+    };
+  }
+  if (status === "failed") {
+    return {
+      ...actionStatusStyle,
+      color: "#ff9c9c",
+      borderColor: "rgba(255, 156, 156, 0.34)",
+      background: "rgba(115, 28, 28, 0.42)",
+    };
+  }
+  return {
+    ...actionStatusStyle,
+    color: "rgba(51, 255, 87, 0.72)",
+    borderColor: "rgba(51, 255, 87, 0.22)",
+    background: "rgba(51, 255, 87, 0.08)",
+  };
 }
 
 const shellStyle: CSSProperties = {
@@ -448,7 +484,8 @@ const actionListStyle: CSSProperties = {
 
 const actionItemStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "18px 1fr",
+  gridTemplateColumns: "70px minmax(0, 1fr)",
+  alignItems: "center",
   gap: 5,
   paddingBottom: 5,
   borderBottom: "1px solid rgba(51, 255, 87, 0.13)",
@@ -458,8 +495,28 @@ const actionItemStyle: CSSProperties = {
 };
 
 const actionStatusStyle: CSSProperties = {
-  color: "rgba(51, 255, 87, 0.7)",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  padding: "2px 6px",
+  border: "1px solid rgba(51, 255, 87, 0.22)",
+  borderRadius: 999,
+  fontSize: 10,
   fontWeight: 900,
+  letterSpacing: 0.8,
+  lineHeight: 1.1,
+  textTransform: "uppercase",
+};
+
+const actionLinkStyle: CSSProperties = {
+  minWidth: 0,
+  color: "rgba(51, 255, 87, 0.82)",
+  fontSize: 12,
+  lineHeight: 1.35,
+  textDecoration: "none",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 };
 
 const canalPanelStyle: CSSProperties = {
