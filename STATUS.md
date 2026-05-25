@@ -9,6 +9,12 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-25) — PR #10 Final Review Fix: Preserve Fallback Manifest Values
+
+- Fixed `mergeSection` in `functions/api/town-manifests.ts` so preferred manifest sections only overwrite fallback values when the preferred property is actually defined.
+- This restores the intended active-branch/PR/default-branch backfill behavior for `project`, `status`, and `queue` fields even though the parser emits explicit `undefined` keys for missing values.
+- Validation: `activate && sm swab --no-cache --json --output-file .slopmop/last_swab_merge_section_fix.json` passed.
+
 ## Done (2026-05-25) — PR #10 Final Review Fix: Bell Announcement Snapshot Baseline
 
 - Fixed `handlePopulate` in `components/TownStage.tsx` so the bell announcement compares a frozen pre-refresh `currentStops` snapshot against refreshed data merged onto that same baseline.

@@ -130,7 +130,17 @@ export class WillvilleManifestClient {
   ): T | undefined {
     if (!preferred) return fallback;
     if (!fallback) return preferred;
-    return { ...fallback, ...preferred };
+
+    const merged = { ...fallback } as T;
+    for (const [key, value] of Object.entries(preferred) as Array<
+      [keyof T, T[keyof T]]
+    >) {
+      if (value !== undefined) {
+        merged[key] = value;
+      }
+    }
+
+    return merged;
   }
 
   private mergeAgent(
