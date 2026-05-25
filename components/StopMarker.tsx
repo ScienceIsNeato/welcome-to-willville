@@ -2,6 +2,7 @@
 
 import type { MouseEvent } from "react";
 import type { Stop } from "@/lib/town";
+import siteSpriteManifest from "@/data/town-site-sprites.v1.json";
 
 type Props = {
   stop: Stop;
@@ -20,6 +21,15 @@ const STATE_COLOR: Record<Stop["status"]["state"], string> = {
   unknown: "#cccccc",
 };
 
+const SITE_SPRITES = new Map(
+  siteSpriteManifest.sprites.map((sprite) => [sprite.stopId, sprite]),
+);
+const SPRITE_CACHE_VERSION = "repo-labels-20260522";
+
+function repoLabel(stop: Stop): string {
+  return stop.repo?.split("/").pop() ?? stop.repo ?? stop.id;
+}
+
 export function StopMarker({
   stop,
   isFocused,
@@ -28,6 +38,13 @@ export function StopMarker({
   onDoubleClick,
 }: Props) {
   const color = STATE_COLOR[stop.status.state];
+  const sprite = SITE_SPRITES.get(stop.id);
+  const spriteWidth = sprite ? Math.round(sprite.width * 0.68) : 0;
+  const spriteHeight = sprite ? Math.round(sprite.height * 0.68) : 0;
+  const label = repoLabel(stop);
+  const hitWidth = Math.max(72, spriteWidth + 24, label.length * 8 + 20);
+  const hitTop = sprite ? -spriteHeight - 64 : -36;
+  const hitBottom = sprite ? 28 : 36;
   return (
     <g
       data-stop-marker
@@ -41,30 +58,50 @@ export function StopMarker({
         e.stopPropagation();
         onDoubleClick(e);
       }}
-      aria-label={stop.displayName}
+      aria-label={label}
     >
-      <circle r={32} fill="transparent" pointerEvents="all" />
+      <rect
+        x={-hitWidth / 2}
+        y={hitTop}
+        width={hitWidth}
+        height={hitBottom - hitTop}
+        fill="transparent"
+        pointerEvents="all"
+      />
       {recentlyUpdated && (
         <circle r={18} fill={color} fillOpacity={0.25} className="whistle" />
       )}
+      {sprite && (
+        <image
+          href={`${sprite.src}?v=${SPRITE_CACHE_VERSION}`}
+          x={-spriteWidth / 2}
+          y={-spriteHeight + 10}
+          width={spriteWidth}
+          height={spriteHeight}
+          preserveAspectRatio="xMidYMid meet"
+          style={{ pointerEvents: "none" }}
+        />
+      )}
       <circle
-        r={isFocused ? 12 : 9}
+        r={isFocused ? 8 : 6}
+        cx={sprite ? 22 : 0}
+        cy={sprite ? 12 : 0}
         fill={color}
         stroke="#1a1233"
         strokeWidth={2}
       />
       <text
-        y={-18}
+        y={sprite ? -52 : -18}
         textAnchor="middle"
         fontSize={14}
-        fontWeight={600}
+        fontWeight={700}
         fill="var(--willville-paper)"
         style={{
           pointerEvents: "none",
-          textShadow: "0 1px 4px rgba(0,0,0,0.8), 0 0 8px rgba(0,0,0,0.5)",
+          textShadow: "0 1px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.65)",
         }}
       >
-        {stop.repo?.split("/").pop() ?? stop.id}
+        {label}
       </text>
     </g>
   );

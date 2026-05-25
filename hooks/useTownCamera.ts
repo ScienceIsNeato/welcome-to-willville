@@ -13,7 +13,7 @@ import { WORLD, TOWN_CENTER } from "@/lib/willville";
 export type Camera = { cx: number; cy: number; scale: number };
 
 export const MIN_SCALE = 0.6;
-export const MAX_SCALE = 4;
+export const MAX_SCALE = 128;
 const DOUBLE_CLICK_ZOOM = 1.4;
 
 const INITIAL_CAMERA: Camera = {
@@ -86,15 +86,10 @@ export function useTownCamera(
   const W2 = WORLD.width / 2;
   const H2 = WORLD.height / 2;
 
-  // Fixed-pivot derived transforms (pivot = world centre = W/2, H/2).
-  // Mathematically equivalent to translate(W/2-cx, H/2-cy) scale(s) around (cx,cy).
-  const gX = useTransform(
-    [mvCx, mvScale] as const,
-    ([cx, s]: number[]) => (W2 - cx) * s,
-  );
-  const gY = useTransform(
-    [mvCy, mvScale] as const,
-    ([cy, s]: number[]) => (H2 - cy) * s,
+  const cameraTransform = useTransform(
+    [mvCx, mvCy, mvScale] as const,
+    ([cx, cy, s]: number[]) =>
+      `translate(${W2 - cx * s} ${H2 - cy * s}) scale(${s})`,
   );
 
   const [isDragging, setIsDragging] = useState(false);
@@ -252,8 +247,7 @@ export function useTownCamera(
   return {
     getCameraSnapshot,
     isDragging,
-    gX,
-    gY,
+    cameraTransform,
     mvScale,
     focusWorldPoint,
     resetToTown,

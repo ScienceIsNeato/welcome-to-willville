@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
+  <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+    <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#100b08" flood-opacity="0.45" />
+  </filter>
+  <ellipse cx="50" cy="82" rx="34" ry="8" fill="#150f0b" opacity="0.28" />
+  <g filter="url(#shadow)">
+    <path d="M 18 78 V 48 C 18 30 32 18 50 18 C 68 18 82 30 82 48 V 78 Z" fill="#f0b184" opacity="0.78" stroke="#3f332a" stroke-width="4" />
+             <path d="M 26 78 V 49 C 26 38 36 28 50 28 C 64 28 74 38 74 49 V 78" fill="none" stroke="#d97757" stroke-width="3" />
+             <path d="M 50 28 V 78 M 20 55 H 80" stroke="#3f332a" stroke-width="2" opacity="0.55" />
+    <path d="M 20 78 H 80" stroke="#20170f" stroke-width="4" stroke-linecap="round" opacity="0.42" />
+  </g>
+</svg>

@@ -11,13 +11,24 @@
     "build": "next build",
     "type-check": "tsc --noEmit",
     "start": "next start",
-    "populate": "node scripts/populate-manifests.mjs"
+    "populate": "node scripts/populate-manifests.mjs",
+    "town:validate": "node scripts/validate-town-layout.mjs",
+    "town:masks": "node scripts/validate-town-layout.mjs && node scripts/generate-town-mask-contract.mjs",
+    "town:base-art": "node scripts/generate-town-base-art.mjs",
+    "town:district-art-placeholders": "node scripts/generate-town-district-art-placeholders.mjs",
+    "town:world-art": "node scripts/generate-town-world-backdrop.mjs",
+    "town:mop-sprite": "node scripts/generate-mop-worker-sprite.mjs",
+    "town:site-sprites": "node scripts/generate-town-site-sprites.mjs",
+    "town:region-prompts": "node scripts/generate-town-region-art-prompts.mjs",
+    "town:district-art-kits": "node scripts/generate-town-district-art-kits.mjs",
+    "town:apply-district-art": "node scripts/apply-town-district-art.mjs",
+    "town:apply-world-landscape-art": "node scripts/apply-town-world-landscape-art.mjs",
+    "town:preview": "node scripts/validate-town-layout.mjs && node scripts/generate-town-layout-preview.mjs && node scripts/generate-town-mask-contract.mjs && node scripts/generate-town-district-art-kits.mjs && node scripts/generate-town-region-art-prompts.mjs && node scripts/generate-town-base-art.mjs && node scripts/generate-town-district-art-placeholders.mjs && node scripts/generate-town-world-backdrop.mjs && node scripts/generate-mop-worker-sprite.mjs && node scripts/generate-town-site-sprites.mjs",
+    "town:art-brief": "node scripts/generate-town-art-brief.mjs && node scripts/generate-town-district-art-kits.mjs && node scripts/generate-town-region-art-prompts.mjs"
   },
   "dependencies": {
-    "@types/js-yaml": "^4.0.9",
     "@use-gesture/react": "^10.3.1",
     "framer-motion": "^12.39.0",
-    "js-yaml": "^4.1.1",
     "next": "16.2.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -30,7 +41,9 @@
     "@types/react-dom": "^19",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.6",
+    "sharp": "^0.34.5",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.94.0"
   }
 }

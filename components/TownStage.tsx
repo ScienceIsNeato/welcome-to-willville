@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   useRef,
@@ -16,11 +17,7 @@ import { type Stop } from "@/lib/town";
 import { isKnownDistrict } from "@/lib/slugs";
 import type { CanalBoat } from "@/lib/canal";
 import { DistrictZone } from "./DistrictZone";
-import {
-  BucolicMargin,
-  WATER_TILE_ART,
-  WATER_TILE_BACKGROUND_SIZE,
-} from "./BucolicMargin";
+import { WorldSubstrate } from "./WorldSubstrate";
 import { TransitLines } from "./TransitLines";
 import { StopMarker } from "./StopMarker";
 import { MainLine } from "./MainLine";
@@ -29,7 +26,11 @@ import { DigitalDetailBoard } from "./DigitalDetailBoard";
 import { Canal } from "./Canal";
 import { ChimneySmoke } from "./ChimneySmoke";
 import { DynamicWalls } from "./DynamicWalls";
+import { GeneratedTownBase } from "./GeneratedTownBase";
+import { WorldWorkerLayer } from "./WorldWorkerLayer";
+import { HollywoodSign } from "./HollywoodSign";
 import { screenToWorld, useTownCamera } from "@/hooks/useTownCamera";
+import { GENERATED_TOWN_LAYOUT } from "@/lib/town-layout";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
 const STOP_HIT_RADIUS = 24;
@@ -78,13 +79,12 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const [now, setNow] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const cameraGroupRef = useRef<SVGGElement>(null);
 
   const {
     getCameraSnapshot,
     isDragging,
-    gX,
-    gY,
-    mvScale,
+    cameraTransform,
     markSkipDrag,
     zoomAtWorldPoint,
     stageHandlers,
@@ -103,7 +103,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const [bellHovered, setBellHovered] = useState(false);
 
   const loadTown = useCallback((signal?: AbortSignal) => {
-    return fetch("/api/town", { signal })
+    return fetch("/api/town", {
+      signal,
+    })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data && Array.isArray(data.stops)) {
@@ -203,6 +205,14 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       window.clearInterval(interval);
     };
   }, []);
+
+  useLayoutEffect(() => {
+    const applyTransform = (value: string) => {
+      cameraGroupRef.current?.setAttribute("transform", value);
+    };
+    applyTransform(cameraTransform.get());
+    return cameraTransform.on("change", applyTransform);
+  }, [cameraTransform]);
 
   // Merge live data into the initial stop list: live stops update matching
   // entries (by id) and new live-only stops are appended. Initial-only stops
@@ -308,11 +318,14 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       if (!svg) return;
       const snap = getCameraSnapshot();
       const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
-      zoomAtWorldPoint(wx, wy);
       const hit = findStopAt(currentStops, wx, wy, snap.scale);
       if (hit) {
+        zoomAtWorldPoint(wx, wy);
         openStopHud(hit);
-      } else if (selectedStop) {
+        return;
+      }
+      zoomAtWorldPoint(wx, wy);
+      if (selectedStop) {
         closeHud();
       }
     },
@@ -327,14 +340,25 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     ],
   );
 
+  const handleStopClick = useCallback(
+    (e: MouseEvent<SVGGElement>, stop: Stop) => {
+      e.stopPropagation();
+      markSkipDrag();
+      openStopHud(stop);
+    },
+    [markSkipDrag, openStopHud],
+  );
+
   const handleStopDoubleClick = useCallback(
-    (stop: Stop) => {
+    (e: MouseEvent<SVGGElement>, stop: Stop) => {
+      e.stopPropagation();
+      markSkipDrag();
       const wx = TOWN_OFFSET.x + stop.position.x;
       const wy = TOWN_OFFSET.y + stop.position.y;
       zoomAtWorldPoint(wx, wy);
       openStopHud(stop);
     },
-    [openStopHud, zoomAtWorldPoint],
+    [markSkipDrag, openStopHud, zoomAtWorldPoint],
   );
 
   const showWelcomeHint = !boardStop && pathDistrict === null;
@@ -344,10 +368,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       id="willville-stage"
       style={{
         backgroundColor: "#063755",
-        backgroundImage: `linear-gradient(rgba(6, 55, 85, 0.32), rgba(8, 5, 21, 0.42)), url(${WATER_TILE_ART})`,
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat, repeat",
-        backgroundSize: `cover, ${WATER_TILE_BACKGROUND_SIZE}`,
+        backgroundImage:
+          "linear-gradient(rgba(6, 55, 85, 0.32), rgba(8, 5, 21, 0.42))",
       }}
     >
       <CentralBoard
@@ -511,37 +533,26 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             </mask>
           </defs>
 
-          <motion.g
-            style={{
-              x: gX,
-              y: gY,
-              scale: mvScale,
-              transformOrigin: `${WORLD.width / 2}px ${WORLD.height / 2}px`,
-            }}
-          >
-            <BucolicMargin />
+          <g ref={cameraGroupRef} transform={cameraTransform.get()}>
+            <WorldSubstrate />
 
             <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
-              <image
-                href="/art/town/willville-v3-closed-loops-draft.png"
-                x={0}
-                y={0}
-                width={TOWN.width}
-                height={TOWN.height}
-                preserveAspectRatio="none"
-                mask="url(#town-art-feather-mask)"
-              />
+              <GeneratedTownBase stops={currentStops} />
               <ChimneySmoke />
               <DynamicWalls />
+              <Canal boats={boats} layer="base" />
               {DISTRICTS.map((d) => (
                 <DistrictZone
                   key={d.id}
                   district={d}
+                  layer="hit"
                   onEnterDistrict={enterDistrict}
                 />
               ))}
               <TransitLines />
               <MainLine stops={currentStops} />
+              <Canal boats={boats} layer="traffic" />
+              <WorldWorkerLayer stops={currentStops} />
               {currentStops.map((stop) => {
                 const updated = stop.status.updated
                   ? Date.parse(stop.status.updated)
@@ -560,16 +571,24 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                       boardStop?.id === stop.id
                     }
                     recentlyUpdated={recently}
-                    onClick={() => openStopHud(stop)}
-                    onDoubleClick={() => handleStopDoubleClick(stop)}
+                    onClick={(e) => handleStopClick(e, stop)}
+                    onDoubleClick={(e) => handleStopDoubleClick(e, stop)}
                   />
                 );
               })}
-              <Canal boats={boats} />
+              {DISTRICTS.map((d) => (
+                <DistrictZone
+                  key={`label-${d.id}`}
+                  district={d}
+                  layer="label"
+                  onEnterDistrict={enterDistrict}
+                />
+              ))}
+              <HollywoodSign />
 
               {/* Town square — clock tower bell */}
               <g
-                transform="translate(784, 456)"
+                transform={`translate(${GENERATED_TOWN_LAYOUT.landmarks.bellTower.x}, ${GENERATED_TOWN_LAYOUT.landmarks.bellTower.y})`}
                 style={{
                   cursor: populating === "running" ? "wait" : "pointer",
                 }}
@@ -638,7 +657,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                 )}
               </g>
             </g>
-          </motion.g>
+          </g>
         </svg>
 
         {populating !== "idle" && (
@@ -731,12 +750,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       `}</style>
       </div>
 
-      <DigitalDetailBoard
-        stop={boardStop}
-        allStops={currentStops}
-        boats={boats}
-        onClear={closeHud}
-      />
+      <DigitalDetailBoard stop={boardStop} boats={boats} onClear={closeHud} />
     </div>
   );
 }

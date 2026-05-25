@@ -15,7 +15,8 @@
  * Mayors: private, no-store.
  */
 
-import { buildTown, type RepoMeta, type WillvillePacket } from "../../lib/town";
+import { buildTown, type RepoMeta } from "../../lib/town";
+import { WillvilleManifestClient } from "./town-manifests";
 
 interface Env {
   GITHUB_PAT?: string;
@@ -126,7 +127,9 @@ async function fetchMilestones(
 async function fetchCommitCounts(
   fullName: string,
   token?: string,
-): Promise<{ d3: number; d7: number; d21: number } | undefined> {
+): Promise<
+  { d3: number; d7: number; d21: number; latestCommitAt?: string } | undefined
+> {
   const headers: Record<string, string> = {
     "User-Agent": "willville-edge",
     Accept: "application/vnd.github+json",
@@ -147,15 +150,22 @@ async function fetchCommitCounts(
     let d3 = 0,
       d7 = 0,
       d21 = 0;
+    let latestCommitAt: string | undefined;
+    let latestCommitTime = 0;
     for (const c of commits) {
-      const t = Date.parse(c.commit?.author?.date ?? "");
+      const rawDate = c.commit?.author?.date ?? "";
+      const t = Date.parse(rawDate);
       if (Number.isNaN(t)) continue;
+      if (t > latestCommitTime) {
+        latestCommitTime = t;
+        latestCommitAt = rawDate;
+      }
       const daysAgo = (now - t) / 86_400_000;
       if (daysAgo <= 3) d3++;
       if (daysAgo <= 7) d7++;
       d21++; // all commits from the `since` window count
     }
-    return { d3, d7, d21 };
+    return { d3, d7, d21, latestCommitAt };
   } catch {
     return undefined;
   }
@@ -222,111 +232,13 @@ async function fetchActiveBranch(
   }
 }
 
-const PACKET_RE = /<!--\s*willville\b([\s\S]*?)-->/;
-
-/** Parse a raw STATUS.md string into a WillvillePacket, or return undefined. */
-function parseWillvillePacket(body: string): WillvillePacket | undefined {
-  const match = PACKET_RE.exec(body);
-  if (!match) return undefined;
-  const inner = match[1]!;
-  const pkt: WillvillePacket = {};
-
-  for (const line of inner.split("\n")) {
-    const colon = line.indexOf(":");
-    if (colon === -1) continue;
-    const key = line.slice(0, colon).trim();
-    const val = line.slice(colon + 1).trim();
-    if (!val) continue;
-
-    switch (key) {
-      // New-format fields
-      case "doing":
-        pkt.doing = val;
-        break;
-      case "done":
-        pkt.done = val;
-        break;
-      case "next":
-        pkt.next = val;
-        break;
-      case "blocked":
-        pkt.blocked = val;
-        break;
-      case "risk":
-        pkt.risk = val;
-        break;
-      case "eta":
-        pkt.eta = val;
-        break;
-      // Shared
-      case "milestone":
-        pkt.milestone = val;
-        break;
-      // Legacy fields (backward compat)
-      case "status":
-        if (
-          ["wip", "shipping", "maintenance", "dormant", "unknown"].includes(val)
-        )
-          pkt.status = val as WillvillePacket["status"];
-        break;
-      case "summary":
-        pkt.summary = val;
-        break;
-      case "eta_date":
-        pkt.etaDate = val;
-        pkt.eta ??= val;
-        break;
-    }
-  }
-
-  // Legacy: parse YAML-style list fields (blockers)
-  const blockersRe = /\bblockers:[\s\S]*?(?=\n\w|$)/;
-  const blockersMatch = blockersRe.exec(inner);
-  if (blockersMatch) {
-    const items = [...blockersMatch[0].matchAll(/^\s*-\s*(.+)/gm)]
-      .map((m) => m[1]!.trim())
-      .filter(Boolean);
-    if (items.length) {
-      pkt.blockers = items;
-      pkt.blocked ??= items[0];
-    }
-  }
-
-  return Object.keys(pkt).length > 0 ? pkt : undefined;
-}
-
-/** Fetch STATUS.md and parse the willville packet. Returns undefined on miss. */
-async function fetchWillvillePacket(
-  fullName: string,
-  branch: string,
-  token?: string,
-): Promise<WillvillePacket | undefined> {
-  const headers: Record<string, string> = {
-    "User-Agent": "willville-edge",
-    Accept: "application/vnd.github+json",
-  };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  try {
-    const r = await fetch(
-      `https://api.github.com/repos/${fullName}/contents/STATUS.md?ref=${branch}`,
-      { headers },
-    );
-    if (!r.ok) return undefined;
-    const data = (await r.json()) as { content?: string; encoding?: string };
-    if (!data.content || data.encoding !== "base64") return undefined;
-    const body = atob(data.content.replace(/\s/g, ""));
-    return parseWillvillePacket(body);
-  } catch {
-    return undefined;
-  }
-}
-
 export const onRequestGet: PagesFunction<Env> = async ({
   request: _request,
   env,
 }) => {
   // Always use PAT when available to avoid unauthenticated rate limits (60/hr).
   const token = env.GITHUB_PAT;
+  const manifestClient = new WillvilleManifestClient(token);
   const repos = await listOwnerRepos(token);
   const cutoff = Date.now() - TWO_YEARS_MS;
   const candidates = repos.filter((r) => {
@@ -340,14 +252,12 @@ export const onRequestGet: PagesFunction<Env> = async ({
       fetchCommitCounts(r.full_name, token),
       fetchActiveBranch(r.full_name, r.default_branch, token),
     ]);
-    // Fetch the packet from whichever branch had the most recent commit, so
-    // work-in-progress STATUS.md entries actually appear in the UI.
-    const packetBranch = activeBranch?.name ?? r.default_branch;
-    const willvillePacket = await fetchWillvillePacket(
-      r.full_name,
-      packetBranch,
-      token,
-    );
+    const { willvilleManifest, willvillePacket } =
+      await manifestClient.fetchRepoPackets(
+        r.full_name,
+        r.default_branch,
+        activeBranch,
+      );
     return {
       repo: r.full_name,
       isPrivate: r.private,
@@ -363,6 +273,7 @@ export const onRequestGet: PagesFunction<Env> = async ({
         dueOn: m.due_on,
         openIssues: m.open_issues,
       })),
+      willvilleManifest,
       willvillePacket,
       openIssuesCount: r.open_issues_count,
       stars: r.stargazers_count,
@@ -370,13 +281,14 @@ export const onRequestGet: PagesFunction<Env> = async ({
       commits3d: commitCounts?.d3,
       commits7d: commitCounts?.d7,
       commits21d: commitCounts?.d21,
+      lastCommitAt: commitCounts?.latestCommitAt,
       activeBranch,
     };
   });
 
   const stops = buildTown(repoMetas);
 
-  const cacheControl = "public, s-maxage=60, stale-while-revalidate=300";
+  const cacheControl = "public, s-maxage=45, stale-while-revalidate=180";
 
   return new Response(
     JSON.stringify({

@@ -1,0 +1,803 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="384" height="192" viewBox="0 0 384 192">
+  <rect width="384" height="192" fill="transparent" />
+  <g transform="translate(24 25)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(0)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-34)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="10" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="15" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-8" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(72 26.555634918610405)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(1.7324116139070411)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-31.525126265847085)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="11.131370849898476" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="15.707106781186548" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-8.707106781186548" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(120 27.2)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(2.4499999999999997)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-30.5)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="11.6" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="16" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-9" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(168 26.555634918610405)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(1.7324116139070413)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-31.525126265847085)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="11.131370849898476" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="15.707106781186548" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-8.707106781186548" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(216 25)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(3.000384657911015e-16)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-34)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="10" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="15" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-8" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(264 23.444365081389595)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(-1.7324116139070411)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-36.474873734152915)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="8.868629150101524" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="14.292893218813452" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-7.292893218813452" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(312 22.8)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(-2.4499999999999997)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-37.5)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="8.4" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="14" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-7" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(360 23.444365081389595)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(-1.7324116139070416)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-36.474873734152915)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="8.868629150101523" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="14.292893218813452" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-7.292893218813452" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(24 73)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(0)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-26)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.78">
+      <circle cx="10" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="15" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-8" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(72 74.55563491861041)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(1.7324116139070411)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-18.928932188134524)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.78">
+      <circle cx="11.131370849898476" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="15.707106781186548" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-8.707106781186548" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(120 75.2)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(2.4499999999999997)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-16)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.78">
+      <circle cx="11.6" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="16" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-9" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(168 74.55563491861041)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(1.7324116139070413)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-18.928932188134524)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.78">
+      <circle cx="11.131370849898476" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="15.707106781186548" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-8.707106781186548" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(216 73)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(3.000384657911015e-16)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-26)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.78">
+      <circle cx="10" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="15" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-8" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(264 71.44436508138959)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(-1.7324116139070411)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-33.071067811865476)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.78">
+      <circle cx="8.868629150101524" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="14.292893218813452" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-7.292893218813452" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(312 70.8)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(-2.4499999999999997)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-36)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.78">
+      <circle cx="8.4" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="14" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-7" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(360 71.44436508138959)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(-1.7324116139070416)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-33.071067811865476)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.78">
+      <circle cx="8.868629150101523" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="14.292893218813452" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-7.292893218813452" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(24 121)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(0)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-18)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="10" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="15" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-8" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(72 122.55563491861041)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(1.7324116139070411)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-18)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="11.131370849898476" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="15.707106781186548" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-8.707106781186548" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(120 123.2)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(2.4499999999999997)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-18)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="11.6" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="16" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-9" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(168 122.55563491861041)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(1.7324116139070413)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-18)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="11.131370849898476" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="15.707106781186548" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-8.707106781186548" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(216 121)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(3.000384657911015e-16)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-18)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="10" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="15" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-8" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(264 119.44436508138959)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(-1.7324116139070411)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-18)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="8.868629150101524" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="14.292893218813452" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-7.292893218813452" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(312 118.8)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(-2.4499999999999997)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-18)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="8.4" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="14" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-7" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(360 119.44436508138959)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(-1.7324116139070416)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(7 -2) rotate(-18)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="0.28">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="8.868629150101523" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="14.292893218813452" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-7.292893218813452" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(24 169)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(0)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-2 -2) rotate(-34)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="1">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="10" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="15" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-8" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(72 170.5556349186104)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(1.7324116139070411)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-2 -2) rotate(-31.525126265847085)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-14.585786437626904 3.585786437626905)" opacity="1">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="11.131370849898476" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="15.707106781186548" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-8.707106781186548" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(120 171.2)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(2.4499999999999997)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-2 -2) rotate(-30.5)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-14 3)" opacity="1">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="11.6" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="16" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-9" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(168 170.5556349186104)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(1.7324116139070413)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-2 -2) rotate(-31.525126265847085)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-14.585786437626904 3.585786437626905)" opacity="1">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="11.131370849898476" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="15.707106781186548" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-8.707106781186548" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(216 169)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(3.000384657911015e-16)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-2 -2) rotate(-34)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-16 5)" opacity="1">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="10" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="15" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-8" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(264 167.4443650813896)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(-1.7324116139070411)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-2 -2) rotate(-36.474873734152915)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-17.414213562373096 6.414213562373095)" opacity="1">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="8.868629150101524" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="14.292893218813452" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-7.292893218813452" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(312 166.8)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(-2.4499999999999997)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-2 -2) rotate(-37.5)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-18 7)" opacity="1">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="8.4" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="14" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-7" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+<g transform="translate(360 167.4443650813896)">
+    <ellipse cx="0" cy="14" rx="14" ry="4" fill="#0c1f2a" opacity="0.28" />
+    <g transform="rotate(-1.7324116139070416)">
+      <path d="M -8 -7 C -11 -15, -4 -20, 3 -17 C 9 -14, 10 -7, 5 -2 Z" fill="#f1d2a2" stroke="#3a2114" stroke-width="1.5" />
+      <path d="M -11 -2 C -5 -9, 7 -9, 13 -1 L 10 13 C 4 17, -6 17, -12 11 Z" fill="#38546b" stroke="#17293a" stroke-width="2" />
+      <path d="M -12 4 C -5 7, 4 7, 12 3" fill="none" stroke="#72c7d0" stroke-width="3" stroke-linecap="round" opacity="0.8" />
+      <path d="M -7 13 L -14 22 M 7 13 L 15 21" fill="none" stroke="#2a1b17" stroke-width="3" stroke-linecap="round" />
+      <path d="M -10 2 L -19 10 M 10 2 L 18 9" fill="none" stroke="#2a1b17" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-2 -2) rotate(-36.474873734152915)">
+      <path d="M 0 -20 L 0 24" fill="none" stroke="#7b4b25" stroke-width="3" stroke-linecap="round" />
+      <path d="M -8 20 C -4 15, 5 15, 9 20 C 5 27, -5 27, -8 20 Z" fill="#d7d5bd" stroke="#6c6754" stroke-width="1.5" />
+      <path d="M -4 20 L -9 27 M 0 19 L 0 29 M 4 20 L 9 27" fill="none" stroke="#f4f2da" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+    <g transform="translate(-17.414213562373096 6.414213562373096)" opacity="1">
+      <path d="M -5 2 H 7 L 5 13 H -3 Z" fill="#1f85a8" stroke="#0c3850" stroke-width="1.5" />
+      <path d="M -5 2 C -2 -3, 4 -3, 7 2" fill="none" stroke="#d8e8e1" stroke-width="1.2" />
+      <circle cx="2" cy="5" r="1.4" fill="#d9f7ff" opacity="0.75" />
+    </g>
+    <g opacity="0.24">
+      <circle cx="8.868629150101523" cy="21" r="1.8" fill="#dff8ff" />
+      <circle cx="14.292893218813452" cy="18" r="1.2" fill="#bcefff" />
+      <circle cx="-7.292893218813452" cy="20" r="1.1" fill="#dff8ff" />
+    </g>
+  </g>
+</svg>

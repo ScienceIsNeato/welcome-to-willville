@@ -1,11 +1,11 @@
 /**
  * Curved canal spine through Willville (1600×1240 viewbox).
  *
- * Coordinates are tuned for a harbor that enters from the southwest, weaves
- * between Slop Wharf, Hearth, and Sawmill, then opens to the open sea on the
- * east. Lock chambers sit at fixed fractions along this path so boats, gates,
- * and labels follow the painted waterway rather than a bottom band.
+ * The canal geometry comes from the generated town layout so boats, gates,
+ * masks, and the painted art brief all share a single source of truth.
  */
+
+import { CANAL_SEGMENTS, GENERATED_TOWN_LAYOUT } from "./town-layout";
 
 export type Point = { x: number; y: number };
 
@@ -14,41 +14,12 @@ type Cubic = { p0: Point; p1: Point; p2: Point; p3: Point };
 /**
  * SVG path for the canal centerline.
  *
- * Stays inside the painted harbor zone (TOWN y ≈ 1085–1230) so that SVG boats
- * and gate lines land on the actual water in willville.png.
+ * Stays inside the generated harbor zone so SVG boats and gate lines land on
+ * the same canal geometry used by masks and district art.
  */
-export const CANAL_PATH_D =
-  "M 75 1225 C 140 1190, 260 1140, 380 1110" +
-  " S 620 1085, 800 1085" +
-  " S 1000 1090, 1160 1115" +
-  " S 1400 1155, 1570 1200";
+export const CANAL_PATH_D = GENERATED_TOWN_LAYOUT.canal.pathD;
 
-const SEGMENTS: Cubic[] = [
-  {
-    p0: { x: 75, y: 1225 },
-    p1: { x: 140, y: 1190 },
-    p2: { x: 260, y: 1140 },
-    p3: { x: 380, y: 1110 },
-  },
-  {
-    p0: { x: 380, y: 1110 },
-    p1: { x: 500, y: 1080 },
-    p2: { x: 620, y: 1085 },
-    p3: { x: 800, y: 1085 },
-  },
-  {
-    p0: { x: 800, y: 1085 },
-    p1: { x: 980, y: 1085 },
-    p2: { x: 1000, y: 1090 },
-    p3: { x: 1160, y: 1115 },
-  },
-  {
-    p0: { x: 1160, y: 1115 },
-    p1: { x: 1320, y: 1140 },
-    p2: { x: 1400, y: 1155 },
-    p3: { x: 1570, y: 1200 },
-  },
-];
+const SEGMENTS: Cubic[] = CANAL_SEGMENTS;
 
 function cubicAt(seg: Cubic, t: number): Point {
   const u = 1 - t;

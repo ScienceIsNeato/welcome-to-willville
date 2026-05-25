@@ -1,0 +1,237 @@
+{
+  "version": "isthmus-rio-v2-topology",
+  "size": { "width": 1600, "height": 1240 },
+  "generation": {
+    "edgeSampleSteps": 56,
+    "edgeCurveFactor": 0.055,
+    "edgeSquiggleFactor": 0.09,
+    "sitePadding": 34,
+    "siteColumns": 9,
+    "siteRows": 7,
+    "canalSectionWidth": 92,
+    "canalSiteClearance": 24,
+    "canalSampleStepsPerSegment": 28
+  },
+  "landPath": "M -154 -1700 C 120 -1240, 402 -890, 330 -520 C 292 -326, 312 -72, 274 324 C 212 480, 230 628, 330 774 C 438 934, 405 1084, 332 1380 C 260 1830, 302 2210, 380 2920 L 1048 2920 C 1136 2200, 1214 1806, 1118 1380 C 1052 1110, 1042 956, 1140 810 C 1266 622, 1234 490, 1165 334 C 1105 198, 1168 66, 1328 -140 C 1426 -560, 1480 -1010, 1710 -1700 Z",
+  "shoreWallPath": "M 332 158 C 430 132, 565 130, 688 156 C 790 178, 890 176, 996 150 C 1114 120, 1236 134, 1318 180 C 1264 318, 1248 420, 1278 532 C 1310 650, 1254 774, 1148 912 C 1054 1034, 928 1100, 800 1114 C 678 1102, 562 1040, 472 922 C 366 784, 316 654, 348 540 C 386 404, 386 286, 332 158 Z",
+  "vertices": {
+    "nw_coast": { "x": 225, "y": 430 },
+    "north_ridge_w": { "x": 350, "y": 220 },
+    "north_ridge_m": { "x": 570, "y": 150 },
+    "north_saddle": { "x": 735, "y": 145 },
+    "sign_hill": { "x": 965, "y": 150 },
+    "graveyard_peak": { "x": 1248, "y": 245 },
+    "east_bluff": { "x": 1378, "y": 405 },
+    "east_green": { "x": 1335, "y": 620 },
+    "hell_gate_e": { "x": 1135, "y": 975 },
+    "hell_coast": { "x": 935, "y": 1075 },
+    "south_bay_e": { "x": 865, "y": 1105 },
+    "south_bay_m": { "x": 760, "y": 1095 },
+    "dog_coast": { "x": 650, "y": 1060 },
+    "wharf_s": { "x": 370, "y": 905 },
+    "wharf_w": { "x": 260, "y": 800 },
+    "wharf_nw": { "x": 220, "y": 660 },
+    "slop_gate": { "x": 330, "y": 600 },
+    "press_low": { "x": 420, "y": 440 },
+    "press_square": { "x": 568, "y": 348 },
+    "web_press": { "x": 672, "y": 235 },
+    "web_square": { "x": 770, "y": 430 },
+    "web_halls": { "x": 980, "y": 466 },
+    "web_grave": { "x": 1088, "y": 330 },
+    "grave_halls": { "x": 1088, "y": 500 },
+    "grave_hell": { "x": 1240, "y": 620 },
+    "halls_canal": { "x": 1168, "y": 800 },
+    "halls_sw": { "x": 1000, "y": 748 },
+    "square_halls": { "x": 870, "y": 650 },
+    "square_e": { "x": 858, "y": 520 },
+    "square_s": { "x": 744, "y": 760 },
+    "square_sw": { "x": 585, "y": 700 },
+    "square_w": { "x": 470, "y": 560 },
+    "slop_dog": { "x": 478, "y": 953 },
+    "slop_canal": { "x": 560, "y": 890 },
+    "dog_hub": { "x": 820, "y": 850 },
+    "hell_bridge": { "x": 1378, "y": 865 }
+  },
+  "canal": {
+    "pathD": "M 150 900 C 260 842, 370 832, 478 890 C 602 956, 718 918, 820 850 C 922 782, 1045 760, 1168 800 C 1260 830, 1320 882, 1378 890",
+    "segments": [
+      {
+        "p0": { "x": 150, "y": 900 },
+        "p1": { "x": 260, "y": 842 },
+        "p2": { "x": 370, "y": 832 },
+        "p3": { "x": 478, "y": 890 }
+      },
+      {
+        "p0": { "x": 478, "y": 890 },
+        "p1": { "x": 602, "y": 956 },
+        "p2": { "x": 718, "y": 918 },
+        "p3": { "x": 820, "y": 850 }
+      },
+      {
+        "p0": { "x": 820, "y": 850 },
+        "p1": { "x": 922, "y": 782 },
+        "p2": { "x": 1045, "y": 760 },
+        "p3": { "x": 1168, "y": 800 }
+      },
+      {
+        "p0": { "x": 1168, "y": 800 },
+        "p1": { "x": 1260, "y": 830 },
+        "p2": { "x": 1320, "y": 882 },
+        "p3": { "x": 1378, "y": 890 }
+      }
+    ],
+    "bounds": { "left": 130, "right": 1400, "top": 760, "bottom": 950 }
+  },
+  "landmarks": {
+    "townHall": { "x": 760, "y": 560 },
+    "bellTower": { "x": 760, "y": 520 },
+    "slopDepot": { "x": 340, "y": 890 },
+    "welcomeSign": {
+      "x": 880,
+      "y": 170,
+      "pathD": "M 650 190 L 1114 130 L 1122 178 L 658 238 Z"
+    }
+  },
+  "districts": [
+    {
+      "id": "mirrored-mile",
+      "displayName": "Mirrored Mile",
+      "label": { "x": 420, "y": 270 },
+      "vertexIds": [
+        "nw_coast",
+        "north_ridge_w",
+        "north_ridge_m",
+        "north_saddle",
+        "web_press",
+        "press_square",
+        "press_low"
+      ]
+    },
+    {
+      "id": "the-zeitgeist",
+      "displayName": "The Zeitgeist",
+      "label": { "x": 810, "y": 300 },
+      "vertexIds": [
+        "north_saddle",
+        "sign_hill",
+        "web_grave",
+        "web_halls",
+        "web_square",
+        "web_press"
+      ]
+    },
+    {
+      "id": "the-graveyard",
+      "displayName": "The Graveyard",
+      "label": { "x": 1210, "y": 350 },
+      "vertexIds": [
+        "sign_hill",
+        "graveyard_peak",
+        "east_bluff",
+        "east_green",
+        "grave_hell",
+        "grave_halls",
+        "web_halls",
+        "web_grave"
+      ]
+    },
+    {
+      "id": "halls-of-judgement",
+      "displayName": "The Halls of Judgement",
+      "label": { "x": 1045, "y": 610 },
+      "vertexIds": [
+        "web_halls",
+        "grave_halls",
+        "grave_hell",
+        "halls_canal",
+        "halls_sw",
+        "square_halls",
+        "square_e"
+      ]
+    },
+    {
+      "id": "town-square",
+      "displayName": "Town Square",
+      "label": { "x": 725, "y": 565 },
+      "vertexIds": [
+        "press_square",
+        "web_square",
+        "square_e",
+        "square_halls",
+        "square_s",
+        "square_sw",
+        "square_w",
+        "press_low"
+      ]
+    },
+    {
+      "id": "slop-wharf",
+      "displayName": "Slop Wharf",
+      "label": { "x": 350, "y": 815 },
+      "vertexIds": [
+        "wharf_nw",
+        "slop_gate",
+        "square_w",
+        "square_sw",
+        "slop_canal",
+        "slop_dog",
+        "wharf_s",
+        "wharf_w"
+      ]
+    },
+    {
+      "id": "dogwallow-ramble-ii",
+      "displayName": "Dogwallow Ramble II",
+      "label": { "x": 640, "y": 985 },
+      "vertexIds": [
+        "slop_canal",
+        "square_s",
+        "dog_hub",
+        "south_bay_m",
+        "dog_coast",
+        "slop_dog"
+      ]
+    },
+    {
+      "id": "gates-of-hell",
+      "displayName": "The Gates of Hell",
+      "label": { "x": 1210, "y": 955 },
+      "vertexIds": [
+        "halls_canal",
+        "hell_bridge",
+        "hell_gate_e",
+        "hell_coast",
+        "south_bay_e",
+        "south_bay_m",
+        "dog_hub",
+        "halls_sw"
+      ]
+    }
+  ],
+  "lines": [
+    {
+      "id": "ai",
+      "path": "M 1120 360 C 1260 430 1280 590 1110 640 C 960 684 900 600 980 506 C 1040 430 1060 382 1120 360 Z"
+    },
+    {
+      "id": "quality",
+      "path": "M 340 890 C 475 760 665 720 850 650 C 1045 575 1170 650 1168 800 C 995 760 770 845 560 890 C 440 916 370 925 340 890 Z"
+    },
+    {
+      "id": "web",
+      "path": "M 760 180 C 930 210 1000 310 930 410 C 820 492 680 382 672 240 C 668 166 704 150 760 180 Z"
+    },
+    {
+      "id": "writing",
+      "path": "M 390 230 C 560 150 690 230 610 360 C 520 508 380 480 300 396 C 230 318 286 266 390 230 Z"
+    },
+    {
+      "id": "workshop",
+      "path": "M 560 950 C 700 820 850 830 980 890 C 1120 956 1110 1058 820 1060 C 680 1060 540 1030 560 950 Z"
+    },
+    {
+      "id": "halloween",
+      "path": "M 1220 870 C 1420 890 1460 1000 1300 1060 C 1100 1135 890 1040 980 910 C 1040 830 1130 850 1220 870 Z"
+    }
+  ]
+}

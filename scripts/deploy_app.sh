@@ -35,8 +35,21 @@ lockfile_for() {
   echo "$DEPLOY_DIR/$(dir_hash "$1").json"
 }
 
+logfile_for() {
+  echo "$DEPLOY_DIR/$(dir_hash "$1").log"
+}
+
+screen_session_for() {
+  echo "willville-$(dir_hash "$1")"
+}
+
 is_pid_alive() {
-  kill -0 "$1" 2>/dev/null
+  [[ "$1" =~ ^[1-9][0-9]*$ ]] && kill -0 "$1" 2>/dev/null
+}
+
+is_screen_alive() {
+  local session="$1"
+  [[ -n "$session" ]] && screen -ls 2>/dev/null | grep -q "[.]$session[[:space:]]"
 }
 
 read_lockfile() {
@@ -52,7 +65,7 @@ jq_field() {
   # Lightweight JSON field extraction without requiring jq
   # Only strips leading/trailing whitespace, not spaces inside values
   local json="$1" field="$2"
-  echo "$json" | grep -o "\"$field\":[^,}]*" | head -1 | sed "s/\"$field\"://;s/^[[:space:]]*\"//;s/\"[[:space:]]*$//"
+  echo "$json" | grep -o "\"$field\":[^,}]*" | head -1 | sed "s/\"$field\"://;s/^[[:space:]]*\"//;s/\"[[:space:]]*$//" || true
 }
 
 # ── stale cleanup ────────────────────────────────────────────────────────────
@@ -69,10 +82,14 @@ cleanup_stale() {
     started_at=$(jq_field "$data" "startedAt")
     local dir
     dir=$(jq_field "$data" "dir")
+    local session
+    session=$(jq_field "$data" "screenSession")
 
-    # Remove if PID is dead
-    if [[ -n "$pid" ]] && ! is_pid_alive "$pid"; then
-      echo "  Removing dead deployment: $dir (pid $pid)"
+    # Remove if PID is dead and no live screen session owns the deployment.
+    if [[ -n "$session" ]] && is_screen_alive "$session"; then
+      :
+    elif [[ -z "$pid" ]] || ! is_pid_alive "$pid"; then
+      echo "  Removing dead deployment: $dir (pid ${pid:-none})"
       rm -f "$lockfile"
       continue
     fi
@@ -82,9 +99,12 @@ cleanup_stale() {
       local age=$(( now - started_at ))
       if (( age > MAX_AGE_SECONDS )); then
         echo "  Killing stale deployment: $dir (${age}s old, pid $pid)"
-        kill "$pid" 2>/dev/null || true
-        # Also kill any child wrangler/workerd/esbuild processes
-        pkill -P "$pid" 2>/dev/null || true
+        if [[ -n "$session" ]] && is_screen_alive "$session"; then
+          screen -S "$session" -X quit 2>/dev/null || true
+        elif is_pid_alive "$pid"; then
+          kill "$pid" 2>/dev/null || true
+          pkill -P "$pid" 2>/dev/null || true
+        fi
         rm -f "$lockfile"
       fi
     fi
@@ -97,7 +117,14 @@ stop_deployment() {
   local root="$1"
   local lockfile
   lockfile=$(lockfile_for "$root")
+  local fallback_session
+  fallback_session=$(screen_session_for "$root")
   if [[ ! -f "$lockfile" ]]; then
+    if is_screen_alive "$fallback_session"; then
+      echo "Stopping deployment screen $fallback_session"
+      screen -S "$fallback_session" -X quit 2>/dev/null || true
+      sleep 1
+    fi
     echo "No active deployment for $root"
     return 0
   fi
@@ -105,8 +132,14 @@ stop_deployment() {
   data=$(cat "$lockfile")
   local pid
   pid=$(jq_field "$data" "pid")
+  local session
+  session=$(jq_field "$data" "screenSession")
   local port
   port=$(jq_field "$data" "wranglerPort")
+  if [[ -n "$session" ]] && is_screen_alive "$session"; then
+    echo "Stopping deployment on :$port (screen $session)"
+    screen -S "$session" -X quit 2>/dev/null || true
+  fi
   if [[ -n "$pid" ]] && is_pid_alive "$pid"; then
     echo "Stopping deployment on :$port (pid $pid)"
     kill "$pid" 2>/dev/null || true
@@ -138,7 +171,7 @@ find_free_port() {
       continue
     fi
     # Skip if something is listening
-    if lsof -i :"$port" >/dev/null 2>&1; then
+    if lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
       port=$(( port + 2 ))
       continue
     fi
@@ -165,8 +198,12 @@ show_status() {
     port=$(jq_field "$data" "wranglerPort")
     started_at=$(jq_field "$data" "startedAt")
     branch=$(jq_field "$data" "branch")
+    local session
+    session=$(jq_field "$data" "screenSession")
     local alive="dead"
-    is_pid_alive "$pid" && alive="running"
+    if is_pid_alive "$pid" || is_screen_alive "$session"; then
+      alive="running"
+    fi
     local age="?"
     [[ -n "$started_at" ]] && age="$(( (now - started_at) / 60 ))m"
     echo "  :$port  $alive  ${age}  $branch  $dir"
@@ -228,21 +265,43 @@ echo ""
 echo "Allocated port: $WRANGLER_PORT"
 
 # 6. Start wrangler (serves static build + API functions, no next dev needed)
-wrangler pages dev ./out --port "$WRANGLER_PORT" --compatibility-date 2026-05-01 &
-WRANGLER_PID=$!
+WRANGLER_LOG=$(logfile_for "$ROOT")
+SCREEN_SESSION=$(screen_session_for "$ROOT")
+rm -f "$WRANGLER_LOG"
+screen -S "$SCREEN_SESSION" -X quit 2>/dev/null || true
+screen -dmS "$SCREEN_SESSION" bash -lc '
+  exec > "$2" 2>&1
+  cd "$1"
+  exec wrangler pages dev ./out \
+    --ip 127.0.0.1 \
+    --port "$3" \
+    --compatibility-date 2026-05-01 \
+    --show-interactive-dev-session=false
+' _ "$ROOT" "$WRANGLER_LOG" "$WRANGLER_PORT"
+WRANGLER_PID=$(pgrep -f "SCREEN.*${SCREEN_SESSION}" | head -1 || true)
+if [[ -z "$WRANGLER_PID" ]]; then
+  WRANGLER_PID=0
+fi
 
 # Wait for wrangler to be ready
-echo "Starting wrangler (pid $WRANGLER_PID)..."
+echo "Starting wrangler (screen $SCREEN_SESSION, pid $WRANGLER_PID)..."
+READY=0
 for i in $(seq 1 30); do
   if curl -s -o /dev/null -w '' "http://127.0.0.1:$WRANGLER_PORT/" 2>/dev/null; then
+    READY=1
     break
   fi
   sleep 1
 done
+if [[ "$READY" != "1" ]]; then
+  echo "ERROR: wrangler did not become ready. Log:"
+  sed -n '1,160p' "$WRANGLER_LOG" 2>/dev/null || true
+  exit 1
+fi
 
 # 7. Write lockfile
 NOW=$(date +%s)
-ROOT="$ROOT" BRANCH="$BRANCH" PORT="$WRANGLER_PORT" PID="$WRANGLER_PID" NOW="$NOW" \
+ROOT="$ROOT" BRANCH="$BRANCH" PORT="$WRANGLER_PORT" PID="$WRANGLER_PID" NOW="$NOW" LOG="$WRANGLER_LOG" SCREEN_SESSION="$SCREEN_SESSION" \
   node -e "
     const o = {
       dir: process.env.ROOT,
@@ -250,6 +309,8 @@ ROOT="$ROOT" BRANCH="$BRANCH" PORT="$WRANGLER_PORT" PID="$WRANGLER_PID" NOW="$NO
       wranglerPort: Number(process.env.PORT),
       pid: Number(process.env.PID),
       startedAt: Number(process.env.NOW),
+      log: process.env.LOG,
+      screenSession: process.env.SCREEN_SESSION,
     };
     process.stdout.write(JSON.stringify(o) + '\\n');
   " > "$(lockfile_for "$ROOT")"
@@ -261,6 +322,7 @@ echo "  http://127.0.0.1:$WRANGLER_PORT/"
 echo ""
 echo "  Branch: $BRANCH"
 echo "  PID:    $WRANGLER_PID"
+echo "  Log:    $WRANGLER_LOG"
 echo "  Stop:   scripts/deploy_app.sh --stop"
 echo "  Status: scripts/deploy_app.sh --status"
 echo "════════════════════════════════════════"

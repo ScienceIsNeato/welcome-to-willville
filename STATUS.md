@@ -1,8 +1,29 @@
 <!-- willville
-status: shipping
+doing: Building deterministic isthmus town-generation and art-pipeline contracts
+done: Shared spline/squiggle district geometry, canal section contract, isthmus terrain, world backdrop, wall tuning, mop sprite-sheet route states, deploy-script repair, mask contract export
+next: Bespoke site structures and non-SVG transit/marker sprite conversion
+risk: medium
+milestone: Isthmus town generation
+eta: 2026-05-22
 -->
 
 # Status
+
+## Done (2026-05-21) — Isthmus Town Generation Foundation
+
+- **Town topology:** Replaced the old circular island direction with a Rio-inspired isthmus town concept: continuous land bridge, sea on both sides, southern canal, distinct districts, and a separate top-layer Hollywood-style `WELCOME TO WILLVILLE` sign.
+- **Shared geometry source:** Added `data/town-layout.v1.json` as the layout source of truth for sparse vertices, generated district topology, canal segments, landmarks, generation parameters, and transit paths.
+- **Deterministic district boundaries:** Added a shared layout engine in [lib/town-layout-engine.mjs](lib/town-layout-engine.mjs) that turns sparse shared edges into deterministic sampled squiggle boundaries. Adjacent districts share the same generated edge geometry in reverse order, preserving exact overlap while producing gerrymander-style borders.
+- **App integration:** Routed district fills, hit zones, wall loops, stop placement, canal data, and service routes through generated layout geometry instead of old hardcoded heuristics.
+- **Wall tuning:** Reworked animated wall borders to be slower, thinner, calmer, and less artifact-prone while preserving a visible stone/brick texture.
+- **Art pipeline contracts:** Added generated preview and mask outputs: [docs/generated/willville-layout-preview.svg](docs/generated/willville-layout-preview.svg), [docs/generated/town-mask-contract.v1.json](docs/generated/town-mask-contract.v1.json), and art briefs for both Ganglia Studio and Agent's Choice profiles.
+- **Raster masks and base pass:** The artifact pipeline now exports PNG/SVG masks for land, canal, shore wall, district walls, and each district. It also generates a first raster town-base image at [public/art/town/willville-isthmus-v1.png](public/art/town/willville-isthmus-v1.png), which the app renders under the live overlays.
+- **World-scale backdrop pass:** Added a generated non-repeating world backdrop at [public/art/town/willville-landscape-v1.png](public/art/town/willville-landscape-v1.png), with sea on both sides of the isthmus, continuous countryside above/below town, and a registered contract at [docs/generated/town-world-backdrop.v1.json](docs/generated/town-world-backdrop.v1.json).
+- **Canal section pass:** Promoted the canal to its own generated section with sampled centerline, exact bank paths, masks, and site-placement exclusion. The app renders canal banks from [lib/town-layout-engine.mjs](lib/town-layout-engine.mjs), and the contract now exports `canalSection`, `canal-section`, and `canal-banks` geometry.
+- **Site sprite placeholder pass:** Added deterministic generated site-structure sprites in [public/art/stops](public/art/stops) and a manifest in [data/town-site-sprites.v1.json](data/town-site-sprites.v1.json). These are placeholder structures pending bespoke repo-specific pixel art.
+- **Mop sprite-sheet scaffold:** Added a generated transparent raster sprite sheet at [public/art/sprites/mop-worker.png](public/art/sprites/mop-worker.png) with walk, sweep, idle, and bucket-carry rows. The mop service layer now clips and animates frames from route states in [data/town-animation.v1.json](data/town-animation.v1.json), sends each worker depot → site → depot, and pauses at the site for the mopping phase.
+- **Deploy repair:** Updated [scripts/deploy_app.sh](scripts/deploy_app.sh) so wrangler survives script exit under a managed screen session and status/stop handling stays reliable.
+- `npm run town:preview`, `npm run town:art-brief`, `npm run town:validate`, `sm swab`, and deployment through `scripts/deploy_app.sh` pass.
 
 ## Done (2026-05-21) — Unified Public Portfolio & Auth Elimination
 

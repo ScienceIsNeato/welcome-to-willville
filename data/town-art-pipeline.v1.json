@@ -1,0 +1,71 @@
+{
+  "version": "town-art-pipeline-v1",
+  "profiles": [
+    {
+      "id": "ganglia-studio",
+      "displayName": "Ganglia Studio",
+      "description": "Use generated masks, region briefs, and site briefs as controlled inputs for Ganglia Studio asset production.",
+      "owner": "user",
+      "outputs": [
+        "town-base",
+        "world-backdrop",
+        "district-paintovers",
+        "site-structure-sprites",
+        "mop-worker-sprite-sheet",
+        "canal-boat-sprites",
+        "ambient-effect-sprites"
+      ]
+    },
+    {
+      "id": "agent-choice",
+      "displayName": "Agent's Choice",
+      "description": "Let the coding agent choose available local/image-generation tooling and integrate produced assets directly.",
+      "owner": "agent",
+      "outputs": [
+        "debug-svg",
+        "world-backdrop",
+        "town-base",
+        "site-structure-sprites",
+        "service-worker-sprites",
+        "animation-manifest"
+      ]
+    }
+  ],
+  "assetKinds": [
+    {
+      "id": "world-backdrop",
+      "path": "public/art/town/willville-landscape-v1.png",
+      "description": "Single masked land-region image for the world isthmus, authored from the Ganglia Studio world-landscape prompt and composited over simple water."
+    },
+    {
+      "id": "town-base",
+      "path": "public/art/town/willville-isthmus-v1.png",
+      "description": "Painted full-town background that follows the generated land, canal, district, and sign masks."
+    },
+    {
+      "id": "district-mask",
+      "path": "public/art/town/masks/districts/<district-id>.png",
+      "description": "One precise mask per district, generated from layout polygons."
+    },
+    {
+      "id": "global-mask",
+      "path": "public/art/town/masks/<land|canal|canal-section|canal-banks|shore-wall|district-walls>.png",
+      "description": "Global town masks for the land footprint, canal centerline ROI, canal section, canal banks, shoreline wall, and generated district-wall layer."
+    },
+    {
+      "id": "site-structure-sprite",
+      "path": "public/art/stops/<stop-id>.png",
+      "description": "Transparent bespoke structure sprite for a project site."
+    },
+    {
+      "id": "mop-worker-sprite-sheet",
+      "path": "public/art/sprites/mop-worker.png",
+      "description": "Transparent raster sprite sheet for mop workers with walk, sweep, idle, and bucket-carry cycles; generated from the animation manifest frame contract."
+    },
+    {
+      "id": "animation-manifest",
+      "path": "data/town-animation.v1.json",
+      "description": "Declarative animation data for sprite sheets, frame timing, and route assignment."
+    }
+  ]
+}

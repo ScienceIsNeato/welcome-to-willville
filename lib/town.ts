@@ -13,12 +13,12 @@ import {
   DISTRICTS,
   LINES,
   MANUAL_STOPS,
-  type District,
   type DistrictId,
   type LineId,
   type SiteGlyph,
 } from "./willville";
 import { HEURISTICS, type Heuristic } from "./willville.heuristics";
+import { sitePositionForStop } from "./town-layout";
 
 export type StatusState =
   | "idea"
@@ -84,8 +84,12 @@ export type Stop = {
   commits7d?: number;
   /** Commit count over the last 21 calendar days (3 weekly buckets). */
   commits21d?: number;
+  /** Timestamp for the latest commit returned by GitHub's commits endpoint. */
+  lastCommitAt?: string;
   /** Most recently committed branch in the repo. */
   activeBranch?: ActiveBranch;
+  /** Committed Willville agent packet from .willville.json, if present. */
+  agent?: WillvilleAgentPacket;
 };
 
 /**
@@ -198,6 +202,25 @@ export type WillvillePacket = {
   blockers?: string[];
 };
 
+export type WillvilleAgentAction = {
+  name: string;
+  status: "done" | "in_progress" | "planned" | "failed" | string;
+};
+
+export type WillvilleAgentPacket = {
+  status?: string;
+  direction?: string;
+  difficulties?: string;
+  needsHuman?: string;
+  lastUpdate?: string;
+  actions?: WillvilleAgentAction[];
+};
+
+export type WillvilleManifest = {
+  schemaVersion?: number;
+  agent?: WillvilleAgentPacket;
+};
+
 export type RepoMeta = {
   repo: string; // "owner/name"
   isPrivate: boolean;
@@ -214,6 +237,8 @@ export type RepoMeta = {
   openMilestones?: OpenMilestone[];
   /** Parsed willville packet from STATUS.md, if present. Agent-written data. */
   willvillePacket?: WillvillePacket;
+  /** Parsed committed .willville.json manifest, if present. */
+  willvilleManifest?: WillvilleManifest;
   /** Open issues + PRs count from GitHub. */
   openIssuesCount?: number;
   /** GitHub star count. */
@@ -226,6 +251,8 @@ export type RepoMeta = {
   commits7d?: number;
   /** Commit count over the last 21 calendar days (3 weekly buckets). */
   commits21d?: number;
+  /** Timestamp for the latest commit returned by GitHub's commits endpoint. */
+  lastCommitAt?: string;
   /** Most recently committed branch in the repo. */
   activeBranch?: ActiveBranch;
 };
@@ -317,38 +344,6 @@ function topicsToLines(topics: string[]): LineId[] {
   return [...seen];
 }
 
-/** AABB of a district polygon (used to scatter auto-positioned stops). */
-function districtBounds(district: District): {
-  minX: number;
-  maxX: number;
-  minY: number;
-  maxY: number;
-} {
-  const pts = district.polygon
-    .trim()
-    .split(/\s+/)
-    .map((p) => {
-      const [x, y] = p.split(",").map(Number);
-      return { x: x!, y: y! };
-    });
-  return {
-    minX: Math.min(...pts.map((p) => p.x)),
-    maxX: Math.max(...pts.map((p) => p.x)),
-    minY: Math.min(...pts.map((p) => p.y)),
-    maxY: Math.max(...pts.map((p) => p.y)),
-  };
-}
-
-/** FNV-1a 32-bit hash — fast, deterministic, good distribution. */
-function hashStr(s: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619) >>> 0;
-  }
-  return h;
-}
-
 /**
  * Deterministic position within a district derived from the repo full name.
  * Stable across syncs — same repo always lands in the same spot.
@@ -356,20 +351,9 @@ function hashStr(s: string): number {
 function autoPosition(
   districtId: DistrictId,
   repo: string,
+  stopId: string,
 ): { x: number; y: number } {
-  const district = DISTRICTS.find((d) => d.id === districtId);
-  const bounds = district
-    ? districtBounds(district)
-    : { minX: 600, maxX: 1000, minY: 400, maxY: 700 };
-  const pad = 40;
-  const w = Math.max(1, bounds.maxX - bounds.minX - pad * 2);
-  const h = Math.max(1, bounds.maxY - bounds.minY - pad * 2);
-  const hx = hashStr(repo);
-  const hy = hashStr(repo + "\x00y");
-  return {
-    x: Math.round(bounds.minX + pad + ((hx % 1000) / 999) * w),
-    y: Math.round(bounds.minY + pad + ((hy % 1000) / 999) * h),
-  };
+  return sitePositionForStop(districtId, stopId, repo);
 }
 
 function repoGlyphLabel(repo: string): string {
@@ -430,12 +414,13 @@ function deriveQueue(
 /** Build a Stop from GitHub repo metadata + optional heuristic layout overrides. */
 export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
   const pkt = meta.willvillePacket;
+  const agent = meta.willvilleManifest?.agent;
   const hasOpenMilestone = (meta.openMilestones?.length ?? 0) > 0;
   const district = heuristic?.district ?? topicsToDistrict(meta.topics ?? []);
   const lines = heuristic?.lines ?? topicsToLines(meta.topics ?? []);
   const stopId = heuristic?.stopId ?? meta.repo.split("/")[1]!.toLowerCase();
   const displayName = heuristic?.displayName ?? repoDisplayName(meta.repo);
-  const position = heuristic?.position ?? autoPosition(district, meta.repo);
+  const position = autoPosition(district, meta.repo, stopId);
   const queue = deriveQueue(meta.openMilestones, heuristic?.queue);
   return {
     id: stopId,
@@ -450,16 +435,20 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
     visibility: "public",
     isPrivate: meta.isPrivate,
     status: {
-      state: pkt?.doing
-        ? "wip"
-        : (pkt?.status ?? deriveState(meta.pushedAt, hasOpenMilestone)),
-      doing: pkt?.doing,
+      state:
+        agent?.status || pkt?.doing
+          ? "wip"
+          : (pkt?.status ?? deriveState(meta.pushedAt, hasOpenMilestone)),
+      doing: agent?.status ?? pkt?.doing,
       done: pkt?.done,
-      next: pkt?.next,
-      blocked: pkt?.blocked ?? pkt?.blockers?.[0],
+      next: agent?.direction ?? pkt?.next,
+      blocked:
+        normalizeNone(agent?.difficulties) ??
+        pkt?.blocked ??
+        pkt?.blockers?.[0],
       risk: pkt?.risk,
       summary: pkt?.summary ?? meta.description,
-      updated: meta.pushedAt,
+      updated: agent?.lastUpdate ?? meta.pushedAt,
     },
     queue,
     openIssues: meta.openIssuesCount,
@@ -468,7 +457,9 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
     commits3d: meta.commits3d,
     commits7d: meta.commits7d,
     commits21d: meta.commits21d,
+    lastCommitAt: meta.lastCommitAt,
     activeBranch: meta.activeBranch,
+    agent,
   };
 }
 
@@ -537,7 +528,7 @@ export function buildInitialStops(): Stop[] {
       displayName: h.displayName,
       district: h.district,
       lines: h.lines,
-      position: h.position ?? { x: 800, y: 500 },
+      position: autoPosition(h.district, h.repo, h.stopId),
       repo: h.repo,
       blurb: h.blurb,
       glyph: h.glyph ?? defaultGlyphForRepo(h.repo),
@@ -551,4 +542,9 @@ export function buildInitialStops(): Stop[] {
 
 function repoDisplayName(repo: string): string {
   return repo.split("/").at(-1) ?? repo;
+}
+
+function normalizeNone(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  return value.trim().toLowerCase() === "none" ? undefined : value;
 }
