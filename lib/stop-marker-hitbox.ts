@@ -41,17 +41,3 @@ export function labelHitBoxForStop(stop: Stop): HitBox {
     height: 24,
   };
 }
-
-export function markerHitBoxForStop(stop: Stop): HitBox {
-  const sprite = SITE_SPRITES.get(stop.id);
-  const { width: spriteWidth, height: spriteHeight } = spriteSizeForStop(stop);
-  const hitWidth = Math.max(36, spriteWidth + 8);
-  const hitTop = sprite ? -spriteHeight + 6 : -16;
-  const hitBottom = sprite ? 24 : 18;
-  return {
-    x: -hitWidth / 2,
-    y: hitTop,
-    width: hitWidth,
-    height: hitBottom - hitTop,
-  };
-}

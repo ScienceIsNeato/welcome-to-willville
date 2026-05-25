@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties, MouseEvent, ReactNode } from "react";
-import { LOCKS, type CanalBoat } from "@/lib/canal";
+import type { CanalBoat } from "@/lib/canal";
 import type { GitHubWorkflowRun, Stop } from "@/lib/town";
 
 type Props = {
@@ -17,8 +17,6 @@ export function DigitalDetailBoard({ stop, boats }: Props) {
           (boat.stopId === stop.id && boat.district === stop.district),
       )
     : [];
-  const canalPrs = stopPrs.length > 0 ? stopPrs : boats;
-  const showTownWideCanal = stopPrs.length === 0 && boats.length > 0;
   const openPrs = stopPrs.filter((pr) => pr.lock !== "open-sea");
   const openPrCount = stop?.openPrCount ?? openPrs.length;
 
@@ -71,33 +69,8 @@ export function DigitalDetailBoard({ stop, boats }: Props) {
               </div>
             </Panel>
 
-            <Panel title="Canal">
-              <div style={canalPanelStyle}>
-                {canalPrs.length > 0 ? (
-                  canalPrs.slice(0, 3).map((pr) => {
-                    const lock = LOCKS.find(
-                      (candidate) => candidate.id === pr.lock,
-                    );
-                    return (
-                      <a
-                        key={`${pr.repo}-${pr.prNumber}`}
-                        href={pr.url}
-                        onClick={followLink}
-                        style={softLinkStyle}
-                      >
-                        {pr.title}
-                        <span style={mutedInlineStyle}>
-                          {showTownWideCanal
-                            ? ` / ${repoShortName(pr.repo)} / ${lock?.displayName ?? pr.lock}`
-                            : ` / ${lock?.displayName ?? pr.lock}`}
-                        </span>
-                      </a>
-                    );
-                  })
-                ) : (
-                  <p style={noteTextStyle}>No active canal traffic.</p>
-                )}
-              </div>
+            <Panel title="Recent Commits">
+              <RecentCommitList stop={stop} />
             </Panel>
           </div>
 
@@ -195,6 +168,27 @@ function WorkflowRunList({ stop }: { stop: Stop }) {
           </span>
           <a href={run.url} onClick={followLink} style={actionLinkStyle}>
             {run.name}
+          </a>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function RecentCommitList({ stop }: { stop: Stop }) {
+  const commits = stop.recentCommits ?? [];
+  if (commits.length === 0) {
+    return <p style={noteTextStyle}>No recent commits.</p>;
+  }
+  return (
+    <ul style={actionListStyle}>
+      {commits.slice(0, 3).map((commit, index) => (
+        <li key={`${commit.url}-${index}`} style={actionItemStyle}>
+          <span style={recentCommitAgeStyle}>
+            {timeAgo(commit.committedAt)}
+          </span>
+          <a href={commit.url} onClick={followLink} style={actionLinkStyle}>
+            {commit.message}
           </a>
         </li>
       ))}
@@ -484,30 +478,16 @@ const actionStatusStyle: CSSProperties = {
   textTransform: "uppercase",
 };
 
+const recentCommitAgeStyle: CSSProperties = {
+  ...actionStatusStyle,
+  color: "rgba(51, 255, 87, 0.78)",
+  borderColor: "rgba(51, 255, 87, 0.2)",
+  background: "rgba(51, 255, 87, 0.08)",
+};
+
 const actionLinkStyle: CSSProperties = {
   minWidth: 0,
   color: "rgba(51, 255, 87, 0.82)",
-  fontSize: 12,
-  lineHeight: 1.35,
-  textDecoration: "none",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
-};
-
-const canalPanelStyle: CSSProperties = {
-  display: "grid",
-  gap: 3,
-  minWidth: 0,
-};
-
-const mutedInlineStyle: CSSProperties = {
-  color: "rgba(51, 255, 87, 0.45)",
-};
-
-const softLinkStyle: CSSProperties = {
-  minWidth: 0,
-  color: "rgba(51, 255, 87, 0.8)",
   fontSize: 12,
   lineHeight: 1.35,
   textDecoration: "none",

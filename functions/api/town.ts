@@ -251,7 +251,14 @@ async function fetchCommitCounts(
   fullName: string,
   token?: string,
 ): Promise<
-  { d3: number; d7: number; d21: number; latestCommitAt?: string } | undefined
+  | {
+      d3: number;
+      d7: number;
+      d21: number;
+      latestCommitAt?: string;
+      recentCommits?: RepoMeta["recentCommits"];
+    }
+  | undefined
 > {
   const headers: Record<string, string> = {
     "User-Agent": "willville-edge",
@@ -265,7 +272,14 @@ async function fetchCommitCounts(
       { headers },
     );
     if (!r.ok) return undefined;
-    type CommitEntry = { commit: { author: { date: string } | null } };
+    type CommitEntry = {
+      html_url?: string | null;
+      commit?: {
+        message?: string | null;
+        author?: { date?: string | null } | null;
+        committer?: { date?: string | null } | null;
+      } | null;
+    };
     const commits = (await r.json()) as CommitEntry[];
     if (!Array.isArray(commits)) return undefined;
 
@@ -275,8 +289,30 @@ async function fetchCommitCounts(
       d21 = 0;
     let latestCommitAt: string | undefined;
     let latestCommitTime = 0;
+    const recentCommits = commits
+      .flatMap((commit) => {
+        const message = commit.commit?.message?.split("\n")[0]?.trim();
+        const committedAt =
+          commit.commit?.author?.date ?? commit.commit?.committer?.date;
+        if (
+          typeof commit.html_url !== "string" ||
+          commit.html_url.length === 0 ||
+          !message ||
+          !committedAt
+        ) {
+          return [];
+        }
+        return [
+          {
+            message,
+            url: commit.html_url,
+            committedAt,
+          },
+        ];
+      })
+      .slice(0, 3);
     for (const c of commits) {
-      const rawDate = c.commit?.author?.date ?? "";
+      const rawDate = c.commit?.author?.date ?? c.commit?.committer?.date ?? "";
       const t = Date.parse(rawDate);
       if (Number.isNaN(t)) continue;
       if (t > latestCommitTime) {
@@ -288,7 +324,7 @@ async function fetchCommitCounts(
       if (daysAgo <= 7) d7++;
       d21++; // all commits from the `since` window count
     }
-    return { d3, d7, d21, latestCommitAt };
+    return { d3, d7, d21, latestCommitAt, recentCommits };
   } catch {
     return undefined;
   }
@@ -480,6 +516,7 @@ export const onRequestGet: PagesFunction<Env> = async ({
       lastMergeAt: repoSignals?.lastMergeAt,
       latestRelease: repoSignals?.latestRelease,
       activeBranch,
+      recentCommits: commitCounts?.recentCommits,
       workflowRuns,
     };
   });

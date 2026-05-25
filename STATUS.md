@@ -9,6 +9,12 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-25) — Recent Commits Replaced Canal Panel
+
+- Replaced the Digital Detail Board's top-right Canal/PR list with a Recent Commits panel so each stop now shows the latest commit subjects in reverse chronological order.
+- Threaded `recentCommits` through `functions/api/town.ts` and `lib/town.ts` by reusing the existing GitHub commits endpoint that already powers the 3d/7d/21d activity counts, so this change did not add an extra repo API round-trip.
+- Validation: rebuilt with `./scripts/deploy_app.sh`, then verified on a fresh `http://127.0.0.1:3752/town-square/willville-town-hall/` page that the board rendered `Merge pull request #9 from ScienceIsNeato/codex/isthmus-town-generation`, `buff: address town interaction review`, and `fix: declare worker static assets` under `Recent Commits`; `sm swab` also passed.
+
 ## Done (2026-05-25) — Dense Stop Marker Click Targets No Longer Cross-Select
 
 - Fixed the repo-selection bug in dense districts by tightening `StopMarker` click targets to the visible label and sprite instead of one tall invisible rectangle that could overlap neighboring stops.
