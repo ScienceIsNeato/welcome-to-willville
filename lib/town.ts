@@ -42,6 +42,39 @@ export type ActiveBranch = {
   isDefault: boolean;
 };
 
+export type ReleaseInfo = {
+  name: string;
+  tagName?: string;
+  publishedAt?: string;
+};
+
+export type WillvilleManifestProject = {
+  name?: string;
+  displayName?: string;
+  district?: string;
+  stop?: string;
+  lines?: string[];
+  visibility?: "public" | "mayor";
+  homepage?: string;
+  repo?: string;
+};
+
+export type WillvilleManifestStatus = {
+  state?: StatusState;
+  summary?: string;
+  blockers?: string[];
+  next?: string[];
+  updated?: string;
+};
+
+export type WillvilleManifestQueue = {
+  active?: boolean;
+  milestone?: string;
+  etaDays?: number;
+  targetDate?: string;
+  priority?: number;
+};
+
 export type Stop = {
   id: string;
   displayName: string;
@@ -78,6 +111,10 @@ export type Stop = {
   stars?: number;
   /** Primary language reported by GitHub. */
   language?: string;
+  /** Open pull requests on GitHub. */
+  openPrCount?: number;
+  /** Total branches in the repository. */
+  branchCount?: number;
   /** Commit count over the last 3 calendar days. */
   commits3d?: number;
   /** Commit count over the last 7 calendar days. */
@@ -86,6 +123,10 @@ export type Stop = {
   commits21d?: number;
   /** Timestamp for the latest commit returned by GitHub's commits endpoint. */
   lastCommitAt?: string;
+  /** Timestamp for the most recently merged pull request. */
+  lastMergeAt?: string;
+  /** Latest published release, if any. */
+  latestRelease?: ReleaseInfo;
   /** Most recently committed branch in the repo. */
   activeBranch?: ActiveBranch;
   /** Committed Willville agent packet from .willville.json, if present. */
@@ -218,6 +259,9 @@ export type WillvilleAgentPacket = {
 
 export type WillvilleManifest = {
   schemaVersion?: number;
+  project?: WillvilleManifestProject;
+  status?: WillvilleManifestStatus;
+  queue?: WillvilleManifestQueue;
   agent?: WillvilleAgentPacket;
 };
 
@@ -245,6 +289,10 @@ export type RepoMeta = {
   stars?: number;
   /** Primary language reported by GitHub. */
   language?: string;
+  /** Open pull requests on GitHub. */
+  openPrCount?: number;
+  /** Total branches in the repository. */
+  branchCount?: number;
   /** Commit count over the last 3 calendar days. */
   commits3d?: number;
   /** Commit count over the last 7 calendar days. */
@@ -253,6 +301,10 @@ export type RepoMeta = {
   commits21d?: number;
   /** Timestamp for the latest commit returned by GitHub's commits endpoint. */
   lastCommitAt?: string;
+  /** Timestamp for the most recently merged pull request. */
+  lastMergeAt?: string;
+  /** Latest published release, if any. */
+  latestRelease?: ReleaseInfo;
   /** Most recently committed branch in the repo. */
   activeBranch?: ActiveBranch;
 };
@@ -388,9 +440,22 @@ function deriveState(pushedAt: string, hasOpenMilestone: boolean): StatusState {
  * Falls back to heuristic queue if no milestones exist.
  */
 function deriveQueue(
+  manifestQueue: WillvilleManifestQueue | undefined,
   openMilestones: OpenMilestone[] | undefined,
   heuristicQueue: Heuristic["queue"] | undefined,
 ): QueueEntry | undefined {
+  if (manifestQueue) {
+    const etaDays = deriveEtaDays({
+      eta_days: manifestQueue.etaDays,
+      target_date: manifestQueue.targetDate,
+    });
+    return {
+      active: manifestQueue.active ?? true,
+      milestone: manifestQueue.milestone,
+      etaDays: Number.isFinite(etaDays ?? NaN) ? etaDays : undefined,
+      priority: manifestQueue.priority,
+    };
+  }
   if (openMilestones && openMilestones.length > 0) {
     const m = openMilestones[0]!;
     const etaDays = m.dueOn
@@ -414,14 +479,27 @@ function deriveQueue(
 /** Build a Stop from GitHub repo metadata + optional heuristic layout overrides. */
 export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
   const pkt = meta.willvillePacket;
-  const agent = meta.willvilleManifest?.agent;
+  const manifest = meta.willvilleManifest;
+  const manifestProject = manifest?.project;
+  const manifestStatus = manifest?.status;
+  const agent = manifest?.agent;
   const hasOpenMilestone = (meta.openMilestones?.length ?? 0) > 0;
   const district = heuristic?.district ?? topicsToDistrict(meta.topics ?? []);
   const lines = heuristic?.lines ?? topicsToLines(meta.topics ?? []);
-  const stopId = heuristic?.stopId ?? meta.repo.split("/")[1]!.toLowerCase();
-  const displayName = heuristic?.displayName ?? repoDisplayName(meta.repo);
+  const stopId =
+    heuristic?.stopId ??
+    manifestProject?.stop ??
+    meta.repo.split("/")[1]!.toLowerCase();
+  const displayName =
+    manifestProject?.displayName ??
+    heuristic?.displayName ??
+    repoDisplayName(meta.repo);
   const position = autoPosition(district, meta.repo, stopId);
-  const queue = deriveQueue(meta.openMilestones, heuristic?.queue);
+  const queue = deriveQueue(
+    manifest?.queue,
+    meta.openMilestones,
+    heuristic?.queue,
+  );
   return {
     id: stopId,
     displayName,
@@ -429,35 +507,41 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
     lines,
     position,
     repo: meta.repo,
-    homepage: meta.homepage,
+    homepage: manifestProject?.homepage ?? meta.homepage,
     blurb: heuristic?.blurb,
     glyph: heuristic?.glyph ?? defaultGlyphForRepo(meta.repo),
     visibility: "public",
     isPrivate: meta.isPrivate,
     status: {
       state:
-        agent?.status || pkt?.doing
+        manifestStatus?.state ??
+        (agent?.status || pkt?.doing
           ? "wip"
-          : (pkt?.status ?? deriveState(meta.pushedAt, hasOpenMilestone)),
-      doing: agent?.status ?? pkt?.doing,
+          : (pkt?.status ?? deriveState(meta.pushedAt, hasOpenMilestone))),
+      doing: manifestStatus?.summary ?? agent?.status ?? pkt?.doing,
       done: pkt?.done,
-      next: agent?.direction ?? pkt?.next,
+      next: manifestStatus?.next?.join(" / ") ?? agent?.direction ?? pkt?.next,
       blocked:
         normalizeNone(agent?.difficulties) ??
+        manifestStatus?.blockers?.[0] ??
         pkt?.blocked ??
         pkt?.blockers?.[0],
       risk: pkt?.risk,
-      summary: pkt?.summary ?? meta.description,
-      updated: agent?.lastUpdate ?? meta.pushedAt,
+      summary: manifestStatus?.summary ?? pkt?.summary ?? meta.description,
+      updated: manifestStatus?.updated ?? agent?.lastUpdate ?? meta.pushedAt,
     },
     queue,
     openIssues: meta.openIssuesCount,
     stars: meta.stars,
     language: meta.language,
+    openPrCount: meta.openPrCount,
+    branchCount: meta.branchCount,
     commits3d: meta.commits3d,
     commits7d: meta.commits7d,
     commits21d: meta.commits21d,
     lastCommitAt: meta.lastCommitAt,
+    lastMergeAt: meta.lastMergeAt,
+    latestRelease: meta.latestRelease,
     activeBranch: meta.activeBranch,
     agent,
   };

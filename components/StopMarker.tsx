@@ -3,6 +3,11 @@
 import type { MouseEvent } from "react";
 import type { Stop } from "@/lib/town";
 import siteSpriteManifest from "@/data/town-site-sprites.v1.json";
+import {
+  hitBoxForStop,
+  repoLabelForStop,
+  spriteSizeForStop,
+} from "@/lib/stop-marker-hitbox";
 
 type Props = {
   stop: Stop;
@@ -26,10 +31,6 @@ const SITE_SPRITES = new Map(
 );
 const SPRITE_CACHE_VERSION = "repo-labels-20260522";
 
-function repoLabel(stop: Stop): string {
-  return stop.repo?.split("/").pop() ?? stop.repo ?? stop.id;
-}
-
 export function StopMarker({
   stop,
   isFocused,
@@ -39,15 +40,14 @@ export function StopMarker({
 }: Props) {
   const color = STATE_COLOR[stop.status.state];
   const sprite = SITE_SPRITES.get(stop.id);
-  const spriteWidth = sprite ? Math.round(sprite.width * 0.68) : 0;
-  const spriteHeight = sprite ? Math.round(sprite.height * 0.68) : 0;
-  const label = repoLabel(stop);
-  const hitWidth = Math.max(72, spriteWidth + 24, label.length * 8 + 20);
-  const hitTop = sprite ? -spriteHeight - 64 : -36;
-  const hitBottom = sprite ? 28 : 36;
+  const { width: spriteWidth, height: spriteHeight } = spriteSizeForStop(stop);
+  const label = repoLabelForStop(stop);
+  const hitBox = hitBoxForStop(stop);
   return (
     <g
       data-stop-marker
+      data-stop-id={stop.id}
+      data-district-id={stop.district}
       transform={`translate(${stop.position.x}, ${stop.position.y})`}
       style={{ cursor: "pointer" }}
       onClick={(e) => {
@@ -61,10 +61,10 @@ export function StopMarker({
       aria-label={label}
     >
       <rect
-        x={-hitWidth / 2}
-        y={hitTop}
-        width={hitWidth}
-        height={hitBottom - hitTop}
+        x={hitBox.x}
+        y={hitBox.y}
+        width={hitBox.width}
+        height={hitBox.height}
         fill="transparent"
         pointerEvents="all"
       />

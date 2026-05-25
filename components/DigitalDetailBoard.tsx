@@ -20,6 +20,8 @@ export function DigitalDetailBoard({ stop, boats, onClear }: Props) {
           (boat.stopId === stop.id && boat.district === stop.district),
       )
     : [];
+  const openPrs = prs.filter((pr) => pr.lock !== "open-sea");
+  const openPrCount = stop?.openPrCount ?? openPrs.length;
 
   return (
     <section aria-label="Willville site detail display" style={shellStyle}>
@@ -39,14 +41,15 @@ export function DigitalDetailBoard({ stop, boats, onClear }: Props) {
               <div style={metricClusterStyle}>
                 <Metric label="Repo" value={repoShortName(stop.repo)} />
                 <Metric label="Language" value={stop.language ?? "Mixed"} />
-                <Metric label="Branches" value="n/a" />
+                <BranchSignal stop={stop} />
+                <Metric label="Branches" value={countLabel(stop.branchCount)} />
                 <Metric
                   label="Issues"
                   value={
                     stop.openIssues != null ? String(stop.openIssues) : "n/a"
                   }
                 />
-                <Metric label="Open PRs" value={String(prs.length)} />
+                <Metric label="Open PRs" value={String(openPrCount)} />
               </div>
             </Panel>
 
@@ -63,21 +66,37 @@ export function DigitalDetailBoard({ stop, boats, onClear }: Props) {
                   label="Last Commit"
                   value={timeAgo(stop.lastCommitAt)}
                 />
-                <Metric label="Oldest PR" value={oldestPrAge(prs)} />
-                <Metric label="Last Merge" value="n/a" />
-                <Metric label="Release" value="n/a" />
+                <Metric label="Oldest PR" value={oldestPrAge(openPrs)} />
+                <Metric label="Last Merge" value={timeAgo(stop.lastMergeAt)} />
+                <Metric label="Release" value={releaseLabel(stop)} />
               </div>
             </Panel>
 
-            <Panel title="Active Branch">
-              <div style={metricClusterStyle}>
-                <BranchSignal stop={stop} />
-                <Metric
-                  label="Milestone"
-                  value={stop.queue?.milestone ?? "n/a"}
-                  wide
-                />
-                <Metric label="ETA" value={etaLabel(stop.queue?.etaDays)} />
+            <Panel title="Canal">
+              <div style={canalPanelStyle}>
+                {prs.length > 0 ? (
+                  prs.slice(0, 3).map((pr) => {
+                    const lock = LOCKS.find(
+                      (candidate) => candidate.id === pr.lock,
+                    );
+                    return (
+                      <a
+                        key={`${pr.repo}-${pr.prNumber}`}
+                        href={pr.url}
+                        onClick={followLink}
+                        style={softLinkStyle}
+                      >
+                        {pr.title}
+                        <span style={mutedInlineStyle}>
+                          {" "}
+                          / {lock?.displayName ?? pr.lock}
+                        </span>
+                      </a>
+                    );
+                  })
+                ) : (
+                  <p style={noteTextStyle}>No active canal traffic.</p>
+                )}
               </div>
             </Panel>
           </div>
@@ -98,38 +117,7 @@ export function DigitalDetailBoard({ stop, boats, onClear }: Props) {
             <Panel title="Activity Log">
               <ActionList stop={stop} />
             </Panel>
-            <Panel title="Difficulties">
-              <TextBlock value={stop.agent?.difficulties} fallback="None" />
-            </Panel>
-            <Panel title="Needs Human">
-              <TextBlock value={stop.agent?.needsHuman} fallback="None" />
-            </Panel>
           </div>
-
-          {prs.length > 0 && (
-            <div style={canalRowStyle}>
-              <span style={smallLabelStyle}>Canal</span>
-              {prs.slice(0, 3).map((pr) => {
-                const lock = LOCKS.find(
-                  (candidate) => candidate.id === pr.lock,
-                );
-                return (
-                  <a
-                    key={`${pr.repo}-${pr.prNumber}`}
-                    href={pr.url}
-                    onClick={followLink}
-                    style={softLinkStyle}
-                  >
-                    {pr.title}
-                    <span style={mutedInlineStyle}>
-                      {" "}
-                      / {lock?.displayName ?? pr.lock}
-                    </span>
-                  </a>
-                );
-              })}
-            </div>
-          )}
 
           <div style={buttonRowStyle}>
             <div style={buttonSpacerStyle} />
@@ -247,14 +235,12 @@ function repoShortName(repo: string | undefined): string {
   return repo?.split("/").at(-1) ?? "n/a";
 }
 
-function etaLabel(days: number | undefined): string {
-  if (!Number.isFinite(days ?? NaN)) return "TBD";
-  const safeDays = days!;
-  if (safeDays <= 0) return "Today";
-  if (safeDays === 1) return "1 day";
-  if (safeDays < 14) return `${safeDays} days`;
-  if (safeDays < 60) return `${Math.round(safeDays / 7)} weeks`;
-  return `${Math.round(safeDays / 30)} months`;
+function countLabel(value: number | undefined): string {
+  return Number.isFinite(value ?? NaN) ? String(value) : "n/a";
+}
+
+function releaseLabel(stop: Stop): string {
+  return stop.latestRelease?.tagName ?? stop.latestRelease?.name ?? "n/a";
 }
 
 function oldestPrAge(prs: CanalBoat[]): string {
@@ -300,11 +286,11 @@ const shellStyle: CSSProperties = {
   position: "relative",
   zIndex: 2,
   width: "min(960px, calc(100vw - 20px))",
-  minHeight: 300,
+  minHeight: 220,
   margin: "0 auto 10px",
   display: "grid",
-  gap: 10,
-  padding: "14px 18px 16px",
+  gap: 8,
+  padding: "12px 18px 12px",
   borderRadius: 3,
   border: "1px solid rgba(51, 255, 87, 0.28)",
   background:
@@ -364,7 +350,7 @@ const bottomGridStyle: CSSProperties = {
 const panelStyle: CSSProperties = {
   position: "relative",
   minWidth: 0,
-  minHeight: 78,
+  minHeight: 68,
   padding: "23px 10px 10px",
   borderRadius: 2,
   background:
@@ -476,11 +462,10 @@ const actionStatusStyle: CSSProperties = {
   fontWeight: 900,
 };
 
-const canalRowStyle: CSSProperties = {
+const canalPanelStyle: CSSProperties = {
   display: "grid",
   gap: 3,
   minWidth: 0,
-  padding: "4px 0",
 };
 
 const mutedInlineStyle: CSSProperties = {
@@ -501,10 +486,13 @@ const softLinkStyle: CSSProperties = {
 const buttonRowStyle: CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
-  alignItems: "center",
+  alignItems: "flex-start",
+  gap: 12,
+  flexWrap: "wrap",
 };
 
 const buttonSpacerStyle: CSSProperties = {
+  flex: "1 1 260px",
   minWidth: 0,
 };
 

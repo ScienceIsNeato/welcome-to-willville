@@ -27,6 +27,14 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Build Pages Functions worker
+        run: |
+          npx wrangler pages functions build functions \
+            --project-directory . \
+            --outfile out/_worker.js \
+            --output-routes-path out/_routes.json \
+            --build-output-directory out
+
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4
         with:

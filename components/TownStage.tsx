@@ -8,12 +8,13 @@ import {
   useRef,
   useCallback,
   useSyncExternalStore,
+  useDeferredValue,
   type MouseEvent,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { DISTRICTS, TOWN, TOWN_OFFSET, WORLD } from "@/lib/willville";
-import { type Stop } from "@/lib/town";
+import type { Stop } from "@/lib/town";
 import { isKnownDistrict } from "@/lib/slugs";
 import type { CanalBoat } from "@/lib/canal";
 import { DistrictZone } from "./DistrictZone";
@@ -29,12 +30,57 @@ import { DynamicWalls } from "./DynamicWalls";
 import { GeneratedTownBase } from "./GeneratedTownBase";
 import { WorldWorkerLayer } from "./WorldWorkerLayer";
 import { HollywoodSign } from "./HollywoodSign";
+import { TownPerfPanel } from "./TownPerfPanel";
 import { screenToWorld, useTownCamera } from "@/hooks/useTownCamera";
+import { useTownInteractionProfiler } from "@/hooks/useTownInteractionProfiler";
+import { useTownPerfJourney } from "@/hooks/useTownPerfJourney";
 import { GENERATED_TOWN_LAYOUT } from "@/lib/town-layout";
+import {
+  buildBellBoardAnnouncement,
+  findStopAt,
+  mergeStops,
+  type BoardAnnouncement,
+} from "./townStageUtils";
 
 const DAY_MS = 1000 * 60 * 60 * 24;
-const STOP_HIT_RADIUS = 24;
 const TOWN_ART_FEATHER = 76;
+const BELL_BOARD_FLASH_MS = 4500;
+
+async function getBellErrorDetail(response: Response): Promise<string> {
+  let detail = "";
+  const contentType = response.headers.get("content-type") ?? "";
+
+  try {
+    if (contentType.includes("application/json")) {
+      const data = (await response.json()) as {
+        error?: unknown;
+        message?: unknown;
+      };
+      if (typeof data.error === "string") {
+        detail = data.error;
+      } else if (typeof data.message === "string") {
+        detail = data.message;
+      }
+    } else {
+      const text = (await response.text()).trim();
+      if (text) {
+        detail = text;
+      }
+    }
+  } catch {
+    // ignore unreadable error payloads
+  }
+
+  if (response.status === 404) {
+    return "API routes missing on deploy";
+  }
+
+  if (response.status === 403 && detail === "No GITHUB_PAT configured") {
+    return "GITHUB_PAT not configured";
+  }
+
+  return detail || `HTTP ${response.status}`;
+}
 
 function useIsClient(): boolean {
   return useSyncExternalStore(
@@ -42,30 +88,6 @@ function useIsClient(): boolean {
     () => true,
     () => false,
   );
-}
-
-function findStopAt(
-  stops: Stop[],
-  wx: number,
-  wy: number,
-  scale: number,
-): Stop | null {
-  const threshold = STOP_HIT_RADIUS / scale;
-  const thresholdSq = threshold * threshold;
-  let best: Stop | null = null;
-  let bestDist = thresholdSq;
-  for (const stop of stops) {
-    const sx = TOWN_OFFSET.x + stop.position.x;
-    const sy = TOWN_OFFSET.y + stop.position.y;
-    const dx = wx - sx;
-    const dy = wy - sy;
-    const dist = dx * dx + dy * dy;
-    if (dist < bestDist) {
-      bestDist = dist;
-      best = stop;
-    }
-  }
-  return best;
 }
 
 /**
@@ -76,31 +98,59 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const router = useRouter();
   const [stops] = useState<Stop[]>(initialStops);
   const isClient = useIsClient();
+  const deferredPathname = useDeferredValue(pathname);
+  const perfSearchParams = useMemo(() => {
+    if (!isClient) return null;
+    return new URLSearchParams(window.location.search);
+  }, [deferredPathname, isClient]);
+  const perfEnabled = perfSearchParams?.get("perf") === "1";
+  const perfAutorun = perfSearchParams?.get("autorun") === "1";
   const [now, setNow] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const cameraGroupRef = useRef<SVGGElement>(null);
+  const perfAutorunRef = useRef(false);
+  const perfProfiler = useTownInteractionProfiler(perfEnabled);
+  const perfProbe = useMemo(
+    () => ({
+      measure: perfProfiler.measure,
+      scheduleFrameSample: perfProfiler.scheduleFrameSample,
+    }),
+    [perfProfiler.measure, perfProfiler.scheduleFrameSample],
+  );
 
   const {
     getCameraSnapshot,
     isDragging,
     cameraTransform,
     markSkipDrag,
+    setCameraImmediate,
     zoomAtWorldPoint,
     stageHandlers,
     wasDragging,
-  } = useTownCamera(svgRef, stageRef);
+  } = useTownCamera(svgRef, stageRef, perfEnabled ? perfProbe : undefined);
 
   const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
   const dismissedStopIdRef = useRef<string | null>(null);
   const transitioningToStopIdRef = useRef<string | null>(null);
+  const boardAnnouncementTimerRef = useRef<number | null>(null);
 
   const [liveStops, setLiveStops] = useState<Stop[] | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [showCentralBoard, setShowCentralBoard] = useState(true);
+  const [showDigitalBoard, setShowDigitalBoard] = useState(true);
   const [populating, setPopulating] = useState<
     "idle" | "running" | "done" | "error"
   >("idle");
+  const [bellErrorMessage, setBellErrorMessage] = useState("✕ Bell failed");
   const [bellHovered, setBellHovered] = useState(false);
+  const [boardAnnouncement, setBoardAnnouncement] =
+    useState<BoardAnnouncement | null>(null);
+
+  const currentStops = useMemo(
+    () => mergeStops(stops, liveStops),
+    [liveStops, stops],
+  );
 
   const loadTown = useCallback((signal?: AbortSignal) => {
     return fetch("/api/town", {
@@ -122,6 +172,15 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       controller.abort();
     };
   }, [loadTown]);
+
+  useEffect(
+    () => () => {
+      if (boardAnnouncementTimerRef.current !== null) {
+        window.clearTimeout(boardAnnouncementTimerRef.current);
+      }
+    },
+    [],
+  );
 
   const handlePopulate = useCallback(() => {
     if (populating === "running") return;
@@ -159,18 +218,46 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       // audio not available — silent fail
     }
     setPopulating("running");
+    setBellErrorMessage("✕ Bell failed");
     fetch("/api/manifests", { method: "POST" })
-      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then(async (response) => {
+        if (response.ok) {
+          return response.json();
+        }
+
+        throw new Error(await getBellErrorDetail(response));
+      })
       .then(() => loadTown())
-      .then(() => {
+      .then((data) => {
+        const nextStops =
+          data && Array.isArray(data.stops)
+            ? mergeStops(stops, data.stops as Stop[])
+            : currentStops;
+        const announcement = buildBellBoardAnnouncement(
+          currentStops,
+          nextStops,
+        );
+        if (boardAnnouncementTimerRef.current !== null) {
+          window.clearTimeout(boardAnnouncementTimerRef.current);
+        }
+        setBoardAnnouncement(announcement);
+        boardAnnouncementTimerRef.current = window.setTimeout(() => {
+          setBoardAnnouncement(null);
+          boardAnnouncementTimerRef.current = null;
+        }, BELL_BOARD_FLASH_MS);
         setPopulating("done");
         setTimeout(() => setPopulating("idle"), 3000);
       })
-      .catch(() => {
+      .catch((error: unknown) => {
+        const detail =
+          error instanceof Error && error.message
+            ? error.message
+            : "Unknown error";
+        setBellErrorMessage(`✕ Bell failed — ${detail}`);
         setPopulating("error");
         setTimeout(() => setPopulating("idle"), 4000);
       });
-  }, [loadTown, populating]);
+  }, [currentStops, loadTown, populating, stops]);
 
   const handleSync = useCallback(() => {
     setSyncing(true);
@@ -208,27 +295,80 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
   useLayoutEffect(() => {
     const applyTransform = (value: string) => {
+      if (perfEnabled) {
+        perfProbe.measure("domApply", () => {
+          cameraGroupRef.current?.setAttribute("transform", value);
+        });
+        return;
+      }
       cameraGroupRef.current?.setAttribute("transform", value);
     };
     applyTransform(cameraTransform.get());
     return cameraTransform.on("change", applyTransform);
-  }, [cameraTransform]);
+  }, [cameraTransform, perfEnabled, perfProbe]);
 
-  // Merge live data into the initial stop list: live stops update matching
-  // entries (by id) and new live-only stops are appended. Initial-only stops
-  // (from heuristics with no live match) are preserved so the map stays full.
-  const currentStops = useMemo(() => {
-    if (!liveStops) return stops;
-    const liveById = new Map(liveStops.map((s) => [s.id, s]));
-    const merged: Stop[] = stops.map((s) => liveById.get(s.id) ?? s);
-    // Append any live stops not already in the initial set.
-    for (const s of liveStops) {
-      if (!stops.some((init) => init.id === s.id)) {
-        merged.push(s);
-      }
+  const { runOfficialPerfProfile } = useTownPerfJourney({
+    currentStops,
+    getCameraSnapshot,
+    perfEnabled,
+    perfProfiler,
+    setCameraImmediate,
+    stageRef,
+    svgRef,
+  });
+
+  const downloadPerfReport = useCallback(() => {
+    if (!perfProfiler.report) return;
+    const blob = new Blob([JSON.stringify(perfProfiler.report, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `willville-town-perf-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }, [perfProfiler.report]);
+
+  useEffect(() => {
+    if (!perfEnabled) return;
+    const perfWindow = window as Window & {
+      __willvillePerf?: {
+        clearLastReport: () => void;
+        getLastReport: () => typeof perfProfiler.report;
+        runOfficialProfile: () => Promise<void>;
+      };
+    };
+    perfWindow.__willvillePerf = {
+      clearLastReport: perfProfiler.clearReport,
+      getLastReport: () => perfProfiler.report,
+      runOfficialProfile: runOfficialPerfProfile,
+    };
+    return () => {
+      delete perfWindow.__willvillePerf;
+    };
+  }, [
+    perfEnabled,
+    perfProfiler.clearReport,
+    perfProfiler.report,
+    runOfficialPerfProfile,
+  ]);
+
+  useEffect(() => {
+    if (
+      !perfEnabled ||
+      !perfAutorun ||
+      perfAutorunRef.current ||
+      perfProfiler.running
+    ) {
+      return;
     }
-    return merged;
-  }, [liveStops, stops]);
+    perfAutorunRef.current = true;
+    void runOfficialPerfProfile();
+  }, [perfAutorun, perfEnabled, perfProfiler.running, runOfficialPerfProfile]);
+
   const hydratedSelectedStop = selectedStop
     ? (currentStops.find(
         (s) => s.district === selectedStop.district && s.id === selectedStop.id,
@@ -246,6 +386,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         ) ?? null)
       : null;
   const boardStop = hydratedSelectedStop ?? pathSelectedStop;
+  const areChromeBoardsHidden = !showCentralBoard && !showDigitalBoard;
 
   // Deep link: open HUD without reframing camera.
   useEffect(() => {
@@ -274,12 +415,16 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
   const openStopHud = useCallback(
     (stop: Stop) => {
+      if (!showCentralBoard || !showDigitalBoard) {
+        setShowCentralBoard(true);
+        setShowDigitalBoard(true);
+      }
       transitioningToStopIdRef.current = stop.id;
       dismissedStopIdRef.current = null;
       setSelectedStop(stop);
       router.replace(`/${stop.district}/${stop.id}/`, { scroll: false });
     },
-    [router],
+    [router, showCentralBoard, showDigitalBoard],
   );
 
   const closeHud = useCallback(() => {
@@ -367,17 +512,30 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     <div
       id="willville-stage"
       style={{
+        display: "grid",
+        gridTemplateRows: showCentralBoard
+          ? showDigitalBoard
+            ? "auto minmax(0, 1fr) auto"
+            : "auto minmax(0, 1fr)"
+          : showDigitalBoard
+            ? "minmax(0, 1fr) auto"
+            : "minmax(0, 1fr)",
+        gap: showCentralBoard || showDigitalBoard ? 10 : 0,
         backgroundColor: "#063755",
         backgroundImage:
           "linear-gradient(rgba(6, 55, 85, 0.32), rgba(8, 5, 21, 0.42))",
       }}
     >
-      <CentralBoard
-        stops={currentStops}
-        selectedStop={boardStop}
-        activeDistrict={pathDistrict}
-        onSelectStop={openStopHud}
-      />
+      {showCentralBoard && (
+        <CentralBoard
+          stops={currentStops}
+          selectedStop={boardStop}
+          activeDistrict={pathDistrict}
+          onSelectStop={openStopHud}
+          announcementRows={boardAnnouncement?.rows}
+          announcementLabel={boardAnnouncement?.label}
+        />
+      )}
 
       <div
         ref={stageRef}
@@ -392,10 +550,77 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         onDoubleClick={handleStageDoubleClick}
         {...stageHandlers}
       >
+        <div
+          style={{
+            position: "absolute",
+            top: 16,
+            left: 16,
+            zIndex: 20,
+            display: "flex",
+            gap: 8,
+            flexWrap: "wrap",
+            maxWidth: "min(420px, calc(100vw - 32px))",
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setShowCentralBoard((current) => !current)}
+            aria-pressed={showCentralBoard}
+            title={showCentralBoard ? "Hide Time Central" : "Show Time Central"}
+            style={{
+              border: "1px solid rgba(230,198,106,0.45)",
+              borderRadius: 999,
+              background: showCentralBoard
+                ? "linear-gradient(180deg, rgba(36,24,12,0.92) 0%, rgba(20,12,6,0.96) 100%)"
+                : "rgba(14, 12, 11, 0.78)",
+              color: "var(--willville-paper)",
+              padding: "8px 12px",
+              fontSize: 12,
+              letterSpacing: 0.5,
+              cursor: "pointer",
+              boxShadow:
+                "0 4px 12px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(230,198,106,0.15)",
+              opacity: showCentralBoard ? 1 : 0.75,
+            }}
+          >
+            {showCentralBoard ? "Hide Time Central" : "Show Time Central"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowDigitalBoard((current) => !current)}
+            aria-pressed={showDigitalBoard}
+            title={
+              showDigitalBoard
+                ? "Hide Digital Detail Board"
+                : "Show Digital Detail Board"
+            }
+            style={{
+              border: "1px solid rgba(230,198,106,0.45)",
+              borderRadius: 999,
+              background: showDigitalBoard
+                ? "linear-gradient(180deg, rgba(36,24,12,0.92) 0%, rgba(20,12,6,0.96) 100%)"
+                : "rgba(14, 12, 11, 0.78)",
+              color: "var(--willville-paper)",
+              padding: "8px 12px",
+              fontSize: 12,
+              letterSpacing: 0.5,
+              cursor: "pointer",
+              boxShadow:
+                "0 4px 12px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(230,198,106,0.15)",
+              opacity: showDigitalBoard ? 1 : 0.75,
+            }}
+          >
+            {showDigitalBoard ? "Hide Digital Board" : "Show Digital Board"}
+          </button>
+        </div>
+
         <svg
           ref={svgRef}
           viewBox={`0 0 ${WORLD.width} ${WORLD.height}`}
-          preserveAspectRatio="xMidYMid meet"
+          preserveAspectRatio={
+            areChromeBoardsHidden ? "xMidYMid slice" : "xMidYMid meet"
+          }
           width="100%"
           height="100%"
           style={{ pointerEvents: "auto" }}
@@ -685,7 +910,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           >
             {populating === "running" && "🔔 The bell rings across Willville…"}
             {populating === "done" && "✓ Manifests updated"}
-            {populating === "error" && "✕ Bell failed — check GITHUB_PAT"}
+            {populating === "error" && bellErrorMessage}
           </div>
         )}
 
@@ -745,12 +970,26 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           </span>
         </button>
 
+        {perfEnabled && (
+          <TownPerfPanel
+            report={perfProfiler.report}
+            running={perfProfiler.running}
+            onRun={() => {
+              void runOfficialPerfProfile();
+            }}
+            onClear={perfProfiler.clearReport}
+            onDownload={downloadPerfReport}
+          />
+        )}
+
         <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
       </div>
 
-      <DigitalDetailBoard stop={boardStop} boats={boats} onClear={closeHud} />
+      {showDigitalBoard && (
+        <DigitalDetailBoard stop={boardStop} boats={boats} onClear={closeHud} />
+      )}
     </div>
   );
 }

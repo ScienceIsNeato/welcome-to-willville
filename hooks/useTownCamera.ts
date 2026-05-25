@@ -9,8 +9,14 @@ import {
 } from "framer-motion";
 import { useGesture } from "@use-gesture/react";
 import { WORLD, TOWN_CENTER } from "@/lib/willville";
+import type { TownPerfProbe } from "@/hooks/useTownInteractionProfiler";
 
 export type Camera = { cx: number; cy: number; scale: number };
+export type CameraCorner =
+  | "topLeft"
+  | "topRight"
+  | "bottomLeft"
+  | "bottomRight";
 
 export const MIN_SCALE = 0.6;
 export const MAX_SCALE = 128;
@@ -52,6 +58,14 @@ function clampCamera(c: Camera): Camera {
   return { cx, cy, scale };
 }
 
+export function cameraAtCorner(corner: CameraCorner, scale: number): Camera {
+  return clampCamera({
+    cx: corner.endsWith("Left") ? 0 : WORLD.width,
+    cy: corner.startsWith("top") ? 0 : WORLD.height,
+    scale,
+  });
+}
+
 /** Map screen pixels → world coordinates under the current camera. */
 export function screenToWorld(
   svg: SVGSVGElement,
@@ -77,6 +91,7 @@ export function screenToWorld(
 export function useTownCamera(
   svgRef: RefObject<SVGSVGElement | null>,
   stageRef: RefObject<HTMLDivElement | null>,
+  perf?: TownPerfProbe,
 ) {
   // MotionValues drive the visual transform directly — no React renders mid-drag.
   const mvCx = useMotionValue(INITIAL_CAMERA.cx);
@@ -117,6 +132,17 @@ export function useTownCamera(
     [stopAnims, mvCx, mvCy, mvScale],
   );
 
+  const setCameraImmediate = useCallback(
+    (target: Camera) => {
+      stopAnims();
+      const next = clampCamera(target);
+      mvCx.set(next.cx);
+      mvCy.set(next.cy);
+      mvScale.set(next.scale);
+    },
+    [stopAnims, mvCx, mvCy, mvScale],
+  );
+
   // Returns the current visual camera position (reads MotionValues, not React state).
   const getCameraSnapshot = useCallback(
     (): Camera => ({
@@ -125,6 +151,107 @@ export function useTownCamera(
       scale: mvScale.get(),
     }),
     [mvCx, mvCy, mvScale],
+  );
+
+  const panByPixels = useCallback(
+    (dx: number, dy: number) => {
+      const ctm = perf
+        ? perf.measure("layoutRead", () => svgRef.current?.getScreenCTM())
+        : svgRef.current?.getScreenCTM();
+      const vbScale = ctm ? ctm.a : 1;
+      const scale = mvScale.get();
+      const clamped = perf
+        ? perf.measure("cameraMath", () =>
+            clampCamera({
+              cx: mvCx.get() - dx / (vbScale * scale),
+              cy: mvCy.get() - dy / (vbScale * scale),
+              scale,
+            }),
+          )
+        : clampCamera({
+            cx: mvCx.get() - dx / (vbScale * scale),
+            cy: mvCy.get() - dy / (vbScale * scale),
+            scale,
+          });
+
+      if (perf) {
+        perf.measure("motionWrites", () => {
+          mvCx.set(clamped.cx);
+          mvCy.set(clamped.cy);
+        });
+        perf.scheduleFrameSample();
+        return;
+      }
+
+      mvCx.set(clamped.cx);
+      mvCy.set(clamped.cy);
+    },
+    [mvCx, mvCy, mvScale, perf, svgRef],
+  );
+
+  const wheelZoomAtViewportPoint = useCallback(
+    (clientX: number, clientY: number, dy: number) => {
+      stopAnims();
+
+      const snapshot = getCameraSnapshot();
+      const svg = svgRef.current;
+      const mouseWorld = svg
+        ? perf
+          ? perf.measure("layoutRead", () =>
+              screenToWorld(svg, clientX, clientY, snapshot),
+            )
+          : screenToWorld(svg, clientX, clientY, snapshot)
+        : null;
+
+      const factor = Math.min(1.2, Math.max(0.8, Math.exp(-dy * 0.001)));
+      const scale = perf
+        ? perf.measure("cameraMath", () => clampScale(snapshot.scale * factor))
+        : clampScale(snapshot.scale * factor);
+
+      let cx = snapshot.cx;
+      let cy = snapshot.cy;
+
+      if (mouseWorld) {
+        const next = perf
+          ? perf.measure("cameraMath", () => ({
+              cx:
+                mouseWorld.wx -
+                (mouseWorld.wx - snapshot.cx) * (snapshot.scale / scale),
+              cy:
+                mouseWorld.wy -
+                (mouseWorld.wy - snapshot.cy) * (snapshot.scale / scale),
+            }))
+          : {
+              cx:
+                mouseWorld.wx -
+                (mouseWorld.wx - snapshot.cx) * (snapshot.scale / scale),
+              cy:
+                mouseWorld.wy -
+                (mouseWorld.wy - snapshot.cy) * (snapshot.scale / scale),
+            };
+        cx = next.cx;
+        cy = next.cy;
+      }
+
+      const clamped = perf
+        ? perf.measure("cameraMath", () => clampCamera({ cx, cy, scale }))
+        : clampCamera({ cx, cy, scale });
+
+      if (perf) {
+        perf.measure("motionWrites", () => {
+          mvCx.set(clamped.cx);
+          mvCy.set(clamped.cy);
+          mvScale.set(clamped.scale);
+        });
+        perf.scheduleFrameSample();
+        return;
+      }
+
+      mvCx.set(clamped.cx);
+      mvCy.set(clamped.cy);
+      mvScale.set(clamped.scale);
+    },
+    [getCameraSnapshot, mvCx, mvCy, mvScale, perf, stopAnims, svgRef],
   );
 
   useGesture(
@@ -149,17 +276,7 @@ export function useTownCamera(
           }
         }
         wasDraggingRef.current = true;
-        // vbScale: CSS pixels per SVG viewBox unit (accounts for letterboxing).
-        const ctm = svgRef.current?.getScreenCTM();
-        const vbScale = ctm ? ctm.a : 1;
-        const s = mvScale.get();
-        const clamped = clampCamera({
-          cx: mvCx.get() - dx / (vbScale * s),
-          cy: mvCy.get() - dy / (vbScale * s),
-          scale: s,
-        });
-        mvCx.set(clamped.cx);
-        mvCy.set(clamped.cy);
+        panByPixels(dx, dy);
         // No setIsDragging / setState here — zero React renders mid-drag.
       },
       onDragEnd: () => {
@@ -179,36 +296,15 @@ export function useTownCamera(
         if (event && event.cancelable) {
           event.preventDefault();
         }
-        stopAnims();
-
-        const snap = getCameraSnapshot();
-        const svg = svgRef.current;
-        const hasCoords = event && typeof (event as any).clientX === "number";
-        const mouseWorld =
-          svg && hasCoords
-            ? screenToWorld(
-                svg,
-                (event as any).clientX,
-                (event as any).clientY,
-                snap,
-              )
-            : null;
-
-        const factor = Math.min(1.2, Math.max(0.8, Math.exp(-dy * 0.001)));
-        const s = clampScale(snap.scale * factor);
-
-        let cx = snap.cx;
-        let cy = snap.cy;
-
-        if (mouseWorld) {
-          cx = mouseWorld.wx - (mouseWorld.wx - snap.cx) * (snap.scale / s);
-          cy = mouseWorld.wy - (mouseWorld.wy - snap.cy) * (snap.scale / s);
-        }
-
-        const clamped = clampCamera({ cx, cy, scale: s });
-        mvCx.set(clamped.cx);
-        mvCy.set(clamped.cy);
-        mvScale.set(clamped.scale);
+        const clientX =
+          event && typeof (event as any).clientX === "number"
+            ? (event as any).clientX
+            : 0;
+        const clientY =
+          event && typeof (event as any).clientY === "number"
+            ? (event as any).clientY
+            : 0;
+        wheelZoomAtViewportPoint(clientX, clientY, dy);
       },
     },
     {
@@ -250,7 +346,10 @@ export function useTownCamera(
     cameraTransform,
     mvScale,
     focusWorldPoint,
+    panByPixels,
     resetToTown,
+    setCameraImmediate,
+    wheelZoomAtViewportPoint,
     zoomAtWorldPoint,
     markSkipDrag: () => {},
     stageHandlers: {},

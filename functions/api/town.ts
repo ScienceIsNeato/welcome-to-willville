@@ -98,6 +98,39 @@ type GitHubMilestone = {
   state: "open" | "closed";
 };
 
+type RepoSignals = {
+  openPrCount?: number;
+  branchCount?: number;
+  lastMergeAt?: string;
+  latestRelease?: RepoMeta["latestRelease"];
+};
+
+const REPO_SIGNALS_QUERY = `
+query ($owner: String!, $name: String!) {
+  repository(owner: $owner, name: $name) {
+    refs(refPrefix: "refs/heads/", first: 1) {
+      totalCount
+    }
+    pullRequests(states: OPEN, first: 1) {
+      totalCount
+    }
+    mergedPulls: pullRequests(
+      states: MERGED
+      first: 1
+      orderBy: { field: UPDATED_AT, direction: DESC }
+    ) {
+      nodes {
+        mergedAt
+      }
+    }
+    latestRelease {
+      name
+      tagName
+      publishedAt
+    }
+  }
+}`;
+
 async function fetchMilestones(
   owner: string,
   name: string,
@@ -166,6 +199,70 @@ async function fetchCommitCounts(
       d21++; // all commits from the `since` window count
     }
     return { d3, d7, d21, latestCommitAt };
+  } catch {
+    return undefined;
+  }
+}
+
+async function fetchRepoSignals(
+  owner: string,
+  name: string,
+  token?: string,
+): Promise<RepoSignals | undefined> {
+  if (!token) return undefined;
+
+  try {
+    const response = await fetch("https://api.github.com/graphql", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "User-Agent": "willville-edge",
+      },
+      body: JSON.stringify({
+        query: REPO_SIGNALS_QUERY,
+        variables: { owner, name },
+      }),
+    });
+    if (!response.ok) return undefined;
+
+    const payload = (await response.json()) as {
+      data?: {
+        repository?: {
+          refs?: { totalCount?: number | null } | null;
+          pullRequests?: { totalCount?: number | null } | null;
+          mergedPulls?: {
+            nodes?: Array<{ mergedAt?: string | null } | null> | null;
+          } | null;
+          latestRelease?: {
+            name?: string | null;
+            tagName?: string | null;
+            publishedAt?: string | null;
+          } | null;
+        } | null;
+      };
+    };
+
+    const repository = payload.data?.repository;
+    if (!repository) return undefined;
+
+    const latestRelease = repository.latestRelease
+      ? {
+          name:
+            repository.latestRelease.name ??
+            repository.latestRelease.tagName ??
+            "release",
+          tagName: repository.latestRelease.tagName ?? undefined,
+          publishedAt: repository.latestRelease.publishedAt ?? undefined,
+        }
+      : undefined;
+
+    return {
+      openPrCount: repository.pullRequests?.totalCount ?? undefined,
+      branchCount: repository.refs?.totalCount ?? undefined,
+      lastMergeAt: repository.mergedPulls?.nodes?.[0]?.mergedAt ?? undefined,
+      latestRelease,
+    };
   } catch {
     return undefined;
   }
@@ -247,11 +344,13 @@ export const onRequestGet: PagesFunction<Env> = async ({
   });
 
   const repoMetas: RepoMeta[] = await mapLimit(candidates, 8, async (r) => {
-    const [milestones, commitCounts, activeBranch] = await Promise.all([
-      fetchMilestones(OWNER, r.name, token),
-      fetchCommitCounts(r.full_name, token),
-      fetchActiveBranch(r.full_name, r.default_branch, token),
-    ]);
+    const [milestones, commitCounts, activeBranch, repoSignals] =
+      await Promise.all([
+        fetchMilestones(OWNER, r.name, token),
+        fetchCommitCounts(r.full_name, token),
+        fetchActiveBranch(r.full_name, r.default_branch, token),
+        fetchRepoSignals(OWNER, r.name, token),
+      ]);
     const { willvilleManifest, willvillePacket } =
       await manifestClient.fetchRepoPackets(
         r.full_name,
@@ -275,13 +374,20 @@ export const onRequestGet: PagesFunction<Env> = async ({
       })),
       willvilleManifest,
       willvillePacket,
-      openIssuesCount: r.open_issues_count,
+      openIssuesCount: Math.max(
+        0,
+        r.open_issues_count - (repoSignals?.openPrCount ?? 0),
+      ),
       stars: r.stargazers_count,
       language: r.language ?? undefined,
+      openPrCount: repoSignals?.openPrCount,
+      branchCount: repoSignals?.branchCount,
       commits3d: commitCounts?.d3,
       commits7d: commitCounts?.d7,
       commits21d: commitCounts?.d21,
       lastCommitAt: commitCounts?.latestCommitAt,
+      lastMergeAt: repoSignals?.lastMergeAt,
+      latestRelease: repoSignals?.latestRelease,
       activeBranch,
     };
   });

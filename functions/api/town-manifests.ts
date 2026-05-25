@@ -38,7 +38,7 @@ export class WillvilleManifestClient {
       { fullName, ref: defaultBranch },
     ]);
     const [willvilleManifest, willvillePacket] = await Promise.all([
-      this.firstResolved(refs, (ref) => this.fetchManifest(ref)),
+      this.mergeResolvedManifests(refs),
       this.firstResolved(refs, (ref) => this.fetchStatusPacket(ref)),
     ]);
     return { willvilleManifest, willvillePacket };
@@ -96,6 +96,60 @@ export class WillvilleManifestClient {
       if (value !== undefined) return value;
     }
     return undefined;
+  }
+
+  private async mergeResolvedManifests(
+    refs: RepoRef[],
+  ): Promise<WillvilleManifest | undefined> {
+    let merged: WillvilleManifest | undefined;
+    for (const ref of refs) {
+      const next = await this.fetchManifest(ref);
+      if (!next) continue;
+      merged = this.mergeManifestSections(merged, next);
+    }
+    return merged;
+  }
+
+  private mergeManifestSections(
+    preferred: WillvilleManifest | undefined,
+    fallback: WillvilleManifest,
+  ): WillvilleManifest {
+    if (!preferred) return fallback;
+    return {
+      schemaVersion: preferred.schemaVersion ?? fallback.schemaVersion,
+      project: this.mergeSection(preferred.project, fallback.project),
+      status: this.mergeSection(preferred.status, fallback.status),
+      queue: this.mergeSection(preferred.queue, fallback.queue),
+      agent: this.mergeAgent(preferred.agent, fallback.agent),
+    };
+  }
+
+  private mergeSection<T extends object>(
+    preferred: T | undefined,
+    fallback: T | undefined,
+  ): T | undefined {
+    if (!preferred) return fallback;
+    if (!fallback) return preferred;
+    return { ...fallback, ...preferred };
+  }
+
+  private mergeAgent(
+    preferred: WillvilleManifest["agent"],
+    fallback: WillvilleManifest["agent"],
+  ): WillvilleManifest["agent"] {
+    if (!preferred) return fallback;
+    if (!fallback) return preferred;
+    return {
+      status: preferred.status ?? fallback.status,
+      direction: preferred.direction ?? fallback.direction,
+      difficulties: preferred.difficulties ?? fallback.difficulties,
+      needsHuman: preferred.needsHuman ?? fallback.needsHuman,
+      lastUpdate: preferred.lastUpdate ?? fallback.lastUpdate,
+      actions:
+        preferred.actions && preferred.actions.length > 0
+          ? preferred.actions
+          : fallback.actions,
+    };
   }
 
   private async fetchStatusPacket(
