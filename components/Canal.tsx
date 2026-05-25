@@ -8,6 +8,7 @@ import {
   pointsToPath,
 } from "@/lib/town-layout";
 import { GATE_HALF_WIDTH, LOCKS, boatPosition } from "@/lib/canal";
+import { RAINBOW_BRICK_LAYERS } from "@/lib/rainbow-brick-layers";
 import { CanalBoat as Boat } from "./CanalBoat";
 
 type Props = {
@@ -16,13 +17,6 @@ type Props = {
 };
 
 const CANAL_WALL_PATH_LENGTH = 3600;
-const CANAL_RAINBOW_BRICK_LAYERS = [
-  { className: "rainbow-bricks-red", offset: 0, speed: 1 },
-  { className: "rainbow-bricks-gold", offset: 18, speed: 1.02 },
-  { className: "rainbow-bricks-green", offset: 38, speed: 0.98 },
-  { className: "rainbow-bricks-blue", offset: 58, speed: 1.04 },
-  { className: "rainbow-bricks-violet", offset: 78, speed: 0.99 },
-] as const;
 const CANAL_BANKS = [
   { id: "north", path: CANAL_SECTION.northBankPath, duration: 116 },
   { id: "south", path: CANAL_SECTION.southBankPath, duration: 124 },
@@ -135,7 +129,7 @@ export function Canal({ boats, layer = "all" }: Props) {
                     repeatCount="indefinite"
                   />
                 </path>
-                {CANAL_RAINBOW_BRICK_LAYERS.map((brickLayer) => (
+                {RAINBOW_BRICK_LAYERS.map((brickLayer) => (
                   <path
                     key={`${bank.id}-${brickLayer.className}`}
                     d={bank.path}

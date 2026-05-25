@@ -1,4 +1,5 @@
 import townWorkers from "@/data/town-workers.v1.json";
+import townAnimation from "@/data/town-animation.v1.json";
 import type { Stop } from "@/lib/town";
 import type { Point } from "@/lib/town-layout";
 
@@ -91,12 +92,29 @@ type TownWorkersData = {
   systems: WorkerSystem[];
 };
 
+type TownAnimationData = {
+  sprites: WorkerAnimatedArt[];
+  systems: Array<{
+    id: string;
+    sprite: string;
+    secondsPerRoute?: number;
+    routeStates?: WorkerRouteState[];
+  }>;
+};
+
 const WORKER_DATA = townWorkers as TownWorkersData;
+const ANIMATION_DATA = townAnimation as TownAnimationData;
 
 const ANIMATED_ART = new Map(
-  WORKER_DATA.animatedArt.map((art) => [art.id, art]),
+  [...WORKER_DATA.animatedArt, ...ANIMATION_DATA.sprites].map((art) => [
+    art.id,
+    art,
+  ]),
 );
 const STATIC_ART = new Map(WORKER_DATA.staticArt.map((art) => [art.id, art]));
+const ANIMATION_SYSTEMS = new Map(
+  ANIMATION_DATA.systems.map((system) => [system.id, system]),
+);
 
 function routeStopsForSystem(system: WorkerSystem, stops: Stop[]): Stop[] {
   const excluded = new Set(system.routeSiteFilter?.excludeDistricts ?? []);
@@ -237,33 +255,44 @@ function resolveRoute(
 
 export function resolveWorldWorkers(stops: Stop[]): WorldWorker[] {
   return WORKER_DATA.systems.flatMap((system) => {
+    const animationSystem = ANIMATION_SYSTEMS.get(system.id);
+    const runtimeSystem: WorkerSystem = {
+      ...system,
+      animatedArt: animationSystem?.sprite ?? system.animatedArt,
+      secondsPerRoute:
+        animationSystem?.secondsPerRoute ?? system.secondsPerRoute,
+      routeStates: animationSystem?.routeStates ?? system.routeStates,
+    };
     const homeSite = stops.find((stop) => stop.id === system.homeSiteId);
     if (!homeSite) return [];
-    const routeSites = routeStopsForSystem(system, stops).slice(
+    const routeSites = routeStopsForSystem(runtimeSystem, stops).slice(
       0,
-      system.maxAnimatedWorkers,
+      runtimeSystem.maxAnimatedWorkers,
     );
-    const animatedArt = system.animatedArt
-      ? ANIMATED_ART.get(system.animatedArt)
+    const animatedArt = runtimeSystem.animatedArt
+      ? ANIMATED_ART.get(runtimeSystem.animatedArt)
       : undefined;
-    const staticArt = system.staticArt
-      ? STATIC_ART.get(system.staticArt)
+    const staticArt = runtimeSystem.staticArt
+      ? STATIC_ART.get(runtimeSystem.staticArt)
       : undefined;
     return routeSites.map((targetSite, index) => ({
-      id: `${system.id}-${targetSite.district}-${targetSite.id}`,
-      kind: system.kind,
-      systemId: system.id,
-      homeSiteId: system.homeSiteId,
+      id: `${runtimeSystem.id}-${targetSite.district}-${targetSite.id}`,
+      kind: runtimeSystem.kind,
+      systemId: runtimeSystem.id,
+      homeSiteId: runtimeSystem.homeSiteId,
       routeSites: [homeSite, targetSite],
       targetSite,
-      renderPath: system.renderPath,
-      animateWorker: system.animateWorker,
-      rotateToPath: system.rotateToPath,
-      layer: system.layer,
-      delaySeconds: -((index / routeSites.length) * system.secondsPerRoute),
-      secondsPerRoute: system.secondsPerRoute,
-      routeStates: system.routeStates,
-      route: resolveRoute(system, homeSite, targetSite),
+      renderPath: runtimeSystem.renderPath,
+      animateWorker: runtimeSystem.animateWorker,
+      rotateToPath: runtimeSystem.rotateToPath,
+      layer: runtimeSystem.layer,
+      delaySeconds: -(
+        (index / routeSites.length) *
+        runtimeSystem.secondsPerRoute
+      ),
+      secondsPerRoute: runtimeSystem.secondsPerRoute,
+      routeStates: runtimeSystem.routeStates,
+      route: resolveRoute(runtimeSystem, homeSite, targetSite),
       animatedArt,
       staticArt,
     }));

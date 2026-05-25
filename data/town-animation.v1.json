@@ -8,6 +8,7 @@
       "sheetHeight": 192,
       "frameWidth": 48,
       "frameHeight": 48,
+      "visualScale": 0.55,
       "animations": {
         "walk": { "row": 0, "frames": 8, "fps": 10 },
         "sweep": { "row": 1, "frames": 8, "fps": 12 },
@@ -19,12 +20,9 @@
   "systems": [
     {
       "id": "mop-service",
-      "originLandmark": "slopDepot",
       "sprite": "mop-worker",
-      "routeStrategy": "slop-depot-to-site",
-      "maxAgents": 33,
+      "routeStrategy": "home-to-site-loop",
       "secondsPerRoute": 42,
-      "frameSeconds": 0.9,
       "routeStates": [
         { "id": "outbound", "from": 0, "to": 0.44, "animation": "bucket" },
         { "id": "mopping", "from": 0.44, "to": 0.56, "animation": "sweep" },

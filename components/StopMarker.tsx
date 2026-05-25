@@ -42,6 +42,9 @@ export function StopMarker({
   const spriteWidth = sprite ? Math.round(sprite.width * 0.68) : 0;
   const spriteHeight = sprite ? Math.round(sprite.height * 0.68) : 0;
   const label = repoLabel(stop);
+  const hitWidth = Math.max(72, spriteWidth + 24, label.length * 8 + 20);
+  const hitTop = sprite ? -spriteHeight - 64 : -36;
+  const hitBottom = sprite ? 28 : 36;
   return (
     <g
       data-stop-marker
@@ -57,7 +60,14 @@ export function StopMarker({
       }}
       aria-label={label}
     >
-      <circle r={32} fill="transparent" pointerEvents="all" />
+      <rect
+        x={-hitWidth / 2}
+        y={hitTop}
+        width={hitWidth}
+        height={hitBottom - hitTop}
+        fill="transparent"
+        pointerEvents="all"
+      />
       {recentlyUpdated && (
         <circle r={18} fill={color} fillOpacity={0.25} className="whistle" />
       )}
