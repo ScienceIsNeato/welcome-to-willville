@@ -5,6 +5,7 @@ import { pointsToPath, resolveTownLayout } from "../lib/town-layout-engine.mjs";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
 const source = resolve(root, "data/town-layout.v1.json");
+const output = resolve(root, "docs/generated/willville-layout-preview.svg");
 const layout = resolveTownLayout(JSON.parse(await readFile(source, "utf8")));
 
 const fills = {

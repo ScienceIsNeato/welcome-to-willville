@@ -379,6 +379,28 @@ const TOPIC_LINE: Partial<Record<string, LineId>> = {
   spooky: "halloween",
 };
 
+const DISTRICT_IDS = new Set<DistrictId>(DISTRICTS.map(({ id }) => id));
+const LINE_IDS = new Set<LineId>(LINES.map(({ id }) => id));
+
+function normalizeManifestDistrict(
+  district: string | undefined,
+): DistrictId | undefined {
+  if (!district) return undefined;
+  return DISTRICT_IDS.has(district as DistrictId)
+    ? (district as DistrictId)
+    : undefined;
+}
+
+function normalizeManifestLines(
+  lines: string[] | undefined,
+): LineId[] | undefined {
+  if (!lines) return undefined;
+  const valid = lines.filter((line): line is LineId =>
+    LINE_IDS.has(line as LineId),
+  );
+  return valid.length > 0 ? [...new Set(valid)] : undefined;
+}
+
 function topicsToDistrict(topics: string[]): DistrictId {
   for (const t of topics) {
     const d = TOPIC_DISTRICT[t.toLowerCase()];
@@ -484,8 +506,14 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
   const manifestStatus = manifest?.status;
   const agent = manifest?.agent;
   const hasOpenMilestone = (meta.openMilestones?.length ?? 0) > 0;
-  const district = heuristic?.district ?? topicsToDistrict(meta.topics ?? []);
-  const lines = heuristic?.lines ?? topicsToLines(meta.topics ?? []);
+  const district =
+    normalizeManifestDistrict(manifestProject?.district) ??
+    heuristic?.district ??
+    topicsToDistrict(meta.topics ?? []);
+  const lines =
+    normalizeManifestLines(manifestProject?.lines) ??
+    heuristic?.lines ??
+    topicsToLines(meta.topics ?? []);
   const stopId =
     heuristic?.stopId ??
     manifestProject?.stop ??
@@ -510,7 +538,7 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
     homepage: manifestProject?.homepage ?? meta.homepage,
     blurb: heuristic?.blurb,
     glyph: heuristic?.glyph ?? defaultGlyphForRepo(meta.repo),
-    visibility: "public",
+    visibility: manifestProject?.visibility ?? "public",
     isPrivate: meta.isPrivate,
     status: {
       state:
@@ -522,8 +550,8 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
       done: pkt?.done,
       next: manifestStatus?.next?.join(" / ") ?? agent?.direction ?? pkt?.next,
       blocked:
-        normalizeNone(agent?.difficulties) ??
         manifestStatus?.blockers?.[0] ??
+        normalizeNone(agent?.difficulties) ??
         pkt?.blocked ??
         pkt?.blockers?.[0],
       risk: pkt?.risk,

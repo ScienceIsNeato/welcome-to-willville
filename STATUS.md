@@ -9,6 +9,13 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-25) — PR #10 Review Fixes: Preview Output + Manifest Overrides
+
+- Fixed the preview generator regression in `scripts/generate-town-layout-preview.mjs` by restoring the resolved SVG output path so the script no longer throws a `ReferenceError` on `output`.
+- Updated `buildStop` in `lib/town.ts` so validated manifest project overrides now win for `district`, `lines`, and `visibility` before position/layout are computed.
+- Swapped blocker precedence so `status.blockers[0]` from the current manifest schema wins over legacy `agent.difficulties`, keeping blocker behavior aligned with `summary`, `next`, and `updated`.
+- Validation: `activate && node scripts/generate-town-layout-preview.mjs` wrote the preview SVG successfully; `activate && sm swab --json --output-file .slopmop/last_swab_pr10_review_fixes.json` passed.
+
 ## Done (2026-05-25) — Pages Functions Deploy Repair + Bell Error Diagnostics
 
 - Production investigation showed `https://willville.ai/api/town`, `/api/canal`, and `/api/manifests` all returning 404, so the live failure was missing Pages Worker routes, not a confirmed PAT problem.
