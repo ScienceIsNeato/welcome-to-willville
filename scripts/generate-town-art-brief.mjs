@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { pointsToPath, resolveTownLayout } from "../lib/town-layout-engine.mjs";
+import { resolveTownLayout } from "../lib/town-layout-engine.mjs";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
 const profileArg = process.argv.find((arg) => arg.startsWith("--profile="));
@@ -44,8 +44,8 @@ const districts = layout.districts
 
 - Region id: \`${district.id}\`
 - Label anchor: ${district.label.x}, ${district.label.y}
-- Generated mask path: \`${pointsToPath(district.polygon)}\`
-- Generated boundary points: ${district.polygon.length}
+- Geometry formula: \`resolveTownLayout(data/town-layout.v1.json).districts["${district.id}"].polygon\`, then \`pointsToPath(...)\` from \`lib/town-layout-engine.mjs\`.
+- Generated boundary points: produced by the formula above; do not paste or hand-edit the expanded path in this brief.
 - Direction: ${regionNotes[district.id]}
 - Geometry contract: follow the generated polygon and wall loop exactly; do not redraw this district as a circular wedge.
 `,

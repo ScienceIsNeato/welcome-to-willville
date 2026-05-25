@@ -33,8 +33,7 @@ export const VIEWBOX = WORLD;
 /**
  * Coastal harbor canal woven through the lower town. PRs sail the curved
  * channel and nose up against lock chambers along the path. Geometry follows
- * `CANAL_PATH_D`; the painted map in `willville.png` is the visual source of
- * truth — the SVG layer only adds gates, labels, and boats.
+ * `CANAL_PATH_D`; generated town layout data is the visual source of truth.
  */
 export const CANAL = {
   /** Centerline path (Bezier) from southwest inlet to open sea on the east. */

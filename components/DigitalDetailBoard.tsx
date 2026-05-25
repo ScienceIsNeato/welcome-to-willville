@@ -61,7 +61,7 @@ export function DigitalDetailBoard({ stop, boats, onClear }: Props) {
                 />
                 <Metric
                   label="Last Commit"
-                  value={timeAgo(stop.status.updated)}
+                  value={timeAgo(stop.lastCommitAt)}
                 />
                 <Metric label="Oldest PR" value={oldestPrAge(prs)} />
                 <Metric label="Last Merge" value="n/a" />

@@ -12,8 +12,8 @@ already references them; replacing a placeholder requires no code change.
 
 ```
 public/art/
-├── town/willville.png          # full board backdrop (16:10, 1600x1000)
-├── districts/<district-id>.png # one tile per district, transparent bg
+├── town/willville-landscape-v1.png # masked world land backdrop
+├── town/districts/<district-id>.png # one painted district layer
 ├── stops/<stop-id>.png         # building icon, transparent bg, ~64x64
 └── trains/<vehicle>.png        # trolley, steam, hearse, cart, paperboy
 ```

@@ -84,6 +84,8 @@ export type Stop = {
   commits7d?: number;
   /** Commit count over the last 21 calendar days (3 weekly buckets). */
   commits21d?: number;
+  /** Timestamp for the latest commit returned by GitHub's commits endpoint. */
+  lastCommitAt?: string;
   /** Most recently committed branch in the repo. */
   activeBranch?: ActiveBranch;
   /** Committed Willville agent packet from .willville.json, if present. */
@@ -249,6 +251,8 @@ export type RepoMeta = {
   commits7d?: number;
   /** Commit count over the last 21 calendar days (3 weekly buckets). */
   commits21d?: number;
+  /** Timestamp for the latest commit returned by GitHub's commits endpoint. */
+  lastCommitAt?: string;
   /** Most recently committed branch in the repo. */
   activeBranch?: ActiveBranch;
 };
@@ -453,6 +457,7 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
     commits3d: meta.commits3d,
     commits7d: meta.commits7d,
     commits21d: meta.commits21d,
+    lastCommitAt: meta.lastCommitAt,
     activeBranch: meta.activeBranch,
     agent,
   };

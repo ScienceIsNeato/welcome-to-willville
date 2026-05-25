@@ -14,8 +14,8 @@ type Cubic = { p0: Point; p1: Point; p2: Point; p3: Point };
 /**
  * SVG path for the canal centerline.
  *
- * Stays inside the painted harbor zone (TOWN y ≈ 1085–1230) so that SVG boats
- * and gate lines land on the actual water in willville.png.
+ * Stays inside the generated harbor zone so SVG boats and gate lines land on
+ * the same canal geometry used by masks and district art.
  */
 export const CANAL_PATH_D = GENERATED_TOWN_LAYOUT.canal.pathD;
 

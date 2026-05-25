@@ -15,12 +15,8 @@
  * Mayors: private, no-store.
  */
 
-import {
-  buildTown,
-  type RepoMeta,
-  type WillvilleManifest,
-  type WillvillePacket,
-} from "../../lib/town";
+import { buildTown, type RepoMeta } from "../../lib/town";
+import { WillvilleManifestClient } from "./town-manifests";
 
 interface Env {
   GITHUB_PAT?: string;
@@ -66,11 +62,6 @@ type GitHubRepo = {
   stargazers_count: number;
   language: string | null;
   topics: string[];
-};
-
-type RepoRef = {
-  fullName: string;
-  ref: string;
 };
 
 async function listOwnerRepos(token?: string): Promise<GitHubRepo[]> {
@@ -136,7 +127,9 @@ async function fetchMilestones(
 async function fetchCommitCounts(
   fullName: string,
   token?: string,
-): Promise<{ d3: number; d7: number; d21: number } | undefined> {
+): Promise<
+  { d3: number; d7: number; d21: number; latestCommitAt?: string } | undefined
+> {
   const headers: Record<string, string> = {
     "User-Agent": "willville-edge",
     Accept: "application/vnd.github+json",
@@ -157,15 +150,22 @@ async function fetchCommitCounts(
     let d3 = 0,
       d7 = 0,
       d21 = 0;
+    let latestCommitAt: string | undefined;
+    let latestCommitTime = 0;
     for (const c of commits) {
-      const t = Date.parse(c.commit?.author?.date ?? "");
+      const rawDate = c.commit?.author?.date ?? "";
+      const t = Date.parse(rawDate);
       if (Number.isNaN(t)) continue;
+      if (t > latestCommitTime) {
+        latestCommitTime = t;
+        latestCommitAt = rawDate;
+      }
       const daysAgo = (now - t) / 86_400_000;
       if (daysAgo <= 3) d3++;
       if (daysAgo <= 7) d7++;
       d21++; // all commits from the `since` window count
     }
-    return { d3, d7, d21 };
+    return { d3, d7, d21, latestCommitAt };
   } catch {
     return undefined;
   }
@@ -232,255 +232,13 @@ async function fetchActiveBranch(
   }
 }
 
-async function fetchMostRecentPrRef(
-  fullName: string,
-  token?: string,
-): Promise<RepoRef | undefined> {
-  const headers: Record<string, string> = {
-    "User-Agent": "willville-edge",
-    Accept: "application/vnd.github+json",
-  };
-  if (token) headers.Authorization = `Bearer ${token}`;
-
-  try {
-    type GitHubPull = {
-      head?: {
-        ref?: string;
-        sha?: string;
-        repo?: { full_name?: string } | null;
-      };
-    };
-    const r = await fetch(
-      `https://api.github.com/repos/${fullName}/pulls?state=open&sort=updated&direction=desc&per_page=1`,
-      { headers },
-    );
-    if (!r.ok) return undefined;
-    const pulls = (await r.json()) as GitHubPull[];
-    const head = Array.isArray(pulls) ? pulls[0]?.head : undefined;
-    const headFullName = head?.repo?.full_name;
-    const headRef = head?.ref ?? head?.sha;
-    if (!headFullName || !headRef) return undefined;
-    if (headFullName.toLowerCase() !== fullName.toLowerCase()) return undefined;
-    return { fullName: headFullName, ref: headRef };
-  } catch {
-    return undefined;
-  }
-}
-
-function uniqueRefs(refs: Array<RepoRef | undefined>): RepoRef[] {
-  const seen = new Set<string>();
-  const result: RepoRef[] = [];
-  for (const ref of refs) {
-    if (!ref) continue;
-    const key = `${ref.fullName}:${ref.ref}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    result.push(ref);
-  }
-  return result;
-}
-
-async function firstResolved<T>(
-  refs: RepoRef[],
-  fetcher: (ref: RepoRef) => Promise<T | undefined>,
-): Promise<T | undefined> {
-  for (const ref of refs) {
-    const value = await fetcher(ref);
-    if (value !== undefined) return value;
-  }
-  return undefined;
-}
-
-const PACKET_RE = /<!--\s*willville\b([\s\S]*?)-->/;
-
-/** Parse a raw STATUS.md string into a WillvillePacket, or return undefined. */
-function parseWillvillePacket(body: string): WillvillePacket | undefined {
-  const match = PACKET_RE.exec(body);
-  if (!match) return undefined;
-  const inner = match[1]!;
-  const pkt: WillvillePacket = {};
-
-  for (const line of inner.split("\n")) {
-    const colon = line.indexOf(":");
-    if (colon === -1) continue;
-    const key = line.slice(0, colon).trim();
-    const val = line.slice(colon + 1).trim();
-    if (!val) continue;
-
-    switch (key) {
-      // New-format fields
-      case "doing":
-        pkt.doing = val;
-        break;
-      case "done":
-        pkt.done = val;
-        break;
-      case "next":
-        pkt.next = val;
-        break;
-      case "blocked":
-        pkt.blocked = val;
-        break;
-      case "risk":
-        pkt.risk = val;
-        break;
-      case "eta":
-        pkt.eta = val;
-        break;
-      // Shared
-      case "milestone":
-        pkt.milestone = val;
-        break;
-      // Legacy fields (backward compat)
-      case "status":
-        if (
-          ["wip", "shipping", "maintenance", "dormant", "unknown"].includes(val)
-        )
-          pkt.status = val as WillvillePacket["status"];
-        break;
-      case "summary":
-        pkt.summary = val;
-        break;
-      case "eta_date":
-        pkt.etaDate = val;
-        pkt.eta ??= val;
-        break;
-    }
-  }
-
-  // Legacy: parse YAML-style list fields (blockers)
-  const blockersRe = /\bblockers:[\s\S]*?(?=\n\w|$)/;
-  const blockersMatch = blockersRe.exec(inner);
-  if (blockersMatch) {
-    const items = [...blockersMatch[0].matchAll(/^\s*-\s*(.+)/gm)]
-      .map((m) => m[1]!.trim())
-      .filter(Boolean);
-    if (items.length) {
-      pkt.blockers = items;
-      pkt.blocked ??= items[0];
-    }
-  }
-
-  return Object.keys(pkt).length > 0 ? pkt : undefined;
-}
-
-/** Fetch STATUS.md and parse the willville packet. Returns undefined on miss. */
-async function fetchWillvillePacket(
-  fullName: string,
-  ref: string,
-  token?: string,
-): Promise<WillvillePacket | undefined> {
-  const headers: Record<string, string> = {
-    "User-Agent": "willville-edge",
-    Accept: "application/vnd.github+json",
-  };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  try {
-    const r = await fetch(
-      `https://api.github.com/repos/${fullName}/contents/STATUS.md?ref=${encodeURIComponent(ref)}`,
-      { headers },
-    );
-    if (!r.ok) return undefined;
-    const data = (await r.json()) as { content?: string; encoding?: string };
-    if (!data.content || data.encoding !== "base64") return undefined;
-    const body = atob(data.content.replace(/\s/g, ""));
-    return parseWillvillePacket(body);
-  } catch {
-    return undefined;
-  }
-}
-
-function parseWillvilleManifest(raw: unknown): WillvilleManifest | undefined {
-  if (!raw || typeof raw !== "object") return undefined;
-  const source = raw as {
-    schema_version?: unknown;
-    agent?: {
-      status?: unknown;
-      direction?: unknown;
-      difficulties?: unknown;
-      needs_human?: unknown;
-      last_update?: unknown;
-      actions?: unknown;
-    };
-  };
-  if (!source.agent || typeof source.agent !== "object") return undefined;
-  const actions = Array.isArray(source.agent.actions)
-    ? source.agent.actions
-        .map((action) => {
-          if (!action || typeof action !== "object") return undefined;
-          const item = action as { name?: unknown; status?: unknown };
-          if (typeof item.name !== "string") return undefined;
-          return {
-            name: item.name,
-            status: typeof item.status === "string" ? item.status : "planned",
-          };
-        })
-        .filter((action) => action !== undefined)
-    : undefined;
-
-  return {
-    schemaVersion:
-      typeof source.schema_version === "number"
-        ? source.schema_version
-        : undefined,
-    agent: {
-      status:
-        typeof source.agent.status === "string"
-          ? source.agent.status
-          : undefined,
-      direction:
-        typeof source.agent.direction === "string"
-          ? source.agent.direction
-          : undefined,
-      difficulties:
-        typeof source.agent.difficulties === "string"
-          ? source.agent.difficulties
-          : undefined,
-      needsHuman:
-        typeof source.agent.needs_human === "string"
-          ? source.agent.needs_human
-          : undefined,
-      lastUpdate:
-        typeof source.agent.last_update === "string"
-          ? source.agent.last_update
-          : undefined,
-      actions,
-    },
-  };
-}
-
-/** Fetch .willville.json and parse the committed agent packet. */
-async function fetchWillvilleManifest(
-  fullName: string,
-  ref: string,
-  token?: string,
-): Promise<WillvilleManifest | undefined> {
-  const headers: Record<string, string> = {
-    "User-Agent": "willville-edge",
-    Accept: "application/vnd.github+json",
-  };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  try {
-    const r = await fetch(
-      `https://api.github.com/repos/${fullName}/contents/.willville.json?ref=${encodeURIComponent(ref)}`,
-      { headers },
-    );
-    if (!r.ok) return undefined;
-    const data = (await r.json()) as { content?: string; encoding?: string };
-    if (!data.content || data.encoding !== "base64") return undefined;
-    const body = atob(data.content.replace(/\s/g, ""));
-    return parseWillvilleManifest(JSON.parse(body));
-  } catch {
-    return undefined;
-  }
-}
-
 export const onRequestGet: PagesFunction<Env> = async ({
   request: _request,
   env,
 }) => {
   // Always use PAT when available to avoid unauthenticated rate limits (60/hr).
   const token = env.GITHUB_PAT;
+  const manifestClient = new WillvilleManifestClient(token);
   const repos = await listOwnerRepos(token);
   const cutoff = Date.now() - TWO_YEARS_MS;
   const candidates = repos.filter((r) => {
@@ -489,29 +247,17 @@ export const onRequestGet: PagesFunction<Env> = async ({
   });
 
   const repoMetas: RepoMeta[] = await mapLimit(candidates, 8, async (r) => {
-    const [milestones, commitCounts, activeBranch, prRef] = await Promise.all([
+    const [milestones, commitCounts, activeBranch] = await Promise.all([
       fetchMilestones(OWNER, r.name, token),
       fetchCommitCounts(r.full_name, token),
       fetchActiveBranch(r.full_name, r.default_branch, token),
-      fetchMostRecentPrRef(r.full_name, token),
     ]);
-    // Agent packets resolve in priority order: current active branch, then the
-    // most recently updated PR branch, then the repo default branch.
-    const packetRefs = uniqueRefs([
-      activeBranch?.name
-        ? { fullName: r.full_name, ref: activeBranch.name }
-        : undefined,
-      prRef,
-      { fullName: r.full_name, ref: r.default_branch },
-    ]);
-    const [willvilleManifest, willvillePacket] = await Promise.all([
-      firstResolved(packetRefs, (ref) =>
-        fetchWillvilleManifest(ref.fullName, ref.ref, token),
-      ),
-      firstResolved(packetRefs, (ref) =>
-        fetchWillvillePacket(ref.fullName, ref.ref, token),
-      ),
-    ]);
+    const { willvilleManifest, willvillePacket } =
+      await manifestClient.fetchRepoPackets(
+        r.full_name,
+        r.default_branch,
+        activeBranch,
+      );
     return {
       repo: r.full_name,
       isPrivate: r.private,
@@ -535,6 +281,7 @@ export const onRequestGet: PagesFunction<Env> = async ({
       commits3d: commitCounts?.d3,
       commits7d: commitCounts?.d7,
       commits21d: commitCounts?.d21,
+      lastCommitAt: commitCounts?.latestCommitAt,
       activeBranch,
     };
   });

@@ -7,7 +7,7 @@ import {
   type Point,
 } from "@/lib/town-layout";
 
-export type WorkerLayer = "town-workers" | "canal-traffic" | "debug-paths";
+type WorkerLayer = "town-workers" | "canal-traffic" | "debug-paths";
 
 export type WorkerAnimation = {
   row: number;
@@ -26,7 +26,7 @@ export type WorkerAnimatedArt = {
   animations: Record<string, WorkerAnimation>;
 };
 
-export type WorkerStaticArt = {
+type WorkerStaticArt = {
   id: string;
   src: string;
   width: number;
@@ -34,7 +34,7 @@ export type WorkerStaticArt = {
   anchor: Point;
 };
 
-export type WorkerRouteState = {
+type WorkerRouteState = {
   id: string;
   from: number;
   to: number;
@@ -45,7 +45,7 @@ type WorkerRouteSiteFilter = {
   excludeDistricts?: string[];
 };
 
-export type WorkerSystem = {
+type WorkerSystem = {
   id: string;
   kind: string;
   homeSiteId: string;
@@ -64,7 +64,7 @@ export type WorkerSystem = {
   routeStates: WorkerRouteState[];
 };
 
-export type ResolvedWorkerRoute = {
+type ResolvedWorkerRoute = {
   pathD: string;
   visiblePathD: string;
   keyPoints: string;

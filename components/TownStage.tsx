@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   useRef,
@@ -205,7 +206,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     };
   }, []);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const applyTransform = (value: string) => {
       cameraGroupRef.current?.setAttribute("transform", value);
     };
@@ -319,6 +320,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
       const hit = findStopAt(currentStops, wx, wy, snap.scale);
       if (hit) {
+        zoomAtWorldPoint(wx, wy);
         openStopHud(hit);
         return;
       }
@@ -351,9 +353,12 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     (e: MouseEvent<SVGGElement>, stop: Stop) => {
       e.stopPropagation();
       markSkipDrag();
+      const wx = TOWN_OFFSET.x + stop.position.x;
+      const wy = TOWN_OFFSET.y + stop.position.y;
+      zoomAtWorldPoint(wx, wy);
       openStopHud(stop);
     },
-    [markSkipDrag, openStopHud],
+    [markSkipDrag, openStopHud, zoomAtWorldPoint],
   );
 
   const showWelcomeHint = !boardStop && pathDistrict === null;
@@ -528,7 +533,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             </mask>
           </defs>
 
-          <g ref={cameraGroupRef}>
+          <g ref={cameraGroupRef} transform={cameraTransform.get()}>
             <WorldSubstrate />
 
             <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
