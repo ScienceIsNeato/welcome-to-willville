@@ -4,7 +4,7 @@ import type { MouseEvent } from "react";
 import type { Stop } from "@/lib/town";
 import siteSpriteManifest from "@/data/town-site-sprites.v1.json";
 import {
-  hitBoxForStop,
+  labelHitBoxForStop,
   repoLabelForStop,
   spriteSizeForStop,
 } from "@/lib/stop-marker-hitbox";
@@ -42,7 +42,7 @@ export function StopMarker({
   const sprite = SITE_SPRITES.get(stop.id);
   const { width: spriteWidth, height: spriteHeight } = spriteSizeForStop(stop);
   const label = repoLabelForStop(stop);
-  const hitBox = hitBoxForStop(stop);
+  const labelHitBox = labelHitBoxForStop(stop);
   return (
     <g
       data-stop-marker
@@ -61,10 +61,10 @@ export function StopMarker({
       aria-label={label}
     >
       <rect
-        x={hitBox.x}
-        y={hitBox.y}
-        width={hitBox.width}
-        height={hitBox.height}
+        x={labelHitBox.x}
+        y={labelHitBox.y}
+        width={labelHitBox.width}
+        height={labelHitBox.height}
         fill="transparent"
         pointerEvents="all"
       />
@@ -79,7 +79,7 @@ export function StopMarker({
           width={spriteWidth}
           height={spriteHeight}
           preserveAspectRatio="xMidYMid meet"
-          style={{ pointerEvents: "none" }}
+          style={{ pointerEvents: "all" }}
         />
       )}
       <circle

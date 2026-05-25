@@ -7,12 +7,9 @@ import type { GitHubWorkflowRun, Stop } from "@/lib/town";
 type Props = {
   stop: Stop | null;
   boats: CanalBoat[];
-  onClear: () => void;
 };
 
-export function DigitalDetailBoard({ stop, boats, onClear }: Props) {
-  const repoUrl = stop?.repo ? repoHref(stop.repo) : null;
-  const linkOut = stop ? (stop.homepage ?? repoUrl) : null;
+export function DigitalDetailBoard({ stop, boats }: Props) {
   const stopPrs = stop
     ? boats.filter(
         (boat) =>
@@ -121,25 +118,6 @@ export function DigitalDetailBoard({ stop, boats, onClear }: Props) {
               <WorkflowRunList stop={stop} />
             </Panel>
           </div>
-
-          <div style={buttonRowStyle}>
-            <div style={buttonSpacerStyle} />
-            <div style={buttonGroupStyle}>
-              {repoUrl && (
-                <a href={repoUrl} onClick={followLink} style={buttonStyle}>
-                  Repo
-                </a>
-              )}
-              {linkOut && linkOut !== repoUrl && (
-                <a href={linkOut} onClick={followLink} style={buttonStyle}>
-                  Site
-                </a>
-              )}
-              <button type="button" onClick={onClear} style={buttonStyle}>
-                Clear
-              </button>
-            </div>
-          </div>
         </>
       )}
     </section>
@@ -227,12 +205,6 @@ function WorkflowRunList({ stop }: { stop: Stop }) {
 function followLink(e: MouseEvent<HTMLAnchorElement>) {
   e.preventDefault();
   window.location.assign(e.currentTarget.href);
-}
-
-function repoHref(repo: string): string {
-  const trimmed = repo.trim();
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  return `https://github.com/${trimmed.replace(/^\/+/, "")}`;
 }
 
 function repoShortName(repo: string | undefined): string {
@@ -390,7 +362,8 @@ const panelStyle: CSSProperties = {
   position: "relative",
   minWidth: 0,
   minHeight: 68,
-  padding: "23px 10px 10px",
+  marginTop: 10,
+  padding: "14px 10px 10px",
   borderRadius: 2,
   background:
     "linear-gradient(180deg, rgba(51,255,87,0.055), rgba(51,255,87,0.025))",
@@ -400,8 +373,8 @@ const panelStyle: CSSProperties = {
 
 const panelTitleStyle: CSSProperties = {
   position: "absolute",
-  top: 9,
-  left: 10,
+  top: -8,
+  left: 8,
   maxWidth: "calc(100% - 20px)",
   padding: "2px 8px",
   borderRadius: 2,
@@ -541,38 +514,4 @@ const softLinkStyle: CSSProperties = {
   overflow: "hidden",
   textOverflow: "ellipsis",
   whiteSpace: "nowrap",
-};
-
-const buttonRowStyle: CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  alignItems: "flex-start",
-  gap: 12,
-  flexWrap: "wrap",
-};
-
-const buttonSpacerStyle: CSSProperties = {
-  flex: "1 1 260px",
-  minWidth: 0,
-};
-
-const buttonGroupStyle: CSSProperties = {
-  display: "flex",
-  gap: 8,
-  flexWrap: "wrap",
-};
-
-const buttonStyle: CSSProperties = {
-  border: "1px solid rgba(51, 255, 87, 0.35)",
-  borderRadius: 2,
-  background: "rgba(51, 255, 87, 0.08)",
-  color: "#33ff57",
-  padding: "7px 11px",
-  fontSize: 12,
-  fontWeight: 700,
-  textDecoration: "none",
-  cursor: "pointer",
-  fontFamily: '"Courier New", Courier, monospace',
-  letterSpacing: 0.5,
-  textShadow: "0 0 6px rgba(51, 255, 87, 0.35)",
 };

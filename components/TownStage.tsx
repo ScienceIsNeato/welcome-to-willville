@@ -989,7 +989,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       </div>
 
       {showDigitalBoard && (
-        <DigitalDetailBoard stop={boardStop} boats={boats} onClear={closeHud} />
+        <DigitalDetailBoard stop={boardStop} boats={boats} />
       )}
     </div>
   );

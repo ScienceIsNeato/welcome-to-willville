@@ -22,18 +22,32 @@ export function spriteSizeForStop(stop: Stop): {
   };
 }
 
-export function hitBoxForStop(stop: Stop): {
+type HitBox = {
   x: number;
   y: number;
   width: number;
   height: number;
-} {
+};
+
+export function labelHitBoxForStop(stop: Stop): HitBox {
+  const sprite = SITE_SPRITES.get(stop.id);
+  const label = repoLabelForStop(stop);
+  const labelY = sprite ? -52 : -18;
+  const hitWidth = Math.max(72, label.length * 8 + 20);
+  return {
+    x: -hitWidth / 2,
+    y: labelY - 14,
+    width: hitWidth,
+    height: 24,
+  };
+}
+
+export function markerHitBoxForStop(stop: Stop): HitBox {
   const sprite = SITE_SPRITES.get(stop.id);
   const { width: spriteWidth, height: spriteHeight } = spriteSizeForStop(stop);
-  const label = repoLabelForStop(stop);
-  const hitWidth = Math.max(72, spriteWidth + 24, label.length * 8 + 20);
-  const hitTop = sprite ? -spriteHeight - 64 : -36;
-  const hitBottom = sprite ? 28 : 36;
+  const hitWidth = Math.max(36, spriteWidth + 8);
+  const hitTop = sprite ? -spriteHeight + 6 : -16;
+  const hitBottom = sprite ? 24 : 18;
   return {
     x: -hitWidth / 2,
     y: hitTop,

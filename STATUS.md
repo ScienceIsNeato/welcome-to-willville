@@ -9,6 +9,12 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-25) — Dense Stop Marker Click Targets No Longer Cross-Select
+
+- Fixed the repo-selection bug in dense districts by tightening `StopMarker` click targets to the visible label and sprite instead of one tall invisible rectangle that could overlap neighboring stops.
+- This was the root cause behind Slop Wharf repos sometimes opening the wrong board content, because overlapping marker hitboxes let a nearby stop intercept clicks even when the visible label or sprite belonged to another repo.
+- Validation: rebuilt with `./scripts/deploy_app.sh`, then ran a browser DOM probe against the live `http://127.0.0.1:3752/slop-wharf/the-rulebook/` page to confirm the `text`, `image`, `circle`, and label hitbox centers for `the-mop-bucket`, `the-action-dock`, `the-slop-bucket`, and `the-rulebook` all resolve to their own stop IDs; `sm swab` also passed.
+
 ## Done (2026-05-25) — Local Token Verification For Town Data
 
 - Rebuilt the app after rotating the local GitHub token and verified the live `welcome-to-willville` stop payload from `/api/town` now reports `openPrCount: 1` and three recent CI workflow runs.
