@@ -26,7 +26,7 @@ import { Canal } from "./Canal";
 import { ChimneySmoke } from "./ChimneySmoke";
 import { DynamicWalls } from "./DynamicWalls";
 import { GeneratedTownBase } from "./GeneratedTownBase";
-import { MopServiceLayer } from "./MopServiceLayer";
+import { WorldWorkerLayer } from "./WorldWorkerLayer";
 import { HollywoodSign } from "./HollywoodSign";
 import { screenToWorld, useTownCamera } from "@/hooks/useTownCamera";
 import { GENERATED_TOWN_LAYOUT } from "@/lib/town-layout";
@@ -547,7 +547,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               <TransitLines />
               <MainLine stops={currentStops} />
               <Canal boats={boats} layer="traffic" />
-              <MopServiceLayer stops={currentStops} />
+              <WorldWorkerLayer stops={currentStops} />
               {currentStops.map((stop) => {
                 const updated = stop.status.updated
                   ? Date.parse(stop.status.updated)

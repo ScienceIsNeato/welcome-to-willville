@@ -1,0 +1,46 @@
+{
+  "version": "town-workers-v1",
+  "animatedArt": [
+    {
+      "id": "mop-worker",
+      "src": "/art/sprites/mop-worker.png",
+      "sheetWidth": 384,
+      "sheetHeight": 192,
+      "frameWidth": 48,
+      "frameHeight": 48,
+      "visualScale": 0.55,
+      "animations": {
+        "walk": { "row": 0, "frames": 8, "fps": 10 },
+        "sweep": { "row": 1, "frames": 8, "fps": 12 },
+        "idle": { "row": 2, "frames": 4, "fps": 6 },
+        "bucket": { "row": 3, "frames": 8, "fps": 10 }
+      }
+    }
+  ],
+  "staticArt": [],
+  "systems": [
+    {
+      "id": "mop-service",
+      "kind": "mop",
+      "homeSiteId": "the-mop-bucket",
+      "homeLandmark": "slopDepot",
+      "routeStrategy": "home-to-site-loop",
+      "routeSiteFilter": {
+        "excludeDistricts": ["slop-wharf"]
+      },
+      "renderPath": false,
+      "animateWorker": true,
+      "animatedArt": "mop-worker",
+      "maxWorkers": 33,
+      "maxAnimatedWorkers": 12,
+      "secondsPerRoute": 42,
+      "rotateToPath": false,
+      "layer": "town-workers",
+      "routeStates": [
+        { "id": "outbound", "from": 0, "to": 0.44, "animation": "bucket" },
+        { "id": "mopping", "from": 0.44, "to": 0.56, "animation": "sweep" },
+        { "id": "return", "from": 0.56, "to": 1, "animation": "walk" }
+      ]
+    }
+  ]
+}
