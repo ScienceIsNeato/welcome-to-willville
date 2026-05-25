@@ -9,6 +9,12 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-25) — PR #10 Final Review Fix: Shared CentralBoard Dimensions
+
+- Removed the duplicated split-flap board dimension constants by introducing `components/centralBoardConstants.ts` as the shared source of truth for board columns, rows, and the empty row string.
+- Updated both `components/CentralBoard.tsx` and `components/townStageUtils.ts` to consume the shared constants so bell-board announcements cannot silently drift out of sync with the split-flap renderer.
+- Validation: `activate && sm swab --no-cache --json --output-file .slopmop/last_swab_shared_board_constants.json` passed.
+
 ## Done (2026-05-25) — GitHub Workflow Runs Replace Manifest Actions
 
 - Corrected the Willville packet contract so `.willville.json` only carries owner-facing `agent.status` and `agent.direction`, not an authored actions list.

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Packaging the PR #10 follow-up that moves the board activity log to GitHub workflow runs",
-    "direction": "Ship the workflow-run contract fix so committed packets stay owner-facing while the bell refresh pulls the last 3 GitHub Actions runs with links",
-    "last_update": "2026-05-25T09:11:03Z"
+    "status": "Closing the last PR #10 review thread by sharing the CentralBoard dimensions across the renderer and announcement formatter",
+    "direction": "Get PR #10 back to CI-only by removing the split-flap constant drift risk while keeping the workflow-run contract fix in place",
+    "last_update": "2026-05-25T09:13:51Z"
   }
 }

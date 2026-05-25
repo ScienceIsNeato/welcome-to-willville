@@ -9,14 +9,11 @@ import {
 } from "react";
 import { activeQueue, mostActiveStops, type Stop } from "@/lib/town";
 import { DISTRICTS } from "@/lib/willville";
-
-const BOARD_COLUMNS = 28;
-const BOARD_ROWS = 6;
+import { BOARD_COLUMNS, BOARD_ROWS, EMPTY_ROW } from "./centralBoardConstants";
 
 function stopLabel(stop: Stop): string {
   return stop.repo?.split("/").pop() ?? stop.id;
 }
-const EMPTY_ROW = " ".repeat(BOARD_COLUMNS);
 
 type Props = {
   stops: Stop[];

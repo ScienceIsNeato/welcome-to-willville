@@ -1,10 +1,12 @@
 import { TOWN_OFFSET } from "@/lib/willville";
 import { mostActiveStops, type Stop } from "@/lib/town";
+import {
+  BOARD_COLUMNS as CENTRAL_BOARD_COLUMNS,
+  BOARD_ROWS as CENTRAL_BOARD_ROWS,
+  EMPTY_ROW as CENTRAL_BOARD_EMPTY_ROW,
+} from "./centralBoardConstants";
 
 const STOP_HIT_RADIUS = 24;
-const CENTRAL_BOARD_COLUMNS = 28;
-const CENTRAL_BOARD_ROWS = 6;
-const CENTRAL_BOARD_EMPTY_ROW = " ".repeat(CENTRAL_BOARD_COLUMNS);
 
 export type BoardAnnouncement = {
   rows: string[];
