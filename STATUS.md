@@ -9,6 +9,18 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-25) — Local Token Verification For Town Data
+
+- Rebuilt the app after rotating the local GitHub token and verified the live `welcome-to-willville` stop payload from `/api/town` now reports `openPrCount: 1` and three recent CI workflow runs.
+- Confirmed the stop still carries the expected owner-facing `status.doing` / `status.next` text after the token change.
+- Production `https://willville.ai/api/town` is still returning a raw 404, so the missing live data there is a deployment/merge problem now, not a remaining local token-permissions problem.
+
+## Done (2026-05-25) — Canal Panel Fallback + Local Rebuild Refresh
+
+- Fixed `components/DigitalDetailBoard.tsx` so the Canal panel no longer goes blank when the selected stop has no repo-local PRs; it now falls back to the live town-wide canal traffic while keeping repo-specific PR metrics unchanged.
+- Rebuilt the local app with `scripts/deploy_app.sh`, which refreshed the stale exported `out/` pages that were still showing the older `Activity Log` / `No recent agent actions.` copy.
+- Validation: `./scripts/deploy_app.sh` rebuilt and served on `http://127.0.0.1:3752/`; browser verification on the `welcome-to-willville` stop showed canal entries and the `GitHub Actions` panel title in the rendered UI.
+
 ## Done (2026-05-25) — PR #10 Final Review Fix: Preserve Fallback Manifest Values
 
 - Fixed `mergeSection` in `functions/api/town-manifests.ts` so preferred manifest sections only overwrite fallback values when the preferred property is actually defined.

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Closing the latest PR #10 review thread by fixing manifest section backfill so undefined values do not wipe fallback data",
-    "direction": "Get PR #10 back to CI-only by preserving fallback manifest fields when merging active branch, PR, and default-branch packets",
-    "last_update": "2026-05-25T09:18:59Z"
+    "status": "Final PR #10 ship pass: local token-backed town data is restored and the canal fallback patch is ready to push",
+    "direction": "Land the last branch-local fixes and merge PR #10 so production finally serves live Pages Functions data instead of 404ing /api/town",
+    "last_update": "2026-05-25T10:05:00Z"
   }
 }

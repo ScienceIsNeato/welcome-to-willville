@@ -13,14 +13,16 @@ type Props = {
 export function DigitalDetailBoard({ stop, boats, onClear }: Props) {
   const repoUrl = stop?.repo ? repoHref(stop.repo) : null;
   const linkOut = stop ? (stop.homepage ?? repoUrl) : null;
-  const prs = stop
+  const stopPrs = stop
     ? boats.filter(
         (boat) =>
           boat.repo === stop.repo ||
           (boat.stopId === stop.id && boat.district === stop.district),
       )
     : [];
-  const openPrs = prs.filter((pr) => pr.lock !== "open-sea");
+  const canalPrs = stopPrs.length > 0 ? stopPrs : boats;
+  const showTownWideCanal = stopPrs.length === 0 && boats.length > 0;
+  const openPrs = stopPrs.filter((pr) => pr.lock !== "open-sea");
   const openPrCount = stop?.openPrCount ?? openPrs.length;
 
   return (
@@ -74,8 +76,8 @@ export function DigitalDetailBoard({ stop, boats, onClear }: Props) {
 
             <Panel title="Canal">
               <div style={canalPanelStyle}>
-                {prs.length > 0 ? (
-                  prs.slice(0, 3).map((pr) => {
+                {canalPrs.length > 0 ? (
+                  canalPrs.slice(0, 3).map((pr) => {
                     const lock = LOCKS.find(
                       (candidate) => candidate.id === pr.lock,
                     );
@@ -88,8 +90,9 @@ export function DigitalDetailBoard({ stop, boats, onClear }: Props) {
                       >
                         {pr.title}
                         <span style={mutedInlineStyle}>
-                          {" "}
-                          / {lock?.displayName ?? pr.lock}
+                          {showTownWideCanal
+                            ? ` / ${repoShortName(pr.repo)} / ${lock?.displayName ?? pr.lock}`
+                            : ` / ${lock?.displayName ?? pr.lock}`}
                         </span>
                       </a>
                     );
