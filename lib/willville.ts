@@ -27,9 +27,6 @@ export const TOWN_CENTER = {
   y: TOWN_OFFSET.y + TOWN.height / 2,
 } as const;
 
-/** @deprecated Prefer WORLD — kept for callers that mean the full canvas. */
-export const VIEWBOX = WORLD;
-
 /**
  * Coastal harbor canal woven through the lower town. PRs sail the curved
  * channel and nose up against lock chambers along the path. Geometry follows
@@ -202,7 +199,13 @@ export type ManualStop = {
   blurb?: string;
   glyph?: SiteGlyph;
   /** Explicit status state for non-repo stops. Defaults to "unknown" if omitted. */
-  statusState?: import("./town").StatusState;
+  statusState?:
+    | "idea"
+    | "wip"
+    | "shipping"
+    | "maintenance"
+    | "dormant"
+    | "unknown";
 };
 
 export type SiteGlyph = {

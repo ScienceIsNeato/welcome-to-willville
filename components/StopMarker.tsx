@@ -30,6 +30,7 @@ const SITE_SPRITES = new Map(
   siteSpriteManifest.sprites.map((sprite) => [sprite.stopId, sprite]),
 );
 const SPRITE_CACHE_VERSION = "repo-labels-20260522";
+const SITE_ART_CENTER = { x: 0, y: 0 };
 
 export function StopMarker({
   stop,
@@ -69,13 +70,20 @@ export function StopMarker({
         pointerEvents="all"
       />
       {recentlyUpdated && !isFocused && (
-        <circle r={18} fill={color} fillOpacity={0.25} className="whistle" />
+        <circle
+          r={18}
+          cx={SITE_ART_CENTER.x}
+          cy={SITE_ART_CENTER.y}
+          fill={color}
+          fillOpacity={0.25}
+          className="whistle"
+        />
       )}
       {sprite && (
         <image
           href={`${sprite.src}?v=${SPRITE_CACHE_VERSION}`}
-          x={-spriteWidth / 2}
-          y={-spriteHeight + 10}
+          x={SITE_ART_CENTER.x - spriteWidth / 2}
+          y={SITE_ART_CENTER.y - spriteHeight / 2}
           width={spriteWidth}
           height={spriteHeight}
           preserveAspectRatio="xMidYMid meet"
@@ -86,8 +94,8 @@ export function StopMarker({
         <g>
           <circle
             r={22}
-            cx={sprite ? 22 : 0}
-            cy={sprite ? 12 : 0}
+            cx={SITE_ART_CENTER.x}
+            cy={SITE_ART_CENTER.y}
             fill="none"
             stroke="#33ff57"
             strokeWidth={2.5}
@@ -97,8 +105,8 @@ export function StopMarker({
           />
           <circle
             r={30}
-            cx={sprite ? 22 : 0}
-            cy={sprite ? 12 : 0}
+            cx={SITE_ART_CENTER.x}
+            cy={SITE_ART_CENTER.y}
             fill="none"
             stroke="#33ff57"
             strokeWidth={1.5}
@@ -106,22 +114,22 @@ export function StopMarker({
             strokeLinecap="round"
             className="stop-focus-ring-pulse"
             style={{
-              transformOrigin: `${sprite ? 22 : 0}px ${sprite ? 12 : 0}px`,
+              transformOrigin: `${SITE_ART_CENTER.x}px ${SITE_ART_CENTER.y}px`,
             }}
           />
         </g>
-      ) : (
+      ) : !sprite ? (
         <circle
           r={6}
-          cx={sprite ? 22 : 0}
-          cy={sprite ? 12 : 0}
+          cx={SITE_ART_CENTER.x}
+          cy={SITE_ART_CENTER.y}
           fill={color}
           stroke="#1a1233"
           strokeWidth={2}
         />
-      )}
+      ) : null}
       <text
-        y={sprite ? -52 : -18}
+        y={sprite ? -spriteHeight / 2 - 8 : -18}
         textAnchor="middle"
         fontSize={14}
         fontWeight={700}

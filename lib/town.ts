@@ -20,7 +20,7 @@ import {
 import { HEURISTICS, type Heuristic } from "./willville.heuristics";
 import { sitePositionForStop } from "./town-layout";
 
-export type StatusState =
+type StatusState =
   | "idea"
   | "wip"
   | "shipping"
@@ -28,14 +28,14 @@ export type StatusState =
   | "dormant"
   | "unknown";
 
-export type QueueEntry = {
+type QueueEntry = {
   active: boolean;
   milestone?: string;
   etaDays?: number;
   priority?: number;
 };
 
-export type ActiveBranch = {
+type ActiveBranch = {
   name: string;
   compareUrl: string;
   pushedAt?: string;
@@ -43,7 +43,7 @@ export type ActiveBranch = {
   isDefault: boolean;
 };
 
-export type ReleaseInfo = {
+type ReleaseInfo = {
   name: string;
   tagName?: string;
   publishedAt?: string;
@@ -55,13 +55,13 @@ export type GitHubWorkflowRun = {
   url: string;
 };
 
-export type GitHubRecentCommit = {
+type GitHubRecentCommit = {
   message: string;
   url: string;
   committedAt: string;
 };
 
-export type WillvilleManifestProject = {
+type WillvilleManifestProject = {
   name?: string;
   displayName?: string;
   district?: string;
@@ -72,7 +72,7 @@ export type WillvilleManifestProject = {
   repo?: string;
 };
 
-export type WillvilleManifestStatus = {
+type WillvilleManifestStatus = {
   state?: StatusState;
   summary?: string;
   blockers?: string[];
@@ -80,7 +80,7 @@ export type WillvilleManifestStatus = {
   updated?: string;
 };
 
-export type WillvilleManifestQueue = {
+type WillvilleManifestQueue = {
   active?: boolean;
   milestone?: string;
   etaDays?: number;
@@ -154,7 +154,7 @@ export type Stop = {
  * Days until the milestone, derived from `eta_days` first, then `target_date`.
  * Returns Number.POSITIVE_INFINITY when nothing is set.
  */
-export function deriveEtaDays(
+function deriveEtaDays(
   input:
     | {
         eta_days?: number;
@@ -214,16 +214,7 @@ export function mostActiveStops(stops: Stop[], limit = 5): Stop[] {
     .slice(0, limit);
 }
 
-/** Returns the 1-based rank of a stop in the Mayor's Express queue, or null. */
-export function expressRank(stop: Stop, allStops: Stop[]): number | null {
-  const queue = mostActiveStops(allStops);
-  const idx = queue.findIndex(
-    (s) => s.id === stop.id && s.district === stop.district,
-  );
-  return idx >= 0 ? idx + 1 : null;
-}
-
-export type OpenMilestone = {
+type OpenMilestone = {
   title: string;
   dueOn: string | null;
   openIssues: number;
@@ -260,7 +251,7 @@ export type WillvillePacket = {
   blockers?: string[];
 };
 
-export type WillvilleAgentPacket = {
+type WillvilleAgentPacket = {
   status?: string;
   direction?: string;
   difficulties?: string;
@@ -517,7 +508,7 @@ function deriveQueue(
 }
 
 /** Build a Stop from GitHub repo metadata + optional heuristic layout overrides. */
-export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
+function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
   const pkt = meta.willvillePacket;
   const manifest = meta.willvilleManifest;
   const manifestProject = manifest?.project;
@@ -628,7 +619,7 @@ export function buildTown(repoMetas: RepoMeta[]): Stop[] {
   return stops;
 }
 
-export { DISTRICTS, LINES };
+// Remove re-export of DISTRICTS and LINES - not used by app
 
 /**
  * Build the initial (offline) stop list from heuristics + manual stops only.

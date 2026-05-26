@@ -1,0 +1,15 @@
+{
+  "style": "",
+  "backend": "dalle",
+  "model": "gpt-image-1",
+  "size": "1536x1024",
+  "quality": "high",
+  "output_dir": "./output/bespoke-sprites",
+  "images": [
+    {
+      "id": "willville-landscape",
+      "prompt": "A zoomed-out aerial bird's-eye view of an isthmus — a wide strip of land with deep blue-teal ocean (#0a5279) on the left and right sides. The land extends fully off the top and bottom edges of the frame. The frame is LANDSCAPE orientation (wider than tall). The land shape: it fills about 65% of the frame width in the center. The left coastline curves inward slightly (concave) in the upper-left, then bulges out in the middle-left, then curves back in toward the bottom-left. The right coastline has a prominent indentation (bay/inlet) in the upper-right third, then bulges out, then narrows significantly in the lower-right (the isthmus neck). The overall shape is like a wide torso that narrows toward the bottom-right. Art style: dense board-game diorama, elevated three-quarter top-down view, TINY miniature-scale terrain details (like looking at a game board from 3 feet away), hand-painted texture, saturated colors. The land has green hills, tiny winding paths, miniature tropical vegetation, tiny rocky outcrops. West coast (left) is steeper with cliff faces. East coast (right) is flatter with beaches. The ocean must be deep blue-teal (#0a5279) matching a tileable ocean texture — uniform color, subtle wave patterns, no dramatic features. The coastline transition should be natural (beaches, rocks, small cliffs) not a hard edge. CRITICAL: everything must be at miniature board-game scale — if you can make out individual palm tree fronds, you are too zoomed in. The trees should be tiny dots and blobs of green.",
+      "raw_prompt": true
+    }
+  ]
+}

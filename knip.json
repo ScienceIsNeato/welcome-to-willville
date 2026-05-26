@@ -16,5 +16,6 @@
     "lib/**/*.{ts,mts,mjs}",
     "scripts/*.mjs"
   ],
-  "ignoreDependencies": ["tailwindcss", "prettier"]
+  "ignoreDependencies": ["tailwindcss", "prettier"],
+  "ignore": ["functions/api/**/*.ts"]
 }

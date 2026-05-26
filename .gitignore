@@ -16,6 +16,7 @@
 # next.js
 /.next/
 /out/
+/output/
 
 # production
 /build
@@ -55,6 +56,9 @@ next-env.d.ts
 
 # Generated Copilot instructions (from cursor-rules)
 .github/instructions/*.instructions.md
+
+# Agent/session runtime locks
+.claude/*.lock
 
 # slop-mop working directory (machine-local state)
 .slopmop/
