@@ -408,3 +408,57 @@ export async function getBellErrorDetail(response: Response): Promise<string> {
   }
   return detail || `HTTP ${response.status}`;
 }
+
+export function playBellChime(): void {
+  try {
+    type AudioCtxCtor = typeof AudioContext;
+    const Ctor: AudioCtxCtor =
+      window.AudioContext ??
+      (window as unknown as { webkitAudioContext: AudioCtxCtor })
+        .webkitAudioContext;
+    const ctx = new Ctor();
+    const partials = [
+      { mult: 1.0, gain: 0.5 },
+      { mult: 2.756, gain: 0.28 },
+      { mult: 5.404, gain: 0.18 },
+      { mult: 8.933, gain: 0.09 },
+    ];
+    const base = 220;
+    const dur = 4;
+    const now = ctx.currentTime;
+    partials.forEach(({ mult, gain }) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = base * mult;
+      g.gain.setValueAtTime(gain, now);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+      osc.connect(g);
+      g.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + dur);
+    });
+    setTimeout(() => ctx.close(), (dur + 0.5) * 1000);
+  } catch {
+    // audio not available — silent fail
+  }
+}
+
+export function buildEasterEggAnnouncement(): BoardAnnouncement {
+  const center = (text: string) => {
+    const t = text.toUpperCase().slice(0, CENTRAL_BOARD_COLUMNS);
+    const pad = Math.max(0, Math.floor((CENTRAL_BOARD_COLUMNS - t.length) / 2));
+    return `${" ".repeat(pad)}${t}`.padEnd(CENTRAL_BOARD_COLUMNS, " ");
+  };
+  return {
+    label: "Easter Egg",
+    rows: [
+      CENTRAL_BOARD_EMPTY_ROW,
+      center(""),
+      center("Where there's a Will"),
+      center("there's a Ville."),
+      center(""),
+      CENTRAL_BOARD_EMPTY_ROW,
+    ],
+  };
+}

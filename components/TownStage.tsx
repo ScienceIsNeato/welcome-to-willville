@@ -40,16 +40,14 @@ import {
   DAY_MS,
   TOWN_ART_FEATHER,
   buildBellBoardAnnouncement,
+  buildEasterEggAnnouncement,
   findStopAt,
   getBellErrorDetail,
   mergeStops,
+  playBellChime,
   useIsClient,
   type BoardAnnouncement,
 } from "./townStageUtils";
-import {
-  BOARD_COLUMNS,
-  EMPTY_ROW as BOARD_EMPTY_ROW,
-} from "./centralBoardConstants";
 
 /**
  * Persistent SVG stage with viewport camera (pan/zoom) and center HUD for stops.
@@ -125,22 +123,25 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     [liveStops, stops],
   );
 
-  const loadTown = useCallback((options: { signal?: AbortSignal; fresh?: boolean } = {}) => {
-    const url = options.fresh
-      ? `/api/town?refresh=${encodeURIComponent(String(Date.now()))}`
-      : "/api/town";
-    return fetch(url, {
-      cache: options.fresh ? "no-store" : "default",
-      signal: options.signal,
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data && Array.isArray(data.stops)) {
-          setLiveStops(data.stops as Stop[]);
-        }
-        return data;
-      });
-  }, []);
+  const loadTown = useCallback(
+    (options: { signal?: AbortSignal; fresh?: boolean } = {}) => {
+      const url = options.fresh
+        ? `/api/town?refresh=${encodeURIComponent(String(Date.now()))}`
+        : "/api/town";
+      return fetch(url, {
+        cache: options.fresh ? "no-store" : "default",
+        signal: options.signal,
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data && Array.isArray(data.stops)) {
+            setLiveStops(data.stops as Stop[]);
+          }
+          return data;
+        });
+    },
+    [],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -189,39 +190,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
   const handlePopulate = useCallback(() => {
     if (populating === "running") return;
-    // Synthesise a clock-tower bell via Web Audio
-    try {
-      type AudioCtxCtor = typeof AudioContext;
-      const Ctor: AudioCtxCtor =
-        window.AudioContext ??
-        (window as unknown as { webkitAudioContext: AudioCtxCtor })
-          .webkitAudioContext;
-      const ctx = new Ctor();
-      const partials = [
-        { mult: 1.0, gain: 0.5 },
-        { mult: 2.756, gain: 0.28 },
-        { mult: 5.404, gain: 0.18 },
-        { mult: 8.933, gain: 0.09 },
-      ];
-      const base = 220;
-      const dur = 4;
-      const now = ctx.currentTime;
-      partials.forEach(({ mult, gain }) => {
-        const osc = ctx.createOscillator();
-        const g = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.value = base * mult;
-        g.gain.setValueAtTime(gain, now);
-        g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-        osc.connect(g);
-        g.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + dur);
-      });
-      setTimeout(() => ctx.close(), (dur + 0.5) * 1000);
-    } catch {
-      // audio not available — silent fail
-    }
+    playBellChime();
     const previousStops = currentStops;
     setPopulating("running");
     setBellErrorMessage("✕ Bell failed");
@@ -276,22 +245,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     if (boardAnnouncementTimerRef.current !== null) {
       window.clearTimeout(boardAnnouncementTimerRef.current);
     }
-    const center = (text: string) => {
-      const t = text.toUpperCase().slice(0, BOARD_COLUMNS);
-      const pad = Math.max(0, Math.floor((BOARD_COLUMNS - t.length) / 2));
-      return `${" ".repeat(pad)}${t}`.padEnd(BOARD_COLUMNS, " ");
-    };
-    setBoardAnnouncement({
-      label: "Easter Egg",
-      rows: [
-        BOARD_EMPTY_ROW,
-        center(""),
-        center("Where there's a Will"),
-        center("there's a Ville."),
-        center(""),
-        BOARD_EMPTY_ROW,
-      ],
-    });
+    setBoardAnnouncement(buildEasterEggAnnouncement());
     boardAnnouncementTimerRef.current = window.setTimeout(() => {
       setBoardAnnouncement(null);
       boardAnnouncementTimerRef.current = null;
