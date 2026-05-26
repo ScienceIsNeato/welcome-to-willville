@@ -50,14 +50,10 @@ Too long, too technical, reads like a changelog.
   "agent": {
     "status": "What you're doing, plain English",
     "direction": "Where it's headed next",
-    "branch": "auto-filled by pre-commit hook",
-    "last_update": "auto-filled by pre-commit hook"
+    "last_update": "2026-05-26T00:00:00Z"
   }
 }
 ```
-
-`branch` and `last_update` are maintained automatically by the pre-commit hook —
-you never need to set them manually. Just write `status` and `direction`.
 
 Do not add `actions`, `difficulties`, or `needs_human` — those are legacy.
 
@@ -66,16 +62,10 @@ Do not add `actions`, `difficulties`, or `needs_human` — those are legacy.
 - When you start work
 - When you finish something
 - When direction changes
-- When what you're working on changes
+- **Whenever you update STATUS.md** — a pre-commit hook blocks commits that
+  touch STATUS.md without also updating .willville.json
 
-## How it stays fresh
-
-A pre-commit hook (`.githooks/pre-commit`) auto-updates `branch` and
-`last_update` on every commit and stages the file. You just need to
-update `status` and `direction` when the work changes — the mechanical
-fields take care of themselves.
-
-If you update status/direction outside a commit, push it:
+## After updating
 
 ```bash
 git add .willville.json

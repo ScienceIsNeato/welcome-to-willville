@@ -1,9 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Bell messenger whoosh audio and pre-commit hook for auto-fresh packets",
+    "status": "Bell messenger whoosh audio, packet freshness hook tied to STATUS.md",
     "direction": "Get the bell sequence sounding right, then ship the skill plumbing",
-    "branch": "codex/investigate-willville-skill-loading",
-    "last_update": "2026-05-26T08:41:01Z"
+    "last_update": "2026-05-26T08:50:00Z"
   }
 }

@@ -1,50 +1,28 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-# pre-commit hook: keep .willville.json mechanically fresh
+# pre-commit hook: if STATUS.md is staged, .willville.json must be too
 #
-# On every commit, auto-updates branch and last_update in the packet.
-# Status and direction are left alone — those are written by humans/agents.
+# The packet should reflect what you just wrote in STATUS.md. If you're
+# updating your status log, update the town map status at the same time.
 # ─────────────────────────────────────────────────────────────────────────────
 
-PACKET=".willville.json"
-
-# Skip if no packet exists (not a ScienceIsNeato repo, or hasn't been created)
-[[ -f "$PACKET" ]] || exit 0
-
-# Skip during rebase/merge to avoid conflicts
+# Skip during rebase/merge
 [[ -d .git/rebase-merge ]] || [[ -d .git/rebase-apply ]] && exit 0
 [[ -f .git/MERGE_HEAD ]] && exit 0
 
-BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
-NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-
-# Use node to update JSON cleanly (preserves formatting, only touches target fields)
-node -e "
-  const fs = require('fs');
-  const path = '$PACKET';
-  let raw;
-  try { raw = fs.readFileSync(path, 'utf8'); } catch { process.exit(0); }
-  let packet;
-  try { packet = JSON.parse(raw); } catch { process.exit(0); }
-
-  const agent = packet.agent;
-  if (!agent || typeof agent !== 'object') process.exit(0);
-
-  let changed = false;
-
-  if (agent.branch !== '$BRANCH') {
-    agent.branch = '$BRANCH';
-    changed = true;
-  }
-
-  // Always bump the timestamp
-  agent.last_update = '$NOW';
-  changed = true;
-
-  if (changed) {
-    fs.writeFileSync(path, JSON.stringify(packet, null, 2) + '\n');
-  }
-" 2>/dev/null || exit 0
-
-# Stage the updated packet so it's included in this commit
-git add "$PACKET" 2>/dev/null || true
+# Is STATUS.md being committed?
+if git diff --cached --name-only | grep -qx "STATUS.md"; then
+  # Is .willville.json also being committed?
+  if ! git diff --cached --name-only | grep -qx ".willville.json"; then
+    echo ""
+    echo "  STATUS.md is staged but .willville.json is not."
+    echo ""
+    echo "  Update the packet so the town map reflects your status."
+    echo "  Just update status and direction in .willville.json — keep it"
+    echo "  plain and casual, like a standup update."
+    echo ""
+    echo "  Then:  git add .willville.json"
+    echo ""
+    exit 1
+  fi
+fi
