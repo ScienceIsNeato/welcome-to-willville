@@ -15,11 +15,36 @@ export type TownPerfProbe = {
   scheduleFrameSample(): void;
 };
 
+export type TownPerfFps = {
+  avgFps: number;
+  minFps: number;
+  maxFps: number;
+  frameCount: number;
+  droppedFrames: number;
+  longFrames: number;
+};
+
+export type TownPerfLongTask = {
+  startedAtMs: number;
+  durationMs: number;
+};
+
 export type TownPerfReportStep = {
   id: string;
   label: string;
   ms: number;
   pct: number;
+  startedAtMs: number;
+  fps?: TownPerfFps;
+};
+
+export type TownPerfReportBlock = {
+  id: string;
+  label: string;
+  ms: number;
+  pct: number;
+  depth: number;
+  startedAtMs: number;
 };
 
 type TownPerfReportPhase = {
@@ -36,7 +61,11 @@ export type TownPerfReport = {
   startedAt: string;
   finishedAt: string;
   totalMs: number;
+  fps: TownPerfFps;
+  longTasks: TownPerfLongTask[];
   steps: TownPerfReportStep[];
+  blocks: TownPerfReportBlock[];
+  largestBlock: TownPerfReportBlock | null;
   phases: TownPerfReportPhase[];
 };
 
@@ -86,6 +115,53 @@ function emptyPhaseCounts(): Record<TownPerfPhase, number> {
   };
 }
 
+const LONG_FRAME_THRESHOLD_MS = 33.34; // below 30fps
+const DROPPED_FRAME_THRESHOLD_MS = 50; // below 20fps
+
+type FrameSample = { ts: number; deltaMs: number };
+
+function computeFps(samples: FrameSample[]): TownPerfFps {
+  if (samples.length === 0) {
+    return {
+      avgFps: 0,
+      minFps: 0,
+      maxFps: 0,
+      frameCount: 0,
+      droppedFrames: 0,
+      longFrames: 0,
+    };
+  }
+  let minFps = Infinity;
+  let maxFps = 0;
+  let droppedFrames = 0;
+  let longFrames = 0;
+  let fpsSum = 0;
+  for (const sample of samples) {
+    const fps = sample.deltaMs > 0 ? 1000 / sample.deltaMs : 0;
+    fpsSum += fps;
+    if (fps < minFps) minFps = fps;
+    if (fps > maxFps) maxFps = fps;
+    if (sample.deltaMs > DROPPED_FRAME_THRESHOLD_MS) droppedFrames++;
+    if (sample.deltaMs > LONG_FRAME_THRESHOLD_MS) longFrames++;
+  }
+  return {
+    avgFps: Math.round(fpsSum / samples.length),
+    minFps: Math.round(minFps),
+    maxFps: Math.round(maxFps),
+    frameCount: samples.length,
+    droppedFrames,
+    longFrames,
+  };
+}
+
+function sliceSamples(
+  samples: FrameSample[],
+  startMs: number,
+  endMs: number,
+): FrameSample[] {
+  return samples.filter((s) => s.ts >= startMs && s.ts <= endMs);
+}
+
 export function useTownInteractionProfiler(enabled: boolean) {
   const scenarioRef = useRef<ScenarioMeta | null>(null);
   const phaseTotalsRef =
@@ -95,20 +171,88 @@ export function useTownInteractionProfiler(enabled: boolean) {
   const frameStartRef = useRef<number | null>(null);
   const frameTimerRef = useRef<number | null>(null);
   const stepsRef = useRef<TownPerfReportStep[]>([]);
+  const blocksRef = useRef<TownPerfReportBlock[]>([]);
+  const blockDepthRef = useRef(0);
   const recordingRef = useRef(false);
+  const fpsLoopIdRef = useRef<number | null>(null);
+  const fpsLastFrameRef = useRef<number | null>(null);
+  const fpsSamplesRef = useRef<FrameSample[]>([]);
+  const longTasksRef = useRef<TownPerfLongTask[]>([]);
+  const longTaskObserverRef = useRef<PerformanceObserver | null>(null);
   const [report, setReport] = useState<TownPerfReport | null>(null);
   const [running, setRunning] = useState(false);
+
+  const stopFpsLoop = useCallback(() => {
+    if (fpsLoopIdRef.current !== null) {
+      window.cancelAnimationFrame(fpsLoopIdRef.current);
+      fpsLoopIdRef.current = null;
+    }
+    fpsLastFrameRef.current = null;
+  }, []);
+
+  const startFpsLoop = useCallback(() => {
+    stopFpsLoop();
+    fpsSamplesRef.current = [];
+    fpsLastFrameRef.current = null;
+    const loop = (now: number) => {
+      if (!recordingRef.current) return;
+      const last = fpsLastFrameRef.current;
+      if (last !== null) {
+        const deltaMs = now - last;
+        if (deltaMs > 0) {
+          fpsSamplesRef.current.push({ ts: now, deltaMs });
+        }
+      }
+      fpsLastFrameRef.current = now;
+      fpsLoopIdRef.current = window.requestAnimationFrame(loop);
+    };
+    fpsLoopIdRef.current = window.requestAnimationFrame(loop);
+  }, [stopFpsLoop]);
+
+  const stopLongTaskObserver = useCallback(() => {
+    if (longTaskObserverRef.current) {
+      longTaskObserverRef.current.disconnect();
+      longTaskObserverRef.current = null;
+    }
+  }, []);
+
+  const startLongTaskObserver = useCallback(() => {
+    stopLongTaskObserver();
+    longTasksRef.current = [];
+    if (typeof PerformanceObserver === "undefined") return;
+    try {
+      const scenarioStart = scenarioRef.current?.startedAtMs ?? 0;
+      const observer = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          longTasksRef.current.push({
+            startedAtMs: entry.startTime - scenarioStart,
+            durationMs: entry.duration,
+          });
+        }
+      });
+      observer.observe({ type: "longtask", buffered: false });
+      longTaskObserverRef.current = observer;
+    } catch {
+      // longtask not supported in this browser
+    }
+  }, [stopLongTaskObserver]);
 
   const resetAccumulators = useCallback(() => {
     phaseTotalsRef.current = emptyPhaseTotals();
     phaseCountsRef.current = emptyPhaseCounts();
     stepsRef.current = [];
+    blocksRef.current = [];
+    blockDepthRef.current = 0;
     frameStartRef.current = null;
+    fpsSamplesRef.current = [];
+    longTasksRef.current = [];
     if (frameTimerRef.current !== null) {
       window.cancelAnimationFrame(frameTimerRef.current);
       frameTimerRef.current = null;
     }
-  }, []);
+    stopFpsLoop();
+    stopLongTaskObserver();
+  }, [stopFpsLoop, stopLongTaskObserver]);
 
   const clearReport = useCallback(() => {
     resetAccumulators();
@@ -129,24 +273,62 @@ export function useTownInteractionProfiler(enabled: boolean) {
       recordingRef.current = true;
       setRunning(true);
       setReport(null);
+      startFpsLoop();
+      startLongTaskObserver();
     },
-    [resetAccumulators],
+    [resetAccumulators, startFpsLoop, startLongTaskObserver],
   );
 
   const runStep = useCallback(
     async <T>(id: string, label: string, fn: () => Promise<T> | T) => {
-      const startedAtMs = performance.now();
+      const scenario = scenarioRef.current;
+      const absStart = performance.now();
       const result = await fn();
-      const ms = performance.now() - startedAtMs;
+      const absEnd = performance.now();
+      const ms = absEnd - absStart;
+      const stepFps = enabled
+        ? computeFps(sliceSamples(fpsSamplesRef.current, absStart, absEnd))
+        : undefined;
       stepsRef.current.push({
         id,
         label,
         ms,
         pct: 0,
+        startedAtMs: scenario ? absStart - scenario.startedAtMs : 0,
+        fps: stepFps,
       });
       return result;
     },
-    [],
+    [enabled],
+  );
+
+  const runBlock = useCallback(
+    async <T>(id: string, label: string, fn: () => Promise<T> | T) => {
+      if (!enabled || !recordingRef.current) return fn();
+
+      const scenario = scenarioRef.current;
+      const startedAtMs = performance.now();
+      const depth = blockDepthRef.current;
+      blockDepthRef.current += 1;
+
+      try {
+        return await fn();
+      } finally {
+        blockDepthRef.current = depth;
+        const ms = performance.now() - startedAtMs;
+        if (ms > 0) {
+          blocksRef.current.push({
+            id,
+            label,
+            ms,
+            pct: 0,
+            depth,
+            startedAtMs: scenario ? startedAtMs - scenario.startedAtMs : 0,
+          });
+        }
+      }
+    },
+    [enabled],
   );
 
   const finishScenario = useCallback(() => {
@@ -154,16 +336,32 @@ export function useTownInteractionProfiler(enabled: boolean) {
     if (!scenario) return null;
 
     recordingRef.current = false;
+    stopFpsLoop();
+    stopLongTaskObserver();
     setRunning(false);
 
     const finishedAt = new Date().toISOString();
     const totalMs = performance.now() - scenario.startedAtMs;
     const safeTotalMs = Math.max(totalMs, 0.0001);
 
+    const fps = computeFps(fpsSamplesRef.current);
+    const longTasks = [...longTasksRef.current];
+
     const steps = stepsRef.current.map((step) => ({
       ...step,
       pct: (step.ms / safeTotalMs) * 100,
     }));
+
+    const blocks = blocksRef.current.map((block) => ({
+      ...block,
+      pct: (block.ms / safeTotalMs) * 100,
+    }));
+    const largestBlock =
+      blocks.length > 0
+        ? blocks.reduce((largest, block) =>
+            block.ms > largest.ms ? block : largest,
+          )
+        : null;
 
     const phases = PHASE_ORDER.map((phase) => {
       const ms = phaseTotalsRef.current[phase];
@@ -183,14 +381,18 @@ export function useTownInteractionProfiler(enabled: boolean) {
       startedAt: scenario.startedAtIso,
       finishedAt,
       totalMs,
+      fps,
+      longTasks,
       steps,
+      blocks,
+      largestBlock,
       phases,
     };
 
     setReport(nextReport);
     scenarioRef.current = null;
     return nextReport;
-  }, []);
+  }, [stopFpsLoop, stopLongTaskObserver]);
 
   const measure = useCallback(
     <T>(phase: Exclude<TownPerfPhase, "frameWait">, fn: () => T): T => {
@@ -239,6 +441,7 @@ export function useTownInteractionProfiler(enabled: boolean) {
       measure,
       recordDuration,
       report,
+      runBlock,
       runStep,
       running,
       scheduleFrameSample,
@@ -250,6 +453,7 @@ export function useTownInteractionProfiler(enabled: boolean) {
       measure,
       recordDuration,
       report,
+      runBlock,
       runStep,
       running,
       scheduleFrameSample,
