@@ -1,0 +1,14 @@
+{
+  "style": "Dense board-game diorama miniature, elevated three-quarter top-down view, hand-painted texture, crisp tiny details, warm saturated colors, soft drop shadow beneath, transparent background (PNG alpha). The object should be a self-contained sprite about 100x120 pixels conceptually, centered in frame with empty space around it.",
+  "backend": "dalle",
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "quality": "high",
+  "output_dir": "./output/bespoke-sprites",
+  "images": [
+    {
+      "id": "the-reactor",
+      "prompt": "A coffin-shaped black arcade cabinet seen from an elevated three-quarter angle. The cabinet has a tapered hexagonal coffin silhouette — wider at the shoulders, narrowing at the top and bottom. Key details: (1) A curved glass dome window in the upper chest area containing a grinning skull wearing round glasses with glowing white LED eyes. (2) Pink-magenta glowing claw-mark slashes cut into the right side panel, light bleeding through from inside. (3) A small blue LCD screen embedded in the chest below the dome. (4) Dark matte black wood construction with visible panel seams. (5) Small caster wheels at the base. The overall vibe is spooky-fun Halloween arcade machine meets mad scientist creation. Render as a tiny board-game miniature building, about the size of a cottage on a game board. Transparent background."
+    }
+  ]
+}

@@ -1,43 +1,37 @@
-import { GENERATED_TOWN_LAYOUT } from "@/lib/town-layout";
+import {
+  CANAL_SECTION,
+  GENERATED_TOWN_LAYOUT,
+  pointsToPath,
+} from "@/lib/town-layout";
 import { TOWN_OFFSET, WORLD } from "@/lib/willville";
 
 const LANDSCAPE_ART =
-  "/art/town/willville-landscape-v1.png?v=ganglia-world-landscape-wide-20260522";
+  "/art/town/willville-landscape-v1.png?v=isthmus-coastline-20260526";
+const WATER_TILE = "/art/town/willville-water-tile-v1.png?v=ocean-256-20260526";
 
 export function WorldSubstrate() {
+  const canalCutout = pointsToPath(CANAL_SECTION.polygon);
+
   return (
     <g aria-hidden>
       <defs>
-        <linearGradient id="willville-water" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#0a5279" />
-          <stop offset="52%" stopColor="#063c64" />
-          <stop offset="100%" stopColor="#03253f" />
-        </linearGradient>
         <pattern
-          id="willville-water-ripples"
+          id="willville-water-tile"
           patternUnits="userSpaceOnUse"
-          width={220}
-          height={160}
-          patternTransform="rotate(-8)"
+          width={256}
+          height={256}
         >
-          <path
-            d="M -40 48 C 20 18, 76 18, 132 48 S 245 78, 286 46"
-            fill="none"
-            stroke="#7fc6d3"
-            strokeWidth={4}
-            opacity={0.12}
-          />
-          <path
-            d="M -28 116 C 35 86, 92 86, 154 116 S 260 144, 304 110"
-            fill="none"
-            stroke="#e3f6e9"
-            strokeWidth={2}
-            opacity={0.08}
+          <image
+            href={WATER_TILE}
+            width={256}
+            height={256}
+            preserveAspectRatio="none"
           />
         </pattern>
         <clipPath id="willville-world-land-mask" clipPathUnits="userSpaceOnUse">
           <path
-            d={GENERATED_TOWN_LAYOUT.landPath}
+            d={`${GENERATED_TOWN_LAYOUT.landPath} ${canalCutout}`}
+            clipRule="evenodd"
             transform={`translate(${TOWN_OFFSET.x} ${TOWN_OFFSET.y})`}
           />
         </clipPath>
@@ -50,17 +44,7 @@ export function WorldSubstrate() {
       <rect
         width={WORLD.width}
         height={WORLD.height}
-        fill="url(#willville-water)"
-      />
-      <rect
-        width={WORLD.width}
-        height={WORLD.height}
-        fill="url(#willville-water-ripples)"
-      />
-      <path
-        d={GENERATED_TOWN_LAYOUT.landPath}
-        transform={`translate(${TOWN_OFFSET.x} ${TOWN_OFFSET.y})`}
-        fill="#1a3a20"
+        fill="url(#willville-water-tile)"
       />
       <image
         href={LANDSCAPE_ART}

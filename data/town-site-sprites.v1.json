@@ -91,7 +91,7 @@
     {
       "stopId": "the-reactor",
       "district": "gates-of-hell",
-      "kind": "workshop",
+      "kind": "bespoke",
       "src": "/art/stops/the-reactor.png",
       "width": 100,
       "height": 100,

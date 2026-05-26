@@ -685,7 +685,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                 />
               ))}
               <TransitLines />
-              <MainLine stops={currentStops} />
+              <MainLine stops={currentStops} onEngineClick={closeHud} />
               {!mobileSafeMode && <Canal boats={boats} layer="traffic" />}
               {!mobileSafeMode && <WorldWorkerLayer stops={currentStops} />}
               {populating !== "idle" && (

@@ -67,11 +67,15 @@ trap cleanup EXIT
 
 if [[ -z "$SERVER_URL" ]]; then
   echo "=== Starting local server ==="
-  DEPLOY_OUTPUT=$("$SCRIPT_DIR/deploy_app.sh" 2>&1)
-  echo "$DEPLOY_OUTPUT" | tail -8
-  SERVER_URL=$(echo "$DEPLOY_OUTPUT" | grep -oE 'http://127\.0\.0\.1:[0-9]+' | head -1)
+  DEPLOY_LOG=$(mktemp /tmp/willville-mobile-deploy.XXXXXX.log)
+  if ! "$SCRIPT_DIR/deploy_app.sh" 2>&1 | tee "$DEPLOY_LOG"; then
+    echo "ERROR: deploy_app.sh failed. Full log: $DEPLOY_LOG" >&2
+    exit 1
+  fi
+  SERVER_URL=$(grep -oE 'http://127\.0\.0\.1:[0-9]+' "$DEPLOY_LOG" | head -1)
   if [[ -z "$SERVER_URL" ]]; then
     echo "ERROR: Could not determine server URL from deploy output" >&2
+    echo "Full log: $DEPLOY_LOG" >&2
     exit 1
   fi
   MANAGED_SERVER=true
@@ -95,6 +99,11 @@ fi
 mkdir -p "$OUTPUT_DIR"
 export NODE_PATH="$TOOLDIR/node_modules"
 export SERVER_URL PATHNAME OUTPUT_DIR DEVICE HEADED TOOLDIR
+
+echo ""
+echo "=== Rendering mobile previews ==="
+echo "URL: $SERVER_URL$PATHNAME"
+echo "Output: $OUTPUT_DIR"
 
 node --input-type=module <<'PLAYWRIGHT_SCRIPT'
 import { createRequire } from "node:module";

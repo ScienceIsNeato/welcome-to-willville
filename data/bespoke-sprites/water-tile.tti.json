@@ -1,0 +1,15 @@
+{
+  "style": "",
+  "backend": "dalle",
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "quality": "medium",
+  "output_dir": "./output/bespoke-sprites",
+  "images": [
+    {
+      "id": "water-tile",
+      "prompt": "A perfectly seamless tileable ocean water texture seen from directly above. Deep blue-teal Caribbean ocean surface with subtle wave patterns, light caustic ripples, and gentle foam traces. No land, no rocks, no shore, no horizon, no objects — pure open ocean surface only. The texture must tile seamlessly in all directions with no visible seam when repeated. Uniform lighting, no strong directional shadows. Color palette: deep navy blue (#063c64) to teal (#0a5279) with subtle lighter (#7fc6d3) ripple highlights.",
+      "raw_prompt": true
+    }
+  ]
+}

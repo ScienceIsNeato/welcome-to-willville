@@ -55,15 +55,17 @@ export function GeneratedTownBase({ stops }: Props) {
           <path d={GENERATED_TOWN_LAYOUT.townFootprintPath} />
         </clipPath>
       </defs>
-      <image
-        href={`${FALLBACK_TOWN_ART}?v=${districtArt.version}`}
-        x={0}
-        y={0}
-        width={GENERATED_TOWN_LAYOUT.size.width}
-        height={GENERATED_TOWN_LAYOUT.size.height}
-        preserveAspectRatio="none"
-        clipPath="url(#generated-town-footprint-clip)"
-      />
+      {districtLayers.length === 0 && (
+        <image
+          href={`${FALLBACK_TOWN_ART}?v=${districtArt.version}`}
+          x={0}
+          y={0}
+          width={GENERATED_TOWN_LAYOUT.size.width}
+          height={GENERATED_TOWN_LAYOUT.size.height}
+          preserveAspectRatio="none"
+          clipPath="url(#generated-town-footprint-clip)"
+        />
+      )}
       {districtLayers.map((layer) => (
         <image
           key={layer.id}

@@ -46,8 +46,7 @@ export function Canal({ boats, layer = "all" }: Props) {
 
           <path
             d={pointsToPath(CANAL_SECTION.polygon)}
-            fill={CANAL.waterColor}
-            fillOpacity={1}
+            fill="none"
             stroke="#10283a"
             strokeWidth={3}
             strokeLinejoin="round"

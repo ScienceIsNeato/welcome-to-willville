@@ -1,29 +1,25 @@
 "use client";
 
+import type { MouseEvent } from "react";
 import { activeQueue, mostActiveStops, type Stop } from "@/lib/town";
 
-/**
- * The Mayor's Express. A featured gilded train that visits only the active
- * queue stops (those with queue.active === true), in order of eta_days.
- *
- * The path is recomputed every render so changes to .willville.json show up
- * immediately when /api/town refreshes.
- */
 type Props = {
   stops: Stop[];
+  onEngineClick?: () => void;
 };
 
 const GOLD = "#e6c66a";
 const GOLD_DEEP = "#b8862c";
+const TIE_SPACING = 18;
+const TIE_WIDTH = 12;
+const RAIL_GAUGE = 6;
 
 function smoothLoopPath(points: { x: number; y: number }[]): string {
-  if (points.length === 0) return "";
-  if (points.length === 1) return "";
+  if (points.length < 2) return "";
   if (points.length === 2) {
     const [a, b] = points;
     return `M ${a.x} ${a.y} L ${b.x} ${b.y} L ${a.x} ${a.y} Z`;
   }
-  // Catmull-Rom-style smoothing into cubic beziers, closed loop.
   const n = points.length;
   let d = `M ${points[0].x} ${points[0].y}`;
   for (let i = 0; i < n; i++) {
@@ -41,50 +37,182 @@ function smoothLoopPath(points: { x: number; y: number }[]): string {
   return d;
 }
 
-function ExpressLocomotive({ scale = 1 }: { scale?: number }) {
+function LocomotiveBody() {
   return (
-    <g transform={`scale(${scale})`}>
+    <>
       <rect
-        x={-20}
-        y={-10}
-        width={32}
-        height={16}
-        rx={3}
+        x={-18}
+        y={-12}
+        width={30}
+        height={18}
+        rx={4}
         fill={GOLD}
         stroke={GOLD_DEEP}
         strokeWidth={1.5}
       />
-      <rect x={10} y={-18} width={10} height={16} rx={1.5} fill={GOLD_DEEP} />
-      <rect x={-16} y={-6} width={6} height={6} fill="#ffe9a0" opacity={0.9} />
-      <rect x={-6} y={-6} width={6} height={6} fill="#ffe9a0" opacity={0.9} />
-      <rect x={4} y={-6} width={6} height={6} fill="#ffe9a0" opacity={0.9} />
-      <circle cx={-12} cy={8} r={4} fill="#1a1233" />
-      <circle cx={-2} cy={8} r={4} fill="#1a1233" />
-      <circle cx={8} cy={8} r={4} fill="#1a1233" />
-      <circle cx={18} cy={-22} r={3} fill="#fff" opacity={0.8} />
-      <circle cx={20} cy={-28} r={2} fill="#fff" opacity={0.5} />
+      <rect
+        x={-16}
+        y={-12}
+        width={26}
+        height={4}
+        rx={2}
+        fill="#ffe9a0"
+        opacity={0.6}
+      />
+      <rect x={10} y={-18} width={12} height={22} rx={2} fill={GOLD_DEEP} />
+      <rect
+        x={11}
+        y={-16}
+        width={10}
+        height={8}
+        rx={1}
+        fill="#ffe9a0"
+        opacity={0.7}
+      />
+      <polygon points="-18,-2 -26,4 -18,6" fill={GOLD_DEEP} opacity={0.9} />
+    </>
+  );
+}
+
+function LocomotiveWindows() {
+  return (
+    <>
+      {[-14, -6, 2].map((x) => (
+        <rect
+          key={x}
+          x={x}
+          y={-8}
+          width={5}
+          height={5}
+          rx={1}
+          fill="#ffe9a0"
+          opacity={0.85}
+        />
+      ))}
+    </>
+  );
+}
+
+function LocomotiveSmoke() {
+  return (
+    <>
+      <rect x={-8} y={-20} width={6} height={8} rx={1} fill={GOLD_DEEP} />
+      <ellipse cx={-5} cy={-20} rx={4.5} ry={2} fill={GOLD} />
+      <circle cx={-5} cy={-26} r={3.5} fill="#fff" opacity={0.6}>
+        <animate
+          attributeName="cy"
+          values="-26;-34"
+          dur="2s"
+          repeatCount="indefinite"
+        />
+        <animate
+          attributeName="opacity"
+          values="0.6;0"
+          dur="2s"
+          repeatCount="indefinite"
+        />
+        <animate
+          attributeName="r"
+          values="3.5;6"
+          dur="2s"
+          repeatCount="indefinite"
+        />
+      </circle>
+      <circle cx={-3} cy={-30} r={2.5} fill="#fff" opacity={0.4}>
+        <animate
+          attributeName="cy"
+          values="-30;-40"
+          dur="2.5s"
+          repeatCount="indefinite"
+        />
+        <animate
+          attributeName="opacity"
+          values="0.4;0"
+          dur="2.5s"
+          repeatCount="indefinite"
+        />
+        <animate
+          attributeName="r"
+          values="2.5;5"
+          dur="2.5s"
+          repeatCount="indefinite"
+        />
+      </circle>
+    </>
+  );
+}
+
+function LocomotiveWheels() {
+  return (
+    <>
       <circle
-        cx={-20}
+        cx={-12}
+        cy={8}
+        r={5}
+        fill="#1a1233"
+        stroke={GOLD_DEEP}
+        strokeWidth={1}
+      />
+      <circle
+        cx={0}
+        cy={8}
+        r={5}
+        fill="#1a1233"
+        stroke={GOLD_DEEP}
+        strokeWidth={1}
+      />
+      <circle
+        cx={12}
+        cy={8}
+        r={4}
+        fill="#1a1233"
+        stroke={GOLD_DEEP}
+        strokeWidth={1}
+      />
+      <line
+        x1={-12}
+        y1={4}
+        x2={-12}
+        y2={12}
+        stroke={GOLD_DEEP}
+        strokeWidth={0.8}
+      />
+      <line
+        x1={-16}
+        y1={8}
+        x2={-8}
+        y2={8}
+        stroke={GOLD_DEEP}
+        strokeWidth={0.8}
+      />
+      <line x1={0} y1={4} x2={0} y2={12} stroke={GOLD_DEEP} strokeWidth={0.8} />
+      <line x1={-4} y1={8} x2={4} y2={8} stroke={GOLD_DEEP} strokeWidth={0.8} />
+    </>
+  );
+}
+
+function ExpressLocomotive({ scale = 1 }: { scale?: number }) {
+  return (
+    <g transform={`scale(${scale})`}>
+      <LocomotiveBody />
+      <LocomotiveWindows />
+      <LocomotiveSmoke />
+      <LocomotiveWheels />
+      <circle
+        cx={-22}
         cy={0}
-        r={2.5}
+        r={3}
         fill="#fff"
         opacity={0.7}
         className="train-glow"
-        style={{ color: GOLD }}
       />
     </g>
   );
 }
 
-function ExpressCar({
-  scale = 1,
-  offset = -36,
-}: {
-  scale?: number;
-  offset?: number;
-}) {
+function ExpressCar({ scale = 1 }: { scale?: number }) {
   return (
-    <g transform={`translate(${offset}, 0) scale(${scale})`}>
+    <g transform={`scale(${scale})`}>
       <rect
         x={-14}
         y={-9}
@@ -95,61 +223,125 @@ function ExpressCar({
         stroke="#5a3f0f"
         strokeWidth={1}
       />
-      <rect x={-10} y={-6} width={4} height={4} fill="#ffe9a0" opacity={0.8} />
-      <rect x={-2} y={-6} width={4} height={4} fill="#ffe9a0" opacity={0.8} />
-      <rect x={6} y={-6} width={4} height={4} fill="#ffe9a0" opacity={0.8} />
-      <circle cx={-8} cy={7} r={3} fill="#1a1233" />
-      <circle cx={8} cy={7} r={3} fill="#1a1233" />
+      {/* Roof accent */}
+      <rect
+        x={-12}
+        y={-9}
+        width={24}
+        height={3}
+        rx={1}
+        fill={GOLD}
+        opacity={0.4}
+      />
+      {/* Windows */}
+      <rect
+        x={-10}
+        y={-5}
+        width={4}
+        height={4}
+        rx={1}
+        fill="#ffe9a0"
+        opacity={0.8}
+      />
+      <rect
+        x={-2}
+        y={-5}
+        width={4}
+        height={4}
+        rx={1}
+        fill="#ffe9a0"
+        opacity={0.8}
+      />
+      <rect
+        x={6}
+        y={-5}
+        width={4}
+        height={4}
+        rx={1}
+        fill="#ffe9a0"
+        opacity={0.8}
+      />
+      {/* Wheels */}
+      <circle
+        cx={-8}
+        cy={7}
+        r={3.5}
+        fill="#1a1233"
+        stroke={GOLD_DEEP}
+        strokeWidth={0.8}
+      />
+      <circle
+        cx={8}
+        cy={7}
+        r={3.5}
+        fill="#1a1233"
+        stroke={GOLD_DEEP}
+        strokeWidth={0.8}
+      />
     </g>
   );
 }
 
-export function MainLine({ stops }: Props) {
-  // On initial render (before /api/town returns) commit data is absent, so
-  // mostActiveStops returns empty. Fall back to the heuristics-based queue
-  // so the train is visible immediately.
+export function MainLine({ stops, onEngineClick }: Props) {
   const active = mostActiveStops(stops);
   const queue = active.length >= 2 ? active : activeQueue(stops);
   if (queue.length < 2) return null;
   const path = smoothLoopPath(queue.map((s) => s.position));
   const loopSeconds = Math.max(18, queue.length * 6);
 
+  const handleEngineClick = (e: MouseEvent) => {
+    e.stopPropagation();
+    onEngineClick?.();
+  };
+
   return (
-    <g
-      id="willville-main-line"
-      aria-label="The Mayor's Express"
-      style={{ pointerEvents: "none" }}
-    >
-      {/* rail glow */}
+    <g id="willville-main-line" aria-label="The Mayor's Express">
+      {/* === Railroad track === */}
+      {/* Ballast / bed glow */}
       <path
         d={path}
         fill="none"
         stroke={GOLD}
-        strokeOpacity={0.18}
-        strokeWidth={20}
+        strokeOpacity={0.1}
+        strokeWidth={22}
         strokeLinecap="round"
+        style={{ pointerEvents: "none" }}
       />
-      {/* rail */}
-      <path
-        d={path}
-        fill="none"
-        stroke={GOLD}
-        strokeOpacity={0.95}
-        strokeWidth={4}
-        strokeLinecap="round"
-      />
-      {/* dotted accent */}
+      {/* Crossties — dashed perpendicular sleepers */}
       <path
         d={path}
         fill="none"
         stroke={GOLD_DEEP}
-        strokeOpacity={0.6}
+        strokeOpacity={0.55}
+        strokeWidth={TIE_WIDTH}
+        strokeDasharray={`3 ${TIE_SPACING - 3}`}
+        strokeLinecap="butt"
+        style={{ pointerEvents: "none" }}
+      />
+      {/* Left rail */}
+      <path
+        d={path}
+        fill="none"
+        stroke={GOLD}
+        strokeOpacity={0.9}
         strokeWidth={2}
-        strokeDasharray="6 6"
         strokeLinecap="round"
+        style={{ pointerEvents: "none" }}
+        transform={`translate(0, -${RAIL_GAUGE / 2})`}
+      />
+      {/* Right rail */}
+      <path
+        d={path}
+        fill="none"
+        stroke={GOLD}
+        strokeOpacity={0.9}
+        strokeWidth={2}
+        strokeLinecap="round"
+        style={{ pointerEvents: "none" }}
+        transform={`translate(0, ${RAIL_GAUGE / 2})`}
       />
 
-      {/* numbered queue badges */}
+      {/* Numbered queue badges */}
       {queue.map((stop, i) => (
         <g
           key={`badge-${stop.id}`}
@@ -182,8 +374,12 @@ export function MainLine({ stops }: Props) {
         </g>
       ))}
 
-      {/* express train (locomotive + 2 cars staggered) */}
-      <g>
+      {/* === Express train === */}
+      {/* Locomotive — clickable */}
+      <g
+        style={{ cursor: "pointer", pointerEvents: "all" }}
+        onClick={handleEngineClick}
+      >
         <ExpressLocomotive scale={1.2} />
         <animateMotion
           dur={`${loopSeconds}s`}
@@ -192,8 +388,9 @@ export function MainLine({ stops }: Props) {
           path={path}
         />
       </g>
-      <g>
-        <ExpressCar offset={0} scale={1.1} />
+      {/* Car 1 */}
+      <g style={{ pointerEvents: "none" }}>
+        <ExpressCar scale={1.1} />
         <animateMotion
           dur={`${loopSeconds}s`}
           repeatCount="indefinite"
@@ -202,8 +399,9 @@ export function MainLine({ stops }: Props) {
           begin={`${(-loopSeconds * 0.02).toFixed(2)}s`}
         />
       </g>
-      <g>
-        <ExpressCar offset={0} scale={1.0} />
+      {/* Car 2 */}
+      <g style={{ pointerEvents: "none" }}>
+        <ExpressCar scale={1.0} />
         <animateMotion
           dur={`${loopSeconds}s`}
           repeatCount="indefinite"
