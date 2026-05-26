@@ -415,7 +415,7 @@ function districtRows(districtId: string, stops: Stop[]): string[] {
       );
       rowStr = truncatedLeft + " ".repeat(spaces) + rightPart;
     }
-    rows.push(formatBoardRow(rowStr, "left"));
+    rows.push(padRenderedRow(rowStr.toUpperCase()));
   }
 
   return rows.slice(0, BOARD_ROWS);

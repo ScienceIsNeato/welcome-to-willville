@@ -82,7 +82,7 @@ if [[ ! -d "$PERF_TOOLDIR/node_modules/playwright" ]]; then
   echo '{"name":"perf-tools","private":true}' > "$PERF_TOOLDIR/package.json"
   (cd "$PERF_TOOLDIR" && npm install --silent playwright 2>&1 | tail -2)
   echo "Installing Chromium..."
-  npx playwright install chromium 2>&1 | tail -1
+  (cd "$PERF_TOOLDIR" && npx playwright install chromium 2>&1 | tail -1)
   echo "Done."
   echo ""
 fi
@@ -208,7 +208,7 @@ if [[ ! -f "$BASELINE_FILE" ]]; then
   echo "No baseline file found at $BASELINE_FILE"
   echo "Run with --save-baseline to create one."
   echo ""
-  exit 0
+  exit 1
 fi
 
 echo "=== Comparing against baseline ==="
@@ -221,7 +221,6 @@ const report = JSON.parse(readFileSync(process.env.REPORT_FILE, "utf8"));
 const baseline = JSON.parse(readFileSync(process.env.BASELINE_FILE, "utf8"));
 
 const failures = [];
-const warnings = [];
 
 function check(label, current, base, threshold, unit = "ms", lowerIsBetter = true) {
   if (base === undefined || base === null || base === 0) return;
