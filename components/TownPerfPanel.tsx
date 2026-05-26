@@ -8,7 +8,6 @@ import type {
   TownPerfReport,
   TownPerfReportBlock,
   TownPerfReportStep,
-  TownPerfStepDelta,
 } from "@/hooks/useTownInteractionProfiler";
 
 type Props = {
@@ -187,8 +186,7 @@ export function TownPerfPanel({
                       key={`lt-${index}`}
                       style={{
                         ...rowStyle,
-                        color:
-                          task.durationMs > 100 ? "#ffb096" : "inherit",
+                        color: task.durationMs > 100 ? "#ffb096" : "inherit",
                       }}
                     >
                       <span>at {task.startedAtMs.toFixed(0)}ms</span>
@@ -342,8 +340,7 @@ function BaselineComparisonBox({
           style={{
             marginTop: 4,
             fontSize: 12,
-            color:
-              comparison.deltaAvgFps > 0 ? "#9fe0b4" : "#ffb096",
+            color: comparison.deltaAvgFps > 0 ? "#9fe0b4" : "#ffb096",
           }}
         >
           FPS: {comparison.deltaAvgFps > 0 ? "+" : ""}
@@ -499,9 +496,7 @@ function MemorySummaryBox({ memory }: { memory: TownPerfMemorySummary }) {
       }}
     >
       <div style={summaryLabelStyle}>JS Heap</div>
-      <div style={summaryValueStyle}>
-        {formatBytes(memory.endHeap)}
-      </div>
+      <div style={summaryValueStyle}>{formatBytes(memory.endHeap)}</div>
       <div
         style={{
           marginTop: 6,
@@ -570,9 +565,7 @@ function FpsSummaryBox({ fps }: { fps: TownPerfFps }) {
           {fps.droppedFrames > 0 && (
             <span>{fps.droppedFrames} dropped (&lt;20fps) · </span>
           )}
-          {fps.longFrames > 0 && (
-            <span>{fps.longFrames} long (&lt;30fps)</span>
-          )}
+          {fps.longFrames > 0 && <span>{fps.longFrames} long (&lt;30fps)</span>}
         </div>
       )}
     </div>
@@ -612,8 +605,16 @@ function TimingTreeNodeView({ node }: { node: TimingTreeNode }) {
             </span>
           )}
           {dom && (
-            <span style={{ display: "block", fontSize: 9, opacity: 0.5, marginTop: 1 }}>
-              {dom.totalNodes} DOM · {dom.svgElements} SVG · {dom.stopMarkers} markers
+            <span
+              style={{
+                display: "block",
+                fontSize: 9,
+                opacity: 0.5,
+                marginTop: 1,
+              }}
+            >
+              {dom.totalNodes} DOM · {dom.svgElements} SVG · {dom.stopMarkers}{" "}
+              markers
             </span>
           )}
         </span>
