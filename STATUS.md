@@ -9,6 +9,12 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-26) — Dead-Code Gate Barnacle Filed
+
+- Filed ScienceIsNeato/slop-mop#226 because the JavaScript dead-code gate is still reporting entries that the repo Knip config excludes, including Pages Function files and `prettier`.
+- Kept the gate enabled rather than weakening the repo checks; the local app build, npm install dry-run, and Pages Functions bundle step all pass while the slop-mop issue is tracked upstream.
+- Current PR state: review feedback is resolved; the remaining external blocker is the Cloudflare Workers Builds check, which does not expose logs through the local buff rail.
+
 ## Done (2026-05-26) — Town Art Loads Use Cropped Render Assets
 
 - Replaced the full-canvas district art render path with cropped WebP render assets sized to each actual district region.
