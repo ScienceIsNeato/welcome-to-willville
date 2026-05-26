@@ -409,22 +409,36 @@ async function fetchActiveBranch(
   defaultBranch: string,
   token?: string,
 ): Promise<RepoMeta["activeBranch"]> {
+  const result = await fetchRecentBranches(fullName, defaultBranch, token);
+  return result.activeBranch;
+}
+
+type RecentBranchesResult = {
+  activeBranch: NonNullable<RepoMeta["activeBranch"]>;
+  recentBranches: Array<{ name: string; commitHash?: string }>;
+};
+
+async function fetchRecentBranches(
+  fullName: string,
+  defaultBranch: string,
+  token?: string,
+): Promise<RecentBranchesResult> {
   const headers: Record<string, string> = {
     "User-Agent": "willville-edge",
     Accept: "application/vnd.github+json",
   };
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  const fallback = {
-    name: defaultBranch,
-    compareUrl: compareUrl(fullName, defaultBranch, defaultBranch),
-    isDefault: true,
+  const fallback: RecentBranchesResult = {
+    activeBranch: {
+      name: defaultBranch,
+      compareUrl: compareUrl(fullName, defaultBranch, defaultBranch),
+      isDefault: true,
+    },
+    recentBranches: [],
   };
 
   try {
-    // One API call per repo: recent push events carry the branch name and
-    // timestamp directly. Replaces the old pattern of fetching all branches
-    // (up to 100) + one commit API call per branch.
     type GitHubPushEvent = {
       type: string;
       created_at: string;
@@ -437,19 +451,41 @@ async function fetchActiveBranch(
     if (!response.ok) return fallback;
 
     const events = (await response.json()) as GitHubPushEvent[];
-    const latestPush = Array.isArray(events)
-      ? events.find((e) => e.type === "PushEvent" && e.payload?.ref)
-      : undefined;
+    if (!Array.isArray(events)) return fallback;
+
+    const pushes = events.filter(
+      (e) => e.type === "PushEvent" && e.payload?.ref,
+    );
+
+    // Collect unique recently-pushed feature branches (for manifest lookup)
+    const seen = new Set<string>();
+    const recentBranches: RecentBranchesResult["recentBranches"] = [];
+    for (const push of pushes) {
+      const name = (push.payload.ref ?? "").replace(/^refs\/heads\//, "");
+      if (!name || name === defaultBranch || seen.has(name)) continue;
+      seen.add(name);
+      recentBranches.push({ name, commitHash: push.payload.head });
+      if (recentBranches.length >= 5) break;
+    }
+
+    // The "active branch" shown on the board is the most recent feature push
+    const latestPush = pushes.find((e) => {
+      const ref = (e.payload.ref ?? "").replace(/^refs\/heads\//, "");
+      return ref !== defaultBranch;
+    }) ?? pushes[0];
 
     if (!latestPush?.payload?.ref) return fallback;
 
     const branchName = latestPush.payload.ref.replace(/^refs\/heads\//, "");
     return {
-      name: branchName,
-      pushedAt: latestPush.created_at,
-      commitHash: latestPush.payload.head,
-      compareUrl: compareUrl(fullName, defaultBranch, branchName),
-      isDefault: branchName === defaultBranch,
+      activeBranch: {
+        name: branchName,
+        pushedAt: latestPush.created_at,
+        commitHash: latestPush.payload.head,
+        compareUrl: compareUrl(fullName, defaultBranch, branchName),
+        isDefault: branchName === defaultBranch,
+      },
+      recentBranches,
     };
   } catch {
     return fallback;
@@ -471,19 +507,21 @@ export const onRequestGet: PagesFunction<Env> = async ({
   });
 
   const repoMetas: RepoMeta[] = await mapLimit(candidates, 8, async (r) => {
-    const [milestones, commitCounts, activeBranch, repoSignals, workflowRuns] =
+    const [milestones, commitCounts, branchResult, repoSignals, workflowRuns] =
       await Promise.all([
         fetchMilestones(OWNER, r.name, token),
         fetchCommitCounts(r.full_name, token),
-        fetchActiveBranch(r.full_name, r.default_branch, token),
+        fetchRecentBranches(r.full_name, r.default_branch, token),
         fetchRepoSignals(OWNER, r.name, token),
         fetchWorkflowRuns(r.full_name, token),
       ]);
+    const activeBranch = branchResult.activeBranch;
     const { willvilleManifest, willvillePacket } =
       await manifestClient.fetchRepoPackets(
         r.full_name,
         r.default_branch,
         activeBranch,
+        branchResult.recentBranches,
       );
     return {
       repo: r.full_name,
