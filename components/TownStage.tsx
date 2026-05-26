@@ -29,6 +29,7 @@ import { DynamicWalls } from "./DynamicWalls";
 import { GeneratedTownBase } from "./GeneratedTownBase";
 import { WorldWorkerLayer } from "./WorldWorkerLayer";
 import { HollywoodSign } from "./HollywoodSign";
+import { BellMessengers } from "./BellMessengers";
 import { TownPerfPanel } from "./TownPerfPanel";
 import { PanelChromeControls } from "./PanelChromeControls";
 import { screenToWorld, useTownCamera } from "@/hooks/useTownCamera";
@@ -221,7 +222,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           boardAnnouncementTimerRef.current = null;
         }, BELL_BOARD_FLASH_MS);
         setPopulating("done");
-        setTimeout(() => setPopulating("idle"), 3000);
+        setTimeout(() => setPopulating("idle"), 4000);
       })
       .catch((error: unknown) => {
         const detail =
@@ -687,6 +688,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               <MainLine stops={currentStops} />
               {!mobileSafeMode && <Canal boats={boats} layer="traffic" />}
               {!mobileSafeMode && <WorldWorkerLayer stops={currentStops} />}
+              {populating !== "idle" && (
+                <BellMessengers stops={currentStops} phase={populating} />
+              )}
               {currentStops.map((stop) => {
                 const updated = stop.status.updated
                   ? Date.parse(stop.status.updated)
