@@ -15,12 +15,37 @@ This packet is an owner-facing status delta, not onboarding copy.
 
 ## Writing style
 
-- Assume the reader already knows the repo.
-- Record the delta: what changed, what is active now, what comes next.
-- Do not restate the repo purpose, architecture, or README material unless that changed.
-- Keep `status` and `direction` concrete and current.
-- Do not author the GitHub Actions list in `.willville.json`; the town derives the last 3 workflow runs programmatically on refresh.
+Write like a coworker giving a standup update over coffee — plain, casual, no jargon.
+
+- **Talk like a human.** "Working on perf testing and art regen" not "Implementing automated Playwright-based regression infrastructure with FPS/baseline/waterfall tracking."
+- **Say what you're doing, not how the code works.** The reader already knows the repo. They want to know what's in flight and where it's headed.
+- **Status** = what's on your plate right now, in one sentence. List the workstreams if there are a few. Mention the PR number if one is open.
+- **Direction** = why this matters or where it's going next. One sentence, forward-looking.
+- Do not enumerate file paths, function names, flag names, or technical implementation details.
+- Do not restate the repo purpose, architecture, or README material.
+- Do not author the GitHub Actions list; the town derives runs programmatically.
 - Omit empty fields instead of filling them with `"None"`.
+
+### Good examples
+
+```json
+"status": "Perf testing, isthmus masks, region art regen — PR #11 up"
+"direction": "Ship perf test harness so future optimization has a real baseline"
+```
+
+```json
+"status": "Fixing deploy pipeline and canal data fallbacks"
+"direction": "Get prod serving live data again after the API route 404s"
+```
+
+### Bad examples (do not write like this)
+
+```json
+"status": "PR #11 open: deep perf profiler with FPS/baseline/waterfall/DOM/memory tracking and automated Playwright regression gate"
+"direction": "Land the perf drilldown tooling so every future change can be validated against a saved baseline via scripts/perf_test.sh"
+```
+
+The bad version is too long, too technical, and reads like a changelog, not a status update.
 
 ## File location
 

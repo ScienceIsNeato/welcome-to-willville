@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "PR #11 open: deep perf profiler with FPS/baseline/waterfall/DOM/memory tracking and automated Playwright regression gate",
-    "direction": "Land the perf drilldown tooling so every future change can be validated against a saved baseline via scripts/perf_test.sh",
-    "last_update": "2026-05-26T00:25:00Z"
+    "status": "Perf testing infra, isthmus art regen, region mask updates — PR #11 up for review",
+    "direction": "Ship a perf test harness so future optimization work has a real baseline to measure against",
+    "last_update": "2026-05-26T00:30:00Z"
   }
 }
