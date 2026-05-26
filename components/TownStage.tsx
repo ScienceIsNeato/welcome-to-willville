@@ -222,7 +222,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           boardAnnouncementTimerRef.current = null;
         }, BELL_BOARD_FLASH_MS);
         setPopulating("done");
-        setTimeout(() => setPopulating("idle"), 3000);
+        setTimeout(() => setPopulating("idle"), 4000);
       })
       .catch((error: unknown) => {
         const detail =

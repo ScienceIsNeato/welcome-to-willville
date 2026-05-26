@@ -1,3 +1,5 @@
+"use client";
+
 import { useMemo, useRef, useEffect } from "react";
 import type { Stop } from "@/lib/town";
 import { GENERATED_TOWN_LAYOUT } from "@/lib/town-layout";
@@ -18,7 +20,7 @@ type Messenger = {
 const BELL = GENERATED_TOWN_LAYOUT.landmarks.bellTower;
 const OUTBOUND_SECONDS = 2.2;
 const RETURN_SECONDS = 1.6;
-const STAGGER_SECONDS = 0.06;
+const MAX_RIPPLE_SECONDS = 1.2;
 
 function messengerRoute(
   from: { x: number; y: number },
@@ -63,6 +65,14 @@ export function BellMessengers({ stops, phase }: Props) {
         };
       }),
     [stops],
+  );
+
+  const stagger = useMemo(
+    () =>
+      messengers.length > 1
+        ? Math.min(MAX_RIPPLE_SECONDS / (messengers.length - 1), 0.06)
+        : 0,
+    [messengers.length],
   );
 
   const containerRef = useRef<SVGGElement>(null);
@@ -114,7 +124,7 @@ export function BellMessengers({ stops, phase }: Props) {
 
       {messengers.map((m, i) => {
         const path = isOutbound ? m.outboundPath : m.returnPath;
-        const delay = i * STAGGER_SECONDS;
+        const delay = i * stagger;
         return (
           <circle
             key={m.id}
