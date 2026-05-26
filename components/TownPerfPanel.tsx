@@ -4,6 +4,7 @@ import type {
   TownPerfBaselineComparison,
   TownPerfDomSnapshot,
   TownPerfFps,
+  TownPerfMemorySummary,
   TownPerfReport,
   TownPerfReportBlock,
   TownPerfReportStep,
@@ -167,6 +168,8 @@ export function TownPerfPanel({
             </div>
 
             <FpsSummaryBox fps={report.fps} />
+
+            {report.memory && <MemorySummaryBox memory={report.memory} />}
 
             {report.baselineComparison && (
               <BaselineComparisonBox
@@ -473,6 +476,53 @@ function WaterfallChart({ report }: { report: TownPerfReport }) {
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+function MemorySummaryBox({ memory }: { memory: TownPerfMemorySummary }) {
+  const grew = memory.growthBytes > 0;
+  const significantGrowth = memory.growthPct > 10;
+  return (
+    <div
+      style={{
+        ...summaryBoxStyle,
+        borderColor: significantGrowth
+          ? "rgba(255, 133, 92, 0.5)"
+          : "rgba(124, 210, 151, 0.45)",
+      }}
+    >
+      <div style={summaryLabelStyle}>JS Heap</div>
+      <div style={summaryValueStyle}>
+        {formatBytes(memory.endHeap)}
+      </div>
+      <div
+        style={{
+          marginTop: 6,
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr 1fr",
+          gap: 8,
+          fontSize: 11,
+          opacity: 0.82,
+        }}
+      >
+        <span>start {formatBytes(memory.startHeap)}</span>
+        <span>peak {formatBytes(memory.peakHeap)}</span>
+        <span
+          style={{
+            color: significantGrowth ? "#ffb096" : grew ? "#ffe27d" : "#9fe0b4",
+          }}
+        >
+          {grew ? "+" : ""}
+          {formatBytes(memory.growthBytes)} ({memory.growthPct.toFixed(1)}%)
+        </span>
+      </div>
     </div>
   );
 }

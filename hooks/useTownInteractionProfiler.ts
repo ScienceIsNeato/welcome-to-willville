@@ -35,6 +35,19 @@ export type TownPerfDomSnapshot = {
   stopMarkers: number;
 };
 
+export type TownPerfMemorySnapshot = {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+};
+
+export type TownPerfMemorySummary = {
+  startHeap: number;
+  endHeap: number;
+  peakHeap: number;
+  growthBytes: number;
+  growthPct: number;
+};
+
 export type TownPerfReportStep = {
   id: string;
   label: string;
@@ -43,6 +56,7 @@ export type TownPerfReportStep = {
   startedAtMs: number;
   fps?: TownPerfFps;
   domSnapshot?: TownPerfDomSnapshot;
+  memory?: TownPerfMemorySnapshot;
 };
 
 export type TownPerfReportBlock = {
@@ -90,6 +104,7 @@ export type TownPerfReport = {
   finishedAt: string;
   totalMs: number;
   fps: TownPerfFps;
+  memory: TownPerfMemorySummary | null;
   longTasks: TownPerfLongTask[];
   steps: TownPerfReportStep[];
   blocks: TownPerfReportBlock[];
@@ -180,6 +195,21 @@ function computeFps(samples: FrameSample[]): TownPerfFps {
     frameCount: samples.length,
     droppedFrames,
     longFrames,
+  };
+}
+
+type PerformanceMemory = {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+};
+
+function captureMemorySnapshot(): TownPerfMemorySnapshot | undefined {
+  const mem = (performance as unknown as { memory?: PerformanceMemory }).memory;
+  if (!mem) return undefined;
+  return {
+    usedJSHeapSize: mem.usedJSHeapSize,
+    totalJSHeapSize: mem.totalJSHeapSize,
   };
 }
 
@@ -284,6 +314,7 @@ export function useTownInteractionProfiler(enabled: boolean) {
   const fpsSamplesRef = useRef<FrameSample[]>([]);
   const longTasksRef = useRef<TownPerfLongTask[]>([]);
   const longTaskObserverRef = useRef<PerformanceObserver | null>(null);
+  const startHeapRef = useRef<number | null>(null);
   const [report, setReport] = useState<TownPerfReport | null>(null);
   const [running, setRunning] = useState(false);
 
@@ -376,6 +407,8 @@ export function useTownInteractionProfiler(enabled: boolean) {
         startedAtIso: new Date().toISOString(),
       };
       recordingRef.current = true;
+      startHeapRef.current =
+        captureMemorySnapshot()?.usedJSHeapSize ?? null;
       setRunning(true);
       setReport(null);
       startFpsLoop();
@@ -395,6 +428,7 @@ export function useTownInteractionProfiler(enabled: boolean) {
         ? computeFps(sliceSamples(fpsSamplesRef.current, absStart, absEnd))
         : undefined;
       const domSnapshot = enabled ? captureDomSnapshot() : undefined;
+      const memorySnap = enabled ? captureMemorySnapshot() : undefined;
       stepsRef.current.push({
         id,
         label,
@@ -403,6 +437,7 @@ export function useTownInteractionProfiler(enabled: boolean) {
         startedAtMs: scenario ? absStart - scenario.startedAtMs : 0,
         fps: stepFps,
         domSnapshot,
+        memory: memorySnap,
       });
       return result;
     },
@@ -454,6 +489,26 @@ export function useTownInteractionProfiler(enabled: boolean) {
     const fps = computeFps(fpsSamplesRef.current);
     const longTasks = [...longTasksRef.current];
 
+    // Memory summary
+    let memory: TownPerfMemorySummary | null = null;
+    const startHeap = startHeapRef.current;
+    const endSnap = captureMemorySnapshot();
+    if (startHeap !== null && endSnap) {
+      const stepHeaps = stepsRef.current
+        .map((s) => s.memory?.usedJSHeapSize)
+        .filter((v): v is number => v !== undefined);
+      const peakHeap = Math.max(startHeap, endSnap.usedJSHeapSize, ...stepHeaps);
+      const growthBytes = endSnap.usedJSHeapSize - startHeap;
+      const growthPct = startHeap > 0 ? (growthBytes / startHeap) * 100 : 0;
+      memory = {
+        startHeap,
+        endHeap: endSnap.usedJSHeapSize,
+        peakHeap,
+        growthBytes,
+        growthPct,
+      };
+    }
+
     const steps = stepsRef.current.map((step) => ({
       ...step,
       pct: (step.ms / safeTotalMs) * 100,
@@ -494,6 +549,7 @@ export function useTownInteractionProfiler(enabled: boolean) {
       finishedAt,
       totalMs,
       fps,
+      memory,
       longTasks,
       steps,
       blocks,
