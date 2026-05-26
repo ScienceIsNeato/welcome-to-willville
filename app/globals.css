@@ -14,6 +14,8 @@
   --willville-town-square: #8b6f47;
   --willville-hell: #7a3da6;
   --willville-dogwallow: #c97c5d;
+  --font-geist-sans: Arial, Helvetica, sans-serif;
+  --font-geist-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
 @theme inline {

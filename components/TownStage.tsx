@@ -46,6 +46,10 @@ import {
   useIsClient,
   type BoardAnnouncement,
 } from "./townStageUtils";
+import {
+  BOARD_COLUMNS,
+  EMPTY_ROW as BOARD_EMPTY_ROW,
+} from "./centralBoardConstants";
 
 /**
  * Persistent SVG stage with viewport camera (pan/zoom) and center HUD for stops.
@@ -112,6 +116,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   >("idle");
   const [bellErrorMessage, setBellErrorMessage] = useState("✕ Bell failed");
   const [bellHovered, setBellHovered] = useState(false);
+  const [eggHovered, setEggHovered] = useState(false);
   const [boardAnnouncement, setBoardAnnouncement] =
     useState<BoardAnnouncement | null>(null);
 
@@ -120,9 +125,13 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     [liveStops, stops],
   );
 
-  const loadTown = useCallback((signal?: AbortSignal) => {
-    return fetch("/api/town", {
-      signal,
+  const loadTown = useCallback((options: { signal?: AbortSignal; fresh?: boolean } = {}) => {
+    const url = options.fresh
+      ? `/api/town?refresh=${encodeURIComponent(String(Date.now()))}`
+      : "/api/town";
+    return fetch(url, {
+      cache: options.fresh ? "no-store" : "default",
+      signal: options.signal,
     })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
@@ -135,7 +144,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
   useEffect(() => {
     const controller = new AbortController();
-    loadTown(controller.signal).catch(() => undefined);
+    loadTown({ signal: controller.signal }).catch(() => undefined);
     return () => {
       controller.abort();
     };
@@ -224,7 +233,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
         throw new Error(await getBellErrorDetail(response));
       })
-      .then(() => loadTown())
+      .then(() => loadTown({ fresh: true }))
       .then((data) => {
         const nextStops =
           data && Array.isArray(data.stops)
@@ -258,10 +267,36 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
   const handleSync = useCallback(() => {
     setSyncing(true);
-    loadTown()
+    loadTown({ fresh: true })
       .catch(() => undefined)
       .finally(() => setSyncing(false));
   }, [loadTown]);
+
+  const handleEasterEgg = useCallback(() => {
+    if (boardAnnouncementTimerRef.current !== null) {
+      window.clearTimeout(boardAnnouncementTimerRef.current);
+    }
+    const center = (text: string) => {
+      const t = text.toUpperCase().slice(0, BOARD_COLUMNS);
+      const pad = Math.max(0, Math.floor((BOARD_COLUMNS - t.length) / 2));
+      return `${" ".repeat(pad)}${t}`.padEnd(BOARD_COLUMNS, " ");
+    };
+    setBoardAnnouncement({
+      label: "Easter Egg",
+      rows: [
+        BOARD_EMPTY_ROW,
+        center(""),
+        center("Where there's a Will"),
+        center("there's a Ville."),
+        center(""),
+        BOARD_EMPTY_ROW,
+      ],
+    });
+    boardAnnouncementTimerRef.current = window.setTimeout(() => {
+      setBoardAnnouncement(null);
+      boardAnnouncementTimerRef.current = null;
+    }, BELL_BOARD_FLASH_MS);
+  }, []);
 
   const [boats, setBoats] = useState<CanalBoat[]>([]);
   useEffect(() => {
@@ -730,6 +765,30 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                 />
               ))}
               {!mobileSafeMode && <HollywoodSign />}
+
+              {/* Easter egg — tucked in the bottom-right */}
+              <g
+                transform="translate(1440, 1100)"
+                style={{ cursor: "pointer" }}
+                onMouseEnter={() => setEggHovered(true)}
+                onMouseLeave={() => setEggHovered(false)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  markSkipDrag();
+                  handleEasterEgg();
+                }}
+              >
+                <circle r={18} fill="transparent" pointerEvents="all" />
+                <image
+                  href="/art/egg.png"
+                  x={-14}
+                  y={-18}
+                  width={28}
+                  height={36}
+                  opacity={eggHovered ? 1 : 0.6}
+                  style={{ transition: "opacity 0.3s" }}
+                />
+              </g>
 
               {/* Town square — clock tower bell */}
               <g

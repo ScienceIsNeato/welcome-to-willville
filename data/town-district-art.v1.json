@@ -64,7 +64,7 @@
       "id": "the-graveyard",
       "displayName": "The Graveyard",
       "src": "/art/town/districts/the-graveyard.png",
-      "contentHash": "district-art-the-graveyard-2026-05-22-1747",
+      "contentHash": "district-art-the-graveyard-remasked-2026-05-26",
       "mask": "/art/town/masks/district-art/the-graveyard.png",
       "components": [
         {
@@ -151,7 +151,7 @@
       "id": "slop-wharf",
       "displayName": "Slop Wharf",
       "src": "/art/town/districts/slop-wharf.png",
-      "contentHash": "district-art-slop-wharf-2026-05-22-1747",
+      "contentHash": "district-art-slop-wharf-remasked-2026-05-26",
       "mask": "/art/town/masks/district-art/slop-wharf.png",
       "components": [
         {
@@ -237,7 +237,7 @@
       "id": "gates-of-hell",
       "displayName": "The Gates of Hell",
       "src": "/art/town/districts/gates-of-hell.png",
-      "contentHash": "district-art-gates-of-hell-2026-05-22-1747",
+      "contentHash": "district-art-gates-of-hell-remasked-2026-05-26",
       "mask": "/art/town/masks/district-art/gates-of-hell.png",
       "components": [
         {

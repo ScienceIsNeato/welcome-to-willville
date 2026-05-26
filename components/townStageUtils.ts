@@ -255,11 +255,15 @@ function stopSyncChanged(previous: Stop | undefined, next: Stop): boolean {
     previous.lastCommitAt !== next.lastCommitAt ||
     previous.activeBranch?.name !== next.activeBranch?.name ||
     previous.activeBranch?.pushedAt !== next.activeBranch?.pushedAt ||
+    previous.activeBranch?.commitHash !== next.activeBranch?.commitHash ||
     previous.agent?.status !== next.agent?.status ||
     previous.agent?.direction !== next.agent?.direction ||
     previous.agent?.difficulties !== next.agent?.difficulties ||
     previous.agent?.needsHuman !== next.agent?.needsHuman ||
-    previous.agent?.lastUpdate !== next.agent?.lastUpdate
+    previous.agent?.lastUpdate !== next.agent?.lastUpdate ||
+    previous.agent?.sourceBranch !== next.agent?.sourceBranch ||
+    previous.agent?.sourceCommitHash !== next.agent?.sourceCommitHash ||
+    previous.agent?.sourceBlobSha !== next.agent?.sourceBlobSha
   );
 }
 
