@@ -7,8 +7,8 @@ Region id: `the-graveyard`
 Output target: `public/art/town/districts/the-graveyard.png`
 Mask to use: `/art/town/masks/district-art/the-graveyard.png`
 Raw district mask: `/art/town/masks/districts/the-graveyard.png`
-Art ROI components: the-graveyard-1: 315x473+972+155
-Recommended authoring plates: the-graveyard-1: author at 1484x2116 pixels for 371x529+944+127 map units
+Art ROI components: the-graveyard-1: 411x477+967+151
+Recommended authoring plates: the-graveyard-1: author at 1868x2132 pixels for 467x533+939+123 map units
 Canvas: 1600x1240
 
 Primary request:

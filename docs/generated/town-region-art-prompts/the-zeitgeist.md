@@ -7,8 +7,8 @@ Region id: `the-zeitgeist`
 Output target: `public/art/town/districts/the-zeitgeist.png`
 Mask to use: `/art/town/masks/district-art/the-zeitgeist.png`
 Raw district mask: `/art/town/masks/districts/the-zeitgeist.png`
-Art ROI components: the-zeitgeist-1: 416x310+672+156
-Recommended authoring plates: the-zeitgeist-1: author at 1888x1464 pixels for 472x366+644+128 map units
+Art ROI components: the-zeitgeist-1: 416x326+672+140
+Recommended authoring plates: the-zeitgeist-1: author at 1888x1528 pixels for 472x382+644+112 map units
 Canvas: 1600x1240
 
 Primary request:

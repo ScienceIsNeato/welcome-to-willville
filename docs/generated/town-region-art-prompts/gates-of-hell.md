@@ -7,8 +7,8 @@ Region id: `gates-of-hell`
 Output target: `public/art/town/districts/gates-of-hell.png`
 Mask to use: `/art/town/masks/district-art/gates-of-hell.png`
 Raw district mask: `/art/town/masks/districts/gates-of-hell.png`
-Art ROI components: gates-of-hell-1: 430x280+758+826
-Recommended authoring plates: gates-of-hell-1: author at 1944x1344 pixels for 486x336+730+798 map units
+Art ROI components: gates-of-hell-1: 534x280+758+826
+Recommended authoring plates: gates-of-hell-1: author at 2360x1344 pixels for 590x336+730+798 map units
 Canvas: 1600x1240
 
 Primary request:

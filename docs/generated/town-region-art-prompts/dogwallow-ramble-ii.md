@@ -7,8 +7,8 @@ Region id: `dogwallow-ramble-ii`
 Output target: `public/art/town/districts/dogwallow-ramble-ii.png`
 Mask to use: `/art/town/masks/district-art/dogwallow-ramble-ii.png`
 Raw district mask: `/art/town/masks/districts/dogwallow-ramble-ii.png`
-Art ROI components: dogwallow-ramble-ii-1: 318x182+493+913; dogwallow-ramble-ii-2: 212x118+581+760
-Recommended authoring plates: dogwallow-ramble-ii-1: author at 1496x952 pixels for 374x238+465+885 map units; dogwallow-ramble-ii-2: author at 1072x696 pixels for 268x174+553+732 map units
+Art ROI components: dogwallow-ramble-ii-1: 333x182+478+913; dogwallow-ramble-ii-2: 212x118+581+760
+Recommended authoring plates: dogwallow-ramble-ii-1: author at 1556x952 pixels for 389x238+450+885 map units; dogwallow-ramble-ii-2: author at 1072x696 pixels for 268x174+553+732 map units
 Canvas: 1600x1240
 
 Primary request:

@@ -793,12 +793,12 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                 )}
 
                 {/* tooltip */}
-                {bellHovered && populating === "idle" && (
+                {bellHovered && (populating === "idle" || populating === "running") && (
                   <g style={{ pointerEvents: "none" }}>
                     <rect
-                      x={-68}
+                      x={populating === "running" ? -86 : -68}
                       y={-88}
-                      width={136}
+                      width={populating === "running" ? 172 : 136}
                       height={24}
                       rx={5}
                       fill="rgba(12,7,22,0.88)"
@@ -813,7 +813,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                       fill="#e6c66a"
                       fontFamily="var(--font-sans, sans-serif)"
                     >
-                      Ring the town bell
+                      {populating === "running"
+                        ? "The Town Bell Sees All"
+                        : "Ring the town bell"}
                     </text>
                   </g>
                 )}
@@ -845,7 +847,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               whiteSpace: "nowrap",
             }}
           >
-            {populating === "running" && "🔔 The bell rings across Willville…"}
+            {populating === "running" && "The Town Bell Sees All"}
             {populating === "done" && "✓ Manifests updated"}
             {populating === "error" && bellErrorMessage}
           </div>

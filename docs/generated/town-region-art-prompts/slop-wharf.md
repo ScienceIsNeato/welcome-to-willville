@@ -7,8 +7,8 @@ Region id: `slop-wharf`
 Output target: `public/art/town/districts/slop-wharf.png`
 Mask to use: `/art/town/masks/district-art/slop-wharf.png`
 Raw district mask: `/art/town/masks/districts/slop-wharf.png`
-Art ROI components: slop-wharf-1: 247x312+338+560
-Recommended authoring plates: slop-wharf-1: author at 1212x1472 pixels for 303x368+310+532 map units
+Art ROI components: slop-wharf-1: 365x312+220+560; slop-wharf-2: 128x53+364+900
+Recommended authoring plates: slop-wharf-1: author at 1684x1472 pixels for 421x368+192+532 map units; slop-wharf-2: author at 736x436 pixels for 184x109+336+872 map units
 Canvas: 1600x1240
 
 Primary request:

@@ -7,8 +7,8 @@ Region id: `mirrored-mile`
 Output target: `public/art/town/districts/mirrored-mile.png`
 Mask to use: `/art/town/masks/district-art/mirrored-mile.png`
 Raw district mask: `/art/town/masks/districts/mirrored-mile.png`
-Art ROI components: mirrored-mile-1: 371x299+354+145
-Recommended authoring plates: mirrored-mile-1: author at 1708x1420 pixels for 427x355+326+117 map units
+Art ROI components: mirrored-mile-1: 509x300+225+144
+Recommended authoring plates: mirrored-mile-1: author at 2260x1424 pixels for 565x356+197+116 map units
 Canvas: 1600x1240
 
 Primary request:

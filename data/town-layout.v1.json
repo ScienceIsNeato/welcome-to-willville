@@ -84,7 +84,7 @@
   },
   "landmarks": {
     "townHall": { "x": 760, "y": 560 },
-    "bellTower": { "x": 760, "y": 520 },
+    "bellTower": { "x": 650, "y": 520 },
     "slopDepot": { "x": 340, "y": 890 },
     "welcomeSign": {
       "x": 880,
