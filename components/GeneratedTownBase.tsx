@@ -4,29 +4,19 @@ import districtArt from "@/data/town-district-art.v1.json";
 
 type Props = {
   stops: Stop[];
-  mobileSafeMode?: boolean;
 };
 
-export function GeneratedTownBase({ stops, mobileSafeMode = false }: Props) {
+export function GeneratedTownBase({ stops }: Props) {
   const districtLayers = districtArt.layers;
-  const artLayers = mobileSafeMode
-    ? [
-        {
-          id: "mobile-safe-composite",
-          src: districtArt.source,
-          contentHash: districtArt.version,
-        },
-      ]
-    : districtLayers;
 
   return (
     <g id="generated-town-base" aria-hidden="true">
       <defs>
-        <clipPath id="generated-town-land-clip">
-          <path d={GENERATED_TOWN_LAYOUT.landPath} />
+        <clipPath id="generated-town-footprint-clip">
+          <path d={GENERATED_TOWN_LAYOUT.townFootprintPath} />
         </clipPath>
       </defs>
-      {artLayers.map((layer) => (
+      {districtLayers.map((layer) => (
         <image
           key={layer.id}
           href={`${layer.src}?v=${layer.contentHash ?? districtArt.version}`}
@@ -35,7 +25,7 @@ export function GeneratedTownBase({ stops, mobileSafeMode = false }: Props) {
           width={GENERATED_TOWN_LAYOUT.size.width}
           height={GENERATED_TOWN_LAYOUT.size.height}
           preserveAspectRatio="none"
-          clipPath="url(#generated-town-land-clip)"
+          clipPath="url(#generated-town-footprint-clip)"
         />
       ))}
 

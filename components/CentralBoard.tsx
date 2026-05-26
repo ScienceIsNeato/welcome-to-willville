@@ -22,6 +22,7 @@ type Props = {
   onSelectStop: (stop: Stop) => void;
   announcementRows?: string[] | null;
   announcementLabel?: string;
+  panelOpacity?: number;
 };
 
 export function CentralBoard({
@@ -31,6 +32,7 @@ export function CentralBoard({
   onSelectStop,
   announcementRows,
   announcementLabel,
+  panelOpacity = 1,
 }: Props) {
   const didMountRef = useRef(false);
   const previousBoardRef = useRef<string[]>([]);
@@ -100,7 +102,12 @@ export function CentralBoard({
     <section
       className="central-split-flap"
       aria-label="Time Central Station split-flap board"
-      style={shellStyle}
+      style={
+        {
+          ...shellStyle,
+          "--panel-opacity": String(panelOpacity),
+        } as CSSProperties
+      }
     >
       <div style={headerStyle}>
         <span>Time Central Station</span>
@@ -164,10 +171,10 @@ export function CentralBoard({
           right: 0;
           height: calc(50% - 1px);
           background:
-            linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0)),
-            #171717;
-          border: 1px solid rgba(255,255,255,0.055);
-          box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+            linear-gradient(180deg, rgb(255 255 255 / calc(0.08 * var(--panel-opacity, 1))), rgb(255 255 255 / 0)),
+            rgb(23 23 23 / var(--panel-opacity, 1));
+          border: 1px solid rgb(255 255 255 / calc(0.055 * var(--panel-opacity, 1)));
+          box-shadow: inset 0 1px 0 rgb(255 255 255 / calc(0.08 * var(--panel-opacity, 1)));
           z-index: 0;
         }
 
@@ -217,7 +224,9 @@ export function CentralBoard({
 }
 
 function normalizeRows(rows: string[]): string[] {
-  const normalized = rows.slice(0, BOARD_ROWS);
+  const normalized = rows
+    .slice(0, BOARD_ROWS)
+    .map((row) => formatBoardRow(row, isNumberedRow(row) ? "left" : "center"));
   while (normalized.length < BOARD_ROWS) {
     normalized.push(EMPTY_ROW);
   }
@@ -233,12 +242,12 @@ function SplitFlapRow({
   rowIndex: number;
   boardKey: string;
 }) {
-  const chars = padded(row).split("");
+  const chars = padRenderedRow(row).split("");
   return (
     <div
       style={{
         ...rowStyle,
-        gridTemplateColumns: `repeat(${BOARD_COLUMNS}, clamp(15px, 2.25vw, 23px))`,
+        gridTemplateColumns: `repeat(${BOARD_COLUMNS}, minmax(0, 1fr))`,
       }}
     >
       {chars.map((char, index) => (
@@ -340,12 +349,15 @@ function selectedStopRows(stop: Stop): string[] {
   const stopName = stopLabel(stop);
   const descText = stop.status.summary ?? stop.blurb ?? "";
 
-  const rows: string[] = [center(districtName), center(stopName)];
+  const rows: string[] = [
+    formatBoardRow(districtName, "center"),
+    formatBoardRow(stopName, "center"),
+  ];
 
   const wrapped = wrapText(descText, BOARD_COLUMNS);
   for (let i = 0; i < 4; i += 1) {
     const line = wrapped[i] ?? "";
-    rows.push(center(line));
+    rows.push(formatBoardRow(line, "center"));
   }
 
   return rows.slice(0, BOARD_ROWS);
@@ -355,7 +367,10 @@ function districtRows(districtId: string, stops: Stop[]): string[] {
   const district = DISTRICTS.find((d) => d.id === districtId);
   const districtName = district?.displayName ?? districtId;
 
-  const rows: string[] = [center(districtName), center("LOCAL DEPARTURES")];
+  const rows: string[] = [
+    formatBoardRow(districtName, "center"),
+    formatBoardRow("LOCAL DEPARTURES", "center"),
+  ];
 
   const dbStops = stops.filter((s) => s.district === districtId);
   const sorted = [...dbStops].sort((a, b) => {
@@ -400,14 +415,17 @@ function districtRows(districtId: string, stops: Stop[]): string[] {
       );
       rowStr = truncatedLeft + " ".repeat(spaces) + rightPart;
     }
-    rows.push(rowStr);
+    rows.push(formatBoardRow(rowStr, "left"));
   }
 
   return rows.slice(0, BOARD_ROWS);
 }
 
 function timetableRows(queue: Stop[]): string[] {
-  const rows = [center("TIME CENTRAL STATION"), center("MAYOR'S EXPRESS")];
+  const rows = [
+    formatBoardRow("TIME CENTRAL STATION", "center"),
+    formatBoardRow("MAYOR'S EXPRESS", "center"),
+  ];
 
   const departures = queue.slice(0, 4);
   for (let i = 0; i < 4; i += 1) {
@@ -422,31 +440,41 @@ function timetableRows(queue: Stop[]): string[] {
       commits7d != null ? [commits7d, "7D"] : [commits3d ?? 0, "3D"];
     const activity = commits > 0 ? `${commits}C/${period}` : "";
     rows.push(
-      fit(`${String(i + 1).padStart(2, "0")} ${stopLabel(stop)} ${activity}`),
+      formatBoardRow(
+        `${String(i + 1).padStart(2, "0")} ${stopLabel(stop)} ${activity}`,
+        "left",
+      ),
     );
   }
 
   return rows.slice(0, BOARD_ROWS);
 }
 
-function padded(input: string): string {
-  return fit(input).padEnd(BOARD_COLUMNS, " ");
+function padRenderedRow(input: string): string {
+  if (input.length >= BOARD_COLUMNS) {
+    return input.slice(0, BOARD_COLUMNS);
+  }
+  return input.padEnd(BOARD_COLUMNS, " ");
 }
 
-function center(input: string): string {
+function formatBoardRow(
+  input: string,
+  align: "left" | "center" = "center",
+): string {
   const normalized = normalize(input);
   const trimmed =
     normalized.length > BOARD_COLUMNS
       ? `${normalized.slice(0, BOARD_COLUMNS - 1)}…`
       : normalized;
+  if (align === "left") {
+    return trimmed.padEnd(BOARD_COLUMNS, " ");
+  }
   const left = Math.max(0, Math.floor((BOARD_COLUMNS - trimmed.length) / 2));
   return `${" ".repeat(left)}${trimmed}`.padEnd(BOARD_COLUMNS, " ");
 }
 
-function fit(input: string): string {
-  const normalized = normalize(input);
-  if (normalized.length <= BOARD_COLUMNS) return normalized;
-  return `${normalized.slice(0, BOARD_COLUMNS - 1)}…`;
+function isNumberedRow(input: string): boolean {
+  return /^\s*\d{2}\s/.test(input);
 }
 
 function normalize(input: string): string {
@@ -512,8 +540,8 @@ function playFlipTicks(previousRows: string[], nextRows: string[]) {
 
   const changes: number[] = [];
   nextRows.forEach((row, rowIndex) => {
-    const previous = padded(previousRows[rowIndex] ?? "");
-    const next = padded(row);
+    const previous = padRenderedRow(previousRows[rowIndex] ?? "");
+    const next = padRenderedRow(row);
     for (let i = 0; i < BOARD_COLUMNS; i += 1) {
       if (next[i] !== " " && next[i] !== previous[i]) {
         changes.push(rowIndex * BOARD_COLUMNS + i);
@@ -639,7 +667,7 @@ function makeNoiseBuffer(
 const shellStyle: CSSProperties = {
   position: "relative",
   zIndex: 2,
-  width: "min(760px, calc(100vw - 16px))",
+  width: "min(960px, calc(100vw - 20px))",
   margin: "10px auto 0",
   color: "var(--willville-paper)",
   fontFamily: "var(--font-geist-mono), monospace",
@@ -653,9 +681,10 @@ const headerStyle: CSSProperties = {
   gridTemplateColumns: "1fr auto",
   alignItems: "center",
   gap: 14,
-  padding: "8px 16px",
-  background: "linear-gradient(180deg, #1a1a1a 0%, #070707 100%)",
-  border: "1px solid rgba(245,230,200,0.18)",
+  padding: "8px 92px 8px 16px",
+  background:
+    "linear-gradient(180deg, rgb(26 26 26 / var(--panel-opacity, 1)) 0%, rgb(7 7 7 / var(--panel-opacity, 1)) 100%)",
+  border: "1px solid rgb(245 230 200 / calc(0.18 * var(--panel-opacity, 1)))",
   borderBottom: 0,
   borderRadius: "5px 5px 0 0",
   color: "#f1e7ce",
@@ -667,20 +696,22 @@ const headerStyle: CSSProperties = {
 
 const boardStyle: CSSProperties = {
   display: "grid",
+  gridTemplateRows: `repeat(${BOARD_ROWS}, minmax(0, 1fr))`,
   gap: 2,
-  padding: 6,
+  padding: 4,
   background:
-    "linear-gradient(180deg, rgba(15,15,15,0.99) 0%, rgba(3,3,3,0.99) 100%)",
-  border: "1px solid rgba(245,230,200,0.18)",
+    "linear-gradient(180deg, rgb(15 15 15 / calc(0.99 * var(--panel-opacity, 1))) 0%, rgb(3 3 3 / calc(0.99 * var(--panel-opacity, 1))) 100%)",
+  border: "1px solid rgb(245 230 200 / calc(0.18 * var(--panel-opacity, 1)))",
   borderRadius: "0 0 5px 5px",
   boxShadow:
-    "inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -18px 40px rgba(0,0,0,0.75)",
+    "inset 0 1px 0 rgb(255 255 255 / calc(0.06 * var(--panel-opacity, 1))), inset 0 -18px 40px rgb(0 0 0 / calc(0.75 * var(--panel-opacity, 1)))",
 };
 
 const rowStyle: CSSProperties = {
   display: "grid",
   gap: 2,
-  justifyContent: "center",
+  width: "100%",
+  minWidth: 0,
 };
 
 const cellStyle: CSSProperties = {
@@ -689,10 +720,10 @@ const cellStyle: CSSProperties = {
   minWidth: 0,
   display: "grid",
   placeItems: "center",
-  background: "#090909",
+  background: "rgb(9 9 9 / var(--panel-opacity, 1))",
   borderRadius: 3,
   boxShadow:
-    "inset 0 0 0 1px rgba(255,255,255,0.04), 0 1px 0 rgba(255,255,255,0.04)",
+    "inset 0 0 0 1px rgb(255 255 255 / calc(0.04 * var(--panel-opacity, 1))), 0 1px 0 rgb(255 255 255 / calc(0.04 * var(--panel-opacity, 1)))",
   overflow: "hidden",
   transformStyle: "preserve-3d",
 };
@@ -717,8 +748,8 @@ const creaseStyle: CSSProperties = {
   height: 1,
   transform: "translateY(-50%)",
   zIndex: 2,
-  background: "rgba(0,0,0,0.45)",
-  boxShadow: "0 -1px 0 rgba(255,255,255,0.06)",
+  background: "rgb(0 0 0 / calc(0.45 * var(--panel-opacity, 1)))",
+  boxShadow: "0 -1px 0 rgb(255 255 255 / calc(0.06 * var(--panel-opacity, 1)))",
 };
 
 const queueButtonsStyle: CSSProperties = {
@@ -734,8 +765,8 @@ const queueButtonStyle: CSSProperties = {
   width: 28,
   height: 24,
   borderRadius: 3,
-  border: "1px solid rgba(245,230,200,0.28)",
-  background: "#0c0c0c",
+  border: "1px solid rgb(245 230 200 / calc(0.28 * var(--panel-opacity, 1)))",
+  background: "rgb(12 12 12 / var(--panel-opacity, 1))",
   color: "#f6f0de",
   fontFamily: "var(--font-geist-mono), monospace",
   fontSize: 10,

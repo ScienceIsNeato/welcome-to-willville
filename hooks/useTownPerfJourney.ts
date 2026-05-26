@@ -48,13 +48,25 @@ export function useTownPerfJourney({
   stageRef,
   svgRef,
 }: Options) {
+  const waitForProfiledFrame = useCallback(
+    async (id: string, label: string) => {
+      await perfProfiler.runBlock(id, label, async () => {
+        await waitForNextFrame();
+      });
+    },
+    [perfProfiler],
+  );
+
   const waitForCameraSettled = useCallback(async () => {
     let stableFrames = 0;
     let previous = getCameraSnapshot();
 
     for (let frame = 0; frame < 90; frame += 1) {
       const waitStartedAt = performance.now();
-      await waitForNextFrame();
+      await waitForProfiledFrame(
+        `settle-frame-${frame + 1}`,
+        `Camera settle frame ${frame + 1}`,
+      );
       perfProfiler.recordDuration(
         "settleWait",
         performance.now() - waitStartedAt,
@@ -70,13 +82,20 @@ export function useTownPerfJourney({
         return;
       }
     }
-  }, [getCameraSnapshot, perfProfiler]);
+  }, [getCameraSnapshot, perfProfiler, waitForProfiledFrame]);
 
-  const waitForFrames = useCallback(async (count: number) => {
-    for (let frame = 0; frame < count; frame += 1) {
-      await waitForNextFrame();
-    }
-  }, []);
+  const waitForFrames = useCallback(
+    async (count: number, idPrefix = "frame-wait") => {
+      const labelPrefix = idPrefix.replace(/-/g, " ");
+      for (let frame = 0; frame < count; frame += 1) {
+        await waitForProfiledFrame(
+          `${idPrefix}-${frame + 1}`,
+          `${labelPrefix} ${frame + 1}`,
+        );
+      }
+    },
+    [waitForProfiledFrame],
+  );
 
   const waitForPathMatch = useCallback(
     async (matcher: (parts: string[]) => boolean) => {
@@ -85,11 +104,14 @@ export function useTownPerfJourney({
         if (matcher(parts)) {
           return true;
         }
-        await waitForNextFrame();
+        await waitForProfiledFrame(
+          `route-match-frame-${frame + 1}`,
+          `Route match frame ${frame + 1}`,
+        );
       }
       return false;
     },
-    [],
+    [waitForProfiledFrame],
   );
 
   const findGroundPoint = useCallback(
@@ -145,11 +167,13 @@ export function useTownPerfJourney({
   const clickElement = useCallback(
     async (element: Element | null) => {
       if (!element) return false;
-      dispatchClickGesture(element, pointAtElementCenter(element));
-      await waitForFrames(10);
+      await perfProfiler.runBlock("click-dispatch", "Dispatch click", () => {
+        dispatchClickGesture(element, pointAtElementCenter(element));
+      });
+      await waitForFrames(10, "post-click-frame");
       return true;
     },
-    [waitForFrames],
+    [perfProfiler, waitForFrames],
   );
 
   const clickVisibleStop = useCallback(
@@ -238,8 +262,17 @@ export function useTownPerfJourney({
           break;
         }
 
-        dispatchWheelGesture(stage, point, deltaY);
-        await waitForNextFrame();
+        await perfProfiler.runBlock(
+          `wheel-dispatch-${iteration + 1}`,
+          `Wheel dispatch ${iteration + 1}`,
+          () => {
+            dispatchWheelGesture(stage, point, deltaY);
+          },
+        );
+        await waitForProfiledFrame(
+          `wheel-frame-${iteration + 1}`,
+          `Wheel frame ${iteration + 1}`,
+        );
 
         const nextScale = getCameraSnapshot().scale;
         if (Math.abs(nextScale - previousScale) < 0.001) {
@@ -250,7 +283,14 @@ export function useTownPerfJourney({
 
       await waitForCameraSettled();
     },
-    [findGroundPoint, getCameraSnapshot, stageRef, waitForCameraSettled],
+    [
+      findGroundPoint,
+      getCameraSnapshot,
+      perfProfiler,
+      stageRef,
+      waitForCameraSettled,
+      waitForProfiledFrame,
+    ],
   );
 
   const dragTowardCorner = useCallback(
@@ -278,8 +318,17 @@ export function useTownPerfJourney({
           break;
         }
 
-        await dispatchDragGesture(stage, start, end, PERF_DRAG_STEPS);
-        await waitForNextFrame();
+        await perfProfiler.runBlock(
+          `drag-gesture-${corner}-${iteration + 1}`,
+          `Drag gesture ${corner} ${iteration + 1}`,
+          async () => {
+            await dispatchDragGesture(stage, start, end, PERF_DRAG_STEPS);
+          },
+        );
+        await waitForProfiledFrame(
+          `drag-frame-${corner}-${iteration + 1}`,
+          `Drag frame ${corner} ${iteration + 1}`,
+        );
 
         const after = getCameraSnapshot();
         const movement =
@@ -289,7 +338,7 @@ export function useTownPerfJourney({
         }
       }
     },
-    [getCameraSnapshot, stageRef],
+    [getCameraSnapshot, perfProfiler, stageRef, waitForProfiledFrame],
   );
 
   const runOfficialPerfProfile = useCallback(async () => {
@@ -303,7 +352,7 @@ export function useTownPerfJourney({
       cy: TOWN_CENTER.y,
       scale: 1,
     });
-    await waitForNextFrame();
+    await waitForProfiledFrame("reset-camera-frame", "Reset camera frame");
 
     const zoomPoint = findGroundPoint([
       [0.58, 0.56],
@@ -330,7 +379,13 @@ export function useTownPerfJourney({
           ]) ?? zoomPoint;
 
         for (const point of [zoomPoint, secondPoint]) {
-          dispatchDoubleClickGesture(stage, point);
+          await perfProfiler.runBlock(
+            "double-click-dispatch",
+            "Dispatch double-click",
+            () => {
+              dispatchDoubleClickGesture(stage, point);
+            },
+          );
           await waitForCameraSettled();
         }
       },
@@ -451,6 +506,7 @@ export function useTownPerfJourney({
     setCameraImmediate,
     stageRef,
     waitForCameraSettled,
+    waitForProfiledFrame,
     waitForPathMatch,
     wheelToScale,
   ]);

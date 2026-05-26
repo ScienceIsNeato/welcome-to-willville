@@ -35,6 +35,10 @@ const SPRING_CONFIG = {
   mass: 0.9,
 };
 
+function isTownControlTarget(event: Event | undefined): boolean {
+  return !!(event?.target as Element | null)?.closest?.("[data-town-control]");
+}
+
 function clampScale(s: number): number {
   return Math.min(MAX_SCALE, Math.max(MIN_SCALE, s));
 }
@@ -257,6 +261,10 @@ export function useTownCamera(
   useGesture(
     {
       onDragStart: ({ event }) => {
+        if (isTownControlTarget(event)) {
+          hudDragRef.current = true;
+          return;
+        }
         hudDragRef.current = !!(event.target as Element)?.closest?.(
           "[data-project-hud]",
         );
@@ -293,6 +301,7 @@ export function useTownCamera(
         }, 50);
       },
       onWheel: ({ delta: [, dy], event }) => {
+        if (isTownControlTarget(event)) return;
         if (event && event.cancelable) {
           event.preventDefault();
         }
@@ -312,7 +321,7 @@ export function useTownCamera(
       drag: {
         filterTaps: true,
         threshold: 4,
-        pointer: { touch: true },
+        pointer: { capture: false, touch: true },
       },
       wheel: { eventOptions: { passive: false } },
     },

@@ -1,8 +1,13 @@
 import { GENERATED_TOWN_LAYOUT } from "@/lib/town-layout";
 
+const SIGN_BOARD = {
+  width: 472,
+  height: 50,
+  y: -10,
+};
+
 export function HollywoodSign() {
   const sign = GENERATED_TOWN_LAYOUT.landmarks.welcomeSign;
-  const boardOffset = { x: -sign.x, y: -sign.y };
   return (
     <g
       id="willville-welcome-sign"
@@ -14,7 +19,7 @@ export function HollywoodSign() {
         <line
           key={x}
           x1={x}
-          y1={38}
+          y1={SIGN_BOARD.y + SIGN_BOARD.height - 2}
           x2={x - 10}
           y2={96}
           stroke="#5b3a22"
@@ -22,24 +27,25 @@ export function HollywoodSign() {
           strokeLinecap="round"
         />
       ))}
-      <path
-        d={sign.pathD}
-        transform={`translate(${boardOffset.x}, ${boardOffset.y})`}
+      <rect
+        x={-SIGN_BOARD.width / 2}
+        y={SIGN_BOARD.y}
+        width={SIGN_BOARD.width}
+        height={SIGN_BOARD.height}
+        rx={3}
         fill="rgba(245,230,200,0.96)"
         stroke="#4c3320"
         strokeWidth={6}
-        strokeLinejoin="round"
       />
       <text
         x={0}
-        y={18}
+        y={SIGN_BOARD.y + SIGN_BOARD.height / 2 + 1}
         textAnchor="middle"
         dominantBaseline="middle"
         fontSize={34}
         fontWeight={900}
         fill="#4c3320"
         letterSpacing={1.4}
-        transform="rotate(-7)"
         style={{
           paintOrder: "stroke",
           stroke: "rgba(245,230,200,0.72)",
