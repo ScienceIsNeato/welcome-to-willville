@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Final PR #10 ship pass: local token-backed town data is restored and the canal fallback patch is ready to push",
-    "direction": "Land the last branch-local fixes and merge PR #10 so production finally serves live Pages Functions data instead of 404ing /api/town",
-    "last_update": "2026-05-25T10:05:00Z"
+    "status": "PR #11 open: deep perf profiler with FPS/baseline/waterfall/DOM/memory tracking and automated Playwright regression gate",
+    "direction": "Land the perf drilldown tooling so every future change can be validated against a saved baseline via scripts/perf_test.sh",
+    "last_update": "2026-05-26T00:25:00Z"
   }
 }
