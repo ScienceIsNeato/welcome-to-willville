@@ -214,15 +214,6 @@ export function mostActiveStops(stops: Stop[], limit = 5): Stop[] {
     .slice(0, limit);
 }
 
-/** Returns the 1-based rank of a stop in the Mayor's Express queue, or null. */
-function expressRank(stop: Stop, allStops: Stop[]): number | null {
-  const queue = mostActiveStops(allStops);
-  const idx = queue.findIndex(
-    (s) => s.id === stop.id && s.district === stop.district,
-  );
-  return idx >= 0 ? idx + 1 : null;
-}
-
 type OpenMilestone = {
   title: string;
   dueOn: string | null;

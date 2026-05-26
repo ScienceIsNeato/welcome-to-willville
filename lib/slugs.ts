@@ -17,7 +17,3 @@ export const KNOWN_STOPS: StopRef[] = [
 export function isKnownDistrict(slug: string): slug is DistrictId {
   return DISTRICT_SLUGS.includes(slug as DistrictId);
 }
-
-function stopsInDistrict(district: DistrictId): StopRef[] {
-  return KNOWN_STOPS.filter((s) => s.district === district);
-}
