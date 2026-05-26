@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Cleaning up the last PR review note after the town art speedup",
-    "direction": "Push the fix, resolve the thread, and watch the remaining deploy check",
-    "last_update": "2026-05-26T11:28:09Z"
+    "status": "Cleaning up the town map markers so buildings are the clickable target",
+    "direction": "Check the map for any remaining marker alignment weirdness",
+    "last_update": "2026-05-26T16:57:23Z"
   }
 }

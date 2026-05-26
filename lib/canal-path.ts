@@ -63,7 +63,7 @@ const TOTAL_WEIGHT = SEGMENT_WEIGHTS.reduce((a, b) => a + b, 0);
  * Point and tangent on the canal centerline.
  * @param t Progress along the path, 0 = southwest inlet, 1 = open sea.
  */
-export function canalPointAt(t: number): Point & { angle: number } {
+function canalPointAt(t: number): Point & { angle: number } {
   const clamped = Math.min(1, Math.max(0, t));
   let remaining = clamped * TOTAL_WEIGHT;
   for (let i = 0; i < SEGMENTS.length; i += 1) {
@@ -84,7 +84,7 @@ export function canalPointAt(t: number): Point & { angle: number } {
 }
 
 /** Lock chamber centers at even spacing along the curved canal. */
-export const LOCK_PATH_T = [0.08, 0.26, 0.44, 0.62, 0.8, 0.94] as const;
+const LOCK_PATH_T = [0.08, 0.26, 0.44, 0.62, 0.8, 0.94] as const;
 
 export function lockCenterAt(index: number): Point & { angle: number } {
   const t = LOCK_PATH_T[index] ?? 0.5;

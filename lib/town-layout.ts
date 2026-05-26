@@ -15,10 +15,10 @@ export type CubicSegment = {
   p3: Point;
 };
 
-export type LayoutDistrictId = (typeof rawTownLayout.districts)[number]["id"];
-export type LayoutLineId = (typeof rawTownLayout.lines)[number]["id"];
+type LayoutDistrictId = (typeof rawTownLayout.districts)[number]["id"];
+type LayoutLineId = (typeof rawTownLayout.lines)[number]["id"];
 
-export type SitePlacement = {
+type SitePlacement = {
   stopId: string;
   districtId: string;
   position: Point;
@@ -44,7 +44,7 @@ const SITE_ROWS = rawTownLayout.generation.siteRows;
 
 type RawDistrict = (typeof rawTownLayout.districts)[number];
 
-export type LayoutDistrict = Omit<RawDistrict, "vertexIds"> & {
+type LayoutDistrict = Omit<RawDistrict, "vertexIds"> & {
   vertexIds: string[];
   polygon: Point[];
   wallLoop: Point[];
@@ -79,7 +79,7 @@ export function pointsToPath(points: Point[]): string {
   ].join(" ");
 }
 
-export function smoothClosedPath(points: Point[], tension = 0.18): string {
+function smoothClosedPath(points: Point[], tension = 0.18): string {
   if (points.length === 0) return "";
   if (points.length < 3) return pointsToPath(points);
 
@@ -141,8 +141,6 @@ function pointInCanalSection(point: Point): boolean {
   return false;
 }
 
-export { hashStr };
-
 function candidateSlotsForDistrict(districtId: string): Point[] {
   const district = GENERATED_TOWN_LAYOUT.districts.find(
     (d) => d.id === districtId,
@@ -197,7 +195,7 @@ export function serviceRouteForStop(position: Point): string {
   return `M ${depot.x} ${depot.y} C ${midX} ${canalBias}, ${midX} ${position.y}, ${position.x} ${position.y}`;
 }
 
-export function serviceLoopRouteForStop(position: Point): string {
+function serviceLoopRouteForStop(position: Point): string {
   const depot = GENERATED_TOWN_LAYOUT.landmarks.slopDepot;
   const midX = Math.round((depot.x + position.x) / 2);
   const canalBias = Math.max(760, Math.min(960, position.y + 80));
@@ -244,7 +242,7 @@ function approximateCubicLength(
   return length;
 }
 
-export function serviceLoopSiteKeyPointForStop(position: Point): number {
+function serviceLoopSiteKeyPointForStop(position: Point): number {
   const depot = GENERATED_TOWN_LAYOUT.landmarks.slopDepot;
   const midX = Math.round((depot.x + position.x) / 2);
   const canalBias = Math.max(760, Math.min(960, position.y + 80));

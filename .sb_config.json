@@ -255,6 +255,9 @@
         "extra_exclude_paths": [],
         "include_paths": [],
         "templates_dir": null
+      },
+      "dead-code.js": {
+        "knip_config": "knip.json"
       }
     }
   },

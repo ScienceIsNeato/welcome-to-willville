@@ -32,7 +32,8 @@ type HitBox = {
 export function labelHitBoxForStop(stop: Stop): HitBox {
   const sprite = SITE_SPRITES.get(stop.id);
   const label = repoLabelForStop(stop);
-  const labelY = sprite ? -52 : -18;
+  const { height } = spriteSizeForStop(stop);
+  const labelY = sprite ? -height / 2 - 8 : -18;
   const hitWidth = Math.max(72, label.length * 8 + 20);
   return {
     x: -hitWidth / 2,

@@ -28,7 +28,7 @@ export const TOWN_CENTER = {
 } as const;
 
 /** @deprecated Prefer WORLD — kept for callers that mean the full canvas. */
-export const VIEWBOX = WORLD;
+const VIEWBOX = WORLD;
 
 /**
  * Coastal harbor canal woven through the lower town. PRs sail the curved

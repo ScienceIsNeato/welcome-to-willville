@@ -19,7 +19,7 @@ export type CameraCorner =
   | "bottomRight";
 
 export const MIN_SCALE = 0.6;
-export const MAX_SCALE = 128;
+const MAX_SCALE = 128;
 const DOUBLE_CLICK_ZOOM = 1.4;
 
 const INITIAL_CAMERA: Camera = {

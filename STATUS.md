@@ -9,6 +9,12 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-26) — Site Buildings Are The Marker
+
+- Removed the extra colored dot from sprite-backed site markers so the building art is the only visible site marker.
+- Centered each building sprite on the stop coordinate and centered the selected focus rings on that same point, so the ring wraps the building instead of landing offset below it.
+- Validation: touched-file diagnostics were clean; `npm run build` passed; `./scripts/deploy_app.sh` passed on `http://127.0.0.1:3752/`; browser geometry checks confirmed sprite images and focus rings share the same center and sprite-backed stops no longer render the old dot.
+
 ## Done (2026-05-26) — Bell Noise Helper Deduplicated
 
 - Moved the procedural audio noise buffer helper into one shared module so bell messenger sounds and board rustle sounds no longer carry separate copies that can drift.
