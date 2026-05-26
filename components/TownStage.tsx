@@ -149,6 +149,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const [showDigitalBoard, setShowDigitalBoard] = useState(true);
   const [centralBoardOpacity, setCentralBoardOpacity] = useState(0.94);
   const [digitalBoardOpacity, setDigitalBoardOpacity] = useState(0.94);
+  const [showPerfPanel, setShowPerfPanel] = useState(true);
+  const [perfPanelOpacity, setPerfPanelOpacity] = useState(0.94);
   const [mobileSafeMode, setMobileSafeMode] = useState(false);
   const [populating, setPopulating] = useState<
     "idle" | "running" | "done" | "error"
@@ -985,11 +987,12 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           </span>
         </button>
 
-        {perfEnabled && (
-          <div data-town-control>
+        {perfEnabled && showPerfPanel && (
+          <div data-town-control style={{ pointerEvents: "none" }}>
             <TownPerfPanel
               report={perfProfiler.report}
               running={perfProfiler.running}
+              panelOpacity={perfPanelOpacity}
               onRun={() => {
                 void runOfficialPerfProfile();
               }}
@@ -997,6 +1000,28 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               onDownload={downloadPerfReport}
               onSaveBaseline={perfProfiler.saveCurrentAsBaseline}
               onClearBaseline={perfProfiler.clearCurrentBaseline}
+            />
+          </div>
+        )}
+
+        {perfEnabled && (
+          <div
+            data-town-control
+            style={{
+              position: "fixed",
+              top: 14,
+              left: 14,
+              zIndex: 1500,
+            }}
+          >
+            <PanelChromeControls
+              panelLabel="Performance panel"
+              visible={showPerfPanel}
+              opacity={perfPanelOpacity}
+              onToggleVisibility={() => {
+                setShowPerfPanel((current) => !current);
+              }}
+              onOpacityChange={setPerfPanelOpacity}
             />
           </div>
         )}

@@ -13,6 +13,7 @@ import type {
 type Props = {
   report: TownPerfReport | null;
   running: boolean;
+  panelOpacity: number;
   onRun: () => void;
   onClear: () => void;
   onDownload: () => void;
@@ -35,6 +36,7 @@ type TimingTreeNode = {
 export function TownPerfPanel({
   report,
   running,
+  panelOpacity,
   onRun,
   onClear,
   onDownload,
@@ -55,9 +57,10 @@ export function TownPerfPanel({
       style={{
         position: "fixed",
         top: 14,
-        right: 14,
-        zIndex: 1200,
-        width: "min(430px, calc(100vw - 28px))",
+        left: "50%",
+        transform: "translateX(-50%)",
+        zIndex: 1400,
+        width: "min(860px, calc(100vw - 28px))",
         maxHeight: "calc(100dvh - 28px)",
         display: "flex",
         flexDirection: "column",
@@ -69,6 +72,8 @@ export function TownPerfPanel({
         color: "var(--willville-paper)",
         boxShadow: "0 20px 40px rgba(0, 0, 0, 0.4)",
         fontFamily: "var(--font-geist-mono), monospace",
+        opacity: panelOpacity,
+        pointerEvents: "auto",
       }}
     >
       <div style={panelHeaderStyle}>
