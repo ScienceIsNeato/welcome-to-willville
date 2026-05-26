@@ -35,7 +35,7 @@ jobs:
           echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
 
       - name: Quality gates
-        run: sm scour
+        run: sm scour || (echo "=== Gate logs ===" && cat .slopmop/logs/*.log && exit 1)
 
       - name: Build
         run: npm run build
