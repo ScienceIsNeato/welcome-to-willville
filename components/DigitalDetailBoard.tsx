@@ -100,7 +100,9 @@ export function DigitalDetailBoard({ stop, boats }: Props) {
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div style={panelStyle}>
-      <span style={panelTitleStyle}>{title}</span>
+      <span style={panelTitleStyle} title={tooltipText(title)}>
+        {title}
+      </span>
       {children}
     </div>
   );
@@ -118,7 +120,9 @@ function Metric({
   return (
     <div style={wide ? wideMetricStyle : metricStyle}>
       <span style={smallLabelStyle}>{label}</span>
-      <strong style={metricValueStyle}>{value}</strong>
+      <strong style={metricValueStyle} title={tooltipText(value)}>
+        {value}
+      </strong>
     </div>
   );
 }
@@ -133,12 +137,14 @@ function BranchSignal({ stop }: { stop: Stop }) {
           href={branch.compareUrl}
           onClick={followLink}
           style={branchLinkStyle}
-          title={`Compare main to ${branch.name}`}
+          title={tooltipText(`Compare main to ${branch.name}`)}
         >
           {branch.name}
         </a>
       ) : (
-        <span style={metricValueStyle}>n/a</span>
+        <span style={metricValueStyle} title="n/a">
+          n/a
+        </span>
       )}
     </div>
   );
@@ -151,13 +157,22 @@ function TextBlock({
   value: string | undefined;
   fallback: string;
 }) {
-  return <p style={noteTextStyle}>{normalizePanelText(value, fallback)}</p>;
+  const text = normalizePanelText(value, fallback);
+  return (
+    <p style={noteTextStyle} title={tooltipText(text)}>
+      {text}
+    </p>
+  );
 }
 
 function WorkflowRunList({ stop }: { stop: Stop }) {
   const runs = stop.workflowRuns ?? [];
   if (runs.length === 0) {
-    return <p style={noteTextStyle}>No recent GitHub Actions runs.</p>;
+    return (
+      <p style={noteTextStyle} title="No recent GitHub Actions runs.">
+        No recent GitHub Actions runs.
+      </p>
+    );
   }
   return (
     <ul style={actionListStyle}>
@@ -166,7 +181,12 @@ function WorkflowRunList({ stop }: { stop: Stop }) {
           <span style={workflowRunStatusStyle(run.status)}>
             {workflowRunStatusLabel(run.status)}
           </span>
-          <a href={run.url} onClick={followLink} style={actionLinkStyle}>
+          <a
+            href={run.url}
+            onClick={followLink}
+            style={actionLinkStyle}
+            title={tooltipText(run.name)}
+          >
             {run.name}
           </a>
         </li>
@@ -178,7 +198,11 @@ function WorkflowRunList({ stop }: { stop: Stop }) {
 function RecentCommitList({ stop }: { stop: Stop }) {
   const commits = stop.recentCommits ?? [];
   if (commits.length === 0) {
-    return <p style={noteTextStyle}>No recent commits.</p>;
+    return (
+      <p style={noteTextStyle} title="No recent commits.">
+        No recent commits.
+      </p>
+    );
   }
   return (
     <ul style={actionListStyle}>
@@ -187,7 +211,12 @@ function RecentCommitList({ stop }: { stop: Stop }) {
           <span style={recentCommitAgeStyle}>
             {timeAgo(commit.committedAt)}
           </span>
-          <a href={commit.url} onClick={followLink} style={actionLinkStyle}>
+          <a
+            href={commit.url}
+            onClick={followLink}
+            style={actionLinkStyle}
+            title={tooltipText(commit.message)}
+          >
             {commit.message}
           </a>
         </li>
@@ -243,6 +272,11 @@ function normalizePanelText(
 ): string {
   if (!value || value.trim().toLowerCase() === "none") return fallback;
   return value;
+}
+
+function tooltipText(value: string | undefined): string | undefined {
+  const text = value?.trim();
+  return text ? text : undefined;
 }
 
 function workflowRunStatusLabel(status: GitHubWorkflowRun["status"]): string {

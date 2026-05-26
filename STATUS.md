@@ -9,6 +9,41 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-25) — Mobile Safe Render Path For iOS Crash Triage
+
+- Added a mobile-safe render path in `components/TownStage.tsx` that activates on coarse/small screens and swaps the town art stack to a lighter mode instead of always rendering the full desktop scene.
+- Updated `components/GeneratedTownBase.tsx` so mobile-safe mode uses the single composite town image (`/art/town/willville-isthmus-v1.png`) instead of stacking every district PNG layer at once.
+- Trimmed the heaviest decorative/animated layers in mobile-safe mode by skipping chimney smoke, dynamic walls, canal traffic animation, world-worker animation, and the Hollywood sign while keeping the core town, stops, and interaction surfaces intact.
+- Validation: touched-file diagnostics were clean; `npm run build` passed; forced mobile-safe browser validation confirmed the rendered town base drops from 8 SVG image layers to 1 and removes the worker/smoke layers; production redeploy succeeded at `https://a227e912.welcome-to-willville.pages.dev`, and both that deployment and the custom-domain edge now return `200` for `/` and `/api/town`.
+
+## Done (2026-05-25) — Pages Domain Attach Attempt + Fresh Production Deploy
+
+- Attached `willville.ai` to the `welcome-to-willville` Cloudflare Pages project directly through the Cloudflare API after confirming Wrangler has no Pages custom-domain CLI for this path.
+- Re-deployed the latest local build, including the mobile viewport hardening, with the corrected Pages bundle flow; the current healthy production deployment is `https://3f0d4b7f.welcome-to-willville.pages.dev` and it serves the app plus `/api/*` correctly.
+- The custom domain is still not cut over yet: the Pages domain object remains `status: initializing` with `verification_data.error_message: "CNAME record not set"`, which explains why `https://willville.ai/` still serves shell HTML while `https://willville.ai/api/town` remains a 404.
+- Re-checked the local perf harness on a phone-sized viewport and confirmed it is not a reliable primary repro rail yet because `window.__willvillePerf.runOfficialProfile()` still fails to populate a `getLastReport()` result under Playwright mobile emulation.
+- Validation: direct `wrangler pages deploy` succeeded at `https://3f0d4b7f.welcome-to-willville.pages.dev`; Pages domain API confirms the attach exists; live custom-domain probe still shows `town 404` while verification is pending.
+
+## Done (2026-05-25) — Mobile Viewport Stabilization + Prod Domain Split
+
+- Patched `app/globals.css` so the app shell uses stable/dynamic viewport units (`100svh` / `100dvh`) instead of relying only on raw `100vh`, which is a likely iOS Safari trigger for flash/resize/collapse behavior when browser chrome changes height.
+- Local mobile-sized sanity check on `http://127.0.0.1:3752/` stayed stable for the initial load window with no console or page errors, so the viewport contract is healthier even though I still do not have a hard Chromium repro of the device-only white-frame failure.
+- Verified the production bell problem is a separate domain/routing issue: `welcome-to-willville.pages.dev` serves `/api/town` correctly, but `https://willville.ai/api/town` and `https://willville.ai/api/manifests` still return 404, and Cloudflare `pages project list` shows no `willville.ai` custom domain attached to the Pages project.
+- Validation: local rebuild via `./scripts/deploy_app.sh` passed; direct mobile browser sanity check passed; `sm swab` only failed on the pre-existing `laziness:dead-code.js` backlog, not on the viewport or deploy changes.
+
+## Done (2026-05-25) — Pages Deploy Foot-Guns Split And Fixed
+
+- Confirmed the recurring Cloudflare deploy failures were two separate problems that looked similar in logs: repo `wrangler.toml` was Pages-invalid because of `[assets]`, and the workflow was using deprecated `wrangler pages functions build --outfile`, which writes a multipart upload payload instead of a deployable worker script.
+- Unstuck production deploys from the CLI by building the app, compiling Pages Functions with `--outdir`, copying `index.js` to `out/_worker.js` plus `_routes.json`, and running `wrangler pages deploy ... --cwd /tmp` so Wrangler never reads the repo config while deploying.
+- Updated `.github/workflows/deploy-pages.yml` to use that same supported path and removed `[assets]` from `wrangler.toml` so repo-local Pages commands stop tripping over an invalid mixed config.
+- Validation: direct CLI deploy succeeded at `https://ed3689b1.welcome-to-willville.pages.dev`, then the post-fix repo-cwd deploy path also succeeded at `https://1351d0c7.welcome-to-willville.pages.dev`; `sm swab` passed. `https://willville.ai/api/town` still returns 404, which now appears to be a separate custom-domain/routing issue rather than the broken Pages bundle path.
+
+## Done (2026-05-25) — Digital Board Truncation Hover Titles
+
+- Updated `components/DigitalDetailBoard.tsx` so clipped text on the Digital Detail Board now exposes the full string on hover via native `title` attributes.
+- Covered the truncation-heavy surfaces directly: panel headers, metric values, branch names, recent commit subjects, GitHub Actions workflow names, and the Status/Direction text blocks.
+- Validation: rebuilt with `./scripts/deploy_app.sh`, then verified on `http://127.0.0.1:3752/town-square/willville-town-hall/` that recent commit rows, workflow rows, long status/direction text, panel headers, and the branch link all carried the expected full hover text; `sm swab` also passed.
+
 ## Done (2026-05-25) — Recent Commits Replaced Canal Panel
 
 - Replaced the Digital Detail Board's top-right Canal/PR list with a Recent Commits panel so each stop now shows the latest commit subjects in reverse chronological order.

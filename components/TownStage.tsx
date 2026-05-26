@@ -139,6 +139,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const [syncing, setSyncing] = useState(false);
   const [showCentralBoard, setShowCentralBoard] = useState(true);
   const [showDigitalBoard, setShowDigitalBoard] = useState(true);
+  const [mobileSafeMode, setMobileSafeMode] = useState(false);
   const [populating, setPopulating] = useState<
     "idle" | "running" | "done" | "error"
   >("idle");
@@ -172,6 +173,34 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       controller.abort();
     };
   }, [loadTown]);
+
+  useEffect(() => {
+    if (!isClient || typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const media = window.matchMedia(
+      "(pointer: coarse) and (max-width: 1024px), (max-width: 767px)",
+    );
+
+    const apply = () => {
+      setMobileSafeMode(media.matches);
+    };
+
+    apply();
+
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", apply);
+      return () => {
+        media.removeEventListener("change", apply);
+      };
+    }
+
+    media.addListener(apply);
+    return () => {
+      media.removeListener(apply);
+    };
+  }, [isClient]);
 
   useEffect(
     () => () => {
@@ -763,9 +792,12 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             <WorldSubstrate />
 
             <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
-              <GeneratedTownBase stops={currentStops} />
-              <ChimneySmoke />
-              <DynamicWalls />
+              <GeneratedTownBase
+                stops={currentStops}
+                mobileSafeMode={mobileSafeMode}
+              />
+              {!mobileSafeMode && <ChimneySmoke />}
+              {!mobileSafeMode && <DynamicWalls />}
               <Canal boats={boats} layer="base" />
               {DISTRICTS.map((d) => (
                 <DistrictZone
@@ -777,8 +809,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               ))}
               <TransitLines />
               <MainLine stops={currentStops} />
-              <Canal boats={boats} layer="traffic" />
-              <WorldWorkerLayer stops={currentStops} />
+              {!mobileSafeMode && <Canal boats={boats} layer="traffic" />}
+              {!mobileSafeMode && <WorldWorkerLayer stops={currentStops} />}
               {currentStops.map((stop) => {
                 const updated = stop.status.updated
                   ? Date.parse(stop.status.updated)
@@ -810,7 +842,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                   onEnterDistrict={enterDistrict}
                 />
               ))}
-              <HollywoodSign />
+              {!mobileSafeMode && <HollywoodSign />}
 
               {/* Town square — clock tower bell */}
               <g
