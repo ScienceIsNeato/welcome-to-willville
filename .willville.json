@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Bell messenger audio, packet hook, skill voice rework — wrapping up loose ends",
-    "direction": "Ship the bell audio and hook, then back to perf testing PR",
-    "last_update": "2026-05-26T09:00:00Z"
+    "status": "Chasing a CI prettier failure in STATUS.md — almost there",
+    "direction": "Get CI green, then this PR is ready to merge",
+    "last_update": "2026-05-26T09:40:00Z"
   }
 }

@@ -308,4 +308,5 @@ eta: 2026-05-22
 - Zoom into town corners shows meadow/hills/sea margin, not black void
 - Deep link `/{district}/{stop}/` opens HUD without camera reframe
 - Mayor's Express list still opens HUD (no map zoom)
+
 # test
