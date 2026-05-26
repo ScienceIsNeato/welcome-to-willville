@@ -3,6 +3,7 @@
 import { useMemo, useRef, useEffect } from "react";
 import type { Stop } from "@/lib/town";
 import { GENERATED_TOWN_LAYOUT } from "@/lib/town-layout";
+import { makeNoiseBuffer } from "@/lib/audio-noise";
 
 type Phase = "running" | "done" | "error";
 
@@ -252,12 +253,17 @@ function scheduleMessengerBed(
   const air = ctx.createBiquadFilter();
   const gain = ctx.createGain();
 
-  source.buffer = makeNoiseBuffer(ctx, duration, (progress) => {
-    const attack = Math.min(1, progress / 0.18);
-    const release = Math.min(1, (1 - progress) / 0.34);
-    const pulse = 0.55 + Math.sin(progress * Math.PI * 8) * 0.16;
-    return Math.max(0, Math.min(1, attack, release)) * pulse;
-  });
+  source.buffer = makeNoiseBuffer(
+    ctx,
+    duration,
+    (progress) => {
+      const attack = Math.min(1, progress / 0.18);
+      const release = Math.min(1, (1 - progress) / 0.34);
+      const pulse = 0.55 + Math.sin(progress * Math.PI * 8) * 0.16;
+      return Math.max(0, Math.min(1, attack, release)) * pulse;
+    },
+    { smoothing: 0.78, randomWeight: 0.22, level: 0.58 },
+  );
 
   hush.type = "lowpass";
   hush.frequency.setValueAtTime(isOutbound ? 4300 : 3300, time);
@@ -299,13 +305,18 @@ function scheduleMessengerWhoosh(
 
   // --- Noise layer: shaped white noise for the "air rush" ---
   const noiseSource = ctx.createBufferSource();
-  noiseSource.buffer = makeNoiseBuffer(ctx, dur, (progress) => {
-    // Swell up, peak at ~40%, then trail off
-    const attack = Math.min(1, progress / 0.15);
-    const peak = 1 - Math.abs(progress - 0.4) * 1.2;
-    const release = Math.pow(Math.max(0, 1 - progress), 1.2);
-    return Math.max(0, Math.min(1, attack, peak + 0.3)) * release;
-  });
+  noiseSource.buffer = makeNoiseBuffer(
+    ctx,
+    dur,
+    (progress) => {
+      // Swell up, peak at ~40%, then trail off
+      const attack = Math.min(1, progress / 0.15);
+      const peak = 1 - Math.abs(progress - 0.4) * 1.2;
+      const release = Math.pow(Math.max(0, 1 - progress), 1.2);
+      return Math.max(0, Math.min(1, attack, peak + 0.3)) * release;
+    },
+    { smoothing: 0.78, randomWeight: 0.22, level: 0.58 },
+  );
 
   // Doppler sweep: bandpass sweeps high→low as the particle "passes"
   const doppler = ctx.createBiquadFilter();
@@ -358,23 +369,4 @@ function scheduleMessengerWhoosh(
   noiseSource.stop(t + dur);
   sub.start(t);
   sub.stop(t + dur);
-}
-
-function makeNoiseBuffer(
-  ctx: AudioContext,
-  duration: number,
-  envelope: (progress: number) => number,
-) {
-  const sampleCount = Math.max(1, Math.floor(ctx.sampleRate * duration));
-  const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
-  const channel = buffer.getChannelData(0);
-  let previous = 0;
-
-  for (let index = 0; index < sampleCount; index += 1) {
-    const progress = index / sampleCount;
-    previous = previous * 0.78 + (Math.random() * 2 - 1) * 0.22;
-    channel[index] = previous * envelope(progress) * 0.58;
-  }
-
-  return buffer;
 }

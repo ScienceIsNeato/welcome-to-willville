@@ -9,6 +9,7 @@ import {
 } from "react";
 import { activeQueue, mostActiveStops, type Stop } from "@/lib/town";
 import { DISTRICTS } from "@/lib/willville";
+import { makeNoiseBuffer } from "@/lib/audio-noise";
 import { BOARD_COLUMNS, BOARD_ROWS, EMPTY_ROW } from "./centralBoardConstants";
 
 function stopLabel(stop: Stop): string {
@@ -574,12 +575,17 @@ function scheduleRustleBed(
   duration: number,
   gainLevel: number,
 ) {
-  const buffer = makeNoiseBuffer(ctx, duration, (t) => {
-    const attack = Math.min(1, t / 0.18);
-    const release = Math.min(1, (1 - t) / 0.35);
-    const slowWave = 0.58 + Math.sin(t * Math.PI * 6) * 0.18;
-    return Math.max(0, Math.min(1, attack, release)) * slowWave;
-  });
+  const buffer = makeNoiseBuffer(
+    ctx,
+    duration,
+    (progress) => {
+      const attack = Math.min(1, progress / 0.18);
+      const release = Math.min(1, (1 - progress) / 0.35);
+      const slowWave = 0.58 + Math.sin(progress * Math.PI * 6) * 0.18;
+      return Math.max(0, Math.min(1, attack, release)) * slowWave;
+    },
+    { smoothing: 0.72, randomWeight: 0.28, level: 0.62 },
+  );
 
   const source = ctx.createBufferSource();
   const hush = ctx.createBiquadFilter();
@@ -613,12 +619,17 @@ function schedulePaperShuffle(
   gainLevel: number,
   duration: number,
 ) {
-  const buffer = makeNoiseBuffer(ctx, duration, (t) => {
-    const attack = Math.min(1, t / 0.08);
-    const release = Math.pow(Math.max(0, 1 - t), 2.2);
-    const fibers = 0.7 + Math.random() * 0.3;
-    return attack * release * fibers;
-  });
+  const buffer = makeNoiseBuffer(
+    ctx,
+    duration,
+    (progress) => {
+      const attack = Math.min(1, progress / 0.08);
+      const release = Math.pow(Math.max(0, 1 - progress), 2.2);
+      const fibers = 0.7 + Math.random() * 0.3;
+      return attack * release * fibers;
+    },
+    { smoothing: 0.72, randomWeight: 0.28, level: 0.62 },
+  );
 
   const source = ctx.createBufferSource();
   const paper = ctx.createBiquadFilter();
@@ -645,23 +656,6 @@ function schedulePaperShuffle(
   gain.connect(ctx.destination);
   source.start(time);
   source.stop(time + duration);
-}
-
-function makeNoiseBuffer(
-  ctx: AudioContext,
-  duration: number,
-  envelope: (progress: number) => number,
-) {
-  const sampleCount = Math.max(1, Math.floor(ctx.sampleRate * duration));
-  const buffer = ctx.createBuffer(1, sampleCount, ctx.sampleRate);
-  const channel = buffer.getChannelData(0);
-  let previous = 0;
-  for (let i = 0; i < sampleCount; i += 1) {
-    const t = i / sampleCount;
-    previous = previous * 0.72 + (Math.random() * 2 - 1) * 0.28;
-    channel[i] = previous * envelope(t) * 0.62;
-  }
-  return buffer;
 }
 
 const shellStyle: CSSProperties = {

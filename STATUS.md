@@ -9,6 +9,12 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-26) — Bell Noise Helper Deduplicated
+
+- Moved the procedural audio noise buffer helper into one shared module so bell messenger sounds and board rustle sounds no longer carry separate copies that can drift.
+- Preserved the existing tuning values at each call site while sharing the buffer generation path.
+- Validation: touched-file diagnostics were clean; `npm run build` passed; `sm swab -g laziness:sloppy-formatting.js --no-cache` passed.
+
 ## Done (2026-05-26) — Dead-Code Gate Barnacle Filed
 
 - Filed ScienceIsNeato/slop-mop#226 because the JavaScript dead-code gate is still reporting entries that the repo Knip config excludes, including Pages Function files and `prettier`.

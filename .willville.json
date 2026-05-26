@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Buffing the PR after the town art speedup",
-    "direction": "Keep the PR moving while the dead-code tool bug is tracked upstream",
-    "last_update": "2026-05-26T11:20:33Z"
+    "status": "Cleaning up the last PR review note after the town art speedup",
+    "direction": "Push the fix, resolve the thread, and watch the remaining deploy check",
+    "last_update": "2026-05-26T11:28:09Z"
   }
 }
