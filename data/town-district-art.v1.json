@@ -24,12 +24,12 @@
           "area": 79775
         }
       ],
+      "artKind": "custom",
       "scale": 4,
       "pixelSize": {
         "width": 6400,
         "height": 4960
-      },
-      "artKind": "custom"
+      }
     },
     {
       "id": "the-zeitgeist",
@@ -53,12 +53,12 @@
           "area": 93261
         }
       ],
+      "artKind": "custom",
       "scale": 4,
       "pixelSize": {
         "width": 6400,
         "height": 4960
-      },
-      "artKind": "custom"
+      }
     },
     {
       "id": "the-graveyard",
@@ -82,12 +82,12 @@
           "area": 104657
         }
       ],
+      "artKind": "custom",
       "scale": 4,
       "pixelSize": {
         "width": 6400,
         "height": 4960
-      },
-      "artKind": "custom"
+      }
     },
     {
       "id": "halls-of-judgement",
@@ -111,12 +111,12 @@
           "area": 75491
         }
       ],
+      "artKind": "custom",
       "scale": 4,
       "pixelSize": {
         "width": 6400,
         "height": 4960
-      },
-      "artKind": "custom"
+      }
     },
     {
       "id": "town-square",
@@ -140,12 +140,12 @@
           "area": 117774
         }
       ],
+      "artKind": "custom",
       "scale": 4,
       "pixelSize": {
         "width": 6400,
         "height": 4960
-      },
-      "artKind": "custom"
+      }
     },
     {
       "id": "slop-wharf",
@@ -183,12 +183,12 @@
           "area": 1285
         }
       ],
+      "artKind": "custom",
       "scale": 4,
       "pixelSize": {
         "width": 6400,
         "height": 4960
-      },
-      "artKind": "custom"
+      }
     },
     {
       "id": "dogwallow-ramble-ii",
@@ -226,12 +226,12 @@
           "area": 9765
         }
       ],
+      "artKind": "custom",
       "scale": 4,
       "pixelSize": {
         "width": 6400,
         "height": 4960
-      },
-      "artKind": "custom"
+      }
     },
     {
       "id": "gates-of-hell",
@@ -255,12 +255,12 @@
           "area": 82913
         }
       ],
+      "artKind": "custom",
       "scale": 4,
       "pixelSize": {
         "width": 6400,
         "height": 4960
-      },
-      "artKind": "custom"
+      }
     }
   ]
 }

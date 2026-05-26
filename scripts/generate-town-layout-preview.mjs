@@ -36,19 +36,23 @@ const rails = layout.lines
   .join("\n");
 
 const sign = layout.landmarks.welcomeSign;
+const signBoard = {
+  width: 472,
+  height: 50,
+  y: -10,
+};
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${layout.size.width} ${layout.size.height}">
   <rect width="${layout.size.width}" height="${layout.size.height}" fill="#0b3a55" />
   <path d="${layout.landPath}" fill="#6f9a65" stroke="#2d5e46" stroke-width="16" />
-  <path d="${layout.shoreWallPath}" fill="none" stroke="#d8c391" stroke-width="12" stroke-dasharray="18 9" opacity="0.75" />
 ${districts}
   <path d="${layout.canal.pathD}" fill="none" stroke="#123a5e" stroke-width="86" stroke-linecap="round" />
   <path d="${layout.canal.pathD}" fill="none" stroke="#1f4f7a" stroke-width="68" stroke-linecap="round" />
   <path d="${layout.canal.pathD}" fill="none" stroke="#3a82b8" stroke-width="9" stroke-linecap="round" stroke-dasharray="24 30" opacity="0.55" />
 ${rails}
   <g transform="translate(${sign.x}, ${sign.y}) rotate(-8)">
-    <path d="${sign.pathD}" transform="translate(${-sign.x}, ${-sign.y})" fill="#f5e6c8" stroke="#4c3320" stroke-width="6" />
-    <text x="0" y="3" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="42" font-weight="900" letter-spacing="2" fill="#4c3320" stroke="#f5e6c8" stroke-width="5" paint-order="stroke">WELCOME TO WILLVILLE</text>
+    <rect x="${-signBoard.width / 2}" y="${signBoard.y}" width="${signBoard.width}" height="${signBoard.height}" rx="3" fill="#f5e6c8" stroke="#4c3320" stroke-width="6" />
+    <text x="0" y="${signBoard.y + signBoard.height / 2 + 1}" text-anchor="middle" dominant-baseline="middle" font-family="Arial Black, Arial, sans-serif" font-size="42" font-weight="900" letter-spacing="2" fill="#4c3320" stroke="#f5e6c8" stroke-width="5" paint-order="stroke">WELCOME TO WILLVILLE</text>
   </g>
 </svg>
 `;
