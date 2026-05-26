@@ -6,6 +6,7 @@ import { activeQueue, mostActiveStops, type Stop } from "@/lib/town";
 type Props = {
   stops: Stop[];
   onEngineClick?: () => void;
+  engineLabel?: string;
 };
 
 const GOLD = "#e6c66a";
@@ -282,7 +283,11 @@ function ExpressCar({ scale = 1 }: { scale?: number }) {
   );
 }
 
-export function MainLine({ stops, onEngineClick }: Props) {
+export function MainLine({
+  stops,
+  onEngineClick,
+  engineLabel = "Activate the Mayor's Express",
+}: Props) {
   const active = mostActiveStops(stops);
   const queue = active.length >= 2 ? active : activeQueue(stops);
   if (queue.length < 2) return null;
@@ -384,7 +389,7 @@ export function MainLine({ stops, onEngineClick }: Props) {
       {/* === Express train === */}
       {/* Locomotive — clickable */}
       <g
-        aria-label="Ring the town bell"
+        aria-label={engineLabel}
         role="button"
         tabIndex={0}
         style={{ cursor: "pointer", pointerEvents: "all" }}
