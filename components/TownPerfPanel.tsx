@@ -1,10 +1,12 @@
 "use client";
 
 import type {
+  TownPerfBaselineComparison,
   TownPerfFps,
   TownPerfReport,
   TownPerfReportBlock,
   TownPerfReportStep,
+  TownPerfStepDelta,
 } from "@/hooks/useTownInteractionProfiler";
 
 type Props = {
@@ -13,6 +15,8 @@ type Props = {
   onRun: () => void;
   onClear: () => void;
   onDownload: () => void;
+  onSaveBaseline: () => void;
+  onClearBaseline: () => void;
 };
 
 type TimingTreeNode = {
@@ -32,6 +36,8 @@ export function TownPerfPanel({
   onRun,
   onClear,
   onDownload,
+  onSaveBaseline,
+  onClearBaseline,
 }: Props) {
   const slowestBlocks = report
     ? [...report.blocks].sort((left, right) => right.ms - left.ms).slice(0, 16)
@@ -160,6 +166,13 @@ export function TownPerfPanel({
 
             <FpsSummaryBox fps={report.fps} />
 
+            {report.baselineComparison && (
+              <BaselineComparisonBox
+                comparison={report.baselineComparison}
+                steps={report.steps}
+              />
+            )}
+
             {report.longTasks.length > 0 && (
               <>
                 <SectionTitle title="Long Tasks (Main Thread Jank)" />
@@ -239,6 +252,22 @@ export function TownPerfPanel({
               </button>
               <button
                 type="button"
+                onClick={onSaveBaseline}
+                style={secondaryButtonStyle}
+              >
+                Save as Baseline
+              </button>
+              {report.baselineComparison && (
+                <button
+                  type="button"
+                  onClick={onClearBaseline}
+                  style={secondaryButtonStyle}
+                >
+                  Clear Baseline
+                </button>
+              )}
+              <button
+                type="button"
                 onClick={onClear}
                 style={secondaryButtonStyle}
               >
@@ -255,6 +284,97 @@ export function TownPerfPanel({
         )}
       </div>
     </aside>
+  );
+}
+
+function formatDelta(ms: number, pct: number): string {
+  const sign = ms > 0 ? "+" : "";
+  return `${sign}${ms.toFixed(0)}ms (${sign}${pct.toFixed(1)}%)`;
+}
+
+function deltaColor(deltaMs: number): string {
+  if (deltaMs > 50) return "#ffb096"; // slower = bad
+  if (deltaMs < -50) return "#9fe0b4"; // faster = good
+  return "inherit";
+}
+
+function BaselineComparisonBox({
+  comparison,
+  steps,
+}: {
+  comparison: TownPerfBaselineComparison;
+  steps: TownPerfReportStep[];
+}) {
+  const isFaster = comparison.deltaTotalMs < 0;
+  const stepMap = new Map(steps.map((s) => [s.id, s]));
+  const significantDeltas = comparison.stepDeltas.filter(
+    (d) => Math.abs(d.deltaMs) > 20,
+  );
+
+  return (
+    <div
+      style={{
+        ...summaryBoxStyle,
+        borderColor: isFaster
+          ? "rgba(124, 210, 151, 0.45)"
+          : "rgba(255, 133, 92, 0.5)",
+      }}
+    >
+      <div style={summaryLabelStyle}>vs. Baseline</div>
+      <div
+        style={{
+          ...summaryValueStyle,
+          color: deltaColor(comparison.deltaTotalMs),
+        }}
+      >
+        {formatDelta(comparison.deltaTotalMs, comparison.deltaTotalPct)}
+      </div>
+      {comparison.deltaAvgFps !== 0 && (
+        <div
+          style={{
+            marginTop: 4,
+            fontSize: 12,
+            color:
+              comparison.deltaAvgFps > 0 ? "#9fe0b4" : "#ffb096",
+          }}
+        >
+          FPS: {comparison.deltaAvgFps > 0 ? "+" : ""}
+          {comparison.deltaAvgFps} avg
+        </div>
+      )}
+      {significantDeltas.length > 0 && (
+        <div style={{ marginTop: 8 }}>
+          <div
+            style={{
+              fontSize: 10,
+              letterSpacing: 1.2,
+              textTransform: "uppercase",
+              opacity: 0.7,
+              marginBottom: 4,
+            }}
+          >
+            Notable step changes
+          </div>
+          <div style={gridStyle}>
+            {significantDeltas.map((d) => {
+              const step = stepMap.get(d.stepId);
+              return (
+                <div
+                  key={d.stepId}
+                  style={{
+                    ...rowStyle,
+                    color: deltaColor(d.deltaMs),
+                  }}
+                >
+                  <span>{step?.label ?? d.stepId}</span>
+                  <span>{formatDelta(d.deltaMs, d.deltaPct)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

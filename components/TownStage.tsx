@@ -31,6 +31,7 @@ import { GeneratedTownBase } from "./GeneratedTownBase";
 import { WorldWorkerLayer } from "./WorldWorkerLayer";
 import { HollywoodSign } from "./HollywoodSign";
 import { TownPerfPanel } from "./TownPerfPanel";
+import { PanelChromeControls } from "./PanelChromeControls";
 import { screenToWorld, useTownCamera } from "@/hooks/useTownCamera";
 import { useTownInteractionProfiler } from "@/hooks/useTownInteractionProfiler";
 import { useTownPerfJourney } from "@/hooks/useTownPerfJourney";
@@ -105,6 +106,13 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   }, [deferredPathname, isClient]);
   const perfEnabled = perfSearchParams?.get("perf") === "1";
   const perfAutorun = perfSearchParams?.get("autorun") === "1";
+  const routeWithCurrentSearch = useCallback(
+    (path: string) => {
+      if (!isClient || !window.location.search) return path;
+      return `${path}${window.location.search}`;
+    },
+    [isClient],
+  );
   const [now, setNow] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -139,6 +147,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const [syncing, setSyncing] = useState(false);
   const [showCentralBoard, setShowCentralBoard] = useState(true);
   const [showDigitalBoard, setShowDigitalBoard] = useState(true);
+  const [centralBoardOpacity, setCentralBoardOpacity] = useState(0.94);
+  const [digitalBoardOpacity, setDigitalBoardOpacity] = useState(0.94);
   const [mobileSafeMode, setMobileSafeMode] = useState(false);
   const [populating, setPopulating] = useState<
     "idle" | "running" | "done" | "error"
@@ -180,7 +190,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     }
 
     const media = window.matchMedia(
-      "(pointer: coarse) and (max-width: 1024px), (max-width: 767px)",
+      "(pointer: coarse) and (hover: none) and (max-width: 1024px)",
     );
 
     const apply = () => {
@@ -452,26 +462,30 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       transitioningToStopIdRef.current = stop.id;
       dismissedStopIdRef.current = null;
       setSelectedStop(stop);
-      router.replace(`/${stop.district}/${stop.id}/`, { scroll: false });
+      router.replace(routeWithCurrentSearch(`/${stop.district}/${stop.id}/`), {
+        scroll: false,
+      });
     },
-    [router, showCentralBoard, showDigitalBoard],
+    [routeWithCurrentSearch, router, showCentralBoard, showDigitalBoard],
   );
 
   const closeHud = useCallback(() => {
     transitioningToStopIdRef.current = null;
     dismissedStopIdRef.current = pathStopId;
     setSelectedStop(null);
-    router.replace("/", { scroll: false });
-  }, [pathStopId, router]);
+    router.replace(routeWithCurrentSearch("/"), { scroll: false });
+  }, [pathStopId, routeWithCurrentSearch, router]);
 
   const enterDistrict = useCallback(
     (district: (typeof DISTRICTS)[number]) => {
       transitioningToStopIdRef.current = null;
       dismissedStopIdRef.current = pathStopId;
       setSelectedStop(null);
-      router.push(`/${district.id}/`);
+      router.push(routeWithCurrentSearch(`/${district.id}/`), {
+        scroll: false,
+      });
     },
-    [pathStopId, router],
+    [pathStopId, routeWithCurrentSearch, router],
   );
 
   const handleStageClick = useCallback(
@@ -537,11 +551,14 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   );
 
   const showWelcomeHint = !boardStop && pathDistrict === null;
+  const stageControlTop = showCentralBoard ? 196 : 16;
+  const stageControlBottom = showDigitalBoard ? 236 : 16;
 
   return (
     <div
       id="willville-stage"
       style={{
+        position: "relative",
         display: "grid",
         gridTemplateRows: showCentralBoard
           ? showDigitalBoard
@@ -557,20 +574,52 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       }}
     >
       {showCentralBoard && (
-        <CentralBoard
-          stops={currentStops}
-          selectedStop={boardStop}
-          activeDistrict={pathDistrict}
-          onSelectStop={openStopHud}
-          announcementRows={boardAnnouncement?.rows}
-          announcementLabel={boardAnnouncement?.label}
-        />
+        <div
+          style={{
+            gridRow: "1 / 2",
+            position: "relative",
+            zIndex: 2,
+            pointerEvents: "none",
+          }}
+        >
+          <CentralBoard
+            stops={currentStops}
+            selectedStop={boardStop}
+            activeDistrict={pathDistrict}
+            onSelectStop={openStopHud}
+            announcementRows={boardAnnouncement?.rows}
+            announcementLabel={boardAnnouncement?.label}
+            panelOpacity={centralBoardOpacity}
+          />
+
+          <div
+            style={{
+              position: "absolute",
+              top: 10,
+              right: 14,
+              zIndex: 4,
+              pointerEvents: "auto",
+            }}
+          >
+            <PanelChromeControls
+              panelLabel="Time Central panel"
+              visible={showCentralBoard}
+              opacity={centralBoardOpacity}
+              onToggleVisibility={() => {
+                setShowCentralBoard((current) => !current);
+              }}
+              onOpacityChange={setCentralBoardOpacity}
+            />
+          </div>
+        </div>
       )}
 
       <div
         ref={stageRef}
         style={{
-          position: "relative",
+          position: "absolute",
+          inset: 0,
+          zIndex: 0,
           minHeight: 0,
           touchAction: "none",
           cursor: isDragging ? "grabbing" : "default",
@@ -580,71 +629,6 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         onDoubleClick={handleStageDoubleClick}
         {...stageHandlers}
       >
-        <div
-          style={{
-            position: "absolute",
-            top: 16,
-            left: 16,
-            zIndex: 20,
-            display: "flex",
-            gap: 8,
-            flexWrap: "wrap",
-            maxWidth: "min(420px, calc(100vw - 32px))",
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setShowCentralBoard((current) => !current)}
-            aria-pressed={showCentralBoard}
-            title={showCentralBoard ? "Hide Time Central" : "Show Time Central"}
-            style={{
-              border: "1px solid rgba(230,198,106,0.45)",
-              borderRadius: 999,
-              background: showCentralBoard
-                ? "linear-gradient(180deg, rgba(36,24,12,0.92) 0%, rgba(20,12,6,0.96) 100%)"
-                : "rgba(14, 12, 11, 0.78)",
-              color: "var(--willville-paper)",
-              padding: "8px 12px",
-              fontSize: 12,
-              letterSpacing: 0.5,
-              cursor: "pointer",
-              boxShadow:
-                "0 4px 12px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(230,198,106,0.15)",
-              opacity: showCentralBoard ? 1 : 0.75,
-            }}
-          >
-            {showCentralBoard ? "Hide Time Central" : "Show Time Central"}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowDigitalBoard((current) => !current)}
-            aria-pressed={showDigitalBoard}
-            title={
-              showDigitalBoard
-                ? "Hide Digital Detail Board"
-                : "Show Digital Detail Board"
-            }
-            style={{
-              border: "1px solid rgba(230,198,106,0.45)",
-              borderRadius: 999,
-              background: showDigitalBoard
-                ? "linear-gradient(180deg, rgba(36,24,12,0.92) 0%, rgba(20,12,6,0.96) 100%)"
-                : "rgba(14, 12, 11, 0.78)",
-              color: "var(--willville-paper)",
-              padding: "8px 12px",
-              fontSize: 12,
-              letterSpacing: 0.5,
-              cursor: "pointer",
-              boxShadow:
-                "0 4px 12px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(230,198,106,0.15)",
-              opacity: showDigitalBoard ? 1 : 0.75,
-            }}
-          >
-            {showDigitalBoard ? "Hide Digital Board" : "Show Digital Board"}
-          </button>
-        </div>
-
         <svg
           ref={svgRef}
           viewBox={`0 0 ${WORLD.width} ${WORLD.height}`}
@@ -792,10 +776,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             <WorldSubstrate />
 
             <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
-              <GeneratedTownBase
-                stops={currentStops}
-                mobileSafeMode={mobileSafeMode}
-              />
+              <GeneratedTownBase stops={currentStops} />
               {!mobileSafeMode && <ChimneySmoke />}
               {!mobileSafeMode && <DynamicWalls />}
               <Canal boats={boats} layer="base" />
@@ -922,7 +903,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           <div
             style={{
               position: "absolute",
-              top: 16,
+              top: stageControlTop,
               left: "50%",
               transform: "translateX(-50%)",
               background: "rgba(18,10,6,0.92)",
@@ -951,7 +932,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           <motion.div
             style={{
               position: "absolute",
-              bottom: 16,
+              bottom: stageControlBottom,
               left: 16,
               color: "var(--willville-paper)",
               opacity: 0.8,
@@ -967,13 +948,14 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         )}
 
         <button
+          data-town-control
           onClick={handleSync}
           disabled={syncing}
           aria-label="Sync town data from GitHub"
           title="Sync from GitHub"
           style={{
             position: "absolute",
-            bottom: 16,
+            bottom: stageControlBottom,
             right: 16,
             width: 36,
             height: 36,
@@ -1004,15 +986,19 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         </button>
 
         {perfEnabled && (
-          <TownPerfPanel
-            report={perfProfiler.report}
-            running={perfProfiler.running}
-            onRun={() => {
-              void runOfficialPerfProfile();
-            }}
-            onClear={perfProfiler.clearReport}
-            onDownload={downloadPerfReport}
-          />
+          <div data-town-control>
+            <TownPerfPanel
+              report={perfProfiler.report}
+              running={perfProfiler.running}
+              onRun={() => {
+                void runOfficialPerfProfile();
+              }}
+              onClear={perfProfiler.clearReport}
+              onDownload={downloadPerfReport}
+              onSaveBaseline={perfProfiler.saveCurrentAsBaseline}
+              onClearBaseline={perfProfiler.clearCurrentBaseline}
+            />
+          </div>
         )}
 
         <style>{`
@@ -1020,8 +1006,84 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       `}</style>
       </div>
 
+      {!showCentralBoard && (
+        <div
+          style={{
+            position: "absolute",
+            top: 14,
+            right: 16,
+            zIndex: 20,
+          }}
+        >
+          <PanelChromeControls
+            panelLabel="Time Central panel"
+            visible={showCentralBoard}
+            opacity={centralBoardOpacity}
+            onToggleVisibility={() => {
+              setShowCentralBoard((current) => !current);
+            }}
+            onOpacityChange={setCentralBoardOpacity}
+          />
+        </div>
+      )}
+
       {showDigitalBoard && (
-        <DigitalDetailBoard stop={boardStop} boats={boats} />
+        <div
+          style={{
+            gridRow: "3 / 4",
+            position: "relative",
+            zIndex: 2,
+            pointerEvents: "none",
+          }}
+        >
+          <DigitalDetailBoard
+            stop={boardStop}
+            boats={boats}
+            panelOpacity={digitalBoardOpacity}
+          />
+
+          <div
+            style={{
+              position: "absolute",
+              top: 10,
+              right: 14,
+              zIndex: 4,
+              pointerEvents: "auto",
+            }}
+          >
+            <PanelChromeControls
+              panelLabel="Digital detail panel"
+              visible={showDigitalBoard}
+              opacity={digitalBoardOpacity}
+              onToggleVisibility={() => {
+                setShowDigitalBoard((current) => !current);
+              }}
+              onOpacityChange={setDigitalBoardOpacity}
+            />
+          </div>
+        </div>
+      )}
+
+      {!showDigitalBoard && (
+        <div
+          style={{
+            position: "absolute",
+            right: 16,
+            bottom: 62,
+            zIndex: 20,
+          }}
+        >
+          <PanelChromeControls
+            panelLabel="Digital detail panel"
+            visible={showDigitalBoard}
+            opacity={digitalBoardOpacity}
+            onToggleVisibility={() => {
+              setShowDigitalBoard((current) => !current);
+            }}
+            onOpacityChange={setDigitalBoardOpacity}
+            popoverDirection="up"
+          />
+        </div>
       )}
     </div>
   );

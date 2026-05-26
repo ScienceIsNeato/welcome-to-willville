@@ -56,6 +56,27 @@ type TownPerfReportPhase = {
   avgMs: number;
 };
 
+export type TownPerfStepDelta = {
+  stepId: string;
+  deltaMs: number;
+  deltaPct: number;
+  deltaFpsAvg: number | null;
+};
+
+export type TownPerfBaseline = {
+  savedAt: string;
+  totalMs: number;
+  avgFps: number;
+  steps: Array<{ id: string; ms: number; avgFps: number }>;
+};
+
+export type TownPerfBaselineComparison = {
+  deltaTotalMs: number;
+  deltaTotalPct: number;
+  deltaAvgFps: number;
+  stepDeltas: TownPerfStepDelta[];
+};
+
 export type TownPerfReport = {
   scenario: string;
   startedAt: string;
@@ -67,6 +88,7 @@ export type TownPerfReport = {
   blocks: TownPerfReportBlock[];
   largestBlock: TownPerfReportBlock | null;
   phases: TownPerfReportPhase[];
+  baselineComparison: TownPerfBaselineComparison | null;
 };
 
 type ScenarioMeta = {
@@ -160,6 +182,74 @@ function sliceSamples(
   endMs: number,
 ): FrameSample[] {
   return samples.filter((s) => s.ts >= startMs && s.ts <= endMs);
+}
+
+const BASELINE_KEY = "willville-perf-baseline";
+
+function loadBaseline(): TownPerfBaseline | null {
+  try {
+    const raw = localStorage.getItem(BASELINE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as TownPerfBaseline;
+  } catch {
+    return null;
+  }
+}
+
+function saveBaseline(report: TownPerfReport): void {
+  const baseline: TownPerfBaseline = {
+    savedAt: new Date().toISOString(),
+    totalMs: report.totalMs,
+    avgFps: report.fps.avgFps,
+    steps: report.steps.map((s) => ({
+      id: s.id,
+      ms: s.ms,
+      avgFps: s.fps?.avgFps ?? 0,
+    })),
+  };
+  try {
+    localStorage.setItem(BASELINE_KEY, JSON.stringify(baseline));
+  } catch {
+    // storage full or unavailable
+  }
+}
+
+function clearBaseline(): void {
+  try {
+    localStorage.removeItem(BASELINE_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+function compareToBaseline(
+  report: { totalMs: number; fps: TownPerfFps; steps: TownPerfReportStep[] },
+  baseline: TownPerfBaseline,
+): TownPerfBaselineComparison {
+  const deltaTotalMs = report.totalMs - baseline.totalMs;
+  const deltaTotalPct =
+    baseline.totalMs > 0 ? (deltaTotalMs / baseline.totalMs) * 100 : 0;
+  const deltaAvgFps = report.fps.avgFps - baseline.avgFps;
+
+  const baselineStepMap = new Map(
+    baseline.steps.map((s) => [s.id, s]),
+  );
+
+  const stepDeltas: TownPerfStepDelta[] = report.steps.map((step) => {
+    const base = baselineStepMap.get(step.id);
+    if (!base) {
+      return { stepId: step.id, deltaMs: 0, deltaPct: 0, deltaFpsAvg: null };
+    }
+    const deltaMs = step.ms - base.ms;
+    const deltaPct = base.ms > 0 ? (deltaMs / base.ms) * 100 : 0;
+    const deltaFpsAvg =
+      step.fps && base.avgFps > 0
+        ? step.fps.avgFps - base.avgFps
+        : null;
+    return { stepId: step.id, deltaMs, deltaPct, deltaFpsAvg };
+  });
+
+  return { deltaTotalMs, deltaTotalPct, deltaAvgFps, stepDeltas };
 }
 
 export function useTownInteractionProfiler(enabled: boolean) {
@@ -376,6 +466,11 @@ export function useTownInteractionProfiler(enabled: boolean) {
       };
     });
 
+    const baseline = loadBaseline();
+    const baselineComparison = baseline
+      ? compareToBaseline({ totalMs, fps, steps }, baseline)
+      : null;
+
     const nextReport: TownPerfReport = {
       scenario: scenario.scenario,
       startedAt: scenario.startedAtIso,
@@ -387,6 +482,7 @@ export function useTownInteractionProfiler(enabled: boolean) {
       blocks,
       largestBlock,
       phases,
+      baselineComparison,
     };
 
     setReport(nextReport);
@@ -434,8 +530,17 @@ export function useTownInteractionProfiler(enabled: boolean) {
     [enabled],
   );
 
+  const saveCurrentAsBaseline = useCallback(() => {
+    if (report) saveBaseline(report);
+  }, [report]);
+
+  const clearCurrentBaseline = useCallback(() => {
+    clearBaseline();
+  }, []);
+
   return useMemo(
     () => ({
+      clearCurrentBaseline,
       clearReport,
       finishScenario,
       measure,
@@ -444,10 +549,12 @@ export function useTownInteractionProfiler(enabled: boolean) {
       runBlock,
       runStep,
       running,
+      saveCurrentAsBaseline,
       scheduleFrameSample,
       startScenario,
     }),
     [
+      clearCurrentBaseline,
       clearReport,
       finishScenario,
       measure,
@@ -456,6 +563,7 @@ export function useTownInteractionProfiler(enabled: boolean) {
       runBlock,
       runStep,
       running,
+      saveCurrentAsBaseline,
       scheduleFrameSample,
       startScenario,
     ],
