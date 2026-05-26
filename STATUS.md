@@ -9,12 +9,27 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-26) — Local Deploy No Longer Depends On Google Fonts
+
+- Fixed `deploy_app` failing during `next build` when the environment could not reach Google Fonts for the Next font optimizer.
+- Removed the build-time `next/font/google` dependency and defined the existing font CSS variables as local system font stacks instead.
+- Validation: touched-file diagnostics were clean; `./scripts/deploy_app.sh` completed successfully and served `http://127.0.0.1:3750/`; smoke checks returned `200` for `/` and `/api/town`.
+
+## Done (2026-05-26) — Bell Refresh Tracks Willville Packet Source
+
+- Added source metadata to displayed `.willville.json` agent packets so each packet now carries the branch, branch head commit, and file blob SHA it came from.
+- Updated active-branch discovery to retain the latest push head SHA, and threaded that through the town API into each stop.
+- Updated bell-board change detection so a repo is marked updated when its active branch changes, active branch commit changes, or the displayed `.willville.json` packet source/blob changes.
+- Made bell toll and manual sync refreshes bypass cached `/api/town` responses so packet changes are checked immediately after the bell work finishes.
+- Validation: touched-file diagnostics were clean; `npm run build` passed.
+
 ## Done (2026-05-25) — District Art No Longer Clipped By Landscape Mask
 
 - Fixed the missing edge chunks in The Graveyard, The Gates of Hell, and Slop Wharf by separating the broad landscape `landPath` mask from the district/town art clipping path.
 - Updated `GeneratedTownBase` so runtime district layers clip to the computed `townFootprintPath` instead of the newer landscape land mask, which had been cutting off coastal district pieces.
 - Updated the mask contract generator so district masks, canal banks, and district wall masks use the town footprint clip while the landscape layer can keep using `landPath`.
-- Validation: touched-file diagnostics were clean; `node scripts/generate-town-mask-contract.mjs` completed successfully.
+- Reapplied corrected masks to the affected district art. The available PNG history preserved enough pixels to recover most of the missing regions; a small amount of already-zeroed transparent RGB had to be filled from neighboring art pixels rather than restored from an original raw source.
+- Validation: touched-file diagnostics were clean; `node scripts/generate-town-mask-contract.mjs` completed successfully; remask previews no longer show black cutout chunks in the affected district layers.
 
 ## Done (2026-05-25) — Per-Panel Eye Toggles + Independent Opacity Controls
 
