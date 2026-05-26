@@ -9,6 +9,97 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-26) — Static Export Uses Multiple Workers In CI
+
+- Fixed the build path that could fall back to `Generating static pages using 1 worker` in constrained environments.
+- Configured Next static generation to use a default 4-worker pool, with `NEXT_STATIC_GENERATION_WORKERS` available for CI/local tuning, and lowered the per-worker page batch size so this 46-page export actually spreads across the pool.
+- Validation: `npm run build` reported `Generating static pages using 4 workers (46/46)`; `./scripts/deploy_app.sh` completed successfully on `http://127.0.0.1:3750/`; smoke checks returned `200` for `/` and `/api/town`.
+
+## Done (2026-05-26) — Local Deploy No Longer Depends On Google Fonts
+
+- Fixed `deploy_app` failing during `next build` when the environment could not reach Google Fonts for the Next font optimizer.
+- Removed the build-time `next/font/google` dependency and defined the existing font CSS variables as local system font stacks instead.
+- Validation: touched-file diagnostics were clean; `./scripts/deploy_app.sh` completed successfully and served `http://127.0.0.1:3750/`; smoke checks returned `200` for `/` and `/api/town`.
+
+## Done (2026-05-26) — Bell Refresh Tracks Willville Packet Source
+
+- Added source metadata to displayed `.willville.json` agent packets so each packet now carries the branch, branch head commit, and file blob SHA it came from.
+- Updated active-branch discovery to retain the latest push head SHA, and threaded that through the town API into each stop.
+- Updated bell-board change detection so a repo is marked updated when its active branch changes, active branch commit changes, or the displayed `.willville.json` packet source/blob changes.
+- Made bell toll and manual sync refreshes bypass cached `/api/town` responses so packet changes are checked immediately after the bell work finishes.
+- Validation: touched-file diagnostics were clean; `npm run build` passed.
+
+## Done (2026-05-25) — District Art No Longer Clipped By Landscape Mask
+
+- Fixed the missing edge chunks in The Graveyard, The Gates of Hell, and Slop Wharf by separating the broad landscape `landPath` mask from the district/town art clipping path.
+- Updated `GeneratedTownBase` so runtime district layers clip to the computed `townFootprintPath` instead of the newer landscape land mask, which had been cutting off coastal district pieces.
+- Updated the mask contract generator so district masks, canal banks, and district wall masks use the town footprint clip while the landscape layer can keep using `landPath`.
+- Reapplied corrected masks to the affected district art. The available PNG history preserved enough pixels to recover most of the missing regions; a small amount of already-zeroed transparent RGB had to be filled from neighboring art pixels rather than restored from an original raw source.
+- Validation: touched-file diagnostics were clean; `node scripts/generate-town-mask-contract.mjs` completed successfully; remask previews no longer show black cutout chunks in the affected district layers.
+
+## Done (2026-05-25) — Per-Panel Eye Toggles + Independent Opacity Controls
+
+- Replaced the old detached `TownStageControls` overlay with panel-mounted chrome controls so each large board now owns its own visibility toggle and opacity control in the upper-right corner.
+- Split the old shared `panelOpacity` state into independent top/bottom opacity values, so fading the Time Central board no longer changes the Digital Detail Board and vice versa.
+- Added hidden-state restore pills anchored to each panel slot so a fully hidden panel can still be re-opened without bringing back the old global control bar.
+- Validation: `npm run build` passed; `./scripts/deploy_app.sh` rebuilt and served on `http://127.0.0.1:3750`; browser validation on `/halls-of-judgement/the-mystery-manor/` confirmed top opacity can be set to `0.61` while bottom stays `0.94`, bottom opacity can then be set independently to `0.47`, and each hidden panel leaves behind a working `Show ... panel` restore control while the other panel stays visible.
+
+## Done (2026-05-25) — Time Central Board Fill + Justification Fix
+
+- Fixed the split-flap formatting path in `components/CentralBoard.tsx` so centered rows stay centered all the way through render instead of being re-normalized back to left-justified at the last step.
+- Kept numbered list rows left-justified while centering non-list rows, including stop-detail narrative lines and section headers.
+- Widened the Time Central board shell to match the Digital Detail Board width and changed each split-flap row to use full-width flexible columns, removing the internal left/right letterboxing.
+- Validation: `npm run build` passed; local browser checks showed the top board width equals the bottom board width (`838px` vs `838px` on the sampled route), centered narrative rows begin several cells in (`row0FirstFilled: 3`, `row2FirstFilled: 4` on a stop page), and numbered list rows still start at column `0` on a district page.
+
+## Done (2026-05-25) — Panel Slider No Longer Dims Board Text
+
+- Reworked the top and bottom board opacity control so it no longer applies element-level `opacity` to `CentralBoard` or `DigitalDetailBoard`.
+- The slider now changes board chrome alpha only: backgrounds, borders, glows, and panel surfaces fade, while the actual text and labels on both boards stay fully opaque.
+- Validation: touched-file diagnostics were clean; `npm run build` passed; search confirmed there are no remaining `opacity: panelOpacity` paths in the board components.
+
+## Done (2026-05-25) — Restored District Art + Added Panel Opacity Slider
+
+- Corrected the mobile-safe art regression by restoring `GeneratedTownBase` to always render the actual district art layers instead of swapping to the flat topology source image, which was why the town suddenly looked like the images disappeared.
+- Tightened the mobile-safe media query in `components/TownStage.tsx` so the lighter render path only engages on actual touch/coarse devices (`pointer: coarse` and `hover: none`) instead of catching ordinary desktop/narrow-window use.
+- Added a shared `Panel opacity` slider in the top-left stage controls and threaded its value into both `CentralBoard` and `DigitalDetailBoard`, so the top and bottom chrome can be faded without touching the world layer.
+- Fixed the opaque blue top/bottom bands by letting the map render behind the full stage while keeping the boards in their top and bottom slots, so panel transparency now reveals the map instead of a separate layout row background.
+- Validation: touched-file diagnostics were clean; `npm run build` passed; local browser probe confirmed the town base is back to 8 district art images and the slider is present with a default value of `94`; overlay screenshot verification confirmed the top and bottom panels now show the map behind them instead of blue banners.
+
+## Done (2026-05-25) — Mobile Safe Render Path For iOS Crash Triage
+
+- Added a mobile-safe render path in `components/TownStage.tsx` that activates on coarse/small screens and swaps the town art stack to a lighter mode instead of always rendering the full desktop scene.
+- Updated `components/GeneratedTownBase.tsx` so mobile-safe mode uses the single composite town image (`/art/town/willville-isthmus-v1.png`) instead of stacking every district PNG layer at once.
+- Trimmed the heaviest decorative/animated layers in mobile-safe mode by skipping chimney smoke, dynamic walls, canal traffic animation, world-worker animation, and the Hollywood sign while keeping the core town, stops, and interaction surfaces intact.
+- Validation: touched-file diagnostics were clean; `npm run build` passed; forced mobile-safe browser validation confirmed the rendered town base drops from 8 SVG image layers to 1 and removes the worker/smoke layers; production redeploy succeeded at `https://a227e912.welcome-to-willville.pages.dev`, and both that deployment and the custom-domain edge now return `200` for `/` and `/api/town`.
+
+## Done (2026-05-25) — Pages Domain Attach Attempt + Fresh Production Deploy
+
+- Attached `willville.ai` to the `welcome-to-willville` Cloudflare Pages project directly through the Cloudflare API after confirming Wrangler has no Pages custom-domain CLI for this path.
+- Re-deployed the latest local build, including the mobile viewport hardening, with the corrected Pages bundle flow; the current healthy production deployment is `https://3f0d4b7f.welcome-to-willville.pages.dev` and it serves the app plus `/api/*` correctly.
+- The custom domain is still not cut over yet: the Pages domain object remains `status: initializing` with `verification_data.error_message: "CNAME record not set"`, which explains why `https://willville.ai/` still serves shell HTML while `https://willville.ai/api/town` remains a 404.
+- Re-checked the local perf harness on a phone-sized viewport and confirmed it is not a reliable primary repro rail yet because `window.__willvillePerf.runOfficialProfile()` still fails to populate a `getLastReport()` result under Playwright mobile emulation.
+- Validation: direct `wrangler pages deploy` succeeded at `https://3f0d4b7f.welcome-to-willville.pages.dev`; Pages domain API confirms the attach exists; live custom-domain probe still shows `town 404` while verification is pending.
+
+## Done (2026-05-25) — Mobile Viewport Stabilization + Prod Domain Split
+
+- Patched `app/globals.css` so the app shell uses stable/dynamic viewport units (`100svh` / `100dvh`) instead of relying only on raw `100vh`, which is a likely iOS Safari trigger for flash/resize/collapse behavior when browser chrome changes height.
+- Local mobile-sized sanity check on `http://127.0.0.1:3752/` stayed stable for the initial load window with no console or page errors, so the viewport contract is healthier even though I still do not have a hard Chromium repro of the device-only white-frame failure.
+- Verified the production bell problem is a separate domain/routing issue: `welcome-to-willville.pages.dev` serves `/api/town` correctly, but `https://willville.ai/api/town` and `https://willville.ai/api/manifests` still return 404, and Cloudflare `pages project list` shows no `willville.ai` custom domain attached to the Pages project.
+- Validation: local rebuild via `./scripts/deploy_app.sh` passed; direct mobile browser sanity check passed; `sm swab` only failed on the pre-existing `laziness:dead-code.js` backlog, not on the viewport or deploy changes.
+
+## Done (2026-05-25) — Pages Deploy Foot-Guns Split And Fixed
+
+- Confirmed the recurring Cloudflare deploy failures were two separate problems that looked similar in logs: repo `wrangler.toml` was Pages-invalid because of `[assets]`, and the workflow was using deprecated `wrangler pages functions build --outfile`, which writes a multipart upload payload instead of a deployable worker script.
+- Unstuck production deploys from the CLI by building the app, compiling Pages Functions with `--outdir`, copying `index.js` to `out/_worker.js` plus `_routes.json`, and running `wrangler pages deploy ... --cwd /tmp` so Wrangler never reads the repo config while deploying.
+- Updated `.github/workflows/deploy-pages.yml` to use that same supported path and removed `[assets]` from `wrangler.toml` so repo-local Pages commands stop tripping over an invalid mixed config.
+- Validation: direct CLI deploy succeeded at `https://ed3689b1.welcome-to-willville.pages.dev`, then the post-fix repo-cwd deploy path also succeeded at `https://1351d0c7.welcome-to-willville.pages.dev`; `sm swab` passed. `https://willville.ai/api/town` still returns 404, which now appears to be a separate custom-domain/routing issue rather than the broken Pages bundle path.
+
+## Done (2026-05-25) — Digital Board Truncation Hover Titles
+
+- Updated `components/DigitalDetailBoard.tsx` so clipped text on the Digital Detail Board now exposes the full string on hover via native `title` attributes.
+- Covered the truncation-heavy surfaces directly: panel headers, metric values, branch names, recent commit subjects, GitHub Actions workflow names, and the Status/Direction text blocks.
+- Validation: rebuilt with `./scripts/deploy_app.sh`, then verified on `http://127.0.0.1:3752/town-square/willville-town-hall/` that recent commit rows, workflow rows, long status/direction text, panel headers, and the branch link all carried the expected full hover text; `sm swab` also passed.
+
 ## Done (2026-05-25) — Recent Commits Replaced Canal Panel
 
 - Replaced the Digital Detail Board's top-right Canal/PR list with a Recent Commits panel so each stop now shows the latest commit subjects in reverse chronological order.

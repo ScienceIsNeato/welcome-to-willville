@@ -59,5 +59,11 @@ next-env.d.ts
 # slop-mop working directory (machine-local state)
 .slopmop/
 
+# perf test tooling (playwright, installed on first run)
+.perf-tools/
+
+# perf baseline (machine-specific, use --save-baseline to create)
+.perf-baseline.json
+
 # Local cursor-rules clone (separate git repo)
 /cursor-rules/

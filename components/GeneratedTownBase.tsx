@@ -8,11 +8,12 @@ type Props = {
 
 export function GeneratedTownBase({ stops }: Props) {
   const districtLayers = districtArt.layers;
+
   return (
     <g id="generated-town-base" aria-hidden="true">
       <defs>
-        <clipPath id="generated-town-land-clip">
-          <path d={GENERATED_TOWN_LAYOUT.landPath} />
+        <clipPath id="generated-town-footprint-clip">
+          <path d={GENERATED_TOWN_LAYOUT.townFootprintPath} />
         </clipPath>
       </defs>
       {districtLayers.map((layer) => (
@@ -24,7 +25,7 @@ export function GeneratedTownBase({ stops }: Props) {
           width={GENERATED_TOWN_LAYOUT.size.width}
           height={GENERATED_TOWN_LAYOUT.size.height}
           preserveAspectRatio="none"
-          clipPath="url(#generated-town-land-clip)"
+          clipPath="url(#generated-town-footprint-clip)"
         />
       ))}
 

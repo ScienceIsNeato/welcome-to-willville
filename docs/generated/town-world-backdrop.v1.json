@@ -14,7 +14,7 @@
   },
   "assets": {
     "landPng": "/art/town/willville-landscape-v1.png",
-    "source": "tmp/ganglia-world-landscape/world-landscape-ganglia-wide-raw.png",
+    "source": "public/art/town/willville-landscape-v1.png",
     "appliedBy": "scripts/apply-town-world-landscape-art.mjs"
   },
   "prompts": {
@@ -22,7 +22,7 @@
   },
   "sourceGeometry": {
     "townLayoutVersion": "isthmus-rio-v2-topology",
-    "landPath": "M -154 -1700 C 120 -1240, 402 -890, 330 -520 C 292 -326, 312 -72, 274 324 C 212 480, 230 628, 330 774 C 438 934, 405 1084, 332 1380 C 260 1830, 302 2210, 380 2920 L 1048 2920 C 1136 2200, 1214 1806, 1118 1380 C 1052 1110, 1042 956, 1140 810 C 1266 622, 1234 490, 1165 334 C 1105 198, 1168 66, 1328 -140 C 1426 -560, 1480 -1010, 1710 -1700 Z",
+    "landPath": "M -210 -1700 C 92 -1260, 416 -930, 340 -520 C 288 -300, 248 -18, 150 318 C 74 500, 84 724, 186 918 C 286 1108, 314 1268, 292 1460 C 214 1842, 262 2216, 340 2920 L 1116 2920 C 1198 2228, 1260 1848, 1182 1460 L 1160 1096 L 1240 1040 L 1306 978 L 1362 910 L 1404 844 L 1436 780 L 1448 712 L 1394 660 L 1388 602 L 1406 540 L 1402 480 L 1398 420 L 1402 360 L 1410 300 L 1416 238 L 1408 162 C 1362 36, 1410 -92, 1588 -282 C 1518 -666, 1576 -1038, 1784 -1700 Z",
     "landTransform": "translate(400 280)"
   }
 }

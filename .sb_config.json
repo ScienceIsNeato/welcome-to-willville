@@ -1,7 +1,7 @@
 {
   "version": "1.0",
   "slopmop_version": "1.2.0",
-  "swabbing_timeout": 20,
+  "swabbing_timeout": 0,
   "overconfidence": {
     "enabled": true,
     "gates": {

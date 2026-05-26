@@ -7,7 +7,6 @@ import {
   useState,
   useRef,
   useCallback,
-  useSyncExternalStore,
   useDeferredValue,
   type MouseEvent,
 } from "react";
@@ -31,64 +30,24 @@ import { GeneratedTownBase } from "./GeneratedTownBase";
 import { WorldWorkerLayer } from "./WorldWorkerLayer";
 import { HollywoodSign } from "./HollywoodSign";
 import { TownPerfPanel } from "./TownPerfPanel";
+import { PanelChromeControls } from "./PanelChromeControls";
 import { screenToWorld, useTownCamera } from "@/hooks/useTownCamera";
 import { useTownInteractionProfiler } from "@/hooks/useTownInteractionProfiler";
 import { useTownPerfJourney } from "@/hooks/useTownPerfJourney";
 import { GENERATED_TOWN_LAYOUT } from "@/lib/town-layout";
 import {
+  BELL_BOARD_FLASH_MS,
+  DAY_MS,
+  TOWN_ART_FEATHER,
   buildBellBoardAnnouncement,
+  buildEasterEggAnnouncement,
   findStopAt,
+  getBellErrorDetail,
   mergeStops,
+  playBellChime,
+  useIsClient,
   type BoardAnnouncement,
 } from "./townStageUtils";
-
-const DAY_MS = 1000 * 60 * 60 * 24;
-const TOWN_ART_FEATHER = 76;
-const BELL_BOARD_FLASH_MS = 4500;
-
-async function getBellErrorDetail(response: Response): Promise<string> {
-  let detail = "";
-  const contentType = response.headers.get("content-type") ?? "";
-
-  try {
-    if (contentType.includes("application/json")) {
-      const data = (await response.json()) as {
-        error?: unknown;
-        message?: unknown;
-      };
-      if (typeof data.error === "string") {
-        detail = data.error;
-      } else if (typeof data.message === "string") {
-        detail = data.message;
-      }
-    } else {
-      const text = (await response.text()).trim();
-      if (text) {
-        detail = text;
-      }
-    }
-  } catch {
-    // ignore unreadable error payloads
-  }
-
-  if (response.status === 404) {
-    return "API routes missing on deploy";
-  }
-
-  if (response.status === 403 && detail === "No GITHUB_PAT configured") {
-    return "GITHUB_PAT not configured";
-  }
-
-  return detail || `HTTP ${response.status}`;
-}
-
-function useIsClient(): boolean {
-  return useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
-}
 
 /**
  * Persistent SVG stage with viewport camera (pan/zoom) and center HUD for stops.
@@ -105,11 +64,17 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   }, [deferredPathname, isClient]);
   const perfEnabled = perfSearchParams?.get("perf") === "1";
   const perfAutorun = perfSearchParams?.get("autorun") === "1";
+  const routeWithCurrentSearch = useCallback(
+    (path: string) => {
+      if (!isClient || !window.location.search) return path;
+      return `${path}${window.location.search}`;
+    },
+    [isClient],
+  );
   const [now, setNow] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const cameraGroupRef = useRef<SVGGElement>(null);
-  const perfAutorunRef = useRef(false);
   const perfProfiler = useTownInteractionProfiler(perfEnabled);
   const perfProbe = useMemo(
     () => ({
@@ -139,11 +104,17 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const [syncing, setSyncing] = useState(false);
   const [showCentralBoard, setShowCentralBoard] = useState(true);
   const [showDigitalBoard, setShowDigitalBoard] = useState(true);
+  const [centralBoardOpacity, setCentralBoardOpacity] = useState(0.94);
+  const [digitalBoardOpacity, setDigitalBoardOpacity] = useState(0.94);
+  const [showPerfPanel, setShowPerfPanel] = useState(true);
+  const [perfPanelOpacity, setPerfPanelOpacity] = useState(0.94);
+  const [mobileSafeMode, setMobileSafeMode] = useState(false);
   const [populating, setPopulating] = useState<
     "idle" | "running" | "done" | "error"
   >("idle");
   const [bellErrorMessage, setBellErrorMessage] = useState("✕ Bell failed");
   const [bellHovered, setBellHovered] = useState(false);
+  const [eggHovered, setEggHovered] = useState(false);
   const [boardAnnouncement, setBoardAnnouncement] =
     useState<BoardAnnouncement | null>(null);
 
@@ -152,26 +123,61 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     [liveStops, stops],
   );
 
-  const loadTown = useCallback((signal?: AbortSignal) => {
-    return fetch("/api/town", {
-      signal,
-    })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data && Array.isArray(data.stops)) {
-          setLiveStops(data.stops as Stop[]);
-        }
-        return data;
-      });
-  }, []);
+  const loadTown = useCallback(
+    (options: { signal?: AbortSignal; fresh?: boolean } = {}) => {
+      const url = options.fresh
+        ? `/api/town?refresh=${encodeURIComponent(String(Date.now()))}`
+        : "/api/town";
+      return fetch(url, {
+        cache: options.fresh ? "no-store" : "default",
+        signal: options.signal,
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data && Array.isArray(data.stops)) {
+            setLiveStops(data.stops as Stop[]);
+          }
+          return data;
+        });
+    },
+    [],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
-    loadTown(controller.signal).catch(() => undefined);
+    loadTown({ signal: controller.signal }).catch(() => undefined);
     return () => {
       controller.abort();
     };
   }, [loadTown]);
+
+  useEffect(() => {
+    if (!isClient || typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const media = window.matchMedia(
+      "(pointer: coarse) and (hover: none) and (max-width: 1024px)",
+    );
+
+    const apply = () => {
+      setMobileSafeMode(media.matches);
+    };
+
+    apply();
+
+    if (typeof media.addEventListener === "function") {
+      media.addEventListener("change", apply);
+      return () => {
+        media.removeEventListener("change", apply);
+      };
+    }
+
+    media.addListener(apply);
+    return () => {
+      media.removeListener(apply);
+    };
+  }, [isClient]);
 
   useEffect(
     () => () => {
@@ -184,39 +190,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
   const handlePopulate = useCallback(() => {
     if (populating === "running") return;
-    // Synthesise a clock-tower bell via Web Audio
-    try {
-      type AudioCtxCtor = typeof AudioContext;
-      const Ctor: AudioCtxCtor =
-        window.AudioContext ??
-        (window as unknown as { webkitAudioContext: AudioCtxCtor })
-          .webkitAudioContext;
-      const ctx = new Ctor();
-      const partials = [
-        { mult: 1.0, gain: 0.5 },
-        { mult: 2.756, gain: 0.28 },
-        { mult: 5.404, gain: 0.18 },
-        { mult: 8.933, gain: 0.09 },
-      ];
-      const base = 220;
-      const dur = 4;
-      const now = ctx.currentTime;
-      partials.forEach(({ mult, gain }) => {
-        const osc = ctx.createOscillator();
-        const g = ctx.createGain();
-        osc.type = "sine";
-        osc.frequency.value = base * mult;
-        g.gain.setValueAtTime(gain, now);
-        g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
-        osc.connect(g);
-        g.connect(ctx.destination);
-        osc.start(now);
-        osc.stop(now + dur);
-      });
-      setTimeout(() => ctx.close(), (dur + 0.5) * 1000);
-    } catch {
-      // audio not available — silent fail
-    }
+    playBellChime();
     const previousStops = currentStops;
     setPopulating("running");
     setBellErrorMessage("✕ Bell failed");
@@ -228,7 +202,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
         throw new Error(await getBellErrorDetail(response));
       })
-      .then(() => loadTown())
+      .then(() => loadTown({ fresh: true }))
       .then((data) => {
         const nextStops =
           data && Array.isArray(data.stops)
@@ -262,10 +236,21 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
   const handleSync = useCallback(() => {
     setSyncing(true);
-    loadTown()
+    loadTown({ fresh: true })
       .catch(() => undefined)
       .finally(() => setSyncing(false));
   }, [loadTown]);
+
+  const handleEasterEgg = useCallback(() => {
+    if (boardAnnouncementTimerRef.current !== null) {
+      window.clearTimeout(boardAnnouncementTimerRef.current);
+    }
+    setBoardAnnouncement(buildEasterEggAnnouncement());
+    boardAnnouncementTimerRef.current = window.setTimeout(() => {
+      setBoardAnnouncement(null);
+      boardAnnouncementTimerRef.current = null;
+    }, BELL_BOARD_FLASH_MS);
+  }, []);
 
   const [boats, setBoats] = useState<CanalBoat[]>([]);
   useEffect(() => {
@@ -308,67 +293,16 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     return cameraTransform.on("change", applyTransform);
   }, [cameraTransform, perfEnabled, perfProbe]);
 
-  const { runOfficialPerfProfile } = useTownPerfJourney({
+  const { runOfficialPerfProfile, downloadPerfReport } = useTownPerfJourney({
     currentStops,
     getCameraSnapshot,
+    perfAutorun,
     perfEnabled,
     perfProfiler,
     setCameraImmediate,
     stageRef,
     svgRef,
   });
-
-  const downloadPerfReport = useCallback(() => {
-    if (!perfProfiler.report) return;
-    const blob = new Blob([JSON.stringify(perfProfiler.report, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `willville-town-perf-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
-  }, [perfProfiler.report]);
-
-  useEffect(() => {
-    if (!perfEnabled) return;
-    const perfWindow = window as Window & {
-      __willvillePerf?: {
-        clearLastReport: () => void;
-        getLastReport: () => typeof perfProfiler.report;
-        runOfficialProfile: () => Promise<void>;
-      };
-    };
-    perfWindow.__willvillePerf = {
-      clearLastReport: perfProfiler.clearReport,
-      getLastReport: () => perfProfiler.report,
-      runOfficialProfile: runOfficialPerfProfile,
-    };
-    return () => {
-      delete perfWindow.__willvillePerf;
-    };
-  }, [
-    perfEnabled,
-    perfProfiler.clearReport,
-    perfProfiler.report,
-    runOfficialPerfProfile,
-  ]);
-
-  useEffect(() => {
-    if (
-      !perfEnabled ||
-      !perfAutorun ||
-      perfAutorunRef.current ||
-      perfProfiler.running
-    ) {
-      return;
-    }
-    perfAutorunRef.current = true;
-    void runOfficialPerfProfile();
-  }, [perfAutorun, perfEnabled, perfProfiler.running, runOfficialPerfProfile]);
 
   const hydratedSelectedStop = selectedStop
     ? (currentStops.find(
@@ -423,26 +357,30 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       transitioningToStopIdRef.current = stop.id;
       dismissedStopIdRef.current = null;
       setSelectedStop(stop);
-      router.replace(`/${stop.district}/${stop.id}/`, { scroll: false });
+      router.replace(routeWithCurrentSearch(`/${stop.district}/${stop.id}/`), {
+        scroll: false,
+      });
     },
-    [router, showCentralBoard, showDigitalBoard],
+    [routeWithCurrentSearch, router, showCentralBoard, showDigitalBoard],
   );
 
   const closeHud = useCallback(() => {
     transitioningToStopIdRef.current = null;
     dismissedStopIdRef.current = pathStopId;
     setSelectedStop(null);
-    router.replace("/", { scroll: false });
-  }, [pathStopId, router]);
+    router.replace(routeWithCurrentSearch("/"), { scroll: false });
+  }, [pathStopId, routeWithCurrentSearch, router]);
 
   const enterDistrict = useCallback(
     (district: (typeof DISTRICTS)[number]) => {
       transitioningToStopIdRef.current = null;
       dismissedStopIdRef.current = pathStopId;
       setSelectedStop(null);
-      router.push(`/${district.id}/`);
+      router.push(routeWithCurrentSearch(`/${district.id}/`), {
+        scroll: false,
+      });
     },
-    [pathStopId, router],
+    [pathStopId, routeWithCurrentSearch, router],
   );
 
   const handleStageClick = useCallback(
@@ -508,11 +446,14 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   );
 
   const showWelcomeHint = !boardStop && pathDistrict === null;
+  const stageControlTop = showCentralBoard ? 196 : 16;
+  const stageControlBottom = showDigitalBoard ? 236 : 16;
 
   return (
     <div
       id="willville-stage"
       style={{
+        position: "relative",
         display: "grid",
         gridTemplateRows: showCentralBoard
           ? showDigitalBoard
@@ -528,20 +469,52 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       }}
     >
       {showCentralBoard && (
-        <CentralBoard
-          stops={currentStops}
-          selectedStop={boardStop}
-          activeDistrict={pathDistrict}
-          onSelectStop={openStopHud}
-          announcementRows={boardAnnouncement?.rows}
-          announcementLabel={boardAnnouncement?.label}
-        />
+        <div
+          style={{
+            gridRow: "1 / 2",
+            position: "relative",
+            zIndex: 2,
+            pointerEvents: "none",
+          }}
+        >
+          <CentralBoard
+            stops={currentStops}
+            selectedStop={boardStop}
+            activeDistrict={pathDistrict}
+            onSelectStop={openStopHud}
+            announcementRows={boardAnnouncement?.rows}
+            announcementLabel={boardAnnouncement?.label}
+            panelOpacity={centralBoardOpacity}
+          />
+
+          <div
+            style={{
+              position: "absolute",
+              top: 10,
+              right: 14,
+              zIndex: 4,
+              pointerEvents: "auto",
+            }}
+          >
+            <PanelChromeControls
+              panelLabel="Time Central panel"
+              visible={showCentralBoard}
+              opacity={centralBoardOpacity}
+              onToggleVisibility={() => {
+                setShowCentralBoard((current) => !current);
+              }}
+              onOpacityChange={setCentralBoardOpacity}
+            />
+          </div>
+        </div>
       )}
 
       <div
         ref={stageRef}
         style={{
-          position: "relative",
+          position: "absolute",
+          inset: 0,
+          zIndex: 0,
           minHeight: 0,
           touchAction: "none",
           cursor: isDragging ? "grabbing" : "default",
@@ -551,71 +524,6 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         onDoubleClick={handleStageDoubleClick}
         {...stageHandlers}
       >
-        <div
-          style={{
-            position: "absolute",
-            top: 16,
-            left: 16,
-            zIndex: 20,
-            display: "flex",
-            gap: 8,
-            flexWrap: "wrap",
-            maxWidth: "min(420px, calc(100vw - 32px))",
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setShowCentralBoard((current) => !current)}
-            aria-pressed={showCentralBoard}
-            title={showCentralBoard ? "Hide Time Central" : "Show Time Central"}
-            style={{
-              border: "1px solid rgba(230,198,106,0.45)",
-              borderRadius: 999,
-              background: showCentralBoard
-                ? "linear-gradient(180deg, rgba(36,24,12,0.92) 0%, rgba(20,12,6,0.96) 100%)"
-                : "rgba(14, 12, 11, 0.78)",
-              color: "var(--willville-paper)",
-              padding: "8px 12px",
-              fontSize: 12,
-              letterSpacing: 0.5,
-              cursor: "pointer",
-              boxShadow:
-                "0 4px 12px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(230,198,106,0.15)",
-              opacity: showCentralBoard ? 1 : 0.75,
-            }}
-          >
-            {showCentralBoard ? "Hide Time Central" : "Show Time Central"}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setShowDigitalBoard((current) => !current)}
-            aria-pressed={showDigitalBoard}
-            title={
-              showDigitalBoard
-                ? "Hide Digital Detail Board"
-                : "Show Digital Detail Board"
-            }
-            style={{
-              border: "1px solid rgba(230,198,106,0.45)",
-              borderRadius: 999,
-              background: showDigitalBoard
-                ? "linear-gradient(180deg, rgba(36,24,12,0.92) 0%, rgba(20,12,6,0.96) 100%)"
-                : "rgba(14, 12, 11, 0.78)",
-              color: "var(--willville-paper)",
-              padding: "8px 12px",
-              fontSize: 12,
-              letterSpacing: 0.5,
-              cursor: "pointer",
-              boxShadow:
-                "0 4px 12px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(230,198,106,0.15)",
-              opacity: showDigitalBoard ? 1 : 0.75,
-            }}
-          >
-            {showDigitalBoard ? "Hide Digital Board" : "Show Digital Board"}
-          </button>
-        </div>
-
         <svg
           ref={svgRef}
           viewBox={`0 0 ${WORLD.width} ${WORLD.height}`}
@@ -764,8 +672,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
             <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
               <GeneratedTownBase stops={currentStops} />
-              <ChimneySmoke />
-              <DynamicWalls />
+              {!mobileSafeMode && <ChimneySmoke />}
+              {!mobileSafeMode && <DynamicWalls />}
               <Canal boats={boats} layer="base" />
               {DISTRICTS.map((d) => (
                 <DistrictZone
@@ -777,8 +685,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               ))}
               <TransitLines />
               <MainLine stops={currentStops} />
-              <Canal boats={boats} layer="traffic" />
-              <WorldWorkerLayer stops={currentStops} />
+              {!mobileSafeMode && <Canal boats={boats} layer="traffic" />}
+              {!mobileSafeMode && <WorldWorkerLayer stops={currentStops} />}
               {currentStops.map((stop) => {
                 const updated = stop.status.updated
                   ? Date.parse(stop.status.updated)
@@ -810,7 +718,31 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                   onEnterDistrict={enterDistrict}
                 />
               ))}
-              <HollywoodSign />
+              {!mobileSafeMode && <HollywoodSign />}
+
+              {/* Easter egg — tucked in the bottom-right */}
+              <g
+                transform="translate(1440, 1100)"
+                style={{ cursor: "pointer" }}
+                onMouseEnter={() => setEggHovered(true)}
+                onMouseLeave={() => setEggHovered(false)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  markSkipDrag();
+                  handleEasterEgg();
+                }}
+              >
+                <circle r={18} fill="transparent" pointerEvents="all" />
+                <image
+                  href="/art/egg.png"
+                  x={-14}
+                  y={-18}
+                  width={28}
+                  height={36}
+                  opacity={eggHovered ? 1 : 0.6}
+                  style={{ transition: "opacity 0.3s" }}
+                />
+              </g>
 
               {/* Town square — clock tower bell */}
               <g
@@ -890,7 +822,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           <div
             style={{
               position: "absolute",
-              top: 16,
+              top: stageControlTop,
               left: "50%",
               transform: "translateX(-50%)",
               background: "rgba(18,10,6,0.92)",
@@ -919,7 +851,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           <motion.div
             style={{
               position: "absolute",
-              bottom: 16,
+              bottom: stageControlBottom,
               left: 16,
               color: "var(--willville-paper)",
               opacity: 0.8,
@@ -935,13 +867,14 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         )}
 
         <button
+          data-town-control
           onClick={handleSync}
           disabled={syncing}
           aria-label="Sync town data from GitHub"
           title="Sync from GitHub"
           style={{
             position: "absolute",
-            bottom: 16,
+            bottom: stageControlBottom,
             right: 16,
             width: 36,
             height: 36,
@@ -971,16 +904,43 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           </span>
         </button>
 
+        {perfEnabled && showPerfPanel && (
+          <div data-town-control style={{ pointerEvents: "none" }}>
+            <TownPerfPanel
+              report={perfProfiler.report}
+              running={perfProfiler.running}
+              panelOpacity={perfPanelOpacity}
+              onRun={() => {
+                void runOfficialPerfProfile();
+              }}
+              onClear={perfProfiler.clearReport}
+              onDownload={downloadPerfReport}
+              onSaveBaseline={perfProfiler.saveCurrentAsBaseline}
+              onClearBaseline={perfProfiler.clearCurrentBaseline}
+            />
+          </div>
+        )}
+
         {perfEnabled && (
-          <TownPerfPanel
-            report={perfProfiler.report}
-            running={perfProfiler.running}
-            onRun={() => {
-              void runOfficialPerfProfile();
+          <div
+            data-town-control
+            style={{
+              position: "fixed",
+              top: "10dvh",
+              left: 14,
+              zIndex: 1500,
             }}
-            onClear={perfProfiler.clearReport}
-            onDownload={downloadPerfReport}
-          />
+          >
+            <PanelChromeControls
+              panelLabel="Performance panel"
+              visible={showPerfPanel}
+              opacity={perfPanelOpacity}
+              onToggleVisibility={() => {
+                setShowPerfPanel((current) => !current);
+              }}
+              onOpacityChange={setPerfPanelOpacity}
+            />
+          </div>
         )}
 
         <style>{`
@@ -988,8 +948,84 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       `}</style>
       </div>
 
+      {!showCentralBoard && (
+        <div
+          style={{
+            position: "absolute",
+            top: 14,
+            right: 16,
+            zIndex: 20,
+          }}
+        >
+          <PanelChromeControls
+            panelLabel="Time Central panel"
+            visible={showCentralBoard}
+            opacity={centralBoardOpacity}
+            onToggleVisibility={() => {
+              setShowCentralBoard((current) => !current);
+            }}
+            onOpacityChange={setCentralBoardOpacity}
+          />
+        </div>
+      )}
+
       {showDigitalBoard && (
-        <DigitalDetailBoard stop={boardStop} boats={boats} />
+        <div
+          style={{
+            gridRow: "3 / 4",
+            position: "relative",
+            zIndex: 2,
+            pointerEvents: "none",
+          }}
+        >
+          <DigitalDetailBoard
+            stop={boardStop}
+            boats={boats}
+            panelOpacity={digitalBoardOpacity}
+          />
+
+          <div
+            style={{
+              position: "absolute",
+              top: 10,
+              right: 14,
+              zIndex: 4,
+              pointerEvents: "auto",
+            }}
+          >
+            <PanelChromeControls
+              panelLabel="Digital detail panel"
+              visible={showDigitalBoard}
+              opacity={digitalBoardOpacity}
+              onToggleVisibility={() => {
+                setShowDigitalBoard((current) => !current);
+              }}
+              onOpacityChange={setDigitalBoardOpacity}
+            />
+          </div>
+        </div>
+      )}
+
+      {!showDigitalBoard && (
+        <div
+          style={{
+            position: "absolute",
+            right: 16,
+            bottom: 62,
+            zIndex: 20,
+          }}
+        >
+          <PanelChromeControls
+            panelLabel="Digital detail panel"
+            visible={showDigitalBoard}
+            opacity={digitalBoardOpacity}
+            onToggleVisibility={() => {
+              setShowDigitalBoard((current) => !current);
+            }}
+            onOpacityChange={setDigitalBoardOpacity}
+            popoverDirection="up"
+          />
+        </div>
       )}
     </div>
   );

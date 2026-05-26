@@ -57,6 +57,11 @@ export function WorldSubstrate() {
         height={WORLD.height}
         fill="url(#willville-water-ripples)"
       />
+      <path
+        d={GENERATED_TOWN_LAYOUT.landPath}
+        transform={`translate(${TOWN_OFFSET.x} ${TOWN_OFFSET.y})`}
+        fill="#1a3a20"
+      />
       <image
         href={LANDSCAPE_ART}
         width={WORLD.width}

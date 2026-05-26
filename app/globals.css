@@ -14,6 +14,8 @@
   --willville-town-square: #8b6f47;
   --willville-hell: #7a3da6;
   --willville-dogwallow: #c97c5d;
+  --font-geist-sans: Arial, Helvetica, sans-serif;
+  --font-geist-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
 @theme inline {
@@ -36,7 +38,7 @@
 
 html,
 body {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
   overflow: hidden;
   background: radial-gradient(
@@ -48,6 +50,16 @@ body {
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -55,6 +67,8 @@ body {
 #willville-stage {
   width: 100vw;
   height: 100vh;
+  height: 100svh;
+  height: 100dvh;
   position: relative;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;

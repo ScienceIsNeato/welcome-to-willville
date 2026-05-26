@@ -4,9 +4,9 @@
     "name": "ScienceIsNeato",
     "url": "https://github.com/ScienceIsNeato"
   },
-  "description": "Willville stop packets — keep live repo-owner status deltas current on the Willville map.",
+  "description": "Keep .willville.json current so the Willville town map shows what you're working on — plain standup updates, not technical changelogs.",
   "metadata": {
-    "description": "Willville stop packets — keep live repo-owner status deltas current on the Willville map."
+    "description": "Keep .willville.json current so the Willville town map shows what you're working on — plain standup updates, not technical changelogs."
   },
   "plugins": [
     {
@@ -15,9 +15,9 @@
         "source": "github",
         "repo": "ScienceIsNeato/welcome-to-willville"
       },
-      "description": "Update committed .willville.json whenever the current step, direction, or action log changes in any ScienceIsNeato repo. Write for the repo owner, not a newcomer. Willville reads it directly and renders live agent status on the DigitalDetailBoard.",
+      "description": "Update .willville.json when the current work or direction changes in any ScienceIsNeato repo. Write like a coworker standup, not a changelog. The town map reads it directly.",
       "category": "productivity",
-      "keywords": ["willville", "status", "agent", "stop-packet", "dashboard"],
+      "keywords": ["willville", "status", "agent", "dashboard"],
       "homepage": "https://github.com/ScienceIsNeato/welcome-to-willville",
       "license": "MIT",
       "author": {

@@ -7,9 +7,10 @@ import type { GitHubWorkflowRun, Stop } from "@/lib/town";
 type Props = {
   stop: Stop | null;
   boats: CanalBoat[];
+  panelOpacity?: number;
 };
 
-export function DigitalDetailBoard({ stop, boats }: Props) {
+export function DigitalDetailBoard({ stop, boats, panelOpacity = 1 }: Props) {
   const stopPrs = stop
     ? boats.filter(
         (boat) =>
@@ -21,7 +22,15 @@ export function DigitalDetailBoard({ stop, boats }: Props) {
   const openPrCount = stop?.openPrCount ?? openPrs.length;
 
   return (
-    <section aria-label="Willville site detail display" style={shellStyle}>
+    <section
+      aria-label="Willville site detail display"
+      style={
+        {
+          ...shellStyle,
+          "--panel-opacity": String(panelOpacity),
+        } as CSSProperties
+      }
+    >
       {!stop ? (
         <div style={emptyStateStyle}>
           <span style={eyebrowStyle}>Digital detail board</span>
@@ -100,7 +109,9 @@ export function DigitalDetailBoard({ stop, boats }: Props) {
 function Panel({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div style={panelStyle}>
-      <span style={panelTitleStyle}>{title}</span>
+      <span style={panelTitleStyle} title={tooltipText(title)}>
+        {title}
+      </span>
       {children}
     </div>
   );
@@ -118,7 +129,9 @@ function Metric({
   return (
     <div style={wide ? wideMetricStyle : metricStyle}>
       <span style={smallLabelStyle}>{label}</span>
-      <strong style={metricValueStyle}>{value}</strong>
+      <strong style={metricValueStyle} title={tooltipText(value)}>
+        {value}
+      </strong>
     </div>
   );
 }
@@ -133,12 +146,14 @@ function BranchSignal({ stop }: { stop: Stop }) {
           href={branch.compareUrl}
           onClick={followLink}
           style={branchLinkStyle}
-          title={`Compare main to ${branch.name}`}
+          title={tooltipText(`Compare main to ${branch.name}`)}
         >
           {branch.name}
         </a>
       ) : (
-        <span style={metricValueStyle}>n/a</span>
+        <span style={metricValueStyle} title="n/a">
+          n/a
+        </span>
       )}
     </div>
   );
@@ -151,13 +166,22 @@ function TextBlock({
   value: string | undefined;
   fallback: string;
 }) {
-  return <p style={noteTextStyle}>{normalizePanelText(value, fallback)}</p>;
+  const text = normalizePanelText(value, fallback);
+  return (
+    <p style={noteTextStyle} title={tooltipText(text)}>
+      {text}
+    </p>
+  );
 }
 
 function WorkflowRunList({ stop }: { stop: Stop }) {
   const runs = stop.workflowRuns ?? [];
   if (runs.length === 0) {
-    return <p style={noteTextStyle}>No recent GitHub Actions runs.</p>;
+    return (
+      <p style={noteTextStyle} title="No recent GitHub Actions runs.">
+        No recent GitHub Actions runs.
+      </p>
+    );
   }
   return (
     <ul style={actionListStyle}>
@@ -166,7 +190,12 @@ function WorkflowRunList({ stop }: { stop: Stop }) {
           <span style={workflowRunStatusStyle(run.status)}>
             {workflowRunStatusLabel(run.status)}
           </span>
-          <a href={run.url} onClick={followLink} style={actionLinkStyle}>
+          <a
+            href={run.url}
+            onClick={followLink}
+            style={actionLinkStyle}
+            title={tooltipText(run.name)}
+          >
             {run.name}
           </a>
         </li>
@@ -178,7 +207,11 @@ function WorkflowRunList({ stop }: { stop: Stop }) {
 function RecentCommitList({ stop }: { stop: Stop }) {
   const commits = stop.recentCommits ?? [];
   if (commits.length === 0) {
-    return <p style={noteTextStyle}>No recent commits.</p>;
+    return (
+      <p style={noteTextStyle} title="No recent commits.">
+        No recent commits.
+      </p>
+    );
   }
   return (
     <ul style={actionListStyle}>
@@ -187,7 +220,12 @@ function RecentCommitList({ stop }: { stop: Stop }) {
           <span style={recentCommitAgeStyle}>
             {timeAgo(commit.committedAt)}
           </span>
-          <a href={commit.url} onClick={followLink} style={actionLinkStyle}>
+          <a
+            href={commit.url}
+            onClick={followLink}
+            style={actionLinkStyle}
+            title={tooltipText(commit.message)}
+          >
             {commit.message}
           </a>
         </li>
@@ -245,6 +283,11 @@ function normalizePanelText(
   return value;
 }
 
+function tooltipText(value: string | undefined): string | undefined {
+  const text = value?.trim();
+  return text ? text : undefined;
+}
+
 function workflowRunStatusLabel(status: GitHubWorkflowRun["status"]): string {
   if (status === "success") return "success";
   if (status === "running") return "running";
@@ -290,18 +333,19 @@ function workflowRunStatusStyle(
 const shellStyle: CSSProperties = {
   position: "relative",
   zIndex: 2,
+  pointerEvents: "auto",
   width: "min(960px, calc(100vw - 20px))",
   minHeight: 220,
   margin: "0 auto 10px",
   display: "grid",
   gap: 8,
-  padding: "12px 18px 12px",
+  padding: "22px 18px 12px",
   borderRadius: 3,
-  border: "1px solid rgba(51, 255, 87, 0.28)",
+  border: "1px solid rgb(51 255 87 / calc(0.28 * var(--panel-opacity, 1)))",
   background:
-    "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 3px), linear-gradient(180deg, #020d02 0%, #000400 100%)",
+    "repeating-linear-gradient(0deg, transparent, transparent 2px, rgb(0 0 0 / calc(0.06 * var(--panel-opacity, 1))) 2px, rgb(0 0 0 / calc(0.06 * var(--panel-opacity, 1))) 3px), linear-gradient(180deg, rgb(2 13 2 / var(--panel-opacity, 1)) 0%, rgb(0 4 0 / var(--panel-opacity, 1)) 100%)",
   boxShadow:
-    "0 0 32px rgba(51, 255, 87, 0.09), inset 0 0 60px rgba(51, 255, 87, 0.05)",
+    "0 0 32px rgb(51 255 87 / calc(0.09 * var(--panel-opacity, 1))), inset 0 0 60px rgb(51 255 87 / calc(0.05 * var(--panel-opacity, 1)))",
   color: "#33ff57",
   fontFamily: '"Courier New", Courier, monospace',
 };
@@ -360,9 +404,10 @@ const panelStyle: CSSProperties = {
   padding: "14px 10px 10px",
   borderRadius: 2,
   background:
-    "linear-gradient(180deg, rgba(51,255,87,0.055), rgba(51,255,87,0.025))",
-  border: "1px solid rgba(51, 255, 87, 0.42)",
-  boxShadow: "inset 0 0 22px rgba(51, 255, 87, 0.035)",
+    "linear-gradient(180deg, rgb(51 255 87 / calc(0.055 * var(--panel-opacity, 1))), rgb(51 255 87 / calc(0.025 * var(--panel-opacity, 1))))",
+  border: "1px solid rgb(51 255 87 / calc(0.42 * var(--panel-opacity, 1)))",
+  boxShadow:
+    "inset 0 0 22px rgb(51 255 87 / calc(0.035 * var(--panel-opacity, 1)))",
 };
 
 const panelTitleStyle: CSSProperties = {
@@ -372,7 +417,7 @@ const panelTitleStyle: CSSProperties = {
   maxWidth: "calc(100% - 20px)",
   padding: "2px 8px",
   borderRadius: 2,
-  background: "rgba(190, 255, 196, 0.95)",
+  background: "rgb(190 255 196 / calc(0.95 * var(--panel-opacity, 1)))",
   color: "#052505",
   fontSize: 10,
   lineHeight: 1.1,
@@ -396,8 +441,8 @@ const metricStyle: CSSProperties = {
   maxWidth: 124,
   padding: "7px 8px",
   borderRadius: 2,
-  background: "rgba(51, 255, 87, 0.04)",
-  border: "1px solid rgba(51, 255, 87, 0.18)",
+  background: "rgb(51 255 87 / calc(0.04 * var(--panel-opacity, 1)))",
+  border: "1px solid rgb(51 255 87 / calc(0.18 * var(--panel-opacity, 1)))",
 };
 
 const wideMetricStyle: CSSProperties = {
@@ -458,7 +503,8 @@ const actionItemStyle: CSSProperties = {
   alignItems: "center",
   gap: 5,
   paddingBottom: 5,
-  borderBottom: "1px solid rgba(51, 255, 87, 0.13)",
+  borderBottom:
+    "1px solid rgb(51 255 87 / calc(0.13 * var(--panel-opacity, 1)))",
   color: "rgba(51, 255, 87, 0.82)",
   fontSize: 12,
   lineHeight: 1.35,
@@ -469,7 +515,7 @@ const actionStatusStyle: CSSProperties = {
   alignItems: "center",
   justifyContent: "center",
   padding: "2px 6px",
-  border: "1px solid rgba(51, 255, 87, 0.22)",
+  border: "1px solid rgb(51 255 87 / calc(0.22 * var(--panel-opacity, 1)))",
   borderRadius: 999,
   fontSize: 10,
   fontWeight: 900,
@@ -481,8 +527,8 @@ const actionStatusStyle: CSSProperties = {
 const recentCommitAgeStyle: CSSProperties = {
   ...actionStatusStyle,
   color: "rgba(51, 255, 87, 0.78)",
-  borderColor: "rgba(51, 255, 87, 0.2)",
-  background: "rgba(51, 255, 87, 0.08)",
+  borderColor: "rgb(51 255 87 / calc(0.2 * var(--panel-opacity, 1)))",
+  background: "rgb(51 255 87 / calc(0.08 * var(--panel-opacity, 1)))",
 };
 
 const actionLinkStyle: CSSProperties = {

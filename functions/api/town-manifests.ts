@@ -8,6 +8,12 @@ import { WillvilleManifestParser, WillvillePacketParser } from "./town-parsers";
 type RepoRef = {
   fullName: string;
   ref: string;
+  commitHash?: string;
+};
+
+type FetchedContent = {
+  body: string;
+  blobSha?: string;
 };
 
 export class WillvilleManifestClient {
@@ -68,7 +74,7 @@ export class WillvilleManifestClient {
       if (headFullName.toLowerCase() !== fullName.toLowerCase()) {
         return undefined;
       }
-      return { fullName: headFullName, ref: headRef };
+      return { fullName: headFullName, ref: headRef, commitHash: head?.sha };
     } catch {
       return undefined;
     }
@@ -155,23 +161,32 @@ export class WillvilleManifestClient {
       difficulties: preferred.difficulties ?? fallback.difficulties,
       needsHuman: preferred.needsHuman ?? fallback.needsHuman,
       lastUpdate: preferred.lastUpdate ?? fallback.lastUpdate,
+      sourceBranch: preferred.sourceBranch ?? fallback.sourceBranch,
+      sourceCommitHash: preferred.sourceCommitHash ?? fallback.sourceCommitHash,
+      sourceBlobSha: preferred.sourceBlobSha ?? fallback.sourceBlobSha,
     };
   }
 
   private async fetchStatusPacket(
     repoRef: RepoRef,
   ): Promise<WillvillePacket | undefined> {
-    const body = await this.fetchContent(repoRef, "STATUS.md");
-    return body ? this.packetParser.parse(body) : undefined;
+    const content = await this.fetchContent(repoRef, "STATUS.md");
+    return content ? this.packetParser.parse(content.body) : undefined;
   }
 
   private async fetchManifest(
     repoRef: RepoRef,
   ): Promise<WillvilleManifest | undefined> {
-    const body = await this.fetchContent(repoRef, ".willville.json");
-    if (!body) return undefined;
+    const content = await this.fetchContent(repoRef, ".willville.json");
+    if (!content) return undefined;
     try {
-      return this.manifestParser.parse(JSON.parse(body));
+      const manifest = this.manifestParser.parse(JSON.parse(content.body));
+      if (manifest?.agent) {
+        manifest.agent.sourceBranch = repoRef.ref;
+        manifest.agent.sourceCommitHash = repoRef.commitHash;
+        manifest.agent.sourceBlobSha = content.blobSha;
+      }
+      return manifest;
     } catch {
       return undefined;
     }
@@ -180,16 +195,23 @@ export class WillvilleManifestClient {
   private async fetchContent(
     repoRef: RepoRef,
     path: string,
-  ): Promise<string | undefined> {
+  ): Promise<FetchedContent | undefined> {
     try {
       const r = await fetch(
         `https://api.github.com/repos/${repoRef.fullName}/contents/${path}?ref=${encodeURIComponent(repoRef.ref)}`,
         { headers: this.headers },
       );
       if (!r.ok) return undefined;
-      const data = (await r.json()) as { content?: string; encoding?: string };
+      const data = (await r.json()) as {
+        content?: string;
+        encoding?: string;
+        sha?: string;
+      };
       if (!data.content || data.encoding !== "base64") return undefined;
-      return atob(data.content.replace(/\s/g, ""));
+      return {
+        body: atob(data.content.replace(/\s/g, "")),
+        blobSha: data.sha,
+      };
     } catch {
       return undefined;
     }

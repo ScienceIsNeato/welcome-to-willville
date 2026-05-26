@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, type RefObject } from "react";
+import { useCallback, useEffect, useRef, type RefObject } from "react";
 import { TOWN_CENTER } from "@/lib/willville";
 import type { Stop } from "@/lib/town";
 import {
@@ -32,6 +32,7 @@ const PERF_DRAG_LIMIT = 24;
 type Options = {
   currentStops: Stop[];
   getCameraSnapshot: () => Camera;
+  perfAutorun: boolean;
   perfEnabled: boolean;
   perfProfiler: ReturnType<typeof useTownInteractionProfiler>;
   setCameraImmediate: (target: Camera) => void;
@@ -42,19 +43,33 @@ type Options = {
 export function useTownPerfJourney({
   currentStops,
   getCameraSnapshot,
+  perfAutorun,
   perfEnabled,
   perfProfiler,
   setCameraImmediate,
   stageRef,
   svgRef,
 }: Options) {
+  const perfAutorunRef = useRef(false);
+  const waitForProfiledFrame = useCallback(
+    async (id: string, label: string) => {
+      await perfProfiler.runBlock(id, label, async () => {
+        await waitForNextFrame();
+      });
+    },
+    [perfProfiler],
+  );
+
   const waitForCameraSettled = useCallback(async () => {
     let stableFrames = 0;
     let previous = getCameraSnapshot();
 
     for (let frame = 0; frame < 90; frame += 1) {
       const waitStartedAt = performance.now();
-      await waitForNextFrame();
+      await waitForProfiledFrame(
+        `settle-frame-${frame + 1}`,
+        `Camera settle frame ${frame + 1}`,
+      );
       perfProfiler.recordDuration(
         "settleWait",
         performance.now() - waitStartedAt,
@@ -70,13 +85,20 @@ export function useTownPerfJourney({
         return;
       }
     }
-  }, [getCameraSnapshot, perfProfiler]);
+  }, [getCameraSnapshot, perfProfiler, waitForProfiledFrame]);
 
-  const waitForFrames = useCallback(async (count: number) => {
-    for (let frame = 0; frame < count; frame += 1) {
-      await waitForNextFrame();
-    }
-  }, []);
+  const waitForFrames = useCallback(
+    async (count: number, idPrefix = "frame-wait") => {
+      const labelPrefix = idPrefix.replace(/-/g, " ");
+      for (let frame = 0; frame < count; frame += 1) {
+        await waitForProfiledFrame(
+          `${idPrefix}-${frame + 1}`,
+          `${labelPrefix} ${frame + 1}`,
+        );
+      }
+    },
+    [waitForProfiledFrame],
+  );
 
   const waitForPathMatch = useCallback(
     async (matcher: (parts: string[]) => boolean) => {
@@ -85,11 +107,14 @@ export function useTownPerfJourney({
         if (matcher(parts)) {
           return true;
         }
-        await waitForNextFrame();
+        await waitForProfiledFrame(
+          `route-match-frame-${frame + 1}`,
+          `Route match frame ${frame + 1}`,
+        );
       }
       return false;
     },
-    [],
+    [waitForProfiledFrame],
   );
 
   const findGroundPoint = useCallback(
@@ -145,11 +170,13 @@ export function useTownPerfJourney({
   const clickElement = useCallback(
     async (element: Element | null) => {
       if (!element) return false;
-      dispatchClickGesture(element, pointAtElementCenter(element));
-      await waitForFrames(10);
+      await perfProfiler.runBlock("click-dispatch", "Dispatch click", () => {
+        dispatchClickGesture(element, pointAtElementCenter(element));
+      });
+      await waitForFrames(10, "post-click-frame");
       return true;
     },
-    [waitForFrames],
+    [perfProfiler, waitForFrames],
   );
 
   const clickVisibleStop = useCallback(
@@ -238,8 +265,17 @@ export function useTownPerfJourney({
           break;
         }
 
-        dispatchWheelGesture(stage, point, deltaY);
-        await waitForNextFrame();
+        await perfProfiler.runBlock(
+          `wheel-dispatch-${iteration + 1}`,
+          `Wheel dispatch ${iteration + 1}`,
+          () => {
+            dispatchWheelGesture(stage, point, deltaY);
+          },
+        );
+        await waitForProfiledFrame(
+          `wheel-frame-${iteration + 1}`,
+          `Wheel frame ${iteration + 1}`,
+        );
 
         const nextScale = getCameraSnapshot().scale;
         if (Math.abs(nextScale - previousScale) < 0.001) {
@@ -250,7 +286,14 @@ export function useTownPerfJourney({
 
       await waitForCameraSettled();
     },
-    [findGroundPoint, getCameraSnapshot, stageRef, waitForCameraSettled],
+    [
+      findGroundPoint,
+      getCameraSnapshot,
+      perfProfiler,
+      stageRef,
+      waitForCameraSettled,
+      waitForProfiledFrame,
+    ],
   );
 
   const dragTowardCorner = useCallback(
@@ -278,8 +321,17 @@ export function useTownPerfJourney({
           break;
         }
 
-        await dispatchDragGesture(stage, start, end, PERF_DRAG_STEPS);
-        await waitForNextFrame();
+        await perfProfiler.runBlock(
+          `drag-gesture-${corner}-${iteration + 1}`,
+          `Drag gesture ${corner} ${iteration + 1}`,
+          async () => {
+            await dispatchDragGesture(stage, start, end, PERF_DRAG_STEPS);
+          },
+        );
+        await waitForProfiledFrame(
+          `drag-frame-${corner}-${iteration + 1}`,
+          `Drag frame ${corner} ${iteration + 1}`,
+        );
 
         const after = getCameraSnapshot();
         const movement =
@@ -289,7 +341,7 @@ export function useTownPerfJourney({
         }
       }
     },
-    [getCameraSnapshot, stageRef],
+    [getCameraSnapshot, perfProfiler, stageRef, waitForProfiledFrame],
   );
 
   const runOfficialPerfProfile = useCallback(async () => {
@@ -303,7 +355,7 @@ export function useTownPerfJourney({
       cy: TOWN_CENTER.y,
       scale: 1,
     });
-    await waitForNextFrame();
+    await waitForProfiledFrame("reset-camera-frame", "Reset camera frame");
 
     const zoomPoint = findGroundPoint([
       [0.58, 0.56],
@@ -330,7 +382,13 @@ export function useTownPerfJourney({
           ]) ?? zoomPoint;
 
         for (const point of [zoomPoint, secondPoint]) {
-          dispatchDoubleClickGesture(stage, point);
+          await perfProfiler.runBlock(
+            "double-click-dispatch",
+            "Dispatch double-click",
+            () => {
+              dispatchDoubleClickGesture(stage, point);
+            },
+          );
           await waitForCameraSettled();
         }
       },
@@ -451,11 +509,67 @@ export function useTownPerfJourney({
     setCameraImmediate,
     stageRef,
     waitForCameraSettled,
+    waitForProfiledFrame,
     waitForPathMatch,
     wheelToScale,
   ]);
 
+  const downloadPerfReport = useCallback(() => {
+    if (!perfProfiler.report) return;
+    const blob = new Blob([JSON.stringify(perfProfiler.report, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `willville-town-perf-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }, [perfProfiler.report]);
+
+  // Expose perf API on window for scripted tests (perf_test.sh)
+  useEffect(() => {
+    if (!perfEnabled) return;
+    const perfWindow = window as Window & {
+      __willvillePerf?: {
+        clearLastReport: () => void;
+        getLastReport: () => typeof perfProfiler.report;
+        runOfficialProfile: () => Promise<void>;
+      };
+    };
+    perfWindow.__willvillePerf = {
+      clearLastReport: perfProfiler.clearReport,
+      getLastReport: () => perfProfiler.report,
+      runOfficialProfile: runOfficialPerfProfile,
+    };
+    return () => {
+      delete perfWindow.__willvillePerf;
+    };
+  }, [
+    perfEnabled,
+    perfProfiler.clearReport,
+    perfProfiler.report,
+    runOfficialPerfProfile,
+  ]);
+
+  // Auto-run the journey on first load when ?autorun=1
+  useEffect(() => {
+    if (
+      !perfEnabled ||
+      !perfAutorun ||
+      perfAutorunRef.current ||
+      perfProfiler.running
+    ) {
+      return;
+    }
+    perfAutorunRef.current = true;
+    void runOfficialPerfProfile();
+  }, [perfAutorun, perfEnabled, perfProfiler.running, runOfficialPerfProfile]);
+
   return {
+    downloadPerfReport,
     runOfficialPerfProfile,
   };
 }

@@ -93,7 +93,6 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${layout.size.width}
   <g filter="url(#soft-shadow)">
     <path d="${layout.landPath}" fill="#6f9a65" stroke="#2d5e46" stroke-width="15" stroke-linejoin="round" />
     <path d="${layout.landPath}" fill="url(#field-grain)" opacity="0.45" />
-    <path d="${layout.shoreWallPath}" fill="none" stroke="#d8c391" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="18 9" opacity="0.72" />
     <g clip-path="url(#clip-town-footprint)">
       <path d="${layout.townFootprintPath}" fill="#6f8f65" opacity="0.92" />
       <path d="${layout.townFootprintPath}" fill="url(#field-grain)" opacity="0.18" />

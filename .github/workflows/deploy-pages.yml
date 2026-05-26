@@ -29,15 +29,18 @@ jobs:
 
       - name: Build Pages Functions worker
         run: |
+          bundle_dir="$(mktemp -d /tmp/willville_pages_bundle_XXXXXX)"
           npx wrangler pages functions build functions \
             --project-directory . \
-            --outfile out/_worker.js \
-            --output-routes-path out/_routes.json \
+            --outdir "$bundle_dir" \
+            --output-routes-path "$bundle_dir/_routes.json" \
             --build-output-directory out
+          cp "$bundle_dir/index.js" out/_worker.js
+          cp "$bundle_dir/_routes.json" out/_routes.json
 
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: 4c2341810414766ae8cbf672785e82c5 # pragma: allowlist secret
-          command: pages deploy ./out --project-name welcome-to-willville --branch main
+          command: pages deploy ${{ github.workspace }}/out --project-name welcome-to-willville --branch main --cwd /tmp

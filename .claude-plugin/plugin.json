@@ -1,7 +1,7 @@
 {
   "name": "willville",
   "version": "1.0.0",
-  "description": "Update committed .willville.json packets with terse repo-owner status deltas so Willville shows current live work without README-style repetition.",
+  "description": "Keep .willville.json up to date so the Willville town map shows what you're actually working on. Write plain standup-style updates, not technical changelogs.",
   "author": {
     "name": "ScienceIsNeato",
     "url": "https://github.com/ScienceIsNeato"
@@ -9,5 +9,5 @@
   "homepage": "https://github.com/ScienceIsNeato/welcome-to-willville",
   "repository": "https://github.com/ScienceIsNeato/welcome-to-willville",
   "license": "MIT",
-  "keywords": ["willville", "status", "agent", "stop-packet", "dashboard"]
+  "keywords": ["willville", "status", "agent", "dashboard"]
 }
