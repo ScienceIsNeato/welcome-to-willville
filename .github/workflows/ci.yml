@@ -34,6 +34,12 @@ jobs:
           .venv/bin/pip install 'slopmop[all]==1.2.0'
           echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
 
+      - name: Lint check (debug)
+        run: npx eslint . 2>&1 || true
+
+      - name: Prettier check (debug)
+        run: npx prettier --check . --ignore-unknown 2>&1 || true
+
       - name: Quality gates
         run: sm scour || (echo "=== Gate logs ===" && cat .slopmop/logs/*.log && exit 1)
 
