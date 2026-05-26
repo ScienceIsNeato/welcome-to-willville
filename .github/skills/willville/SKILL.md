@@ -1,9 +1,9 @@
 ---
 name: willville
 description: >-
-  Use when updating a committed .willville.json in a ScienceIsNeato repo.
-  Write status and direction text for the repo owner: assume working
-  knowledge, capture deltas, and do not restate README context.
+  Update .willville.json in any ScienceIsNeato repo. Write plain standup-style
+  updates — what you're working on and where it's headed. No jargon, no file
+  paths, no technical changelogs.
 ---
 
 # Willville committed packet
