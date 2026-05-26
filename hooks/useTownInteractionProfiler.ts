@@ -84,17 +84,39 @@ export type TownPerfStepDelta = {
   deltaFpsAvg: number | null;
 };
 
+export type TownPerfBaselineStep = {
+  id: string;
+  ms: number;
+  avgFps: number;
+  domNodes: number;
+  svgElements: number;
+  heapUsed: number;
+};
+
 export type TownPerfBaseline = {
   savedAt: string;
   totalMs: number;
   avgFps: number;
-  steps: Array<{ id: string; ms: number; avgFps: number }>;
+  minFps: number;
+  droppedFrames: number;
+  longFrames: number;
+  longTaskCount: number;
+  heapStart: number;
+  heapEnd: number;
+  heapPeak: number;
+  steps: TownPerfBaselineStep[];
 };
 
 export type TownPerfBaselineComparison = {
+  baselineSavedAt: string;
   deltaTotalMs: number;
   deltaTotalPct: number;
   deltaAvgFps: number;
+  deltaMinFps: number;
+  deltaDroppedFrames: number;
+  deltaLongFrames: number;
+  deltaLongTasks: number;
+  deltaHeapGrowth: number | null;
   stepDeltas: TownPerfStepDelta[];
 };
 
@@ -246,10 +268,20 @@ function saveBaseline(report: TownPerfReport): void {
     savedAt: new Date().toISOString(),
     totalMs: report.totalMs,
     avgFps: report.fps.avgFps,
+    minFps: report.fps.minFps,
+    droppedFrames: report.fps.droppedFrames,
+    longFrames: report.fps.longFrames,
+    longTaskCount: report.longTasks.length,
+    heapStart: report.memory?.startHeap ?? 0,
+    heapEnd: report.memory?.endHeap ?? 0,
+    heapPeak: report.memory?.peakHeap ?? 0,
     steps: report.steps.map((s) => ({
       id: s.id,
       ms: s.ms,
       avgFps: s.fps?.avgFps ?? 0,
+      domNodes: s.domSnapshot?.totalNodes ?? 0,
+      svgElements: s.domSnapshot?.svgElements ?? 0,
+      heapUsed: s.memory?.usedJSHeapSize ?? 0,
     })),
   };
   try {
@@ -268,17 +300,23 @@ function clearBaseline(): void {
 }
 
 function compareToBaseline(
-  report: { totalMs: number; fps: TownPerfFps; steps: TownPerfReportStep[] },
+  report: TownPerfReport,
   baseline: TownPerfBaseline,
 ): TownPerfBaselineComparison {
   const deltaTotalMs = report.totalMs - baseline.totalMs;
   const deltaTotalPct =
     baseline.totalMs > 0 ? (deltaTotalMs / baseline.totalMs) * 100 : 0;
   const deltaAvgFps = report.fps.avgFps - baseline.avgFps;
+  const deltaMinFps = report.fps.minFps - baseline.minFps;
+  const deltaDroppedFrames = report.fps.droppedFrames - baseline.droppedFrames;
+  const deltaLongFrames = report.fps.longFrames - baseline.longFrames;
+  const deltaLongTasks = report.longTasks.length - baseline.longTaskCount;
+  const deltaHeapGrowth =
+    report.memory && baseline.heapEnd > 0
+      ? (report.memory.endHeap - baseline.heapEnd)
+      : null;
 
-  const baselineStepMap = new Map(
-    baseline.steps.map((s) => [s.id, s]),
-  );
+  const baselineStepMap = new Map(baseline.steps.map((s) => [s.id, s]));
 
   const stepDeltas: TownPerfStepDelta[] = report.steps.map((step) => {
     const base = baselineStepMap.get(step.id);
@@ -288,13 +326,22 @@ function compareToBaseline(
     const deltaMs = step.ms - base.ms;
     const deltaPct = base.ms > 0 ? (deltaMs / base.ms) * 100 : 0;
     const deltaFpsAvg =
-      step.fps && base.avgFps > 0
-        ? step.fps.avgFps - base.avgFps
-        : null;
+      step.fps && base.avgFps > 0 ? step.fps.avgFps - base.avgFps : null;
     return { stepId: step.id, deltaMs, deltaPct, deltaFpsAvg };
   });
 
-  return { deltaTotalMs, deltaTotalPct, deltaAvgFps, stepDeltas };
+  return {
+    baselineSavedAt: baseline.savedAt,
+    deltaTotalMs,
+    deltaTotalPct,
+    deltaAvgFps,
+    deltaMinFps,
+    deltaDroppedFrames,
+    deltaLongFrames,
+    deltaLongTasks,
+    deltaHeapGrowth,
+    stepDeltas,
+  };
 }
 
 export function useTownInteractionProfiler(enabled: boolean) {
@@ -407,8 +454,7 @@ export function useTownInteractionProfiler(enabled: boolean) {
         startedAtIso: new Date().toISOString(),
       };
       recordingRef.current = true;
-      startHeapRef.current =
-        captureMemorySnapshot()?.usedJSHeapSize ?? null;
+      startHeapRef.current = captureMemorySnapshot()?.usedJSHeapSize ?? null;
       setRunning(true);
       setReport(null);
       startFpsLoop();
@@ -497,7 +543,11 @@ export function useTownInteractionProfiler(enabled: boolean) {
       const stepHeaps = stepsRef.current
         .map((s) => s.memory?.usedJSHeapSize)
         .filter((v): v is number => v !== undefined);
-      const peakHeap = Math.max(startHeap, endSnap.usedJSHeapSize, ...stepHeaps);
+      const peakHeap = Math.max(
+        startHeap,
+        endSnap.usedJSHeapSize,
+        ...stepHeaps,
+      );
       const growthBytes = endSnap.usedJSHeapSize - startHeap;
       const growthPct = startHeap > 0 ? (growthBytes / startHeap) * 100 : 0;
       memory = {
@@ -538,11 +588,6 @@ export function useTownInteractionProfiler(enabled: boolean) {
       };
     });
 
-    const baseline = loadBaseline();
-    const baselineComparison = baseline
-      ? compareToBaseline({ totalMs, fps, steps }, baseline)
-      : null;
-
     const nextReport: TownPerfReport = {
       scenario: scenario.scenario,
       startedAt: scenario.startedAtIso,
@@ -555,8 +600,13 @@ export function useTownInteractionProfiler(enabled: boolean) {
       blocks,
       largestBlock,
       phases,
-      baselineComparison,
+      baselineComparison: null,
     };
+
+    const baseline = loadBaseline();
+    if (baseline) {
+      nextReport.baselineComparison = compareToBaseline(nextReport, baseline);
+    }
 
     setReport(nextReport);
     scenarioRef.current = null;
@@ -604,12 +654,21 @@ export function useTownInteractionProfiler(enabled: boolean) {
   );
 
   const saveCurrentAsBaseline = useCallback(() => {
-    if (report) saveBaseline(report);
+    if (!report) return;
+    saveBaseline(report);
+    // Re-compare the current report against the just-saved baseline
+    const baseline = loadBaseline();
+    if (baseline) {
+      setReport({ ...report, baselineComparison: compareToBaseline(report, baseline) });
+    }
   }, [report]);
 
   const clearCurrentBaseline = useCallback(() => {
     clearBaseline();
-  }, []);
+    if (report) {
+      setReport({ ...report, baselineComparison: null });
+    }
+  }, [report]);
 
   return useMemo(
     () => ({

@@ -304,6 +304,10 @@ function deltaColor(deltaMs: number): string {
   return "inherit";
 }
 
+function formatSignedInt(n: number): string {
+  return n > 0 ? `+${n}` : String(n);
+}
+
 function BaselineComparisonBox({
   comparison,
   steps,
@@ -317,6 +321,47 @@ function BaselineComparisonBox({
     (d) => Math.abs(d.deltaMs) > 20,
   );
 
+  const metrics: Array<{ label: string; value: string; good: boolean | null }> = [
+    {
+      label: "Total time",
+      value: formatDelta(comparison.deltaTotalMs, comparison.deltaTotalPct),
+      good: comparison.deltaTotalMs < -20 ? true : comparison.deltaTotalMs > 20 ? false : null,
+    },
+    {
+      label: "Avg FPS",
+      value: `${formatSignedInt(comparison.deltaAvgFps)} fps`,
+      good: comparison.deltaAvgFps > 2 ? true : comparison.deltaAvgFps < -2 ? false : null,
+    },
+    {
+      label: "Min FPS",
+      value: `${formatSignedInt(comparison.deltaMinFps)} fps`,
+      good: comparison.deltaMinFps > 2 ? true : comparison.deltaMinFps < -2 ? false : null,
+    },
+    {
+      label: "Dropped frames",
+      value: formatSignedInt(comparison.deltaDroppedFrames),
+      good: comparison.deltaDroppedFrames < 0 ? true : comparison.deltaDroppedFrames > 0 ? false : null,
+    },
+    {
+      label: "Long frames",
+      value: formatSignedInt(comparison.deltaLongFrames),
+      good: comparison.deltaLongFrames < 0 ? true : comparison.deltaLongFrames > 0 ? false : null,
+    },
+    {
+      label: "Long tasks",
+      value: formatSignedInt(comparison.deltaLongTasks),
+      good: comparison.deltaLongTasks < 0 ? true : comparison.deltaLongTasks > 0 ? false : null,
+    },
+  ];
+
+  if (comparison.deltaHeapGrowth !== null) {
+    metrics.push({
+      label: "Heap end",
+      value: `${comparison.deltaHeapGrowth > 0 ? "+" : ""}${formatBytes(comparison.deltaHeapGrowth)}`,
+      good: comparison.deltaHeapGrowth < 0 ? true : comparison.deltaHeapGrowth > 1024 * 1024 ? false : null,
+    });
+  }
+
   return (
     <div
       style={{
@@ -326,29 +371,32 @@ function BaselineComparisonBox({
           : "rgba(255, 133, 92, 0.5)",
       }}
     >
-      <div style={summaryLabelStyle}>vs. Baseline</div>
-      <div
-        style={{
-          ...summaryValueStyle,
-          color: deltaColor(comparison.deltaTotalMs),
-        }}
-      >
-        {formatDelta(comparison.deltaTotalMs, comparison.deltaTotalPct)}
+      <div style={summaryLabelStyle}>
+        vs. Baseline ({new Date(comparison.baselineSavedAt).toLocaleString()})
       </div>
-      {comparison.deltaAvgFps !== 0 && (
-        <div
-          style={{
-            marginTop: 4,
-            fontSize: 12,
-            color: comparison.deltaAvgFps > 0 ? "#9fe0b4" : "#ffb096",
-          }}
-        >
-          FPS: {comparison.deltaAvgFps > 0 ? "+" : ""}
-          {comparison.deltaAvgFps} avg
-        </div>
-      )}
+
+      <div style={{ marginTop: 8, display: "grid", gap: 4 }}>
+        {metrics.map((m) => (
+          <div
+            key={m.label}
+            style={{
+              ...rowStyle,
+              color:
+                m.good === true
+                  ? "#9fe0b4"
+                  : m.good === false
+                    ? "#ffb096"
+                    : "inherit",
+            }}
+          >
+            <span>{m.label}</span>
+            <span>{m.value}</span>
+          </div>
+        ))}
+      </div>
+
       {significantDeltas.length > 0 && (
-        <div style={{ marginTop: 8 }}>
+        <div style={{ marginTop: 10 }}>
           <div
             style={{
               fontSize: 10,
@@ -358,7 +406,7 @@ function BaselineComparisonBox({
               marginBottom: 4,
             }}
           >
-            Notable step changes
+            Per-step timing
           </div>
           <div style={gridStyle}>
             {significantDeltas.map((d) => {
@@ -371,7 +419,14 @@ function BaselineComparisonBox({
                     color: deltaColor(d.deltaMs),
                   }}
                 >
-                  <span>{step?.label ?? d.stepId}</span>
+                  <span>
+                    {step?.label ?? d.stepId}
+                    {d.deltaFpsAvg !== null && (
+                      <span style={{ opacity: 0.7, fontSize: 10, marginLeft: 4 }}>
+                        {formatSignedInt(d.deltaFpsAvg)}fps
+                      </span>
+                    )}
+                  </span>
                   <span>{formatDelta(d.deltaMs, d.deltaPct)}</span>
                 </div>
               );
