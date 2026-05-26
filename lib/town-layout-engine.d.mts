@@ -45,15 +45,6 @@ export type ResolvedTownLayout<T extends TownLayoutInput> = Omit<
 };
 
 export function hashStr(input: string): number;
-export function sampledEdgePoints(
-  layout: TownLayoutInput,
-  startVertexId: string,
-  endVertexId: string,
-): Point[];
-export function resolveDistrictPolygon(
-  layout: TownLayoutInput,
-  vertexIds: string[],
-): Point[];
 export function resolveTownLayout<T extends TownLayoutInput>(
   layout: T,
 ): ResolvedTownLayout<T>;

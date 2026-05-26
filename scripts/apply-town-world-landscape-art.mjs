@@ -80,12 +80,14 @@ const cropSize = Math.min(
   256,
   Math.floor(Math.min(sourceWidth, sourceHeight) * 0.18),
 );
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const maxWaterCropLeft = sourceWidth - cropSize;
+const maxWaterCropTop = sourceHeight - cropSize;
+const desiredWaterCropLeft = Math.round(sourceWidth * 0.49);
+const desiredWaterCropTop = 0;
 const waterCrop = {
-  left: Math.min(
-    sourceWidth - cropSize,
-    Math.max(0, Math.round(sourceWidth * 0.49)),
-  ),
-  top: Math.min(sourceHeight - cropSize, 0),
+  left: clamp(desiredWaterCropLeft, 0, maxWaterCropLeft),
+  top: clamp(desiredWaterCropTop, 0, maxWaterCropTop),
   width: cropSize,
   height: cropSize,
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import type { MouseEvent } from "react";
+import type { KeyboardEvent, MouseEvent } from "react";
 import { activeQueue, mostActiveStops, type Stop } from "@/lib/town";
 
 type Props = {
@@ -293,6 +293,12 @@ export function MainLine({ stops, onEngineClick }: Props) {
     e.stopPropagation();
     onEngineClick?.();
   };
+  const handleEngineKeyDown = (e: KeyboardEvent) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    e.preventDefault();
+    e.stopPropagation();
+    onEngineClick?.();
+  };
 
   return (
     <g id="willville-main-line" aria-label="The Mayor's Express">
@@ -378,8 +384,12 @@ export function MainLine({ stops, onEngineClick }: Props) {
       {/* === Express train === */}
       {/* Locomotive — clickable */}
       <g
+        aria-label="Ring the town bell"
+        role="button"
+        tabIndex={0}
         style={{ cursor: "pointer", pointerEvents: "all" }}
         onClick={handleEngineClick}
+        onKeyDown={handleEngineKeyDown}
       >
         <ExpressLocomotive scale={1.2} />
         <animateMotion

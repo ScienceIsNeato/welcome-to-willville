@@ -10,8 +10,8 @@ set -euo pipefail
 #   scripts/generate-bespoke-sprite.sh the-reactor --force
 #   scripts/generate-bespoke-sprite.sh --list
 #
-# Requires ganglia-studio installed at:
-#   /Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio
+# Set GANGLIA_STUDIO_DIR to the ganglia-studio checkout if it is not in a
+# nearby sibling directory.
 # ─────────────────────────────────────────────────────────────────────────────
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -19,7 +19,7 @@ ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 BESPOKE_DIR="$ROOT/data/bespoke-sprites"
 OUTPUT_DIR="$ROOT/output/bespoke-sprites"
 SPRITE_DIR="$ROOT/public/art/stops"
-GANGLIA_STUDIO="/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio"
+GANGLIA_STUDIO="${GANGLIA_STUDIO_DIR:-}"
 
 FORCE=""
 
@@ -51,6 +51,24 @@ CONFIG="$BESPOKE_DIR/$STOP_ID.tti.json"
 if [[ ! -f "$CONFIG" ]]; then
   echo "ERROR: No config found at $CONFIG" >&2
   echo "Create one first, or run --list to see available configs." >&2
+  exit 1
+fi
+
+if [[ -z "$GANGLIA_STUDIO" ]]; then
+  for candidate in \
+    "$ROOT/../ganglia-studio" \
+    "$ROOT/../ganglia-core/ganglia-studio" \
+    "$ROOT/../../ganglia-core/ganglia-studio"; do
+    if [[ -d "$candidate/.git" ]]; then
+      GANGLIA_STUDIO="$candidate"
+      break
+    fi
+  done
+fi
+
+if [[ -z "$GANGLIA_STUDIO" || ! -d "$GANGLIA_STUDIO" ]]; then
+  echo "ERROR: ganglia-studio checkout not found." >&2
+  echo "Set GANGLIA_STUDIO_DIR=/path/to/ganglia-studio and retry." >&2
   exit 1
 fi
 
