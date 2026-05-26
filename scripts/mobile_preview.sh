@@ -187,6 +187,8 @@ for (const device of selected) {
   if (headed) {
     console.log(`Opened ${device.label}: ${metrics.url}`);
     console.log("Close the browser window when you are done.");
+    await page.waitForEvent("close", { timeout: 0 }).catch(() => {});
+    await context.close().catch(() => {});
     break;
   }
 
