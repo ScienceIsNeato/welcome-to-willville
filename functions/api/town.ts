@@ -460,10 +460,11 @@ async function fetchRecentBranches(
     }
 
     // The "active branch" shown on the board is the most recent feature push
-    const latestPush = pushes.find((e) => {
-      const ref = (e.payload.ref ?? "").replace(/^refs\/heads\//, "");
-      return ref !== defaultBranch;
-    }) ?? pushes[0];
+    const latestPush =
+      pushes.find((e) => {
+        const ref = (e.payload.ref ?? "").replace(/^refs\/heads\//, "");
+        return ref !== defaultBranch;
+      }) ?? pushes[0];
 
     if (!latestPush?.payload?.ref) return fallback;
 

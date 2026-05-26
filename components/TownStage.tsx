@@ -793,32 +793,33 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                 )}
 
                 {/* tooltip */}
-                {bellHovered && (populating === "idle" || populating === "running") && (
-                  <g style={{ pointerEvents: "none" }}>
-                    <rect
-                      x={populating === "running" ? -86 : -68}
-                      y={-88}
-                      width={populating === "running" ? 172 : 136}
-                      height={24}
-                      rx={5}
-                      fill="rgba(12,7,22,0.88)"
-                      stroke="rgba(230,198,106,0.35)"
-                      strokeWidth={1}
-                    />
-                    <text
-                      x={0}
-                      y={-71}
-                      textAnchor="middle"
-                      fontSize={13}
-                      fill="#e6c66a"
-                      fontFamily="var(--font-sans, sans-serif)"
-                    >
-                      {populating === "running"
-                        ? "The Town Bell Sees All"
-                        : "Ring the town bell"}
-                    </text>
-                  </g>
-                )}
+                {bellHovered &&
+                  (populating === "idle" || populating === "running") && (
+                    <g style={{ pointerEvents: "none" }}>
+                      <rect
+                        x={populating === "running" ? -86 : -68}
+                        y={-88}
+                        width={populating === "running" ? 172 : 136}
+                        height={24}
+                        rx={5}
+                        fill="rgba(12,7,22,0.88)"
+                        stroke="rgba(230,198,106,0.35)"
+                        strokeWidth={1}
+                      />
+                      <text
+                        x={0}
+                        y={-71}
+                        textAnchor="middle"
+                        fontSize={13}
+                        fill="#e6c66a"
+                        fontFamily="var(--font-sans, sans-serif)"
+                      >
+                        {populating === "running"
+                          ? "The Town Bell Sees All"
+                          : "Ring the town bell"}
+                      </text>
+                    </g>
+                  )}
               </g>
             </g>
           </g>

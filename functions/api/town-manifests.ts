@@ -182,7 +182,10 @@ export class WillvilleManifestClient {
     let older = fallback;
     const prefTime = Date.parse(preferred.lastUpdate ?? "");
     const fallTime = Date.parse(fallback.lastUpdate ?? "");
-    if (!Number.isNaN(fallTime) && (Number.isNaN(prefTime) || fallTime > prefTime)) {
+    if (
+      !Number.isNaN(fallTime) &&
+      (Number.isNaN(prefTime) || fallTime > prefTime)
+    ) {
       newer = fallback;
       older = preferred;
     }
