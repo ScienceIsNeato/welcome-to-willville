@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# pre-commit hook: keep .willville.json mechanically fresh
+#
+# On every commit, auto-updates branch and last_update in the packet.
+# Status and direction are left alone — those are written by humans/agents.
+# ─────────────────────────────────────────────────────────────────────────────
+
+PACKET=".willville.json"
+
+# Skip if no packet exists (not a ScienceIsNeato repo, or hasn't been created)
+[[ -f "$PACKET" ]] || exit 0
+
+# Skip during rebase/merge to avoid conflicts
+[[ -d .git/rebase-merge ]] || [[ -d .git/rebase-apply ]] && exit 0
+[[ -f .git/MERGE_HEAD ]] && exit 0
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
+NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+# Use node to update JSON cleanly (preserves formatting, only touches target fields)
+node -e "
+  const fs = require('fs');
+  const path = '$PACKET';
+  let raw;
+  try { raw = fs.readFileSync(path, 'utf8'); } catch { process.exit(0); }
+  let packet;
+  try { packet = JSON.parse(raw); } catch { process.exit(0); }
+
+  const agent = packet.agent;
+  if (!agent || typeof agent !== 'object') process.exit(0);
+
+  let changed = false;
+
+  if (agent.branch !== '$BRANCH') {
+    agent.branch = '$BRANCH';
+    changed = true;
+  }
+
+  // Always bump the timestamp
+  agent.last_update = '$NOW';
+  changed = true;
+
+  if (changed) {
+    fs.writeFileSync(path, JSON.stringify(packet, null, 2) + '\n');
+  }
+" 2>/dev/null || exit 0
+
+# Stage the updated packet so it's included in this commit
+git add "$PACKET" 2>/dev/null || true

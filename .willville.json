@@ -1,8 +1,9 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Adding an easter egg to the town board — a little pun for fun",
-    "direction": "Ship the egg, then back to perf testing work",
-    "last_update": "2026-05-26T01:00:00Z"
+    "status": "Bell messenger whoosh audio and pre-commit hook for auto-fresh packets",
+    "direction": "Get the bell sequence sounding right, then ship the skill plumbing",
+    "branch": "codex/investigate-willville-skill-loading",
+    "last_update": "2026-05-26T08:41:01Z"
   }
 }

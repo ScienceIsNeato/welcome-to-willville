@@ -50,10 +50,14 @@ Too long, too technical, reads like a changelog.
   "agent": {
     "status": "What you're doing, plain English",
     "direction": "Where it's headed next",
-    "last_update": "2026-05-26T00:00:00Z"
+    "branch": "auto-filled by pre-commit hook",
+    "last_update": "auto-filled by pre-commit hook"
   }
 }
 ```
+
+`branch` and `last_update` are maintained automatically by the pre-commit hook —
+you never need to set them manually. Just write `status` and `direction`.
 
 Do not add `actions`, `difficulties`, or `needs_human` — those are legacy.
 
@@ -64,9 +68,14 @@ Do not add `actions`, `difficulties`, or `needs_human` — those are legacy.
 - When direction changes
 - When what you're working on changes
 
-## After updating
+## How it stays fresh
 
-Commit and push so both local and deployed Willville see the same data:
+A pre-commit hook (`.githooks/pre-commit`) auto-updates `branch` and
+`last_update` on every commit and stages the file. You just need to
+update `status` and `direction` when the work changes — the mechanical
+fields take care of themselves.
+
+If you update status/direction outside a commit, push it:
 
 ```bash
 git add .willville.json
