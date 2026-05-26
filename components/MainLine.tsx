@@ -346,6 +346,7 @@ export function MainLine({ stops, onEngineClick }: Props) {
         <g
           key={`badge-${stop.id}`}
           transform={`translate(${stop.position.x + 16}, ${stop.position.y - 18})`}
+          style={{ pointerEvents: "none" }}
         >
           <circle
             r={11}
