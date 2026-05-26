@@ -194,6 +194,9 @@ export function TownPerfPanel({
               </>
             )}
 
+            <SectionTitle title="Waterfall" />
+            <WaterfallChart report={report} />
+
             <SectionTitle title="Timing Tree" />
             <div style={treeStyle}>
               {timingTree.map((node) => (
@@ -374,6 +377,100 @@ function BaselineComparisonBox({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+const STEP_COLORS = [
+  "rgba(230, 198, 106, 0.7)",
+  "rgba(106, 198, 230, 0.7)",
+  "rgba(180, 140, 230, 0.7)",
+  "rgba(140, 230, 160, 0.7)",
+  "rgba(230, 140, 140, 0.7)",
+  "rgba(230, 180, 106, 0.7)",
+  "rgba(106, 230, 210, 0.7)",
+  "rgba(200, 200, 120, 0.7)",
+  "rgba(160, 160, 230, 0.7)",
+  "rgba(230, 160, 200, 0.7)",
+];
+
+function WaterfallChart({ report }: { report: TownPerfReport }) {
+  const totalMs = Math.max(report.totalMs, 0.001);
+  const steps = report.steps;
+  if (steps.length === 0) return null;
+
+  return (
+    <div style={{ display: "grid", gap: 3 }}>
+      {/* Time axis */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "90px 1fr",
+          gap: 6,
+          fontSize: 9,
+          opacity: 0.5,
+          marginBottom: 2,
+        }}
+      >
+        <span />
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <span>0ms</span>
+          <span>{(totalMs / 2).toFixed(0)}ms</span>
+          <span>{totalMs.toFixed(0)}ms</span>
+        </div>
+      </div>
+      {steps.map((step, index) => {
+        const leftPct = (step.startedAtMs / totalMs) * 100;
+        const widthPct = Math.max((step.ms / totalMs) * 100, 0.5);
+        const color = STEP_COLORS[index % STEP_COLORS.length];
+        return (
+          <div
+            key={step.id}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "90px 1fr",
+              gap: 6,
+              alignItems: "center",
+            }}
+          >
+            <span
+              style={{
+                fontSize: 10,
+                lineHeight: 1.2,
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                opacity: 0.82,
+              }}
+              title={step.label}
+            >
+              {step.label}
+            </span>
+            <div
+              style={{
+                position: "relative",
+                height: 14,
+                background: "rgba(255, 255, 255, 0.04)",
+                borderRadius: 2,
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  left: `${leftPct}%`,
+                  width: `${widthPct}%`,
+                  height: "100%",
+                  background: color,
+                  borderRadius: 2,
+                  minWidth: 2,
+                }}
+                title={`${step.ms.toFixed(1)}ms at ${step.startedAtMs.toFixed(0)}ms`}
+              />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
