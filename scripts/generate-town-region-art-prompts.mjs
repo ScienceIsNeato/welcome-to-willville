@@ -9,6 +9,9 @@ const contract = JSON.parse(
     "utf8",
   ),
 );
+const glyphInserts = JSON.parse(
+  await readFile(resolve(root, "data/town-glyph-inserts.v1.json"), "utf8"),
+);
 const outputRoot = resolve(root, "docs/generated/town-region-art-prompts");
 
 const regionDirections = {
@@ -89,6 +92,22 @@ function authoringPlateSummary(district, scale = 4, padding = 28) {
     .join("; ");
 }
 
+function glyphInsertSummary(district) {
+  const inserts = glyphInserts.inserts.filter(
+    (insert) => insert.districtId === district.id,
+  );
+  if (inserts.length === 0) return "";
+
+  const lines = inserts
+    .map(
+      (insert) =>
+        `- ${insert.displayName} (\`${insert.id}\`): must be explicitly visible at map coordinate ${insert.anchor.x}, ${insert.anchor.y}. Use mask \`${insert.maskImage}\` when doing a targeted insertion pass. ${insert.description}`,
+    )
+    .join("\n");
+
+  return `\nRequired glyph inserts:\n${lines}\n`;
+}
+
 function promptForDistrict(district) {
   const direction = regionDirections[district.id];
   return `# ${district.displayName} Region Art Prompt
@@ -114,7 +133,7 @@ Palette:
 ${direction.palette}
 
 Motifs:
-${direction.motifs}
+${direction.motifs}${glyphInsertSummary(district)}
 
 Geometry contract:
 The supplied mask is authoritative. Do not redraw the district as a circle, wedge, rectangle, or standalone island. Do not paint across the canal cutouts. Any disconnected ROI component should feel like the same district continuing on the other side of the canal, but the canal itself remains empty for the shared canal layer.

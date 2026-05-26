@@ -2,7 +2,7 @@
  * Per-repo default mapping for repos that don't (yet) ship a .willville.json.
  *
  * When /api/town discovers a repo under ScienceIsNeato it looks up the
- * repo here for sensible defaults (district, lines, displayName, position).
+ * repo here for sensible defaults (district, lines, position).
  * A .willville.json in the repo overrides any of these fields.
  *
  * Repos not listed here are assumed to be "out of town" until someone drops
@@ -13,7 +13,6 @@ import type { DistrictId, LineId, SiteGlyph } from "./willville";
 export type Heuristic = {
   repo: string; // e.g. "ScienceIsNeato/chronic-chronicler"
   stopId: string;
-  displayName: string;
   district: DistrictId;
   lines: LineId[];
   /** Optional manual placement inside the district SVG polygon. */
@@ -37,7 +36,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/10000_years_of_solitude",
     stopId: "the-solitude-stacks",
-    displayName: "The Solitude Stacks",
     district: "mirrored-mile",
     lines: ["writing"],
     position: { x: 160, y: 200 },
@@ -53,7 +51,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/GANGLIA",
     stopId: "the-furnace",
-    displayName: "The Furnace",
     district: "the-graveyard",
     lines: ["ai"],
     position: { x: 880, y: 220 },
@@ -67,7 +64,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/suno-api",
     stopId: "the-suno-organ",
-    displayName: "The Suno Organ",
     district: "the-graveyard",
     lines: ["ai"],
     position: { x: 1080, y: 360 },
@@ -81,7 +77,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/FogOfDog",
     stopId: "the-kennel",
-    displayName: "The Kennel",
     district: "the-graveyard",
     lines: ["web"],
     position: { x: 960, y: 200 },
@@ -95,7 +90,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/epsilon",
     stopId: "the-compilers-forge",
-    displayName: "The Compiler's Forge",
     district: "the-graveyard",
     lines: ["workshop"],
     position: { x: 1040, y: 280 },
@@ -109,7 +103,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/gene-builder",
     stopId: "the-gene-greenhouse",
-    displayName: "The Gene Greenhouse",
     district: "the-graveyard",
     lines: ["workshop"],
     position: { x: 1120, y: 200 },
@@ -123,7 +116,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/go-playground",
     stopId: "the-go-workbench",
-    displayName: "The Go Workbench",
     district: "the-graveyard",
     lines: ["workshop"],
     position: { x: 1000, y: 320 },
@@ -137,7 +129,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/dotFiles",
     stopId: "the-dotfile-cabinet",
-    displayName: "The Dotfile Cabinet",
     district: "the-graveyard",
     lines: [],
     position: { x: 920, y: 280 },
@@ -154,7 +145,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/ganglia-core",
     stopId: "the-reactor",
-    displayName: "The Reactor",
     district: "gates-of-hell",
     lines: ["ai"],
     position: { x: 1320, y: 660 },
@@ -174,7 +164,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/ganglia-studio",
     stopId: "the-atelier",
-    displayName: "The Atelier",
     district: "gates-of-hell",
     lines: ["ai", "halloween"],
     position: { x: 1420, y: 700 },
@@ -188,7 +177,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/ganglia-common",
     stopId: "the-toolworks",
-    displayName: "The Toolworks",
     district: "gates-of-hell",
     lines: ["ai"],
     position: { x: 1380, y: 780 },
@@ -202,7 +190,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/HalloweenTracker",
     stopId: "the-watchful-pumpkin",
-    displayName: "The Watchful Pumpkin",
     district: "gates-of-hell",
     lines: ["halloween", "workshop"],
     position: { x: 1460, y: 820 },
@@ -224,7 +211,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/slop-mop",
     stopId: "the-mop-bucket",
-    displayName: "The Mop Bucket",
     district: "slop-wharf",
     lines: ["quality"],
     position: { x: 180, y: 480 },
@@ -239,7 +225,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/slop-mop-action",
     stopId: "the-action-dock",
-    displayName: "The Action Dock",
     district: "slop-wharf",
     lines: ["quality"],
     position: { x: 280, y: 520 },
@@ -253,7 +238,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/bucket-o-slop",
     stopId: "the-slop-bucket",
-    displayName: "The Slop Bucket",
     district: "slop-wharf",
     lines: ["quality"],
     position: { x: 200, y: 600 },
@@ -267,7 +251,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/cursor-rules",
     stopId: "the-rulebook",
-    displayName: "The Rulebook",
     district: "slop-wharf",
     lines: ["quality"],
     position: { x: 120, y: 580 },
@@ -283,7 +266,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/swe-audit",
     stopId: "the-audit-house",
-    displayName: "The Audit House",
     district: "halls-of-judgement",
     lines: ["quality", "ai"],
     position: { x: 1280, y: 360 },
@@ -297,7 +279,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/imperium-swe-traces",
     stopId: "the-trace-station",
-    displayName: "The Trace Station",
     district: "halls-of-judgement",
     lines: ["ai"],
     position: { x: 1420, y: 360 },
@@ -311,7 +292,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/snorkelAI-tasks",
     stopId: "the-task-forge",
-    displayName: "The Task Forge",
     district: "halls-of-judgement",
     lines: ["ai"],
     position: { x: 1320, y: 440 },
@@ -325,7 +305,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/hard-collesium",
     stopId: "the-colosseum",
-    displayName: "The Colosseum",
     district: "halls-of-judgement",
     lines: ["ai"],
     position: { x: 1460, y: 440 },
@@ -339,7 +318,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/apertus_task_scaffolding",
     stopId: "the-apertus-drafting-desk",
-    displayName: "The Apertus Drafting Desk",
     district: "halls-of-judgement",
     lines: ["quality"],
     position: { x: 1380, y: 470 },
@@ -353,7 +331,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/pr-task-scaffolding",
     stopId: "the-pr-scaffold",
-    displayName: "The PR Scaffold",
     district: "halls-of-judgement",
     lines: ["quality"],
     position: { x: 1500, y: 480 },
@@ -368,7 +345,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/codebase-navigation",
     stopId: "the-map-room",
-    displayName: "The Map Room",
     district: "halls-of-judgement",
     lines: ["quality"],
     position: { x: 1400, y: 500 },
@@ -382,7 +358,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/mystery",
     stopId: "the-mystery-manor",
-    displayName: "The Mystery Manor",
     district: "halls-of-judgement",
     lines: ["halloween", "writing"],
     position: { x: 1300, y: 500 },
@@ -398,7 +373,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/ChronicChronicler",
     stopId: "the-chroniclers-tower",
-    displayName: "The Chronicler's Tower",
     district: "the-zeitgeist",
     lines: ["web", "writing"],
     position: { x: 520, y: 180 },
@@ -418,7 +392,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/fogofdog-frontend",
     stopId: "the-kennel-storefront",
-    displayName: "The Kennel Storefront",
     district: "the-zeitgeist",
     lines: ["web"],
     position: { x: 740, y: 240 },
@@ -432,7 +405,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/lonely_little_vampire",
     stopId: "the-vampires-crypt",
-    displayName: "The Vampire's Crypt",
     district: "the-zeitgeist",
     lines: ["halloween", "writing"],
     position: { x: 660, y: 200 },
@@ -446,7 +418,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/loopcloser",
     stopId: "the-roundabout",
-    displayName: "The Roundabout",
     district: "the-zeitgeist",
     lines: ["quality"],
     position: { x: 600, y: 160 },
@@ -460,7 +431,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/razer-ripple",
     stopId: "the-light-mill",
-    displayName: "The Light Mill",
     district: "the-zeitgeist",
     lines: ["workshop"],
     position: { x: 780, y: 180 },
@@ -476,7 +446,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/welcome-to-willville",
     stopId: "willville-town-hall",
-    displayName: "Willville Town Hall",
     district: "town-square",
     lines: ["web"],
     position: { x: 800, y: 500 },
@@ -492,7 +461,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/grocery-automation",
     stopId: "the-pantry-bot",
-    displayName: "The Pantry Bot",
     district: "dogwallow-ramble-ii",
     lines: ["workshop"],
     position: { x: 240, y: 880 },
@@ -506,7 +474,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/RANDY-SHARON",
     stopId: "randy-sharons-cottage",
-    displayName: "Randy & Sharon's Cottage",
     district: "dogwallow-ramble-ii",
     lines: [],
     position: { x: 180, y: 820 },
@@ -520,7 +487,6 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/TheWallow",
     stopId: "the-wallow",
-    displayName: "The Wallow",
     district: "dogwallow-ramble-ii",
     lines: ["halloween"],
     position: { x: 320, y: 860 },

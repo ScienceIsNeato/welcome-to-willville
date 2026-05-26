@@ -62,11 +62,10 @@ Do not add `actions`, `difficulties`, or `needs_human` — those are legacy.
 - When you start work
 - When you finish something
 - When direction changes
-- When what you're working on changes
+- **Whenever you update STATUS.md** — a pre-commit hook blocks commits that
+  touch STATUS.md without also updating .willville.json
 
 ## After updating
-
-Commit and push so both local and deployed Willville see the same data:
 
 ```bash
 git add .willville.json

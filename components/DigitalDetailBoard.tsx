@@ -24,6 +24,7 @@ export function DigitalDetailBoard({ stop, boats, panelOpacity = 1 }: Props) {
   return (
     <section
       aria-label="Willville site detail display"
+      className="digital-detail-board"
       style={
         {
           ...shellStyle,
@@ -42,96 +43,110 @@ export function DigitalDetailBoard({ stop, boats, panelOpacity = 1 }: Props) {
         </div>
       ) : (
         <>
-          <div style={topGridStyle}>
-            <Panel title="Primary Metrics">
-              <div style={metricClusterStyle}>
-                <Metric label="Repo" value={repoShortName(stop.repo)} />
-                <Metric label="Language" value={stop.language ?? "Mixed"} />
-                <BranchSignal stop={stop} />
-                <Metric label="Branches" value={countLabel(stop.branchCount)} />
-                <Metric
-                  label="Issues"
-                  value={
-                    stop.openIssues != null ? String(stop.openIssues) : "n/a"
-                  }
-                />
-                <Metric label="Open PRs" value={String(openPrCount)} />
-              </div>
-            </Panel>
-
-            <Panel title="Temporal Data">
-              <div style={metricClusterStyle}>
-                <Metric
-                  label="Commits 3d/7d/21d"
-                  value={`${stop.commits3d ?? 0} / ${stop.commits7d ?? 0} / ${
+          <section style={overviewColumnStyle}>
+            <span style={sectionLabelStyle}>Project</span>
+            <h2 style={projectTitleStyle}>
+              <a
+                href={stop.repo ? `https://github.com/${stop.repo}` : "#"}
+                onClick={stop.repo ? followLink : undefined}
+                style={projectTitleLinkStyle}
+                title={tooltipText(stop.repo)}
+              >
+                {repoShortName(stop.repo)}
+              </a>
+            </h2>
+            <BranchSignal stop={stop} />
+            <FactGrid
+              facts={[
+                ["Language", stop.language ?? "Mixed"],
+                ["Branches", countLabel(stop.branchCount)],
+                ["Issues", countLabel(stop.openIssues)],
+                ["Open PRs", String(openPrCount)],
+                [
+                  "Commits 3/7/21d",
+                  `${stop.commits3d ?? 0}/${stop.commits7d ?? 0}/${
                     stop.commits21d ?? 0
-                  }`}
-                  wide
-                />
-                <Metric
-                  label="Last Commit"
-                  value={timeAgo(stop.lastCommitAt)}
-                />
-                <Metric label="Oldest PR" value={oldestPrAge(openPrs)} />
-                <Metric label="Last Merge" value={timeAgo(stop.lastMergeAt)} />
-                <Metric label="Release" value={releaseLabel(stop)} />
-              </div>
-            </Panel>
+                  }`,
+                ],
+                ["Last Commit", timeAgo(stop.lastCommitAt)],
+                ["Last Merged", timeAgo(stop.lastMergeAt)],
+              ]}
+            />
+          </section>
 
-            <Panel title="Recent Commits">
+          <section style={workColumnStyle}>
+            <TextSection
+              label="Status"
+              value={stop.status.doing}
+              fallback="No active work logged."
+            />
+            <TextSection
+              label="Direction"
+              value={stop.status.next}
+              fallback="No direction logged."
+            />
+          </section>
+
+          <section style={activityColumnStyle}>
+            <ActivitySection label="Recent Commits">
               <RecentCommitList stop={stop} />
-            </Panel>
-          </div>
-
-          <div style={bottomGridStyle}>
-            <Panel title="Status">
-              <TextBlock
-                value={stop.status.doing}
-                fallback="No active work logged."
-              />
-            </Panel>
-            <Panel title="Direction">
-              <TextBlock
-                value={stop.status.next}
-                fallback="No direction logged."
-              />
-            </Panel>
-            <Panel title="GitHub Actions">
+            </ActivitySection>
+            <ActivitySection label="GitHub Actions">
               <WorkflowRunList stop={stop} />
-            </Panel>
-          </div>
+            </ActivitySection>
+          </section>
         </>
       )}
     </section>
   );
 }
 
-function Panel({ title, children }: { title: string; children: ReactNode }) {
+function FactGrid({ facts }: { facts: Array<[string, string]> }) {
   return (
-    <div style={panelStyle}>
-      <span style={panelTitleStyle} title={tooltipText(title)}>
-        {title}
-      </span>
-      {children}
+    <dl style={factGridStyle}>
+      {facts.map(([label, value]) => (
+        <div key={label} style={factItemStyle}>
+          <dt style={factLabelStyle}>{label}</dt>
+          <dd style={factValueStyle} title={tooltipText(value)}>
+            {value}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function TextSection({
+  label,
+  value,
+  fallback,
+}: {
+  label: string;
+  value: string | undefined;
+  fallback: string;
+}) {
+  const text = normalizePanelText(value, fallback);
+  return (
+    <div style={textSectionStyle}>
+      <span style={sectionLabelStyle}>{label}</span>
+      <p style={noteTextStyle} title={tooltipText(text)}>
+        {text}
+      </p>
     </div>
   );
 }
 
-function Metric({
+function ActivitySection({
   label,
-  value,
-  wide,
+  children,
 }: {
   label: string;
-  value: string;
-  wide?: boolean;
+  children: ReactNode;
 }) {
   return (
-    <div style={wide ? wideMetricStyle : metricStyle}>
-      <span style={smallLabelStyle}>{label}</span>
-      <strong style={metricValueStyle} title={tooltipText(value)}>
-        {value}
-      </strong>
+    <div style={activitySectionStyle}>
+      <span style={sectionLabelStyle}>{label}</span>
+      {children}
     </div>
   );
 }
@@ -139,8 +154,8 @@ function Metric({
 function BranchSignal({ stop }: { stop: Stop }) {
   const branch = stop.activeBranch;
   return (
-    <div style={metricStyle}>
-      <span style={smallLabelStyle}>Branch</span>
+    <div style={branchRowStyle}>
+      <span style={sectionLabelStyle}>Branch</span>
       {branch ? (
         <a
           href={branch.compareUrl}
@@ -151,26 +166,11 @@ function BranchSignal({ stop }: { stop: Stop }) {
           {branch.name}
         </a>
       ) : (
-        <span style={metricValueStyle} title="n/a">
+        <span style={branchValueStyle} title="n/a">
           n/a
         </span>
       )}
     </div>
-  );
-}
-
-function TextBlock({
-  value,
-  fallback,
-}: {
-  value: string | undefined;
-  fallback: string;
-}) {
-  const text = normalizePanelText(value, fallback);
-  return (
-    <p style={noteTextStyle} title={tooltipText(text)}>
-      {text}
-    </p>
   );
 }
 
@@ -196,7 +196,7 @@ function WorkflowRunList({ stop }: { stop: Stop }) {
             style={actionLinkStyle}
             title={tooltipText(run.name)}
           >
-            {run.name}
+            {shortWorkflowName(run.name)}
           </a>
         </li>
       ))}
@@ -247,18 +247,6 @@ function countLabel(value: number | undefined): string {
   return Number.isFinite(value ?? NaN) ? String(value) : "n/a";
 }
 
-function releaseLabel(stop: Stop): string {
-  return stop.latestRelease?.tagName ?? stop.latestRelease?.name ?? "n/a";
-}
-
-function oldestPrAge(prs: CanalBoat[]): string {
-  if (prs.length === 0) return "n/a";
-  const oldest = prs.reduce((min, pr) =>
-    Date.parse(pr.createdAt) < Date.parse(min.createdAt) ? pr : min,
-  );
-  return timeAgo(oldest.createdAt);
-}
-
 function timeAgo(value: string | undefined): string {
   if (!value) return "n/a";
   const time = Date.parse(value);
@@ -293,6 +281,10 @@ function workflowRunStatusLabel(status: GitHubWorkflowRun["status"]): string {
   if (status === "running") return "running";
   if (status === "failed") return "failed";
   return "neutral";
+}
+
+function shortWorkflowName(name: string): string {
+  return name.replace(/\s*\([^)]*\)\s*$/, "").trim() || name;
 }
 
 function workflowRunStatusStyle(
@@ -334,12 +326,16 @@ const shellStyle: CSSProperties = {
   position: "relative",
   zIndex: 2,
   pointerEvents: "auto",
-  width: "min(960px, calc(100vw - 20px))",
-  minHeight: 220,
+  width: "calc(100vw - 20px)",
+  height: "clamp(260px, 31vh, 340px)",
   margin: "0 auto 10px",
   display: "grid",
-  gap: 8,
-  padding: "22px 18px 12px",
+  gridTemplateColumns:
+    "minmax(250px, 1fr) minmax(270px, 1.05fr) minmax(250px, 0.95fr)",
+  gap: 12,
+  padding: "14px 16px 12px",
+  boxSizing: "border-box",
+  overflow: "hidden",
   borderRadius: 3,
   border: "1px solid rgb(51 255 87 / calc(0.28 * var(--panel-opacity, 1)))",
   background:
@@ -361,7 +357,7 @@ const emptyStateStyle: CSSProperties = {
 };
 
 const emptyTitleStyle: CSSProperties = {
-  fontSize: 20,
+  fontSize: 23,
   letterSpacing: 0.5,
   textShadow: "0 0 10px rgba(51, 255, 87, 0.5)",
 };
@@ -369,13 +365,13 @@ const emptyTitleStyle: CSSProperties = {
 const emptyCopyStyle: CSSProperties = {
   maxWidth: 520,
   color: "rgba(51, 255, 87, 0.6)",
-  fontSize: 13,
-  lineHeight: 1.4,
+  fontSize: 15,
+  lineHeight: 1.2,
 };
 
 const eyebrowStyle: CSSProperties = {
   color: "rgba(51, 255, 87, 0.5)",
-  fontSize: 11,
+  fontSize: 12.8,
   fontWeight: 700,
   letterSpacing: 1.5,
   textTransform: "uppercase",
@@ -384,142 +380,177 @@ const eyebrowStyle: CSSProperties = {
   whiteSpace: "nowrap",
 };
 
-const topGridStyle: CSSProperties = {
+const overviewColumnStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "1fr 1fr 1fr",
-  gap: 10,
+  gridTemplateRows: "auto auto auto minmax(0, 1fr)",
+  alignContent: "start",
+  gap: 7,
+  minHeight: 0,
+  overflowY: "auto",
+  overflowX: "hidden",
 };
 
-const bottomGridStyle: CSSProperties = {
+const workColumnStyle: CSSProperties = {
   display: "grid",
-  gridTemplateColumns: "1fr 1fr 1fr",
+  gridTemplateRows: "minmax(0, 1fr) minmax(0, 1fr)",
   gap: 10,
-};
-
-const panelStyle: CSSProperties = {
-  position: "relative",
-  minWidth: 0,
-  minHeight: 68,
-  marginTop: 10,
-  padding: "14px 10px 10px",
-  borderRadius: 2,
-  background:
-    "linear-gradient(180deg, rgb(51 255 87 / calc(0.055 * var(--panel-opacity, 1))), rgb(51 255 87 / calc(0.025 * var(--panel-opacity, 1))))",
-  border: "1px solid rgb(51 255 87 / calc(0.42 * var(--panel-opacity, 1)))",
-  boxShadow:
-    "inset 0 0 22px rgb(51 255 87 / calc(0.035 * var(--panel-opacity, 1)))",
-};
-
-const panelTitleStyle: CSSProperties = {
-  position: "absolute",
-  top: -8,
-  left: 8,
-  maxWidth: "calc(100% - 20px)",
-  padding: "2px 8px",
-  borderRadius: 2,
-  background: "rgb(190 255 196 / calc(0.95 * var(--panel-opacity, 1)))",
-  color: "#052505",
-  fontSize: 10,
-  lineHeight: 1.1,
-  fontWeight: 900,
-  letterSpacing: 1.6,
-  textTransform: "uppercase",
+  minHeight: 0,
   overflow: "hidden",
-  textOverflow: "ellipsis",
+};
+
+const activityColumnStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateRows: "minmax(0, 1.15fr) minmax(0, 1fr)",
+  gap: 10,
+  minHeight: 0,
+  paddingRight: 58,
+  overflow: "hidden",
+};
+
+const sectionLabelStyle: CSSProperties = {
+  display: "block",
+  color: "rgba(190, 255, 196, 0.76)",
+  fontSize: 11,
+  lineHeight: 1,
+  fontWeight: 900,
+  letterSpacing: 1.1,
+  textTransform: "uppercase",
   whiteSpace: "nowrap",
 };
 
-const metricClusterStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(3, minmax(0, max-content))",
-  alignContent: "start",
-  gap: 6,
+const projectTitleStyle: CSSProperties = {
+  margin: 0,
+  fontSize: 18,
+  lineHeight: 1.05,
+  fontWeight: 900,
 };
 
-const metricStyle: CSSProperties = {
-  minWidth: 0,
-  maxWidth: 124,
-  padding: "7px 8px",
-  borderRadius: 2,
-  background: "rgb(51 255 87 / calc(0.04 * var(--panel-opacity, 1)))",
-  border: "1px solid rgb(51 255 87 / calc(0.18 * var(--panel-opacity, 1)))",
-};
-
-const wideMetricStyle: CSSProperties = {
-  ...metricStyle,
-  gridColumn: "span 2",
-  maxWidth: 190,
-};
-
-const smallLabelStyle: CSSProperties = {
+const projectTitleLinkStyle: CSSProperties = {
+  color: "#baffc2",
+  textDecoration: "none",
   display: "block",
-  marginBottom: 3,
+  overflowWrap: "anywhere",
+  whiteSpace: "normal",
+  textShadow: "0 0 10px rgba(51, 255, 87, 0.45)",
+};
+
+const branchRowStyle: CSSProperties = {
+  display: "grid",
+  gap: 4,
+  minWidth: 0,
+};
+
+const factGridStyle: CSSProperties = {
+  margin: 0,
+  display: "grid",
+  gridTemplateColumns: "1fr",
+  gap: 4,
+  minWidth: 0,
+  overflow: "hidden",
+};
+
+const factItemStyle: CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "128px minmax(0, 1fr)",
+  alignItems: "baseline",
+  gap: 8,
+  minWidth: 0,
+  paddingTop: 4,
+  borderTop: "1px solid rgb(51 255 87 / calc(0.16 * var(--panel-opacity, 1)))",
+};
+
+const factLabelStyle: CSSProperties = {
+  display: "block",
   color: "rgba(51, 255, 87, 0.5)",
   fontSize: 10,
+  lineHeight: 1,
   fontWeight: 700,
-  letterSpacing: 1.5,
+  letterSpacing: 0.7,
   textTransform: "uppercase",
 };
 
-const metricValueStyle: CSSProperties = {
+const factValueStyle: CSSProperties = {
+  margin: 0,
   display: "block",
   color: "#33ff57",
-  fontSize: 13,
-  lineHeight: 1.2,
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
+  fontSize: 14,
+  lineHeight: 1.08,
+  fontWeight: 800,
+  overflowWrap: "anywhere",
+  whiteSpace: "normal",
   textShadow: "0 0 8px rgba(51, 255, 87, 0.55)",
 };
 
+const textSectionStyle: CSSProperties = {
+  minHeight: 0,
+  paddingTop: 2,
+  overflowY: "auto",
+  overflowX: "hidden",
+};
+
 const noteTextStyle: CSSProperties = {
-  margin: 0,
+  margin: "7px 0 0",
   color: "rgba(51, 255, 87, 0.82)",
-  fontSize: 12,
-  lineHeight: 1.45,
+  fontSize: 13,
+  lineHeight: 1.28,
+  overflow: "visible",
+  overflowWrap: "anywhere",
 };
 
 const branchLinkStyle: CSSProperties = {
-  ...metricValueStyle,
+  ...factValueStyle,
   display: "block",
   color: "#33ff57",
+  fontSize: 14,
   textDecoration: "none",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
+};
+
+const branchValueStyle: CSSProperties = {
+  ...factValueStyle,
+  fontSize: 14,
+};
+
+const activitySectionStyle: CSSProperties = {
+  minHeight: 0,
+  overflowY: "auto",
+  overflowX: "hidden",
 };
 
 const actionListStyle: CSSProperties = {
-  margin: 0,
+  margin: "7px 0 0",
   padding: 0,
   listStyle: "none",
   display: "grid",
-  gap: 5,
+  gap: 4,
+  minHeight: 0,
+  overflow: "visible",
 };
 
 const actionItemStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "70px minmax(0, 1fr)",
-  alignItems: "center",
-  gap: 5,
-  paddingBottom: 5,
+  alignItems: "start",
+  gap: 8,
+  minWidth: 0,
+  paddingBottom: 4,
   borderBottom:
     "1px solid rgb(51 255 87 / calc(0.13 * var(--panel-opacity, 1)))",
   color: "rgba(51, 255, 87, 0.82)",
-  fontSize: 12,
-  lineHeight: 1.35,
+  fontSize: 14,
+  lineHeight: 1.18,
 };
 
 const actionStatusStyle: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
+  minWidth: 62,
   padding: "2px 6px",
   border: "1px solid rgb(51 255 87 / calc(0.22 * var(--panel-opacity, 1)))",
   borderRadius: 999,
   fontSize: 10,
   fontWeight: 900,
-  letterSpacing: 0.8,
+  letterSpacing: 0,
   lineHeight: 1.1,
   textTransform: "uppercase",
 };
@@ -534,10 +565,10 @@ const recentCommitAgeStyle: CSSProperties = {
 const actionLinkStyle: CSSProperties = {
   minWidth: 0,
   color: "rgba(51, 255, 87, 0.82)",
-  fontSize: 12,
-  lineHeight: 1.35,
+  fontSize: 14,
+  lineHeight: 1.18,
   textDecoration: "none",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-  whiteSpace: "nowrap",
+  display: "block",
+  overflowWrap: "anywhere",
+  whiteSpace: "normal",
 };

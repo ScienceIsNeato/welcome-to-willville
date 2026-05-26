@@ -4,7 +4,6 @@
     "app/**/*.{ts,tsx}",
     "components/TownStage.tsx",
     "functions/api/**/*.ts",
-    "lib/manifest.ts",
     "next.config.ts",
     "postcss.config.mjs",
     "eslint.config.mjs",
@@ -13,24 +12,9 @@
   "project": [
     "app/**/*.{ts,tsx}",
     "components/**/*.{ts,tsx}",
-    "functions/**/*.ts",
     "hooks/**/*.ts",
     "lib/**/*.{ts,mts,mjs}",
     "scripts/*.mjs"
   ],
-  "ignoreDependencies": ["tailwindcss"],
-  "ignore": [
-    "components/MayorsExpressHud.tsx",
-    "components/ProjectHud.tsx",
-    "components/SpogCard.tsx",
-    "hooks/useTownCamera.ts",
-    "lib/canal-path.ts",
-    "lib/canal.ts",
-    "lib/slugs.ts",
-    "lib/town-layout-engine.mjs",
-    "lib/town-layout.ts",
-    "lib/town.ts",
-    "lib/willville.heuristics.ts",
-    "lib/willville.ts"
-  ]
+  "ignoreDependencies": ["tailwindcss", "prettier"]
 }

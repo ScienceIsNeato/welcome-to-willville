@@ -22,6 +22,9 @@ civic cream stone, green planters, blue fountain water, warm roof tile
 
 Motifs:
 circular plaza, fountain, town hall, bell tower, mosaic paving, market stalls, lamps, stairs, rail access
+Required glyph inserts:
+
+- Town Bell Tower (`town-bell`): must be explicitly visible at map coordinate 650, 520. Use mask `/art/town/masks/inserts/town-bell.png` when doing a targeted insertion pass. Insert a tall, elaborate dark fantasy watchtower directly on top of the central Town Square fountain, styled as a civic bell tower merged with a black volcanic tower and a fiery all-seeing eye beacon. The tower should fit the supplied mask, keep its main vertical axis on x=650, and keep the glowing eye/ringing origin aligned around y=520. It should visibly replace the fountain as the central landmark without looking pasted on. Use dark basalt stone, jagged carved trim, arched belfry openings, ember-lit windows, warm roof highlights, and a prominent orange-gold flaming eye where the bell would read from a distance. Keep it whimsical and native to Willville rather than photorealistic or menacing. Match the existing dense hand-drawn board-game diorama style, elevated three-quarter top-down view, crisp miniature detail, saturated but readable color, and plaza-integrated lighting. No readable text, labels, logos, UI, or map pins.
 
 Geometry contract:
 The supplied mask is authoritative. Do not redraw the district as a circle, wedge, rectangle, or standalone island. Do not paint across the canal cutouts. Any disconnected ROI component should feel like the same district continuing on the other side of the canal, but the canal itself remains empty for the shared canal layer.

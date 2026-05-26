@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# ─────────────────────────────────────────────────────────────────────────────
+# pre-commit hook: if STATUS.md is staged, .willville.json must be too
+#
+# The packet should reflect what you just wrote in STATUS.md. If you're
+# updating your status log, update the town map status at the same time.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Skip during rebase/merge
+[[ -d .git/rebase-merge ]] || [[ -d .git/rebase-apply ]] && exit 0
+[[ -f .git/MERGE_HEAD ]] && exit 0
+
+# Is STATUS.md being committed?
+if git diff --cached --name-only | grep -qx "STATUS.md"; then
+  # Is .willville.json also being committed?
+  if ! git diff --cached --name-only | grep -qx ".willville.json"; then
+    echo ""
+    echo "  STATUS.md is staged but .willville.json is not."
+    echo ""
+    echo "  Update the packet so the town map reflects your status."
+    echo "  Just update status and direction in .willville.json — keep it"
+    echo "  plain and casual, like a standup update."
+    echo ""
+    echo "  Then:  git add .willville.json"
+    echo ""
+    exit 1
+  fi
+fi

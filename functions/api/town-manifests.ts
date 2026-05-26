@@ -16,6 +16,12 @@ type FetchedContent = {
   blobSha?: string;
 };
 
+function decodeBase64Utf8(input: string): string {
+  const binary = atob(input.replace(/\s/g, ""));
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
 export class WillvilleManifestClient {
   private readonly headers: Record<string, string>;
   private readonly manifestParser = new WillvilleManifestParser();
@@ -25,6 +31,7 @@ export class WillvilleManifestClient {
     this.headers = {
       "User-Agent": "willville-edge",
       Accept: "application/vnd.github+json",
+      "Cache-Control": "no-cache",
     };
     if (token) this.headers.Authorization = `Bearer ${token}`;
   }
@@ -33,14 +40,27 @@ export class WillvilleManifestClient {
     fullName: string,
     defaultBranch: string,
     activeBranch?: RepoMeta["activeBranch"],
+    recentBranches?: Array<{ name: string; commitHash?: string }>,
   ): Promise<{
     willvilleManifest?: WillvilleManifest;
     willvillePacket?: WillvillePacket;
   }> {
     const prRef = await this.fetchMostRecentPrRef(fullName);
+    const branchRefs = (recentBranches ?? []).map((b) => ({
+      fullName,
+      ref: b.name,
+      commitHash: b.commitHash,
+    }));
     const refs = this.uniqueRefs([
-      activeBranch?.name ? { fullName, ref: activeBranch.name } : undefined,
+      activeBranch?.name
+        ? {
+            fullName,
+            ref: activeBranch.name,
+            commitHash: activeBranch.commitHash,
+          }
+        : undefined,
       prRef,
+      ...branchRefs,
       { fullName, ref: defaultBranch },
     ]);
     const [willvilleManifest, willvillePacket] = await Promise.all([
@@ -155,15 +175,30 @@ export class WillvilleManifestClient {
   ): WillvilleManifest["agent"] {
     if (!preferred) return fallback;
     if (!fallback) return preferred;
+
+    // The agent block with the most recent last_update wins — so when
+    // multiple branches have .willville.json, the freshest status shows.
+    let newer = preferred;
+    let older = fallback;
+    const prefTime = Date.parse(preferred.lastUpdate ?? "");
+    const fallTime = Date.parse(fallback.lastUpdate ?? "");
+    if (
+      !Number.isNaN(fallTime) &&
+      (Number.isNaN(prefTime) || fallTime > prefTime)
+    ) {
+      newer = fallback;
+      older = preferred;
+    }
+
     return {
-      status: preferred.status ?? fallback.status,
-      direction: preferred.direction ?? fallback.direction,
-      difficulties: preferred.difficulties ?? fallback.difficulties,
-      needsHuman: preferred.needsHuman ?? fallback.needsHuman,
-      lastUpdate: preferred.lastUpdate ?? fallback.lastUpdate,
-      sourceBranch: preferred.sourceBranch ?? fallback.sourceBranch,
-      sourceCommitHash: preferred.sourceCommitHash ?? fallback.sourceCommitHash,
-      sourceBlobSha: preferred.sourceBlobSha ?? fallback.sourceBlobSha,
+      status: newer.status ?? older.status,
+      direction: newer.direction ?? older.direction,
+      difficulties: newer.difficulties ?? older.difficulties,
+      needsHuman: newer.needsHuman ?? older.needsHuman,
+      lastUpdate: newer.lastUpdate ?? older.lastUpdate,
+      sourceBranch: newer.sourceBranch ?? older.sourceBranch,
+      sourceCommitHash: newer.sourceCommitHash ?? older.sourceCommitHash,
+      sourceBlobSha: newer.sourceBlobSha ?? older.sourceBlobSha,
     };
   }
 
@@ -199,7 +234,7 @@ export class WillvilleManifestClient {
     try {
       const r = await fetch(
         `https://api.github.com/repos/${repoRef.fullName}/contents/${path}?ref=${encodeURIComponent(repoRef.ref)}`,
-        { headers: this.headers },
+        { headers: this.headers, cache: "no-store" },
       );
       if (!r.ok) return undefined;
       const data = (await r.json()) as {
@@ -209,7 +244,7 @@ export class WillvilleManifestClient {
       };
       if (!data.content || data.encoding !== "base64") return undefined;
       return {
-        body: atob(data.content.replace(/\s/g, "")),
+        body: decodeBase64Utf8(data.content),
         blobSha: data.sha,
       };
     } catch {
