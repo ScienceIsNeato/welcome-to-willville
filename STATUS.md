@@ -9,6 +9,41 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-25) — District Art No Longer Clipped By Landscape Mask
+
+- Fixed the missing edge chunks in The Graveyard, The Gates of Hell, and Slop Wharf by separating the broad landscape `landPath` mask from the district/town art clipping path.
+- Updated `GeneratedTownBase` so runtime district layers clip to the computed `townFootprintPath` instead of the newer landscape land mask, which had been cutting off coastal district pieces.
+- Updated the mask contract generator so district masks, canal banks, and district wall masks use the town footprint clip while the landscape layer can keep using `landPath`.
+- Validation: touched-file diagnostics were clean; `node scripts/generate-town-mask-contract.mjs` completed successfully.
+
+## Done (2026-05-25) — Per-Panel Eye Toggles + Independent Opacity Controls
+
+- Replaced the old detached `TownStageControls` overlay with panel-mounted chrome controls so each large board now owns its own visibility toggle and opacity control in the upper-right corner.
+- Split the old shared `panelOpacity` state into independent top/bottom opacity values, so fading the Time Central board no longer changes the Digital Detail Board and vice versa.
+- Added hidden-state restore pills anchored to each panel slot so a fully hidden panel can still be re-opened without bringing back the old global control bar.
+- Validation: `npm run build` passed; `./scripts/deploy_app.sh` rebuilt and served on `http://127.0.0.1:3750`; browser validation on `/halls-of-judgement/the-mystery-manor/` confirmed top opacity can be set to `0.61` while bottom stays `0.94`, bottom opacity can then be set independently to `0.47`, and each hidden panel leaves behind a working `Show ... panel` restore control while the other panel stays visible.
+
+## Done (2026-05-25) — Time Central Board Fill + Justification Fix
+
+- Fixed the split-flap formatting path in `components/CentralBoard.tsx` so centered rows stay centered all the way through render instead of being re-normalized back to left-justified at the last step.
+- Kept numbered list rows left-justified while centering non-list rows, including stop-detail narrative lines and section headers.
+- Widened the Time Central board shell to match the Digital Detail Board width and changed each split-flap row to use full-width flexible columns, removing the internal left/right letterboxing.
+- Validation: `npm run build` passed; local browser checks showed the top board width equals the bottom board width (`838px` vs `838px` on the sampled route), centered narrative rows begin several cells in (`row0FirstFilled: 3`, `row2FirstFilled: 4` on a stop page), and numbered list rows still start at column `0` on a district page.
+
+## Done (2026-05-25) — Panel Slider No Longer Dims Board Text
+
+- Reworked the top and bottom board opacity control so it no longer applies element-level `opacity` to `CentralBoard` or `DigitalDetailBoard`.
+- The slider now changes board chrome alpha only: backgrounds, borders, glows, and panel surfaces fade, while the actual text and labels on both boards stay fully opaque.
+- Validation: touched-file diagnostics were clean; `npm run build` passed; search confirmed there are no remaining `opacity: panelOpacity` paths in the board components.
+
+## Done (2026-05-25) — Restored District Art + Added Panel Opacity Slider
+
+- Corrected the mobile-safe art regression by restoring `GeneratedTownBase` to always render the actual district art layers instead of swapping to the flat topology source image, which was why the town suddenly looked like the images disappeared.
+- Tightened the mobile-safe media query in `components/TownStage.tsx` so the lighter render path only engages on actual touch/coarse devices (`pointer: coarse` and `hover: none`) instead of catching ordinary desktop/narrow-window use.
+- Added a shared `Panel opacity` slider in the top-left stage controls and threaded its value into both `CentralBoard` and `DigitalDetailBoard`, so the top and bottom chrome can be faded without touching the world layer.
+- Fixed the opaque blue top/bottom bands by letting the map render behind the full stage while keeping the boards in their top and bottom slots, so panel transparency now reveals the map instead of a separate layout row background.
+- Validation: touched-file diagnostics were clean; `npm run build` passed; local browser probe confirmed the town base is back to 8 district art images and the slider is present with a default value of `94`; overlay screenshot verification confirmed the top and bottom panels now show the map behind them instead of blue banners.
+
 ## Done (2026-05-25) — Mobile Safe Render Path For iOS Crash Triage
 
 - Added a mobile-safe render path in `components/TownStage.tsx` that activates on coarse/small screens and swaps the town art stack to a lighter mode instead of always rendering the full desktop scene.
