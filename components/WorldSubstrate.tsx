@@ -60,7 +60,7 @@ export function WorldSubstrate() {
       <path
         d={GENERATED_TOWN_LAYOUT.landPath}
         transform={`translate(${TOWN_OFFSET.x} ${TOWN_OFFSET.y})`}
-        fill="#00ff00"
+        fill="#1a3a20"
       />
       <image
         href={LANDSCAPE_ART}

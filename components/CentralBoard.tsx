@@ -474,7 +474,7 @@ function formatBoardRow(
 }
 
 function isNumberedRow(input: string): boolean {
-  return /^\s*\d{2}\s/.test(input);
+  return /^\s*(?:\d+\s|#\d|UPD\s)/.test(input);
 }
 
 function normalize(input: string): string {
