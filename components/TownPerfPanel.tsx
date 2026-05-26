@@ -313,6 +313,61 @@ function formatSignedInt(n: number): string {
   return n > 0 ? `+${n}` : String(n);
 }
 
+type BaselineMetric = { label: string; value: string; good: boolean | null };
+
+function goodness(
+  delta: number,
+  better: "lower" | "higher",
+  threshold = 0,
+): boolean | null {
+  if (better === "lower")
+    return delta < -threshold ? true : delta > threshold ? false : null;
+  return delta > threshold ? true : delta < -threshold ? false : null;
+}
+
+function buildBaselineMetrics(c: TownPerfBaselineComparison): BaselineMetric[] {
+  const m: BaselineMetric[] = [
+    {
+      label: "Total time",
+      value: formatDelta(c.deltaTotalMs, c.deltaTotalPct),
+      good: goodness(c.deltaTotalMs, "lower", 20),
+    },
+    {
+      label: "Avg FPS",
+      value: `${formatSignedInt(c.deltaAvgFps)} fps`,
+      good: goodness(c.deltaAvgFps, "higher", 2),
+    },
+    {
+      label: "Min FPS",
+      value: `${formatSignedInt(c.deltaMinFps)} fps`,
+      good: goodness(c.deltaMinFps, "higher", 2),
+    },
+    {
+      label: "Dropped frames",
+      value: formatSignedInt(c.deltaDroppedFrames),
+      good: goodness(c.deltaDroppedFrames, "lower"),
+    },
+    {
+      label: "Long frames",
+      value: formatSignedInt(c.deltaLongFrames),
+      good: goodness(c.deltaLongFrames, "lower"),
+    },
+    {
+      label: "Long tasks",
+      value: formatSignedInt(c.deltaLongTasks),
+      good: goodness(c.deltaLongTasks, "lower"),
+    },
+  ];
+  if (c.deltaHeapGrowth !== null) {
+    m.push({
+      label: "Heap end",
+      value: `${c.deltaHeapGrowth > 0 ? "+" : ""}${formatBytes(c.deltaHeapGrowth)}`,
+      good: goodness(c.deltaHeapGrowth, "lower", 1024 * 1024),
+    });
+  }
+  return m;
+}
+
 function BaselineComparisonBox({
   comparison,
   steps,
@@ -325,47 +380,7 @@ function BaselineComparisonBox({
   const significantDeltas = comparison.stepDeltas.filter(
     (d) => Math.abs(d.deltaMs) > 20,
   );
-
-  const metrics: Array<{ label: string; value: string; good: boolean | null }> = [
-    {
-      label: "Total time",
-      value: formatDelta(comparison.deltaTotalMs, comparison.deltaTotalPct),
-      good: comparison.deltaTotalMs < -20 ? true : comparison.deltaTotalMs > 20 ? false : null,
-    },
-    {
-      label: "Avg FPS",
-      value: `${formatSignedInt(comparison.deltaAvgFps)} fps`,
-      good: comparison.deltaAvgFps > 2 ? true : comparison.deltaAvgFps < -2 ? false : null,
-    },
-    {
-      label: "Min FPS",
-      value: `${formatSignedInt(comparison.deltaMinFps)} fps`,
-      good: comparison.deltaMinFps > 2 ? true : comparison.deltaMinFps < -2 ? false : null,
-    },
-    {
-      label: "Dropped frames",
-      value: formatSignedInt(comparison.deltaDroppedFrames),
-      good: comparison.deltaDroppedFrames < 0 ? true : comparison.deltaDroppedFrames > 0 ? false : null,
-    },
-    {
-      label: "Long frames",
-      value: formatSignedInt(comparison.deltaLongFrames),
-      good: comparison.deltaLongFrames < 0 ? true : comparison.deltaLongFrames > 0 ? false : null,
-    },
-    {
-      label: "Long tasks",
-      value: formatSignedInt(comparison.deltaLongTasks),
-      good: comparison.deltaLongTasks < 0 ? true : comparison.deltaLongTasks > 0 ? false : null,
-    },
-  ];
-
-  if (comparison.deltaHeapGrowth !== null) {
-    metrics.push({
-      label: "Heap end",
-      value: `${comparison.deltaHeapGrowth > 0 ? "+" : ""}${formatBytes(comparison.deltaHeapGrowth)}`,
-      good: comparison.deltaHeapGrowth < 0 ? true : comparison.deltaHeapGrowth > 1024 * 1024 ? false : null,
-    });
-  }
+  const metrics = buildBaselineMetrics(comparison);
 
   return (
     <div
@@ -427,7 +442,9 @@ function BaselineComparisonBox({
                   <span>
                     {step?.label ?? d.stepId}
                     {d.deltaFpsAvg !== null && (
-                      <span style={{ opacity: 0.7, fontSize: 10, marginLeft: 4 }}>
+                      <span
+                        style={{ opacity: 0.7, fontSize: 10, marginLeft: 4 }}
+                      >
                         {formatSignedInt(d.deltaFpsAvg)}fps
                       </span>
                     )}

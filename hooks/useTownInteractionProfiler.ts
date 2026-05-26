@@ -77,14 +77,14 @@ type TownPerfReportPhase = {
   avgMs: number;
 };
 
-export type TownPerfStepDelta = {
+type TownPerfStepDelta = {
   stepId: string;
   deltaMs: number;
   deltaPct: number;
   deltaFpsAvg: number | null;
 };
 
-export type TownPerfBaselineStep = {
+type TownPerfBaselineStep = {
   id: string;
   ms: number;
   avgFps: number;
@@ -313,7 +313,7 @@ function compareToBaseline(
   const deltaLongTasks = report.longTasks.length - baseline.longTaskCount;
   const deltaHeapGrowth =
     report.memory && baseline.heapEnd > 0
-      ? (report.memory.endHeap - baseline.heapEnd)
+      ? report.memory.endHeap - baseline.heapEnd
       : null;
 
   const baselineStepMap = new Map(baseline.steps.map((s) => [s.id, s]));
@@ -659,7 +659,10 @@ export function useTownInteractionProfiler(enabled: boolean) {
     // Re-compare the current report against the just-saved baseline
     const baseline = loadBaseline();
     if (baseline) {
-      setReport({ ...report, baselineComparison: compareToBaseline(report, baseline) });
+      setReport({
+        ...report,
+        baselineComparison: compareToBaseline(report, baseline),
+      });
     }
   }, [report]);
 

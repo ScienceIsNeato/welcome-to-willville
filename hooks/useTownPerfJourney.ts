@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, type RefObject } from "react";
+import { useCallback, useEffect, useRef, type RefObject } from "react";
 import { TOWN_CENTER } from "@/lib/willville";
 import type { Stop } from "@/lib/town";
 import {
@@ -32,6 +32,7 @@ const PERF_DRAG_LIMIT = 24;
 type Options = {
   currentStops: Stop[];
   getCameraSnapshot: () => Camera;
+  perfAutorun: boolean;
   perfEnabled: boolean;
   perfProfiler: ReturnType<typeof useTownInteractionProfiler>;
   setCameraImmediate: (target: Camera) => void;
@@ -42,12 +43,14 @@ type Options = {
 export function useTownPerfJourney({
   currentStops,
   getCameraSnapshot,
+  perfAutorun,
   perfEnabled,
   perfProfiler,
   setCameraImmediate,
   stageRef,
   svgRef,
 }: Options) {
+  const perfAutorunRef = useRef(false);
   const waitForProfiledFrame = useCallback(
     async (id: string, label: string) => {
       await perfProfiler.runBlock(id, label, async () => {
@@ -511,7 +514,62 @@ export function useTownPerfJourney({
     wheelToScale,
   ]);
 
+  const downloadPerfReport = useCallback(() => {
+    if (!perfProfiler.report) return;
+    const blob = new Blob([JSON.stringify(perfProfiler.report, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `willville-town-perf-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }, [perfProfiler.report]);
+
+  // Expose perf API on window for scripted tests (perf_test.sh)
+  useEffect(() => {
+    if (!perfEnabled) return;
+    const perfWindow = window as Window & {
+      __willvillePerf?: {
+        clearLastReport: () => void;
+        getLastReport: () => typeof perfProfiler.report;
+        runOfficialProfile: () => Promise<void>;
+      };
+    };
+    perfWindow.__willvillePerf = {
+      clearLastReport: perfProfiler.clearReport,
+      getLastReport: () => perfProfiler.report,
+      runOfficialProfile: runOfficialPerfProfile,
+    };
+    return () => {
+      delete perfWindow.__willvillePerf;
+    };
+  }, [
+    perfEnabled,
+    perfProfiler.clearReport,
+    perfProfiler.report,
+    runOfficialPerfProfile,
+  ]);
+
+  // Auto-run the journey on first load when ?autorun=1
+  useEffect(() => {
+    if (
+      !perfEnabled ||
+      !perfAutorun ||
+      perfAutorunRef.current ||
+      perfProfiler.running
+    ) {
+      return;
+    }
+    perfAutorunRef.current = true;
+    void runOfficialPerfProfile();
+  }, [perfAutorun, perfEnabled, perfProfiler.running, runOfficialPerfProfile]);
+
   return {
+    downloadPerfReport,
     runOfficialPerfProfile,
   };
 }

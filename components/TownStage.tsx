@@ -7,7 +7,6 @@ import {
   useState,
   useRef,
   useCallback,
-  useSyncExternalStore,
   useDeferredValue,
   type MouseEvent,
 } from "react";
@@ -37,59 +36,16 @@ import { useTownInteractionProfiler } from "@/hooks/useTownInteractionProfiler";
 import { useTownPerfJourney } from "@/hooks/useTownPerfJourney";
 import { GENERATED_TOWN_LAYOUT } from "@/lib/town-layout";
 import {
+  BELL_BOARD_FLASH_MS,
+  DAY_MS,
+  TOWN_ART_FEATHER,
   buildBellBoardAnnouncement,
   findStopAt,
+  getBellErrorDetail,
   mergeStops,
+  useIsClient,
   type BoardAnnouncement,
 } from "./townStageUtils";
-
-const DAY_MS = 1000 * 60 * 60 * 24;
-const TOWN_ART_FEATHER = 76;
-const BELL_BOARD_FLASH_MS = 4500;
-
-async function getBellErrorDetail(response: Response): Promise<string> {
-  let detail = "";
-  const contentType = response.headers.get("content-type") ?? "";
-
-  try {
-    if (contentType.includes("application/json")) {
-      const data = (await response.json()) as {
-        error?: unknown;
-        message?: unknown;
-      };
-      if (typeof data.error === "string") {
-        detail = data.error;
-      } else if (typeof data.message === "string") {
-        detail = data.message;
-      }
-    } else {
-      const text = (await response.text()).trim();
-      if (text) {
-        detail = text;
-      }
-    }
-  } catch {
-    // ignore unreadable error payloads
-  }
-
-  if (response.status === 404) {
-    return "API routes missing on deploy";
-  }
-
-  if (response.status === 403 && detail === "No GITHUB_PAT configured") {
-    return "GITHUB_PAT not configured";
-  }
-
-  return detail || `HTTP ${response.status}`;
-}
-
-function useIsClient(): boolean {
-  return useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
-}
 
 /**
  * Persistent SVG stage with viewport camera (pan/zoom) and center HUD for stops.
@@ -117,7 +73,6 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const cameraGroupRef = useRef<SVGGElement>(null);
-  const perfAutorunRef = useRef(false);
   const perfProfiler = useTownInteractionProfiler(perfEnabled);
   const perfProbe = useMemo(
     () => ({
@@ -349,67 +304,16 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     return cameraTransform.on("change", applyTransform);
   }, [cameraTransform, perfEnabled, perfProbe]);
 
-  const { runOfficialPerfProfile } = useTownPerfJourney({
+  const { runOfficialPerfProfile, downloadPerfReport } = useTownPerfJourney({
     currentStops,
     getCameraSnapshot,
+    perfAutorun,
     perfEnabled,
     perfProfiler,
     setCameraImmediate,
     stageRef,
     svgRef,
   });
-
-  const downloadPerfReport = useCallback(() => {
-    if (!perfProfiler.report) return;
-    const blob = new Blob([JSON.stringify(perfProfiler.report, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `willville-town-perf-${new Date().toISOString().replace(/[:.]/g, "-")}.json`;
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(url);
-  }, [perfProfiler.report]);
-
-  useEffect(() => {
-    if (!perfEnabled) return;
-    const perfWindow = window as Window & {
-      __willvillePerf?: {
-        clearLastReport: () => void;
-        getLastReport: () => typeof perfProfiler.report;
-        runOfficialProfile: () => Promise<void>;
-      };
-    };
-    perfWindow.__willvillePerf = {
-      clearLastReport: perfProfiler.clearReport,
-      getLastReport: () => perfProfiler.report,
-      runOfficialProfile: runOfficialPerfProfile,
-    };
-    return () => {
-      delete perfWindow.__willvillePerf;
-    };
-  }, [
-    perfEnabled,
-    perfProfiler.clearReport,
-    perfProfiler.report,
-    runOfficialPerfProfile,
-  ]);
-
-  useEffect(() => {
-    if (
-      !perfEnabled ||
-      !perfAutorun ||
-      perfAutorunRef.current ||
-      perfProfiler.running
-    ) {
-      return;
-    }
-    perfAutorunRef.current = true;
-    void runOfficialPerfProfile();
-  }, [perfAutorun, perfEnabled, perfProfiler.running, runOfficialPerfProfile]);
 
   const hydratedSelectedStop = selectedStop
     ? (currentStops.find(

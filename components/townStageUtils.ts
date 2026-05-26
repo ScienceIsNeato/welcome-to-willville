@@ -1,3 +1,4 @@
+import { useSyncExternalStore } from "react";
 import { TOWN_OFFSET } from "@/lib/willville";
 import { mostActiveStops, type Stop } from "@/lib/town";
 import {
@@ -358,4 +359,48 @@ export function buildBellBoardAnnouncement(
     label: "Status Update",
     rows,
   };
+}
+
+export const DAY_MS = 1000 * 60 * 60 * 24;
+export const TOWN_ART_FEATHER = 76;
+export const BELL_BOARD_FLASH_MS = 4500;
+
+export function useIsClient(): boolean {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+}
+
+export async function getBellErrorDetail(response: Response): Promise<string> {
+  let detail = "";
+  const contentType = response.headers.get("content-type") ?? "";
+  try {
+    if (contentType.includes("application/json")) {
+      const data = (await response.json()) as {
+        error?: unknown;
+        message?: unknown;
+      };
+      if (typeof data.error === "string") {
+        detail = data.error;
+      } else if (typeof data.message === "string") {
+        detail = data.message;
+      }
+    } else {
+      const text = (await response.text()).trim();
+      if (text) {
+        detail = text;
+      }
+    }
+  } catch {
+    // ignore unreadable error payloads
+  }
+  if (response.status === 404) {
+    return "API routes missing on deploy";
+  }
+  if (response.status === 403 && detail === "No GITHUB_PAT configured") {
+    return "GITHUB_PAT not configured";
+  }
+  return detail || `HTTP ${response.status}`;
 }
