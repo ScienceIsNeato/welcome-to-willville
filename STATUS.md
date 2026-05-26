@@ -9,6 +9,29 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-26) — Town Art Loads Use Cropped Render Assets
+
+- Replaced the full-canvas district art render path with cropped WebP render assets sized to each actual district region.
+- Kept the lightweight generated isthmus image underneath the district layers so the town has a complete visual fallback while the richer regional art finishes loading.
+- Added a project script to regenerate those cropped render assets after district art changes.
+- Validation: generated district render assets dropped the district art payload from roughly 66MB to 3.9MB before browser decode; touched-file diagnostics were clean.
+
+## Done (2026-05-26) — Heuristic Stops Use Repo Names
+
+- Removed custom stop display names from the repo heuristic list so fallback stop labels now come from the repository name instead of a second hand-maintained title.
+- Updated stop building so live and static fallback stops use the repo slug unless a manifest explicitly provides a project display name.
+- Updated the Digital Detail Board to lead with the repository name and removed the redundant full owner/repo line beneath it.
+- Expanded the timestamp labels to `Last Commit` and `Last Merged` now that the fact column has room.
+- Validation: touched-file diagnostics were clean; `npm run build` passed; `./scripts/deploy_app.sh` passed on `http://127.0.0.1:3750/`; browser probe confirmed the Town Hall digital display now shows `welcome-to-willville` and no longer shows `Willville Town Hall`.
+
+## Done (2026-05-26) — Digital Board Readability Tuning
+
+- Tuned the Digital Detail Board so long-form body text is smaller, scrollable, and no longer clipped by fixed-height text regions.
+- Styled board scrollbars to match the terminal-green display and reserved space so panel controls no longer sit over the activity text.
+- Changed default panel opacity: split-flap board now starts at 35%, Digital Detail Board starts at 75%.
+- Relabeled commit activity as `Commits 3/7/21d` and widened the fact label column so the time-window label and values fit cleanly.
+- Validation: touched-file diagnostics were clean; `./scripts/deploy_app.sh` passed on `http://127.0.0.1:3750/`; browser probe confirmed opacity defaults, 13px rendered body text, scrollable sections, styled scrollbar colors, and the commit label/value layout.
+
 ## Done (2026-05-26) — Static Export Uses Multiple Workers In CI
 
 - Fixed the build path that could fall back to `Generating static pages using 1 worker` in constrained environments.

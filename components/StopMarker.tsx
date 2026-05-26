@@ -68,7 +68,7 @@ export function StopMarker({
         fill="transparent"
         pointerEvents="all"
       />
-      {recentlyUpdated && (
+      {recentlyUpdated && !isFocused && (
         <circle r={18} fill={color} fillOpacity={0.25} className="whistle" />
       )}
       {sprite && (
@@ -82,14 +82,44 @@ export function StopMarker({
           style={{ pointerEvents: "all" }}
         />
       )}
-      <circle
-        r={isFocused ? 8 : 6}
-        cx={sprite ? 22 : 0}
-        cy={sprite ? 12 : 0}
-        fill={color}
-        stroke="#1a1233"
-        strokeWidth={2}
-      />
+      {isFocused ? (
+        <g>
+          <circle
+            r={22}
+            cx={sprite ? 22 : 0}
+            cy={sprite ? 12 : 0}
+            fill="none"
+            stroke="#33ff57"
+            strokeWidth={2.5}
+            strokeDasharray="8 6"
+            strokeLinecap="round"
+            opacity={0.85}
+          />
+          <circle
+            r={30}
+            cx={sprite ? 22 : 0}
+            cy={sprite ? 12 : 0}
+            fill="none"
+            stroke="#33ff57"
+            strokeWidth={1.5}
+            strokeDasharray="4 10"
+            strokeLinecap="round"
+            className="stop-focus-ring-pulse"
+            style={{
+              transformOrigin: `${sprite ? 22 : 0}px ${sprite ? 12 : 0}px`,
+            }}
+          />
+        </g>
+      ) : (
+        <circle
+          r={6}
+          cx={sprite ? 22 : 0}
+          cy={sprite ? 12 : 0}
+          fill={color}
+          stroke="#1a1233"
+          strokeWidth={2}
+        />
+      )}
       <text
         y={sprite ? -52 : -18}
         textAnchor="middle"

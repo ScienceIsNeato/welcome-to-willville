@@ -26,6 +26,7 @@
     "town:insert-glyph": "node scripts/apply-town-glyph-insert.mjs",
     "town:apply-district-art": "node scripts/apply-town-district-art.mjs",
     "town:apply-world-landscape-art": "node scripts/apply-town-world-landscape-art.mjs",
+    "town:district-render-assets": "node scripts/generate-town-district-render-assets.mjs",
     "town:preview": "node scripts/validate-town-layout.mjs && node scripts/generate-town-layout-preview.mjs && node scripts/generate-town-mask-contract.mjs && node scripts/generate-town-district-art-kits.mjs && node scripts/generate-town-glyph-inserts.mjs && node scripts/generate-town-region-art-prompts.mjs && node scripts/generate-town-base-art.mjs && node scripts/generate-town-district-art-placeholders.mjs && node scripts/generate-town-world-backdrop.mjs && node scripts/generate-mop-worker-sprite.mjs && node scripts/generate-town-site-sprites.mjs",
     "town:art-brief": "node scripts/generate-town-art-brief.mjs && node scripts/generate-town-district-art-kits.mjs && node scripts/generate-town-glyph-inserts.mjs && node scripts/generate-town-region-art-prompts.mjs"
   },

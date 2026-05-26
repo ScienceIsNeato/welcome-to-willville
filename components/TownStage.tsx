@@ -105,8 +105,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const [syncing, setSyncing] = useState(false);
   const [showCentralBoard, setShowCentralBoard] = useState(true);
   const [showDigitalBoard, setShowDigitalBoard] = useState(true);
-  const [centralBoardOpacity, setCentralBoardOpacity] = useState(0.94);
-  const [digitalBoardOpacity, setDigitalBoardOpacity] = useState(0.94);
+  const [centralBoardOpacity, setCentralBoardOpacity] = useState(0.35);
+  const [digitalBoardOpacity, setDigitalBoardOpacity] = useState(0.75);
   const [showPerfPanel, setShowPerfPanel] = useState(true);
   const [perfPanelOpacity, setPerfPanelOpacity] = useState(0.94);
   const [mobileSafeMode, setMobileSafeMode] = useState(false);
@@ -935,7 +935,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               position: "fixed",
               top: "10dvh",
               left: 14,
-              zIndex: 1500,
+              zIndex: 2300,
             }}
           >
             <PanelChromeControls

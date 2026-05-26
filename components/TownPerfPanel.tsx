@@ -59,7 +59,7 @@ export function TownPerfPanel({
         top: "10dvh",
         left: "50%",
         transform: "translateX(-50%)",
-        zIndex: 1400,
+        zIndex: 2200,
         width: "min(860px, calc(100vw - 28px))",
         maxHeight: "calc(90dvh - 14px)",
         display: "flex",

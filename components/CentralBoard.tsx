@@ -667,7 +667,7 @@ function makeNoiseBuffer(
 const shellStyle: CSSProperties = {
   position: "relative",
   zIndex: 2,
-  width: "min(960px, calc(100vw - 20px))",
+  width: "calc(100vw - 20px)",
   margin: "10px auto 0",
   color: "var(--willville-paper)",
   fontFamily: "var(--font-geist-mono), monospace",

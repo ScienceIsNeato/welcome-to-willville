@@ -92,6 +92,24 @@ body {
   pointer-events: none;
 }
 
+.digital-detail-board * {
+  scrollbar-color: rgba(51, 255, 87, 0.5) rgba(3, 18, 6, 0.28);
+  scrollbar-width: thin;
+}
+
+.digital-detail-board *::-webkit-scrollbar {
+  width: 7px;
+}
+
+.digital-detail-board *::-webkit-scrollbar-track {
+  background: rgba(3, 18, 6, 0.28);
+}
+
+.digital-detail-board *::-webkit-scrollbar-thumb {
+  background: rgba(51, 255, 87, 0.46);
+  border-radius: 999px;
+}
+
 .dynamic-wall-source-shadow {
   fill: #2a2520;
   opacity: 0.46;
@@ -240,6 +258,22 @@ body {
 
 .whistle {
   animation: whistle-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes focus-ring-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 0.2;
+  }
+}
+
+.stop-focus-ring-pulse {
+  animation: focus-ring-pulse 2s ease-in-out infinite;
 }
 
 @keyframes hallow-flicker {

@@ -537,9 +537,7 @@ export function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
     manifestProject?.stop ??
     meta.repo.split("/")[1]!.toLowerCase();
   const displayName =
-    manifestProject?.displayName ??
-    heuristic?.displayName ??
-    repoDisplayName(meta.repo);
+    manifestProject?.displayName ?? repoDisplayName(meta.repo);
   const position = autoPosition(district, meta.repo, stopId);
   const queue = deriveQueue(
     manifest?.queue,
@@ -657,7 +655,7 @@ export function buildInitialStops(): Stop[] {
   for (const h of HEURISTICS) {
     stops.push({
       id: h.stopId,
-      displayName: h.displayName,
+      displayName: repoDisplayName(h.repo),
       district: h.district,
       lines: h.lines,
       position: autoPosition(h.district, h.repo, h.stopId),
