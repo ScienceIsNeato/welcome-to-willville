@@ -404,15 +404,6 @@ function compareUrl(
   return `https://github.com/${fullName}/compare/${safeBase}...${safeBranch}`;
 }
 
-async function fetchActiveBranch(
-  fullName: string,
-  defaultBranch: string,
-  token?: string,
-): Promise<RepoMeta["activeBranch"]> {
-  const result = await fetchRecentBranches(fullName, defaultBranch, token);
-  return result.activeBranch;
-}
-
 type RecentBranchesResult = {
   activeBranch: NonNullable<RepoMeta["activeBranch"]>;
   recentBranches: Array<{ name: string; commitHash?: string }>;
