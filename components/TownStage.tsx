@@ -1009,7 +1009,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             data-town-control
             style={{
               position: "fixed",
-              top: 14,
+              top: "10dvh",
               left: 14,
               zIndex: 1500,
             }}

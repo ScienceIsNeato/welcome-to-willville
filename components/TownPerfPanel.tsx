@@ -56,12 +56,12 @@ export function TownPerfPanel({
       aria-label="Town interaction performance report"
       style={{
         position: "fixed",
-        top: 14,
+        top: "10dvh",
         left: "50%",
         transform: "translateX(-50%)",
         zIndex: 1400,
         width: "min(860px, calc(100vw - 28px))",
-        maxHeight: "calc(100dvh - 28px)",
+        maxHeight: "calc(90dvh - 14px)",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
