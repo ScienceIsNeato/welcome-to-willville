@@ -29,6 +29,12 @@ export type TownPerfLongTask = {
   durationMs: number;
 };
 
+export type TownPerfDomSnapshot = {
+  totalNodes: number;
+  svgElements: number;
+  stopMarkers: number;
+};
+
 export type TownPerfReportStep = {
   id: string;
   label: string;
@@ -36,6 +42,7 @@ export type TownPerfReportStep = {
   pct: number;
   startedAtMs: number;
   fps?: TownPerfFps;
+  domSnapshot?: TownPerfDomSnapshot;
 };
 
 export type TownPerfReportBlock = {
@@ -173,6 +180,14 @@ function computeFps(samples: FrameSample[]): TownPerfFps {
     frameCount: samples.length,
     droppedFrames,
     longFrames,
+  };
+}
+
+function captureDomSnapshot(): TownPerfDomSnapshot {
+  return {
+    totalNodes: document.querySelectorAll("*").length,
+    svgElements: document.querySelectorAll("svg *").length,
+    stopMarkers: document.querySelectorAll("[data-stop-marker]").length,
   };
 }
 
@@ -379,6 +394,7 @@ export function useTownInteractionProfiler(enabled: boolean) {
       const stepFps = enabled
         ? computeFps(sliceSamples(fpsSamplesRef.current, absStart, absEnd))
         : undefined;
+      const domSnapshot = enabled ? captureDomSnapshot() : undefined;
       stepsRef.current.push({
         id,
         label,
@@ -386,6 +402,7 @@ export function useTownInteractionProfiler(enabled: boolean) {
         pct: 0,
         startedAtMs: scenario ? absStart - scenario.startedAtMs : 0,
         fps: stepFps,
+        domSnapshot,
       });
       return result;
     },

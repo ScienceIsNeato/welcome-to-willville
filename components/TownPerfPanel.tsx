@@ -2,6 +2,7 @@
 
 import type {
   TownPerfBaselineComparison,
+  TownPerfDomSnapshot,
   TownPerfFps,
   TownPerfReport,
   TownPerfReportBlock,
@@ -27,6 +28,7 @@ type TimingTreeNode = {
   depth: number;
   startedAtMs: number;
   fps?: TownPerfFps;
+  domSnapshot?: TownPerfDomSnapshot;
   children: TimingTreeNode[];
 };
 
@@ -531,6 +533,7 @@ function TimingTreeNodeView({ node }: { node: TimingTreeNode }) {
   const overTarget = node.ms > 500;
   const fps = node.fps;
   const fpsLow = fps && fps.avgFps > 0 && fps.avgFps < 30;
+  const dom = node.domSnapshot;
   return (
     <div style={treeNodeStyle}>
       <div
@@ -556,6 +559,11 @@ function TimingTreeNodeView({ node }: { node: TimingTreeNode }) {
             >
               {fps.avgFps}fps
               {fps.droppedFrames > 0 && ` (${fps.droppedFrames} dropped)`}
+            </span>
+          )}
+          {dom && (
+            <span style={{ display: "block", fontSize: 9, opacity: 0.5, marginTop: 1 }}>
+              {dom.totalNodes} DOM · {dom.svgElements} SVG · {dom.stopMarkers} markers
             </span>
           )}
         </span>
@@ -590,6 +598,7 @@ function stepToNode(step: TownPerfReportStep): TimingTreeNode {
     depth: 0,
     startedAtMs: step.startedAtMs,
     fps: step.fps,
+    domSnapshot: step.domSnapshot,
     children: [],
   };
 }
