@@ -199,7 +199,13 @@ export type ManualStop = {
   blurb?: string;
   glyph?: SiteGlyph;
   /** Explicit status state for non-repo stops. Defaults to "unknown" if omitted. */
-  statusState?: import("./town").StatusState;
+  statusState?:
+    | "idea"
+    | "wip"
+    | "shipping"
+    | "maintenance"
+    | "dormant"
+    | "unknown";
 };
 
 export type SiteGlyph = {
