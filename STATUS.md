@@ -9,6 +9,12 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-26) — Static Export Uses Multiple Workers In CI
+
+- Fixed the build path that could fall back to `Generating static pages using 1 worker` in constrained environments.
+- Configured Next static generation to use a default 4-worker pool, with `NEXT_STATIC_GENERATION_WORKERS` available for CI/local tuning, and lowered the per-worker page batch size so this 46-page export actually spreads across the pool.
+- Validation: `npm run build` reported `Generating static pages using 4 workers (46/46)`; `./scripts/deploy_app.sh` completed successfully on `http://127.0.0.1:3750/`; smoke checks returned `200` for `/` and `/api/town`.
+
 ## Done (2026-05-26) — Local Deploy No Longer Depends On Google Fonts
 
 - Fixed `deploy_app` failing during `next build` when the environment could not reach Google Fonts for the Next font optimizer.
