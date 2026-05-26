@@ -428,7 +428,7 @@ async function fetchActiveBranch(
     type GitHubPushEvent = {
       type: string;
       created_at: string;
-      payload: { ref?: string };
+      payload: { ref?: string; head?: string };
     };
     const response = await fetch(
       `https://api.github.com/repos/${fullName}/events?per_page=30`,
@@ -447,6 +447,7 @@ async function fetchActiveBranch(
     return {
       name: branchName,
       pushedAt: latestPush.created_at,
+      commitHash: latestPush.payload.head,
       compareUrl: compareUrl(fullName, defaultBranch, branchName),
       isDefault: branchName === defaultBranch,
     };

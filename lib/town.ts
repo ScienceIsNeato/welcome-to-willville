@@ -39,6 +39,7 @@ export type ActiveBranch = {
   name: string;
   compareUrl: string;
   pushedAt?: string;
+  commitHash?: string;
   isDefault: boolean;
 };
 
@@ -265,6 +266,9 @@ export type WillvilleAgentPacket = {
   difficulties?: string;
   needsHuman?: string;
   lastUpdate?: string;
+  sourceBranch?: string;
+  sourceCommitHash?: string;
+  sourceBlobSha?: string;
 };
 
 export type WillvilleManifest = {
