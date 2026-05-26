@@ -162,8 +162,7 @@ export class WillvilleManifestClient {
       needsHuman: preferred.needsHuman ?? fallback.needsHuman,
       lastUpdate: preferred.lastUpdate ?? fallback.lastUpdate,
       sourceBranch: preferred.sourceBranch ?? fallback.sourceBranch,
-      sourceCommitHash:
-        preferred.sourceCommitHash ?? fallback.sourceCommitHash,
+      sourceCommitHash: preferred.sourceCommitHash ?? fallback.sourceCommitHash,
       sourceBlobSha: preferred.sourceBlobSha ?? fallback.sourceBlobSha,
     };
   }
