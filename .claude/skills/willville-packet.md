@@ -1,54 +1,63 @@
-# Willville Packet — STATUS.md encoding
+# Willville packet
 
-When working on any repo under `ScienceIsNeato/`, maintain a `<!-- willville ... -->` packet at the top of the repo's `STATUS.md`. This is your compressed standup — a manager should be able to read it in 10 seconds and know exactly what's happening.
+Keep `.willville.json` in the repo root current so the Willville town map shows what you're actually working on.
 
-## Format
+## Voice
 
-```markdown
-<!-- willville
-doing: Implementing frame-by-frame video renderer for story pipeline
-done: Audio sync engine, caption overlay, timeline scrubber
-next: Subtitle track support, ship beta to 3 testers
-blocked: FFmpeg wasm build segfaults on ARM — investigating upstream
-risk: medium — wasm stability could slip eta by a week
-milestone: Story-to-video v2
-eta: 2026-06-01
--->
+Write like a coworker giving a standup update — plain, casual, no jargon. The reader already knows the repo. They want to know what's in flight and where it's headed, not how the code works.
+
+- **Status** = what's on your plate right now, one sentence. List the workstreams if there are a few. Mention the PR number if one is open.
+- **Direction** = why this matters or where it's going next. One sentence, forward-looking.
+- Do not enumerate file paths, function names, flag names, or technical implementation details.
+- Do not restate the repo purpose or README material.
+
+### Good
+
+```json
+"status": "Perf testing, isthmus masks, region art regen — PR #11 up"
+"direction": "Ship perf test harness so future optimization has a real baseline"
 ```
 
-## Fields
+```json
+"status": "Fixing deploy pipeline and canal data fallbacks"
+"direction": "Get prod serving live data again after the API route 404s"
+```
 
-| Field       | Purpose                                                    | Example                                                       |
-| ----------- | ---------------------------------------------------------- | ------------------------------------------------------------- |
-| `doing`     | What you're actively working on right now. Be specific.    | `Rewriting the PR diff parser to handle renames`              |
-| `done`      | What you just shipped. Comma-separated, most recent first. | `Rename detection, binary file filter, test harness`          |
-| `next`      | What comes after `doing` is finished.                      | `Add GitHub Actions integration, write docs`                  |
-| `blocked`   | The single most important blocker, if any. Omit if clear.  | `Waiting on upstream API to expose commit signatures`         |
-| `risk`      | `low`, `medium`, or `high` with a brief reason if not low. | `high — auth token rotation breaks all existing integrations` |
-| `milestone` | Active milestone name.                                     | `v2.0 release`                                                |
-| `eta`       | Target date, `YYYY-MM-DD`.                                 | `2026-06-15`                                                  |
+### Bad (do not write like this)
 
-## Guidelines
+```json
+"status": "PR #11 open: deep perf profiler with FPS/baseline/waterfall/DOM/memory tracking and automated Playwright regression gate"
+"direction": "Land the perf drilldown tooling so every future change can be validated against a saved baseline via scripts/perf_test.sh"
+```
 
-**Be concrete, not categorical.** Don't write `doing: development`. Write `doing: Adding retry logic to the webhook delivery queue`. The reader should understand the actual work without opening the repo.
+Too long, too technical, reads like a changelog.
 
-**`doing` + `done` together tell the story.** `done` shows momentum and context. `doing` shows current focus. Together they answer "what happened and what's happening" in two lines.
+## Shape
 
-**`blocked` is singular and important.** If you have three blockers, pick the one that matters most. If nothing is truly blocked, omit the field entirely.
+```json
+{
+  "schema_version": 1,
+  "agent": {
+    "status": "What you're doing right now, plain English",
+    "direction": "Where it's headed next",
+    "last_update": "2026-05-26T00:00:00Z"
+  }
+}
+```
 
-**`risk` is your judgment call.** Low means on track. Medium means there's a known concern that could cause delay. High means the manager should pay attention now. Always include a reason for medium/high.
+Do not add `actions`, `difficulties`, or `needs_human` — those are legacy.
 
-**Update the packet whenever you:**
+## When to update
 
-- Start a new task (change `doing`, move old `doing` to `done`)
-- Hit or clear a blocker
-- Finish a milestone
-- Notice a risk change
+- When you start work
+- When you finish something
+- When direction changes
+- When the current slice changes
 
-## Placement
+## After updating
 
-The packet goes at the very top of `STATUS.md`, before any other content. Everything below `-->` is free-form markdown (changelogs, notes, checklists).
-
-## Auto-derived fallbacks
-
-If no packet exists, Willville derives state from GitHub signals (push recency, milestones, repo description). An explicit packet always overrides auto-derived values. Writing one gives the town map real signal instead of guesses.
+```bash
+git add .willville.json
+git commit -m "chore: update willville agent packet"
+git push
+```
