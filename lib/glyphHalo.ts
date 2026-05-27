@@ -4,6 +4,7 @@ type GlyphHaloConfig = {
   padding?: number;
   cacheKey?: string;
   differenceThreshold?: number;
+  widthScale?: number;
 };
 
 type SpriteLike = {
@@ -40,15 +41,24 @@ function glyphHaloRadiusForSprite(sprite: Pick<SpriteLike, "width">) {
   return Math.max(1, Math.round(sprite.width / 2));
 }
 
+function glyphHaloWidthScaleForSprite(sprite: SpriteLike) {
+  const scale = sprite.inpaintHalo?.widthScale ?? 1;
+  return Math.max(0.2, scale);
+}
+
 export function glyphHaloMaskBoxForSprite(
   sprite: SpriteLike,
   center: Point,
 ): Box {
   const radius = glyphHaloRadiusForSprite(sprite);
+  const width = Math.max(
+    1,
+    Math.round(radius * 2 * glyphHaloWidthScaleForSprite(sprite)),
+  );
   return {
-    x: Math.round(center.x - radius),
+    x: Math.round(center.x - width / 2),
     y: Math.round(center.y - radius),
-    width: radius * 2,
+    width,
     height: radius * 2,
   };
 }

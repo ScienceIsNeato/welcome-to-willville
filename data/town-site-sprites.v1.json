@@ -129,7 +129,8 @@
       "anchorY": 78,
       "inpaintHalo": {
         "description": "Paint a native background integration layer for the HalloweenTracker watchful pumpkin glyph directly into the Gates of Hell paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the pumpkin monument feel built into the district art: ember-orange underglow, smoky pumpkin-light spill, subtle carved-stone pedestal shadow, scorched cobbles, curled black-vine edging, and warm haunted reflections that match the whimsical spooky town style. Keep the center composition open enough for the foreground pumpkin glyph to sit on top cleanly without doubling the silhouette. Match the surrounding Gates of Hell palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
-        "cacheKey": "halloweentracker-halo-v1"
+        "cacheKey": "halloweentracker-halo-v2",
+        "widthScale": 0.7
       }
     },
     {
@@ -274,7 +275,7 @@
     },
     {
       "stopId": "lonely_little_vampire",
-      "district": "the-zeitgeist",
+      "district": "mirrored-mile",
       "kind": "bespoke",
       "src": "/art/stops/the-vampires-crypt-lonely-vampire-totem.png",
       "width": 140,

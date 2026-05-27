@@ -4,21 +4,21 @@
   "sourceImage": "/art/town/districts/gates-of-hell.png",
   "overlayOutput": "/art/town/glyph-halos/halloweentracker.png",
   "maskBox": {
-    "x": 989,
+    "x": 1010,
     "y": 795,
-    "width": 140,
+    "width": 98,
     "height": 140
   },
   "cropBox": {
-    "x": 965,
+    "x": 986,
     "y": 771,
-    "width": 188,
+    "width": 146,
     "height": 188
   },
   "authoringCrop": {
-    "left": 3860,
+    "left": 3944,
     "top": 3084,
-    "width": 752,
+    "width": 584,
     "height": 752
   },
   "dryRun": true

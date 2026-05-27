@@ -63,6 +63,9 @@ export async function fetchApiRoute(
   try {
     return await fetch(fallbackUrl, init);
   } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw error;
+    }
     if (primaryResponse) {
       return primaryResponse;
     }

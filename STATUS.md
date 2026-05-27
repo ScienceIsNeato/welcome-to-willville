@@ -9,6 +9,13 @@ eta: 2026-05-27
 
 # Status
 
+## Done (2026-05-27) — Halloween Tracker Glyph Halo Spike Works On The Live Map
+
+- Added a first-pass glyph halo feature directly off the glyph manifest and tried it on Halloween Tracker instead of inventing a separate authoring manifest.
+- Generated a real Halloween Tracker halo plate through Ganglia Studio from the Gates of Hell background crop, then rendered that plate directly above the district art and below the foreground glyph in the live town stage.
+- Kept the spike deliberately simple: square halo bounds from the glyph width, one optional halo block in the glyph manifest, one apply script, one runtime layer.
+- Validation: `node scripts/apply-town-glyph-halo.mjs --id=halloweentracker --dry-run` resolved the expected `140x140` halo box and `188x188` context crop; `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio node scripts/apply-town-glyph-halo.mjs --id=halloweentracker` passed twice and wrote `/art/town/glyph-halos/halloweentracker.png`; `sm swab --no-cache` passed; fresh local deploy via `./scripts/deploy_app.sh` confirmed the halo layer renders under Halloween Tracker on `http://127.0.0.1:3740/gates-of-hell/halloweentracker?site_type=desktop`.
+
 ## Done (2026-05-27) — Reposition Coordinates Persistence & StopId Abstraction Removal
 
 - Persisted the live-dragged coordinates for all 33 repositories in `lib/willville.heuristics.ts`, carefully retaining all visual `glyph` and `queue` definitions to prevent asset regression.
