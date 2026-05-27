@@ -145,11 +145,11 @@ export function BellMessengers({
       const outboundStart = index * stagger;
       const outboundEnd = outboundStart + OUTBOUND_SECONDS;
       const completedAt = completedAtByStopId[messenger.stopId];
-      const resolvedAtSeconds =
-        completedAt === undefined
-          ? outboundEnd
-          : Math.max(0, (completedAt - startedAt) / 1000);
-      const returnStart = Math.max(resolvedAtSeconds, outboundEnd);
+      const returnStart = returnStartSeconds({
+        completedAt,
+        startedAt,
+        outboundEnd,
+      });
       return Math.max(latest, returnStart + RETURN_SECONDS);
     }, 0);
 
@@ -352,16 +352,13 @@ function particleForMessenger(options: {
     };
   }
 
-  const resolvedAtSeconds =
-    completedAt === undefined
-      ? null
-      : Math.max(0, (completedAt - startedAt) / 1000);
-  const returnStart =
-    resolvedAtSeconds === null
-      ? null
-      : Math.max(resolvedAtSeconds, outboundEnd);
+  const returnStart = returnStartSeconds({
+    completedAt,
+    startedAt,
+    outboundEnd,
+  });
 
-  if (returnStart === null || elapsed < returnStart) {
+  if (elapsed < returnStart) {
     const orbitElapsed = elapsed - outboundEnd;
     const angle =
       orbitElapsed * ORBIT_SPEED * Math.PI * 2 + messenger.orbitPhase;
@@ -391,6 +388,19 @@ function particleForMessenger(options: {
   }
 
   return null;
+}
+
+function returnStartSeconds(options: {
+  completedAt: number | undefined;
+  startedAt: number;
+  outboundEnd: number;
+}): number {
+  const { completedAt, startedAt, outboundEnd } = options;
+  const resolvedAtSeconds =
+    completedAt === undefined
+      ? outboundEnd
+      : Math.max(0, (completedAt - startedAt) / 1000);
+  return Math.max(resolvedAtSeconds, outboundEnd);
 }
 
 function pointOnCurve(curve: Curve, t: number): Point {
