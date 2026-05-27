@@ -32,8 +32,6 @@ export function MobileCentralBoard({
   announcementLabel,
   panelOpacity = 1,
 }: Props) {
-  const previousBoardRef = useRef<string[]>([]);
-
   const queue = useMemo(() => {
     const active = mostActiveStops(stops);
     return active.length > 0 ? active : activeQueue(stops);
@@ -59,10 +57,6 @@ export function MobileCentralBoard({
       : activeDistrict
         ? `district-${activeDistrict}`
         : "timetable";
-
-  useEffect(() => {
-    previousBoardRef.current = rows;
-  }, [rows]);
 
   return (
     <section
