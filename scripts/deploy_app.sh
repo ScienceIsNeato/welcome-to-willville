@@ -139,6 +139,37 @@ cleanup_stale() {
 
 # ── kill orphan node/workerd processes ────────────────────────────────────────
 
+process_signature_for_pid() {
+  local pid="$1"
+  ps -p "$pid" -o comm= -o args= 2>/dev/null | sed 's/^[[:space:]]*//'
+}
+
+is_willville_deploy_pid() {
+  local current="$1"
+  local depth=0
+
+  while [[ -n "$current" && "$current" != "0" && $depth -lt 8 ]]; do
+    local signature
+    signature=$(process_signature_for_pid "$current")
+    if [[ -z "$signature" ]]; then
+      return 1
+    fi
+
+    if [[ "$signature" == *"wrangler pages dev ./out"* ]]; then
+      return 0
+    fi
+
+    if [[ "$signature" == *"SCREEN"* && "$signature" == *"willville-"* ]]; then
+      return 0
+    fi
+
+    current=$(ps -p "$current" -o ppid= 2>/dev/null | tr -d ' ')
+    depth=$(( depth + 1 ))
+  done
+
+  return 1
+}
+
 cleanup_orphans() {
   # Collect ports claimed by live lockfiles
   local claimed_ports=""
@@ -157,13 +188,15 @@ cleanup_orphans() {
     fi
     local pids
     pids=$(lsof -ti :"$port" 2>/dev/null || true)
-    if [[ -n "$pids" ]]; then
-      orphan_pids="$orphan_pids $pids"
-    fi
+    for pid in $pids; do
+      if is_willville_deploy_pid "$pid"; then
+        orphan_pids="$orphan_pids $pid"
+      fi
+    done
   done
 
   if [[ -n "${orphan_pids// /}" ]]; then
-    echo "  Killing orphan processes on unclaimed ports..."
+    echo "  Killing orphan Willville deploy processes on unclaimed ports..."
     for pid in $(echo "$orphan_pids" | tr ' ' '\n' | sort -u); do
       [[ -n "$pid" ]] && kill "$pid" 2>/dev/null || true
     done
