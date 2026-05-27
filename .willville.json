@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Tightening the town bell so the couriers keep circling and humming until each site actually finishes, while the phone detail toggle lives in the corner where that old refresh button used to be",
-    "direction": "Keep smoothing the live town feedback until the bell and mobile controls feel intentional instead of stitched together",
-    "last_update": "2026-05-27T06:59:42Z"
+    "status": "Fixing the real-site data split so prod shows the same live status and bell updates as local",
+    "direction": "Bridge the real site back to the live town feed while the domain routing gets sorted",
+    "last_update": "2026-05-27T08:41:39Z"
   }
 }

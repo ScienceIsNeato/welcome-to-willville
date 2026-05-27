@@ -12,13 +12,7 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import {
-  DISTRICTS,
-  TOWN,
-  TOWN_CENTER,
-  TOWN_OFFSET,
-  WORLD,
-} from "@/lib/willville";
+import { DISTRICTS, TOWN, TOWN_OFFSET, WORLD } from "@/lib/willville";
 import type { Stop } from "@/lib/town";
 import { isKnownDistrict } from "@/lib/slugs";
 import type { CanalBoat } from "@/lib/canal";
@@ -44,9 +38,11 @@ import { GENERATED_TOWN_LAYOUT } from "@/lib/town-layout";
 import {
   BELL_BOARD_FLASH_MS,
   DAY_MS,
+  MOBILE_TOWN_CAMERA,
   TOWN_ART_FEATHER,
   buildBellBoardAnnouncement,
   buildEasterEggAnnouncement,
+  fetchApiRoute,
   findStopAt,
   getBellErrorDetail,
   mergeStops,
@@ -58,12 +54,6 @@ import {
   markBellRepoCompletion,
   readManifestProgress,
 } from "./townStageManifestProgress";
-
-const MOBILE_TOWN_CAMERA = {
-  cx: TOWN_CENTER.x,
-  cy: TOWN_CENTER.y,
-  scale: 1.35,
-};
 
 /**
  * Persistent SVG stage with viewport camera (pan/zoom) and center HUD for stops.
@@ -150,7 +140,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       const url = options.fresh
         ? `/api/town?refresh=${encodeURIComponent(String(Date.now()))}`
         : "/api/town";
-      return fetch(url, {
+      return fetchApiRoute(url, {
         cache: options.fresh ? "no-store" : "default",
         signal: options.signal,
       })
@@ -233,7 +223,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     setBellCompletedAtByStopId({});
     setPopulating("running");
     setBellErrorMessage("✕ Bell failed");
-    fetch("/api/manifests", { method: "POST" })
+    fetchApiRoute("/api/manifests", { method: "POST" })
       .then(async (response) => {
         if (response.ok) {
           return readManifestProgress(response, (event) => {
@@ -312,7 +302,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   useEffect(() => {
     let cancelled = false;
     const load = () =>
-      fetch("/api/canal")
+      fetchApiRoute("/api/canal")
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
           if (!cancelled && data && Array.isArray(data.boats)) {

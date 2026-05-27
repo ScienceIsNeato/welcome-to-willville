@@ -20,6 +20,7 @@ import {
   type GitHubWorkflowRun,
   type RepoMeta,
 } from "../../lib/town";
+import { withCorsHeaders } from "./cors";
 import { WillvilleManifestClient } from "./town-manifests";
 
 interface Env {
@@ -484,10 +485,7 @@ async function fetchRecentBranches(
   }
 }
 
-export const onRequestGet: PagesFunction<Env> = async ({
-  request: _request,
-  env,
-}) => {
+export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   // Always use PAT when available to avoid unauthenticated rate limits (60/hr).
   const token = env.GITHUB_PAT;
   const manifestClient = new WillvilleManifestClient(token);
@@ -563,10 +561,10 @@ export const onRequestGet: PagesFunction<Env> = async ({
       stops,
     }),
     {
-      headers: {
+      headers: withCorsHeaders(request, {
         "Content-Type": "application/json; charset=utf-8",
         "Cache-Control": cacheControl,
-      },
+      }),
     },
   );
 };

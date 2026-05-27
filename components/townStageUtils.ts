@@ -8,6 +8,14 @@ import {
 } from "./centralBoardConstants";
 
 const STOP_HIT_RADIUS = 24;
+const PAGES_API_ORIGIN = "https://welcome-to-willville.pages.dev";
+const API_FALLBACK_HOSTS = new Set(["willville.ai", "www.willville.ai"]);
+
+export const MOBILE_TOWN_CAMERA = {
+  cx: 800,
+  cy: 500,
+  scale: 1.35,
+};
 
 export type BoardAnnouncement = {
   rows: string[];
@@ -18,6 +26,49 @@ export type ClientPoint = {
   clientX: number;
   clientY: number;
 };
+
+function fallbackApiUrl(path: string): string | null {
+  if (typeof window === "undefined") return null;
+  if (!path.startsWith("/api/")) return null;
+  if (!API_FALLBACK_HOSTS.has(window.location.hostname)) return null;
+  return `${PAGES_API_ORIGIN}${path}`;
+}
+
+export async function fetchApiRoute(
+  path: string,
+  init?: RequestInit,
+): Promise<Response> {
+  let primaryResponse: Response | null = null;
+
+  try {
+    primaryResponse = await fetch(path, init);
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw error;
+    }
+  }
+
+  if (primaryResponse?.ok) {
+    return primaryResponse;
+  }
+
+  const fallbackUrl = fallbackApiUrl(path);
+  if (!fallbackUrl) {
+    if (primaryResponse) {
+      return primaryResponse;
+    }
+    throw new Error(`Failed to fetch ${path}`);
+  }
+
+  try {
+    return await fetch(fallbackUrl, init);
+  } catch (error) {
+    if (primaryResponse) {
+      return primaryResponse;
+    }
+    throw error;
+  }
+}
 
 export function waitForNextFrame(): Promise<void> {
   return new Promise((resolve) => {

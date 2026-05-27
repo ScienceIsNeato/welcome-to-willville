@@ -14,6 +14,7 @@
 
 import { HEURISTICS } from "../../lib/willville.heuristics";
 import { lockForPr, type CanalBoat, type LockId } from "../../lib/canal";
+import { withCorsHeaders } from "./cors";
 
 interface Env {
   GITHUB_PAT?: string;
@@ -119,10 +120,7 @@ function mapPr(pr: GraphQLPR): CanalBoat {
   };
 }
 
-export const onRequestGet: PagesFunction<Env> = async ({
-  request: _request,
-  env,
-}) => {
+export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const token = env.GITHUB_PAT;
 
   if (!token) {
@@ -136,10 +134,10 @@ export const onRequestGet: PagesFunction<Env> = async ({
       }),
       {
         status: 200,
-        headers: {
+        headers: withCorsHeaders(request, {
           "Content-Type": "application/json; charset=utf-8",
           "Cache-Control": "public, s-maxage=30",
-        },
+        }),
       },
     );
   }
@@ -166,7 +164,9 @@ export const onRequestGet: PagesFunction<Env> = async ({
       }),
       {
         status: 200,
-        headers: { "Content-Type": "application/json; charset=utf-8" },
+        headers: withCorsHeaders(request, {
+          "Content-Type": "application/json; charset=utf-8",
+        }),
       },
     );
   }
@@ -197,10 +197,10 @@ export const onRequestGet: PagesFunction<Env> = async ({
       boats,
     }),
     {
-      headers: {
+      headers: withCorsHeaders(request, {
         "Content-Type": "application/json; charset=utf-8",
         "Cache-Control": cacheControl,
-      },
+      }),
     },
   );
 };

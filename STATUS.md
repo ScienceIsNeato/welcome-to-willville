@@ -9,6 +9,13 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-27) — Prod Custom Domain Falls Back To Pages API
+
+- Confirmed the production mismatch was not the town merge logic: the real domain was serving `404` HTML for `/api/town` while the Pages hostname still returned live JSON, so the UI stayed on the empty static fallback.
+- Added a client-side retry path for the town, bell, and canal requests so the custom domain can fall back to the known-good Pages API host when same-origin `/api/*` misses.
+- Added explicit cross-origin headers on the Pages town, bell, and canal responses so that fallback can be read from the custom domain instead of dying at the browser boundary.
+- Validation: `npm run build` passed; `npx wrangler pages functions build functions --project-directory . --outdir /tmp/willville_pages_validation_$$ --output-routes-path /tmp/willville_pages_validation_routes_$$.json --build-output-directory out` passed; live probes still show `https://willville.ai/api/town -> 404` and `https://welcome-to-willville.pages.dev/api/town -> 200`, which is the split this patch works around.
+
 ## Done (2026-05-27) — Bell Couriers Hold, Thrum, And Return Per Site
 
 - Reworked the bell courier animation so the yellow messengers no longer vanish after the initial fan-out: they now orbit each site and keep a live thrum bed going until that site's manifest write finishes, then flip green and head back individually.
