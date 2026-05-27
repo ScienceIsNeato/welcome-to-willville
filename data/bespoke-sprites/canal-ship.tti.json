@@ -1,0 +1,15 @@
+{
+  "style": "",
+  "backend": "dalle",
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "quality": "high",
+  "output_dir": "./output/bespoke-sprites",
+  "images": [
+    {
+      "id": "canal-ship",
+      "prompt": "A single tall sailing ship seen from the SIDE (profile view, broadside), facing RIGHT. Board-game miniature piece style. Aged parchment-toned sails, dark walnut brown wooden hull with gold trim along the gunwale, ornate stern carvings, three masts with full rigging and billowing square sails. Dense hand-painted diorama style, warm saturated colors, crisp tiny details, wobbly hand-inked outlines, painted wood texture. The ship should look like a miniature galleon game piece. Transparent background (PNG alpha). No water, no waves, no background — just the ship on nothing. Sails are off-white/parchment with visible stitching lines. IMPORTANT: side-on profile view, not top-down or three-quarter.",
+      "raw_prompt": true
+    }
+  ]
+}

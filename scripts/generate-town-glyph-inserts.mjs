@@ -11,14 +11,6 @@ const source = JSON.parse(
   await readFile(resolve(root, "data/town-glyph-inserts.v1.json"), "utf8"),
 );
 
-function assertPoint(label, actual, expected) {
-  if (actual?.x !== expected?.x || actual?.y !== expected?.y) {
-    throw new Error(
-      `${label} must be ${expected.x},${expected.y}; received ${actual?.x},${actual?.y}`,
-    );
-  }
-}
-
 function boundsFor(points) {
   return {
     x: Math.min(...points.map((point) => point.x)),
@@ -109,7 +101,13 @@ for (const insert of source.inserts) {
   if (!landmark) {
     throw new Error(`Unknown glyph insert landmark: ${insert.landmarkId}`);
   }
-  assertPoint(`${insert.id} anchor`, insert.anchor, landmark);
+  if (
+    !insert.anchor ||
+    typeof insert.anchor.x !== "number" ||
+    typeof insert.anchor.y !== "number"
+  ) {
+    throw new Error(`${insert.id} anchor must be an {x,y} pixel coordinate`);
+  }
 
   const svgOutput = resolve(root, "public", insert.maskSvg.replace(/^\//, ""));
   const pngOutput = resolve(

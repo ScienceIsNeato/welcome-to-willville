@@ -1,0 +1,54 @@
+{
+  "version": "town-site-inpaints.v1-resolved",
+  "authoringScale": 4,
+  "districtOutputs": [
+    {
+      "districtId": "slop-wharf",
+      "baseImage": "/art/town/districts/slop-wharf.png",
+      "outputImage": "/art/town/districts-inpainted/slop-wharf.png"
+    }
+  ],
+  "inpaints": [
+    {
+      "id": "the-mop-bucket-site",
+      "stopId": "the-mop-bucket",
+      "districtId": "slop-wharf",
+      "displayName": "Slop-Mop Site Landmark",
+      "enabled": true,
+      "anchor": {
+        "x": 436,
+        "y": 710
+      },
+      "maskImage": "/art/town/masks/site-inpaints/the-mop-bucket-site.png",
+      "maskSvg": "/art/town/masks/site-inpaints/the-mop-bucket-site.svg",
+      "maskEllipse": {
+        "rx": 72,
+        "ry": 86,
+        "centerYOffset": -18
+      },
+      "authoringCrop": {
+        "left": 1408,
+        "top": 2368,
+        "width": 672,
+        "height": 672
+      },
+      "description": "Paint a permanent Slop-Mop landmark into this exact Slop Wharf location so it looks like part of the original Willville map art, not a sticker or foreground icon. The landmark should be a compact dockside civic shrine for slop-mop: a weathered teal-and-brass mop bucket workshop with a small brass wringer, crossed tidy mops, wet cobblestone base, rope lashings, tiny maintenance charms, and warm lantern glow. Match the surrounding Slop Wharf perspective, scale, texture density, painterly isometric board-game style, teal water reflections, dark rooflines, and local shadows. Preserve nearby docks, paving, rail lines, labels, and existing buildings outside the editable mask. No readable text, logos, UI, badges, flat icon edges, neon green background, or sticker outline.",
+      "gangliaCommand": [
+        "ganglia-studio",
+        "insert-glyph",
+        "--input",
+        "<current-district-working-image>",
+        "--mask",
+        "/art/town/masks/site-inpaints/the-mop-bucket-site.png",
+        "--description",
+        "Paint a permanent Slop-Mop landmark into this exact Slop Wharf location so it looks like part of the original Willville map art, not a sticker or foreground icon. The landmark should be a compact dockside civic shrine for slop-mop: a weathered teal-and-brass mop bucket workshop with a small brass wringer, crossed tidy mops, wet cobblestone base, rope lashings, tiny maintenance charms, and warm lantern glow. Match the surrounding Slop Wharf perspective, scale, texture density, painterly isometric board-game style, teal water reflections, dark rooflines, and local shadows. Preserve nearby docks, paving, rail lines, labels, and existing buildings outside the editable mask. No readable text, logos, UI, badges, flat icon edges, neon green background, or sticker outline.",
+        "--output",
+        "<updated-district-working-image>",
+        "--quality",
+        "high",
+        "--feather",
+        "15"
+      ]
+    }
+  ]
+}

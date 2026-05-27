@@ -2,17 +2,13 @@
 
 import type { MouseEvent } from "react";
 import type { CanalBoat as CanalBoatType } from "@/lib/canal";
+import shipManifest from "@/data/canal-ship-sprites.v1.json";
 
-const DISTRICT_HULL: Record<string, string> = {
-  "mirrored-mile": "var(--willville-mirrored)",
-  "slop-wharf": "var(--willville-slop)",
-  "halls-of-judgement": "var(--willville-judgement)",
-  "the-zeitgeist": "var(--willville-zeitgeist)",
-  "gates-of-hell": "var(--willville-hell)",
-  "dogwallow-ramble-ii": "var(--willville-dogwallow)",
-  "town-square": "var(--willville-town-square)",
-  "the-graveyard": "var(--willville-graveyard)",
-};
+const DEFAULT_SHIP = "/art/stops/canal-ship.png?v=galleon-v1";
+const SHIP_W = 88;
+const SHIP_H = 100;
+
+const SHIP_SPRITES = new Map(shipManifest.ships.map((s) => [s.stopId, s.src]));
 
 type Props = {
   boat: CanalBoatType;
@@ -20,9 +16,9 @@ type Props = {
 };
 
 export function CanalBoat({ boat, position }: Props) {
-  const hull = (boat.district && DISTRICT_HULL[boat.district]) ?? "#888";
-  const sailColor = boat.draft ? "#888" : "var(--willville-paper)";
   const label = `Open PR #${boat.prNumber}: ${boat.title}`;
+  const shipSrc =
+    (boat.stopId && SHIP_SPRITES.get(boat.stopId)) ?? DEFAULT_SHIP;
 
   const stopStageClick = (e: MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -44,42 +40,27 @@ export function CanalBoat({ boat, position }: Props) {
           {`#${boat.prNumber} · ${boat.title}\n${boat.repo} · ${boat.author}`}
         </title>
         <rect
-          x={-30}
-          y={-34}
-          width={64}
-          height={52}
+          x={-SHIP_W / 2 - 4}
+          y={-SHIP_H - 14}
+          width={SHIP_W + 8}
+          height={SHIP_H + 20}
           fill="transparent"
           pointerEvents="all"
         />
-        {/* hull */}
-        <path
-          d="M -22 0 Q -16 10 -10 12 L 16 12 Q 22 10 26 0 Z"
-          fill={hull}
-          stroke="#0c1a26"
-          strokeWidth={1.5}
+        <image
+          href={shipSrc}
+          x={-SHIP_W / 2}
+          y={-SHIP_H + 12}
+          width={SHIP_W}
+          height={SHIP_H}
+          preserveAspectRatio="xMidYMid meet"
+          opacity={boat.draft ? 0.55 : 1}
+          style={{ pointerEvents: "none" }}
         />
-        {/* mast */}
-        <line
-          x1={0}
-          y1={0}
-          x2={0}
-          y2={-22}
-          stroke="#3a2410"
-          strokeWidth={1.5}
-        />
-        {/* sail */}
-        <path
-          d="M 0 -22 L 12 -8 L 0 -8 Z"
-          fill={sailColor}
-          stroke="#0c1a26"
-          strokeWidth={1}
-          opacity={boat.draft ? 0.55 : 0.95}
-        />
-        {/* PR number flag */}
         <text
-          y={-26}
+          y={-SHIP_H + 2}
           textAnchor="middle"
-          fontSize={9}
+          fontSize={11}
           fontWeight={700}
           fill="var(--willville-paper)"
           style={{
