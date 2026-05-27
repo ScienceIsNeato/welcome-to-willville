@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { TOWN_OFFSET } from "@/lib/willville";
+import { TOWN_CENTER, TOWN_OFFSET } from "@/lib/willville";
 import { mostActiveStops, type Stop } from "@/lib/town";
 import {
   BOARD_COLUMNS as CENTRAL_BOARD_COLUMNS,
@@ -12,8 +12,8 @@ const PAGES_API_ORIGIN = "https://welcome-to-willville.pages.dev";
 const API_FALLBACK_HOSTS = new Set(["willville.ai", "www.willville.ai"]);
 
 export const MOBILE_TOWN_CAMERA = {
-  cx: 800,
-  cy: 500,
+  cx: TOWN_CENTER.x,
+  cy: TOWN_CENTER.y,
   scale: 1.35,
 };
 
