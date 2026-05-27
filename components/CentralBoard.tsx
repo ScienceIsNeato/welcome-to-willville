@@ -10,11 +10,12 @@ import {
 import { activeQueue, mostActiveStops, type Stop } from "@/lib/town";
 import { DISTRICTS } from "@/lib/willville";
 import { makeNoiseBuffer } from "@/lib/audio-noise";
+import {
+  isNumberedRow,
+  normalizeBoardText as normalize,
+  stopLabel,
+} from "./boardUtils";
 import { BOARD_COLUMNS, BOARD_ROWS, EMPTY_ROW } from "./centralBoardConstants";
-
-function stopLabel(stop: Stop): string {
-  return stop.repo?.split("/").pop() ?? stop.id;
-}
 
 type Props = {
   stops: Stop[];
@@ -364,13 +365,13 @@ function selectedStopRows(stop: Stop): string[] {
   return rows.slice(0, BOARD_ROWS);
 }
 
-function commitSummary(stop: Stop, long: boolean): string {
+function commitSummary(stop: Stop): string {
   const c3 = stop.commits3d ?? 0;
   const c7 = stop.commits7d ?? 0;
   const c21 = stop.commits21d ?? 0;
-  if (c3 + c7 + c21 === 0) return "";
-  if (long) return `${c3}/${c7}/${c21} COMMITS PER 3/7/21 DAYS`;
-  return `${c3}/${c7}/${c21}`;
+  if (c3 + c7 + c21 > 0) return `${c3}/${c7}/${c21}`;
+  if (stop.stars && stop.stars > 0) return `${stop.stars}*`;
+  return (stop.status.state || "IDEA").toUpperCase();
 }
 
 function districtRows(districtId: string, stops: Stop[]): string[] {
@@ -402,7 +403,7 @@ function districtRows(districtId: string, stops: Stop[]): string[] {
     }
 
     const leftPart = `${String(i + 1).padStart(2, "0")} ${stopLabel(stop)}`;
-    const rightPart = commitSummary(stop, i === 0);
+    const rightPart = commitSummary(stop);
 
     let rowStr = "";
     if (leftPart.length + 1 + rightPart.length <= BOARD_COLUMNS) {
@@ -439,7 +440,7 @@ function timetableRows(queue: Stop[]): string[] {
       rows.push(EMPTY_ROW);
       continue;
     }
-    const activity = commitSummary(stop, i === 0);
+    const activity = commitSummary(stop);
     rows.push(
       formatBoardRow(
         `${String(i + 1).padStart(2, "0")} ${stopLabel(stop)} ${activity}`,
@@ -472,21 +473,6 @@ function formatBoardRow(
   }
   const left = Math.max(0, Math.floor((BOARD_COLUMNS - trimmed.length) / 2));
   return `${" ".repeat(left)}${trimmed}`.padEnd(BOARD_COLUMNS, " ");
-}
-
-function isNumberedRow(input: string): boolean {
-  return /^\s*(?:\d+\s|#\d|UPD\s)/.test(input);
-}
-
-function normalize(input: string): string {
-  return input
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/&/g, "AND")
-    .replace(/[^A-Z0-9 .,'#/:!?…-]/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toUpperCase();
 }
 
 let audioCtx: AudioContext | null = null;

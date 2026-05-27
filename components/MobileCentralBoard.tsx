@@ -9,6 +9,11 @@ import {
 } from "react";
 import { activeQueue, mostActiveStops, type Stop } from "@/lib/town";
 import { DISTRICTS } from "@/lib/willville";
+import {
+  isNumberedRow,
+  normalizeBoardText as normalize,
+  stopLabel,
+} from "./boardUtils";
 
 const MOBILE_BOARD_COLUMNS = 24;
 const MOBILE_BOARD_ROWS = 4;
@@ -328,10 +333,6 @@ function emptyRow(): string {
   return " ".repeat(MOBILE_BOARD_COLUMNS);
 }
 
-function stopLabel(stop: Stop): string {
-  return stop.repo?.split("/").pop() ?? stop.id;
-}
-
 function padRenderedRow(input: string): string {
   if (input.length >= MOBILE_BOARD_COLUMNS) {
     return input.slice(0, MOBILE_BOARD_COLUMNS);
@@ -358,21 +359,6 @@ function formatBoardRow(
     Math.floor((MOBILE_BOARD_COLUMNS - trimmed.length) / 2),
   );
   return `${" ".repeat(left)}${trimmed}`.padEnd(MOBILE_BOARD_COLUMNS, " ");
-}
-
-function isNumberedRow(input: string): boolean {
-  return /^\s*(?:\d+\s|#\d|UPD\s)/.test(input);
-}
-
-function normalize(input: string): string {
-  return input
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/&/g, "AND")
-    .replace(/[^A-Z0-9 .,'#/:!?…-]/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toUpperCase();
 }
 
 const shellStyle: CSSProperties = {
