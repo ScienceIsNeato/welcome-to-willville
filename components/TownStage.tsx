@@ -11,10 +11,16 @@ import {
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { DISTRICTS, TOWN, TOWN_OFFSET, WORLD, MANUAL_STOPS, type ManualStop } from "@/lib/willville";
+import {
+  DISTRICTS,
+  TOWN,
+  TOWN_OFFSET,
+  WORLD,
+  MANUAL_STOPS,
+} from "@/lib/willville";
 import type { Stop } from "@/lib/town";
 import { isKnownDistrict } from "@/lib/slugs";
-import { HEURISTICS, type Heuristic } from "@/lib/willville.heuristics";
+import { HEURISTICS } from "@/lib/willville.heuristics";
 import type { CanalBoat } from "@/lib/canal";
 import { DistrictZone } from "./DistrictZone";
 import { WorldSubstrate } from "./WorldSubstrate";
@@ -55,15 +61,20 @@ import {
   readManifestProgress,
 } from "./townStageManifestProgress";
 
-function formatHeuristics(heuristics: typeof HEURISTICS, updatedStops: Stop[]): string {
+function formatHeuristics(
+  heuristics: typeof HEURISTICS,
+  updatedStops: Stop[],
+): string {
   const repoStops = updatedStops.filter((s) => s.repo && s.isManual !== true);
-  
+
   const items = repoStops.map((stop) => {
-    const orig = heuristics.find((h) => h.repo.toLowerCase() === stop.repo?.toLowerCase());
-    
+    const orig = heuristics.find(
+      (h) => h.repo.toLowerCase() === stop.repo?.toLowerCase(),
+    );
+
     const linesStr = JSON.stringify(stop.lines);
     const posStr = `{ x: ${stop.position.x}, y: ${stop.position.y} }`;
-    
+
     let parts = [
       `    repo: ${JSON.stringify(stop.repo)},`,
       `    displayName: ${JSON.stringify(stop.displayName)},`,
@@ -71,13 +82,16 @@ function formatHeuristics(heuristics: typeof HEURISTICS, updatedStops: Stop[]): 
       `    lines: ${linesStr},`,
       `    position: ${posStr},`,
     ];
-    
+
     if (orig) {
       if (orig.blurb) parts.push(`    blurb: ${JSON.stringify(orig.blurb)},`);
       if (orig.queue) {
         const q = orig.queue;
-        const queueStr = `{\n      active: ${q.active},` +
-          (q.milestone ? `\n      milestone: ${JSON.stringify(q.milestone)},` : "") +
+        const queueStr =
+          `{\n      active: ${q.active},` +
+          (q.milestone
+            ? `\n      milestone: ${JSON.stringify(q.milestone)},`
+            : "") +
           (q.etaDays !== undefined ? `\n      etaDays: ${q.etaDays},` : "") +
           (q.priority !== undefined ? `\n      priority: ${q.priority},` : "") +
           `\n    }`;
@@ -93,12 +107,15 @@ function formatHeuristics(heuristics: typeof HEURISTICS, updatedStops: Stop[]): 
   return `export const HEURISTICS: Heuristic[] = [\n${items.join(",\n\n")}\n];`;
 }
 
-function formatManualStops(manualStops: typeof MANUAL_STOPS, updatedStops: Stop[]): string {
+function formatManualStops(
+  manualStops: typeof MANUAL_STOPS,
+  updatedStops: Stop[],
+): string {
   const manualStopsInUpdated = updatedStops.filter((s) => s.isManual === true);
 
   const items = manualStopsInUpdated.map((stop) => {
     const orig = manualStops.find((m) => m.id === stop.id);
-    
+
     const linesStr = JSON.stringify(stop.lines);
     const posStr = `{ x: ${stop.position.x}, y: ${stop.position.y} }`;
 
@@ -109,15 +126,19 @@ function formatManualStops(manualStops: typeof MANUAL_STOPS, updatedStops: Stop[
       `    lines: ${linesStr},`,
       `    position: ${posStr},`,
     ];
-    
+
     if (orig) {
-      if (orig.homepage) parts.push(`    homepage: ${JSON.stringify(orig.homepage)},`);
+      if (orig.homepage)
+        parts.push(`    homepage: ${JSON.stringify(orig.homepage)},`);
       if (orig.blurb) parts.push(`    blurb: ${JSON.stringify(orig.blurb)},`);
-      if (orig.statusState) parts.push(`    statusState: ${JSON.stringify(orig.statusState)},`);
+      if (orig.statusState)
+        parts.push(`    statusState: ${JSON.stringify(orig.statusState)},`);
     } else {
-      if (stop.homepage) parts.push(`    homepage: ${JSON.stringify(stop.homepage)},`);
+      if (stop.homepage)
+        parts.push(`    homepage: ${JSON.stringify(stop.homepage)},`);
       if (stop.blurb) parts.push(`    blurb: ${JSON.stringify(stop.blurb)},`);
-      if (stop.status?.state) parts.push(`    statusState: ${JSON.stringify(stop.status.state)},`);
+      if (stop.status?.state)
+        parts.push(`    statusState: ${JSON.stringify(stop.status.state)},`);
     }
 
     return `  {\n${parts.join("\n")}\n  }`;
@@ -183,7 +204,12 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const populateResetTimerRef = useRef<number | null>(null);
 
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
-  const [movedStops, setMovedStops] = useState<Record<string, { original: { x: number; y: number }; current: { x: number; y: number } }>>({});
+  const [movedStops, setMovedStops] = useState<
+    Record<
+      string,
+      { original: { x: number; y: number }; current: { x: number; y: number } }
+    >
+  >({});
   const [liveStops, setLiveStops] = useState<Stop[] | null>(null);
   const [showCentralBoard, setShowCentralBoard] = useState(true);
   const [showDigitalBoard, setShowDigitalBoard] = useState(false);
@@ -216,68 +242,79 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     return mergeStops(localStops, liveStops);
   }, [localStops, liveStops, isRepositionMode]);
 
-  const handleMarkerDragStart = useCallback((stop: Stop, e: React.PointerEvent<SVGGElement>) => {
-    e.currentTarget.setPointerCapture(e.pointerId);
-    setActiveDragId(stop.id);
-    setMovedStops((prev) => {
-      if (prev[stop.id]) return prev;
-      return {
-        ...prev,
-        [stop.id]: {
-          original: { ...stop.position },
-          current: { ...stop.position },
-        },
-      };
-    });
-  }, []);
+  const handleMarkerDragStart = useCallback(
+    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
+      e.currentTarget.setPointerCapture(e.pointerId);
+      setActiveDragId(stop.id);
+      setMovedStops((prev) => {
+        if (prev[stop.id]) return prev;
+        return {
+          ...prev,
+          [stop.id]: {
+            original: { ...stop.position },
+            current: { ...stop.position },
+          },
+        };
+      });
+    },
+    [],
+  );
 
-  const handleMarkerDragMove = useCallback((stop: Stop, e: React.PointerEvent<SVGGElement>) => {
-    if (activeDragId !== stop.id) return;
-    const svg = svgRef.current;
-    if (!svg) return;
-    const snap = getCameraSnapshot();
-    const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
-    
-    const newX = Math.round(wx - TOWN_OFFSET.x);
-    const newY = Math.round(wy - TOWN_OFFSET.y);
-    
-    const clampedX = Math.max(0, Math.min(TOWN.width, newX));
-    const clampedY = Math.max(0, Math.min(TOWN.height, newY));
+  const handleMarkerDragMove = useCallback(
+    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
+      if (activeDragId !== stop.id) return;
+      const svg = svgRef.current;
+      if (!svg) return;
+      const snap = getCameraSnapshot();
+      const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
 
-    setLocalStops((prevStops) =>
-      prevStops.map((s) =>
-        s.id === stop.id ? { ...s, position: { x: clampedX, y: clampedY } } : s
-      )
-    );
+      const newX = Math.round(wx - TOWN_OFFSET.x);
+      const newY = Math.round(wy - TOWN_OFFSET.y);
 
-    setMovedStops((prev) => {
-      if (!prev[stop.id]) return prev;
-      return {
-        ...prev,
-        [stop.id]: {
-          ...prev[stop.id],
-          current: { x: clampedX, y: clampedY },
-        },
-      };
-    });
-  }, [activeDragId, getCameraSnapshot]);
+      const clampedX = Math.max(0, Math.min(TOWN.width, newX));
+      const clampedY = Math.max(0, Math.min(TOWN.height, newY));
 
-  const handleMarkerDragEnd = useCallback((stop: Stop, e: React.PointerEvent<SVGGElement>) => {
-    if (activeDragId === stop.id) {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-      setActiveDragId(null);
-    }
-  }, [activeDragId]);
+      setLocalStops((prevStops) =>
+        prevStops.map((s) =>
+          s.id === stop.id
+            ? { ...s, position: { x: clampedX, y: clampedY } }
+            : s,
+        ),
+      );
+
+      setMovedStops((prev) => {
+        if (!prev[stop.id]) return prev;
+        return {
+          ...prev,
+          [stop.id]: {
+            ...prev[stop.id],
+            current: { x: clampedX, y: clampedY },
+          },
+        };
+      });
+    },
+    [activeDragId, getCameraSnapshot],
+  );
+
+  const handleMarkerDragEnd = useCallback(
+    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
+      if (activeDragId === stop.id) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+        setActiveDragId(null);
+      }
+    },
+    [activeDragId],
+  );
 
   const handleResetStop = useCallback((stopId: string) => {
     setMovedStops((prev) => {
       const item = prev[stopId];
       if (!item) return prev;
-      
+
       setLocalStops((prevStops) =>
         prevStops.map((s) =>
-          s.id === stopId ? { ...s, position: { ...item.original } } : s
-        )
+          s.id === stopId ? { ...s, position: { ...item.original } } : s,
+        ),
       );
 
       const next = { ...prev };
@@ -291,7 +328,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       prevStops.map((s) => {
         const item = movedStops[s.id];
         return item ? { ...s, position: { ...item.original } } : s;
-      })
+      }),
     );
     setMovedStops({});
   }, [movedStops]);
@@ -314,7 +351,8 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
   }, [localStops]);
 
   const changedStops = Object.entries(movedStops).filter(
-    ([_, item]) => item.original.x !== item.current.x || item.original.y !== item.current.y
+    ([_, item]) =>
+      item.original.x !== item.current.x || item.original.y !== item.current.y,
   );
 
   const loadTown = useCallback(
@@ -676,7 +714,13 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
       const hit = findStopAt(currentStops, wx, wy, snap.scale);
       if (hit) openStopHud(hit);
     },
-    [currentStops, getCameraSnapshot, wasDragging, openStopHud, isRepositionMode],
+    [
+      currentStops,
+      getCameraSnapshot,
+      wasDragging,
+      openStopHud,
+      isRepositionMode,
+    ],
   );
 
   const handleStageDoubleClick = useCallback(
@@ -1170,7 +1214,8 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                 maxHeight: "calc(100vh - 32px)",
                 display: "flex",
                 flexDirection: "column",
-                background: "linear-gradient(180deg, rgba(28,20,38,0.92) 0%, rgba(15,10,22,0.96) 100%)",
+                background:
+                  "linear-gradient(180deg, rgba(28,20,38,0.92) 0%, rgba(15,10,22,0.96) 100%)",
                 color: "var(--willville-paper)",
                 borderRadius: 12,
                 border: "1px solid rgba(230,198,106,0.35)",
@@ -1185,27 +1230,75 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
               }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 6,
+                }}
+              >
                 <span style={{ fontSize: 20 }}>🗺️</span>
-                <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#e6c66a", letterSpacing: 0.5 }}>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: 18,
+                    fontWeight: 700,
+                    color: "#e6c66a",
+                    letterSpacing: 0.5,
+                  }}
+                >
                   Willville Planner
                 </h2>
               </div>
-              
-              <p style={{ margin: "0 0 14px", fontSize: 13, lineHeight: 1.45, opacity: 0.85 }}>
-                Click and drag any stop marker to reposition it live on the map. Coordinates will update in real time.
+
+              <p
+                style={{
+                  margin: "0 0 14px",
+                  fontSize: 13,
+                  lineHeight: 1.45,
+                  opacity: 0.85,
+                }}
+              >
+                Click and drag any stop marker to reposition it live on the map.
+                Coordinates will update in real time.
               </p>
 
-              <div style={{ flex: 1, overflowY: "auto", minHeight: 0, margin: "0 0 16px" }}>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, color: "#e6c66a", marginBottom: 8 }}>
+              <div
+                style={{
+                  flex: 1,
+                  overflowY: "auto",
+                  minHeight: 0,
+                  margin: "0 0 16px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                    color: "#e6c66a",
+                    marginBottom: 8,
+                  }}
+                >
                   Modified Coordinates ({changedStops.length})
                 </div>
                 {changedStops.length === 0 ? (
-                  <div style={{ fontSize: 12, fontStyle: "italic", opacity: 0.6, padding: "8px 0" }}>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontStyle: "italic",
+                      opacity: 0.6,
+                      padding: "8px 0",
+                    }}
+                  >
                     No sites moved yet.
                   </div>
                 ) : (
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 8 }}
+                  >
                     {changedStops.map(([id, item]) => {
                       const s = localStops.find((x) => x.id === id);
                       if (!s) return null;
@@ -1222,12 +1315,35 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                             border: "1px solid rgba(255,255,255,0.06)",
                           }}
                         >
-                          <div style={{ display: "flex", flexDirection: "column", gap: 2, minWidth: 0, flex: 1 }}>
-                            <span style={{ fontSize: 12, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 2,
+                              minWidth: 0,
+                              flex: 1,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 600,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
                               {s.displayName}
                             </span>
-                            <span style={{ fontSize: 11, fontFamily: "monospace", opacity: 0.7 }}>
-                              ({item.original.x}, {item.original.y}) ➔ ({item.current.x}, {item.current.y})
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontFamily: "monospace",
+                                opacity: 0.7,
+                              }}
+                            >
+                              ({item.original.x}, {item.original.y}) ➔ (
+                              {item.current.x}, {item.current.y})
                             </span>
                           </div>
                           <button
@@ -1243,8 +1359,13 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                               borderRadius: 4,
                               transition: "background 0.2s",
                             }}
-                            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(244,160,160,0.15)")}
-                            onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.background =
+                                "rgba(244,160,160,0.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.background = "transparent")
+                            }
                           >
                             Reset
                           </button>
@@ -1255,13 +1376,23 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                 )}
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, borderTop: "1px solid rgba(230,198,106,0.18)", paddingTop: 14 }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  borderTop: "1px solid rgba(230,198,106,0.18)",
+                  paddingTop: 14,
+                }}
+              >
                 <button
                   type="button"
                   onClick={handleCopy}
                   style={{
                     width: "100%",
-                    background: copied ? "#7bd389" : "linear-gradient(90deg, #b8862c 0%, #e6c66a 100%)",
+                    background: copied
+                      ? "#7bd389"
+                      : "linear-gradient(90deg, #b8862c 0%, #e6c66a 100%)",
                     border: 0,
                     color: "#1a1233",
                     borderRadius: 6,
@@ -1279,13 +1410,15 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                   onMouseEnter={(e) => {
                     if (!copied) {
                       e.currentTarget.style.transform = "translateY(-1px)";
-                      e.currentTarget.style.boxShadow = "0 6px 16px rgba(230,198,106,0.4)";
+                      e.currentTarget.style.boxShadow =
+                        "0 6px 16px rgba(230,198,106,0.4)";
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!copied) {
                       e.currentTarget.style.transform = "translateY(0px)";
-                      e.currentTarget.style.boxShadow = "0 4px 12px rgba(230,198,106,0.25)";
+                      e.currentTarget.style.boxShadow =
+                        "0 4px 12px rgba(230,198,106,0.25)";
                     }
                   }}
                 >
@@ -1306,12 +1439,15 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                       padding: "8px 10px",
                       fontSize: 12,
                       fontWeight: 600,
-                      cursor: changedStops.length === 0 ? "not-allowed" : "pointer",
+                      cursor:
+                        changedStops.length === 0 ? "not-allowed" : "pointer",
                       opacity: changedStops.length === 0 ? 0.5 : 1,
                       transition: "all 0.2s",
                     }}
                     onMouseEnter={(e) => {
-                      if (changedStops.length > 0) e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                      if (changedStops.length > 0)
+                        e.currentTarget.style.background =
+                          "rgba(255,255,255,0.06)";
                     }}
                     onMouseLeave={(e) => {
                       e.currentTarget.style.background = "transparent";
@@ -1335,8 +1471,13 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                       cursor: "pointer",
                       transition: "all 0.2s",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(220,80,80,0.2)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(220,80,80,0.12)")}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = "rgba(220,80,80,0.2)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background =
+                        "rgba(220,80,80,0.12)")
+                    }
                   >
                     Exit Editor
                   </button>
