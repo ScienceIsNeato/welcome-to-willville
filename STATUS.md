@@ -9,6 +9,47 @@ eta: 2026-05-22
 
 # Status
 
+## Done (2026-05-27) — Bell Couriers Hold, Thrum, And Return Per Site
+
+- Reworked the bell courier animation so the yellow messengers no longer vanish after the initial fan-out: they now orbit each site and keep a live thrum bed going until that site's manifest write finishes, then flip green and head back individually.
+- Updated the bell endpoint to stream per-site completion events instead of only returning one final aggregate payload, so the courier return timing is tied to actual site completion rather than a fake global delay.
+- Removed the old bottom-right refresh icon and reused that corner slot for the mobile digital-detail panel toggle, so stop routes now expose the bottom pane with the eye control instead of the centered `Open details` pill.
+- Validation: touched-file diagnostics were clean; `./scripts/deploy_app.sh` passed on `http://127.0.0.1:3750/`; the 390px stop route reported `showDetailButton: true` and `refreshButton: false`; a bell probe at the 2.8s hold window saw `yellowCount: 14`, `greenCount: 19`, and moving particle transforms before the run settled into the fully green return leg.
+
+## Done (2026-05-27) — Mobile Layout And Pan Work Across Browser Paths
+
+- Stopped forcing touch-only drag events on the town camera so the headed mobile-emulation browser can pan with an ordinary click-drag while real touch input still works.
+- Broadened the mobile layout gate from a strict coarse-pointer test to a responsive-width-or-touch check, so narrow embedded browsers like the VS Code preview now take the mobile board path instead of falling back to the desktop split-flap board.
+- Validation: `./scripts/deploy_app.sh` passed on `http://127.0.0.1:3750/`; a Playwright mobile-emulated mouse drag changed the camera transform from `translate(-420 -315) scale(1.35)` to `translate(-274.9763033175361 -221.16113744075847) scale(1.35)`; the shared 390px browser tab reported `mobileBoard: true` and `desktopBoard: false`; touched-file diagnostics were clean.
+
+## Done (2026-05-27) — Mobile Drag Panning Works Again
+
+- Moved the camera gesture target onto the actual stage SVG instead of the outer wrapper so phone drags land on the element the user is touching.
+- Added `touch-action: none` directly to the stage SVG so mobile browsers stop trying to own the pan gesture before the camera hook sees it.
+- Validation: touched-file diagnostics were clean; `./scripts/deploy_app.sh` passed on `http://127.0.0.1:3750/`; a Playwright mobile-emulated drag probe in a `390x844` `hasTouch` context changed the camera transform from `translate(-420 -315) scale(1.35)` to `translate(-274.9763033175361 -221.16113744075847) scale(1.35)`; cleanup via `./scripts/deploy_app.sh --stop` passed.
+
+## Done (2026-05-27) — Deploy Script Can Launch Mobile Preview
+
+- Added `--mobile` to the local deploy script so it still does the normal build + wrangler launch, then hands off to the existing headed mobile preview flow instead of making you run a second command.
+- The mobile deploy path defaults to the root route on an iPhone 14 view, while still forwarding explicit mobile preview args like `--path` and `--device`.
+- Updated the deploy usage note so the new entry point shows up where agents look for the sanctioned local run command.
+- Validation: `bash -n scripts/deploy_app.sh` passed; `./scripts/deploy_app.sh --help` shows the new `--mobile` usage; `./scripts/deploy_app.sh --mobile --device iphone-14 --path /` built the app, started the local preview on `http://127.0.0.1:3750/`, and launched the headed iPhone 14 mobile session before cleanup via `./scripts/deploy_app.sh --stop`.
+
+## Done (2026-05-27) — Mobile Detail Panel Stays Closed And Stacks Cleanly
+
+- Stopped the route-sync path from auto-opening the digital detail display on initial load, so the panel stays hidden until the user intentionally selects a site.
+- Reworked the mobile detail board rows into a true single-column stack inside the drawer, so fact rows and activity rows no longer squeeze text into side-by-side badge/value columns.
+- Let the mobile drawer body own the scroll behavior with touch-friendly overflow so long sections can keep flowing instead of clipping at the section boundary.
+- Validation: touched-file diagnostics were clean; `npm run build` passed; `scripts/mobile_preview.sh --path / --output /tmp/willville-mobile-followup-root-managed` and `scripts/mobile_preview.sh --path /town-square/willville-town-hall/ --output /tmp/willville-mobile-followup-stop-managed` both passed; refreshed iPhone screenshots confirmed the root route still loads without the detail display and the selected-stop route now shows the `Open details` CTA instead of auto-opening the panel on load.
+
+## Done (2026-05-26) — Mobile Gets Its Own Board, Drawer, And Framing
+
+- Hid the detail board by default so it does not appear until a site is purposefully selected.
+- Added a dedicated mobile Time Central board with shorter rows/columns, mobile-specific labels, and top-mounted controls that no longer collide with the header.
+- Replaced the desktop-style mobile detail panel with a bottom drawer shell and a stacked list-style detail board that is meant to be pulled up instead of reading like a squeezed desktop SPOG.
+- Changed the mobile stage framing so the phone view opens on the town itself instead of showing the wider desktop world composition.
+- Validation: touched-file diagnostics were clean; `npm run build` passed; `scripts/mobile_preview.sh --url http://127.0.0.1:3760 --path / --output /tmp/willville-mobile-check-root-final` and `scripts/mobile_preview.sh --url http://127.0.0.1:3760 --path /town-square/willville-town-hall/ --output /tmp/willville-mobile-check-stop-final` both passed; refreshed iPhone screenshots confirmed the root mobile view now hides details by default and the selected-stop route now uses the bottom drawer + compact mobile board layout.
+
 ## Done (2026-05-26) — Site Buildings Are The Marker
 
 - Removed the extra colored dot from sprite-backed site markers so the building art is the only visible site marker.

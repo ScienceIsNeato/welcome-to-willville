@@ -10,11 +10,12 @@ import {
 import { activeQueue, mostActiveStops, type Stop } from "@/lib/town";
 import { DISTRICTS } from "@/lib/willville";
 import { makeNoiseBuffer } from "@/lib/audio-noise";
+import {
+  isNumberedRow,
+  normalizeBoardText as normalize,
+  stopLabel,
+} from "./boardUtils";
 import { BOARD_COLUMNS, BOARD_ROWS, EMPTY_ROW } from "./centralBoardConstants";
-
-function stopLabel(stop: Stop): string {
-  return stop.repo?.split("/").pop() ?? stop.id;
-}
 
 type Props = {
   stops: Stop[];
@@ -364,13 +365,23 @@ function selectedStopRows(stop: Stop): string[] {
   return rows.slice(0, BOARD_ROWS);
 }
 
+function commitSummary(stop: Stop): string {
+  const c3 = stop.commits3d ?? 0;
+  const c7 = stop.commits7d ?? 0;
+  const c21 = stop.commits21d ?? 0;
+  if (c3 + c7 + c21 > 0) return `${c3}/${c7}/${c21}`;
+  if (stop.stars && stop.stars > 0) return `${stop.stars}*`;
+  return (stop.status.state || "IDEA").toUpperCase();
+}
+
 function districtRows(districtId: string, stops: Stop[]): string[] {
   const district = DISTRICTS.find((d) => d.id === districtId);
   const districtName = district?.displayName ?? districtId;
+  const subtitle = district?.subtitle;
 
   const rows: string[] = [
     formatBoardRow(districtName, "center"),
-    formatBoardRow("LOCAL DEPARTURES", "center"),
+    formatBoardRow(subtitle ?? "LOCAL DEPARTURES", "center"),
   ];
 
   const dbStops = stops.filter((s) => s.district === districtId);
@@ -392,13 +403,7 @@ function districtRows(districtId: string, stops: Stop[]): string[] {
     }
 
     const leftPart = `${String(i + 1).padStart(2, "0")} ${stopLabel(stop)}`;
-
-    let rightPart = (stop.status.state || "IDEA").toUpperCase();
-    if (stop.stars && stop.stars > 0) {
-      rightPart = `${stop.stars}*`;
-    } else if (stop.commits7d && stop.commits7d > 0) {
-      rightPart = `${stop.commits7d}C`;
-    }
+    const rightPart = commitSummary(stop);
 
     let rowStr = "";
     if (leftPart.length + 1 + rightPart.length <= BOARD_COLUMNS) {
@@ -435,11 +440,7 @@ function timetableRows(queue: Stop[]): string[] {
       rows.push(EMPTY_ROW);
       continue;
     }
-    const commits7d = stop.commits7d;
-    const commits3d = stop.commits3d;
-    const [commits, period] =
-      commits7d != null ? [commits7d, "7D"] : [commits3d ?? 0, "3D"];
-    const activity = commits > 0 ? `${commits}C/${period}` : "";
+    const activity = commitSummary(stop);
     rows.push(
       formatBoardRow(
         `${String(i + 1).padStart(2, "0")} ${stopLabel(stop)} ${activity}`,
@@ -472,21 +473,6 @@ function formatBoardRow(
   }
   const left = Math.max(0, Math.floor((BOARD_COLUMNS - trimmed.length) / 2));
   return `${" ".repeat(left)}${trimmed}`.padEnd(BOARD_COLUMNS, " ");
-}
-
-function isNumberedRow(input: string): boolean {
-  return /^\s*(?:\d+\s|#\d|UPD\s)/.test(input);
-}
-
-function normalize(input: string): string {
-  return input
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/&/g, "AND")
-    .replace(/[^A-Z0-9 .,'#/:!?…-]/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .toUpperCase();
 }
 
 let audioCtx: AudioContext | null = null;

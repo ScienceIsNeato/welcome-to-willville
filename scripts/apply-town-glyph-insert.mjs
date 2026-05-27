@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { mkdtemp, readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rename } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { execFile } from "node:child_process";
@@ -84,6 +84,10 @@ if (dryRun) {
   const cropInput = join(tempDir, `${insert.id}-input.png`);
   const cropMask = join(tempDir, `${insert.id}-mask.png`);
   const cropOutput = join(tempDir, `${insert.id}-output.png`);
+  const compositeOutput =
+    inputPath === outputPath
+      ? join(tempDir, `${insert.id}-composited.png`)
+      : outputPath;
   await sharp(inputPath).extract(crop).toFile(cropInput);
   await sharp(maskPath).extract(crop).toFile(cropMask);
   await runGanglia(gangliaBin, [
@@ -98,7 +102,10 @@ if (dryRun) {
   await sharp(inputPath)
     .composite([{ input: cropOutput, left: crop.left, top: crop.top }])
     .png()
-    .toFile(outputPath);
+    .toFile(compositeOutput);
+  if (compositeOutput !== outputPath) {
+    await rename(compositeOutput, outputPath);
+  }
   console.log(`composited crop into ${outputPath}`);
 } else {
   await runGanglia(gangliaBin, commandArgs);

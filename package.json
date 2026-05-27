@@ -24,6 +24,8 @@
     "town:district-art-kits": "node scripts/generate-town-district-art-kits.mjs",
     "town:glyph-inserts": "node scripts/generate-town-glyph-inserts.mjs",
     "town:insert-glyph": "node scripts/apply-town-glyph-insert.mjs",
+    "town:site-inpaints": "node scripts/generate-town-site-inpaints.mjs",
+    "town:apply-site-inpaints": "node scripts/apply-town-site-inpaints.mjs",
     "town:apply-district-art": "node scripts/apply-town-district-art.mjs",
     "town:apply-world-landscape-art": "node scripts/apply-town-world-landscape-art.mjs",
     "town:district-render-assets": "node scripts/generate-town-district-render-assets.mjs",

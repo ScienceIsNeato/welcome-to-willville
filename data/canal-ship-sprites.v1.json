@@ -1,0 +1,82 @@
+{
+  "version": "canal-ship-sprites-v1",
+  "default": "/art/stops/canal-ship.png",
+  "ships": [
+    {
+      "stopId": "_placeholder",
+      "src": "/art/stops/canal-ship.png"
+    },
+    {
+      "stopId": "the-mop-bucket",
+      "src": "/art/stops/the-mop-bucket-ship.png"
+    },
+    {
+      "stopId": "the-reactor",
+      "src": "/art/stops/the-reactor-ship.png"
+    },
+    {
+      "stopId": "willville-town-hall",
+      "src": "/art/stops/willville-town-hall-ship.png"
+    },
+    {
+      "stopId": "the-kennel-storefront",
+      "src": "/art/stops/the-kennel-storefront-ship.png"
+    },
+    {
+      "stopId": "the-solitude-stacks",
+      "src": "/art/stops/the-solitude-stacks-ship.png"
+    },
+    {
+      "stopId": "the-atelier",
+      "src": "/art/stops/the-atelier-ship.png"
+    },
+    {
+      "stopId": "the-toolworks",
+      "src": "/art/stops/the-toolworks-ship.png"
+    },
+    {
+      "stopId": "the-watchful-pumpkin",
+      "src": "/art/stops/the-watchful-pumpkin-ship.png"
+    },
+    {
+      "stopId": "the-action-dock",
+      "src": "/art/stops/the-action-dock-ship.png"
+    },
+    {
+      "stopId": "the-slop-bucket",
+      "src": "/art/stops/the-slop-bucket-ship.png"
+    },
+    {
+      "stopId": "the-rulebook",
+      "src": "/art/stops/the-rulebook-ship.png"
+    },
+    {
+      "stopId": "the-chroniclers-tower",
+      "src": "/art/stops/the-chroniclers-tower-ship.png"
+    },
+    {
+      "stopId": "the-vampires-crypt",
+      "src": "/art/stops/the-vampires-crypt-ship.png"
+    },
+    {
+      "stopId": "the-roundabout",
+      "src": "/art/stops/the-roundabout-ship.png"
+    },
+    {
+      "stopId": "the-light-mill",
+      "src": "/art/stops/the-light-mill-ship.png"
+    },
+    {
+      "stopId": "the-pantry-bot",
+      "src": "/art/stops/the-pantry-bot-ship.png"
+    },
+    {
+      "stopId": "randy-sharons-cottage",
+      "src": "/art/stops/randy-sharons-cottage-ship.png"
+    },
+    {
+      "stopId": "the-wallow",
+      "src": "/art/stops/the-wallow-ship.png"
+    }
+  ]
+}

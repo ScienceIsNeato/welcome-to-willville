@@ -9,6 +9,7 @@ set -euo pipefail
 #
 # Usage:
 #   scripts/deploy_app.sh          # build + start wrangler
+#   scripts/deploy_app.sh --mobile # build + start + open headed mobile preview
 #   scripts/deploy_app.sh --stop   # tear down this worktree's deployment
 #   scripts/deploy_app.sh --status # show all running deployments
 # ─────────────────────────────────────────────────────────────────────────────
@@ -19,6 +20,20 @@ PORT_RANGE_START=3740
 PORT_RANGE_END=3800
 
 mkdir -p "$DEPLOY_DIR"
+
+usage() {
+  cat <<'EOF'
+Usage:
+  scripts/deploy_app.sh
+  scripts/deploy_app.sh --mobile [mobile preview args]
+  scripts/deploy_app.sh --stop
+  scripts/deploy_app.sh --status
+
+Examples:
+  scripts/deploy_app.sh --mobile
+  scripts/deploy_app.sh --mobile --device iphone-14 --path /town-square/willville-town-hall/
+EOF
+}
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -68,6 +83,17 @@ jq_field() {
   echo "$json" | grep -o "\"$field\":[^,}]*" | head -1 | sed "s/\"$field\"://;s/^[[:space:]]*\"//;s/\"[[:space:]]*$//" || true
 }
 
+has_arg() {
+  local needle="$1"
+  local arg
+  for arg in "${@:2}"; do
+    if [[ "$arg" == "$needle" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
 # ── stale cleanup ────────────────────────────────────────────────────────────
 
 cleanup_stale() {
@@ -107,6 +133,64 @@ cleanup_stale() {
         fi
         rm -f "$lockfile"
       fi
+    fi
+  done
+}
+
+# ── kill orphan node/workerd processes ────────────────────────────────────────
+
+cleanup_orphans() {
+  # Collect ports claimed by live lockfiles
+  local claimed_ports=""
+  for lockfile in "$DEPLOY_DIR"/*.json; do
+    [[ -f "$lockfile" ]] || continue
+    local data
+    data=$(cat "$lockfile")
+    claimed_ports="$claimed_ports $(jq_field "$data" "wranglerPort")"
+  done
+
+  # Find node/workerd listeners in our port range that aren't claimed
+  local orphan_pids=""
+  for port in $(seq "$PORT_RANGE_START" 2 "$PORT_RANGE_END"); do
+    if echo "$claimed_ports" | grep -qw "$port"; then
+      continue
+    fi
+    local pids
+    pids=$(lsof -ti :"$port" 2>/dev/null || true)
+    if [[ -n "$pids" ]]; then
+      orphan_pids="$orphan_pids $pids"
+    fi
+  done
+
+  if [[ -n "${orphan_pids// /}" ]]; then
+    echo "  Killing orphan processes on unclaimed ports..."
+    for pid in $(echo "$orphan_pids" | tr ' ' '\n' | sort -u); do
+      [[ -n "$pid" ]] && kill "$pid" 2>/dev/null || true
+    done
+    sleep 1
+    for pid in $(echo "$orphan_pids" | tr ' ' '\n' | sort -u); do
+      [[ -n "$pid" ]] && kill -9 "$pid" 2>/dev/null || true
+    done
+  fi
+
+  # Also clean up any dead willville screen sessions
+  local stale_screens
+  stale_screens=$(screen -ls 2>/dev/null | grep -o '[0-9]*\.willville-[a-f0-9]*' || true)
+  for sess in $stale_screens; do
+    local sess_name="${sess#*.}"
+    local found=false
+    for lockfile in "$DEPLOY_DIR"/*.json; do
+      [[ -f "$lockfile" ]] || continue
+      local data
+      data=$(cat "$lockfile")
+      if [[ "$(jq_field "$data" "screenSession")" == "$sess_name" ]]; then
+        found=true
+        break
+      fi
+    done
+    if ! $found; then
+      echo "  Killing orphan screen: $sess_name"
+      screen -S "$sess_name" -X quit 2>/dev/null || true
     fi
   done
 }
@@ -216,17 +300,57 @@ show_status() {
 
 # ── main ─────────────────────────────────────────────────────────────────────
 
+ACTION="deploy"
+MOBILE_MODE=false
+MOBILE_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --stop)
+      ACTION="stop"
+      shift
+      ;;
+    --status)
+      ACTION="status"
+      shift
+      ;;
+    --mobile)
+      MOBILE_MODE=true
+      shift
+      MOBILE_ARGS=("$@")
+      break
+      ;;
+    --help|-h)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1" >&2
+      usage >&2
+      exit 1
+      ;;
+  esac
+done
+
+if $MOBILE_MODE && [[ "$ACTION" != "deploy" ]]; then
+  echo "ERROR: --mobile cannot be combined with --$ACTION" >&2
+  usage >&2
+  exit 1
+fi
+
 ROOT=$(repo_root)
 BRANCH=$(git -C "$ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")
 
-case "${1:-}" in
-  --stop)
+case "$ACTION" in
+  stop)
     stop_deployment "$ROOT"
+    cleanup_orphans
     exit 0
     ;;
-  --status)
+  status)
     echo "Willville deployments:"
     cleanup_stale
+    cleanup_orphans
     show_status
     exit 0
     ;;
@@ -240,6 +364,7 @@ echo ""
 # 1. Clean up stale deployments everywhere
 echo "Cleaning stale deployments..."
 cleanup_stale
+cleanup_orphans
 
 # 2. Stop any existing deployment from THIS worktree
 stop_deployment "$ROOT"
@@ -326,3 +451,21 @@ echo "  Log:    $WRANGLER_LOG"
 echo "  Stop:   scripts/deploy_app.sh --stop"
 echo "  Status: scripts/deploy_app.sh --status"
 echo "════════════════════════════════════════"
+
+if $MOBILE_MODE; then
+  MOBILE_DEFAULT_ARGS=()
+  if ! has_arg "--path" ${MOBILE_ARGS[@]+"${MOBILE_ARGS[@]}"}; then
+    MOBILE_DEFAULT_ARGS+=(--path /)
+  fi
+  if ! has_arg "--device" ${MOBILE_ARGS[@]+"${MOBILE_ARGS[@]}"}; then
+    MOBILE_DEFAULT_ARGS+=(--device iphone-14)
+  fi
+
+  echo ""
+  echo "Launching interactive mobile preview..."
+  "$ROOT/scripts/mobile_preview.sh" \
+    --url "http://127.0.0.1:$WRANGLER_PORT" \
+    --headed \
+    ${MOBILE_DEFAULT_ARGS[@]+"${MOBILE_DEFAULT_ARGS[@]}"} \
+    ${MOBILE_ARGS[@]+"${MOBILE_ARGS[@]}"}
+fi

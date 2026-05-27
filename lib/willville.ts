@@ -65,6 +65,7 @@ export type LineId =
 export type District = {
   id: DistrictId;
   displayName: string;
+  subtitle?: string;
   blurb: string;
   /** Polygon points string for the SVG zone. */
   polygon: string;
@@ -164,6 +165,7 @@ export const DISTRICTS: District[] = [
   ...GENERATED_TOWN_LAYOUT.districts.map((district) => ({
     id: district.id as DistrictId,
     displayName: district.displayName,
+    subtitle: (district as { subtitle?: string }).subtitle,
     blurb: DISTRICT_BLURBS[district.id as DistrictId],
     polygon: pointsToPolygon(district.polygon),
     label: district.label,

@@ -87,8 +87,8 @@
     "bellTower": { "x": 650, "y": 520 },
     "slopDepot": { "x": 340, "y": 890 },
     "welcomeSign": {
-      "x": 880,
-      "y": 170,
+      "x": 450,
+      "y": 30,
       "pathD": "M 650 190 L 1114 130 L 1122 178 L 658 238 Z"
     }
   },
@@ -96,6 +96,7 @@
     {
       "id": "mirrored-mile",
       "displayName": "Mirrored Mile",
+      "subtitle": "The Hall of Narcissism — Published Works",
       "label": { "x": 420, "y": 270 },
       "vertexIds": [
         "nw_coast",
@@ -110,6 +111,7 @@
     {
       "id": "the-zeitgeist",
       "displayName": "The Zeitgeist",
+      "subtitle": "Things Consumed by the Public — Apps & Utilities",
       "label": { "x": 810, "y": 300 },
       "vertexIds": [
         "north_saddle",
@@ -123,6 +125,7 @@
     {
       "id": "the-graveyard",
       "displayName": "The Graveyard",
+      "subtitle": "Touched but Not Active — Not Planning to Go Back",
       "label": { "x": 1210, "y": 350 },
       "vertexIds": [
         "sign_hill",
@@ -138,6 +141,7 @@
     {
       "id": "halls-of-judgement",
       "displayName": "The Halls of Judgement",
+      "subtitle": "AI Evaluation & Training",
       "label": { "x": 1045, "y": 610 },
       "vertexIds": [
         "web_halls",
@@ -152,6 +156,7 @@
     {
       "id": "town-square",
       "displayName": "Town Square",
+      "subtitle": "Organize & Communicate",
       "label": { "x": 725, "y": 565 },
       "vertexIds": [
         "press_square",
@@ -167,6 +172,7 @@
     {
       "id": "slop-wharf",
       "displayName": "Slop Wharf",
+      "subtitle": "Where Ships Get Outfitted Against Slop",
       "label": { "x": 350, "y": 815 },
       "vertexIds": [
         "wharf_nw",
@@ -182,6 +188,7 @@
     {
       "id": "dogwallow-ramble-ii",
       "displayName": "Dogwallow Ramble II",
+      "subtitle": "The Homestead — Round-the-House Projects",
       "label": { "x": 640, "y": 985 },
       "vertexIds": [
         "slop_canal",
@@ -195,6 +202,7 @@
     {
       "id": "gates-of-hell",
       "displayName": "The Gates of Hell",
+      "subtitle": "All Things Halloween & the GANGLIA Suite",
       "label": { "x": 1210, "y": 955 },
       "vertexIds": [
         "halls_canal",
