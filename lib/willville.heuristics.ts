@@ -12,7 +12,7 @@ import type { DistrictId, LineId, SiteGlyph } from "./willville";
 
 export type Heuristic = {
   repo: string; // e.g. "ScienceIsNeato/chronic-chronicler"
-  stopId: string;
+  displayName?: string;
   district: DistrictId;
   lines: LineId[];
   /** Optional manual placement inside the district SVG polygon. */
@@ -32,13 +32,12 @@ export type Heuristic = {
 };
 
 export const HEURISTICS: Heuristic[] = [
-  // Mirrored Mile
   {
     repo: "ScienceIsNeato/10000_years_of_solitude",
-    stopId: "the-solitude-stacks",
+    displayName: "10000_years_of_solitude",
     district: "mirrored-mile",
     lines: ["writing"],
-    position: { x: 160, y: 200 },
+    position: { x: 376, y: 355 },
     blurb: "A novel-in-progress. Long form, slow loop.",
     glyph: {
       label: "book",
@@ -47,13 +46,12 @@ export const HEURISTICS: Heuristic[] = [
     },
   },
 
-  // The Graveyard
   {
     repo: "ScienceIsNeato/GANGLIA",
-    stopId: "the-furnace",
+    displayName: "GANGLIA",
     district: "the-graveyard",
     lines: ["ai"],
-    position: { x: 880, y: 220 },
+    position: { x: 1133, y: 272 },
     blurb: "The original AI framework. Where it all started.",
     glyph: {
       label: "coffin",
@@ -61,12 +59,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/suno-api",
-    stopId: "the-suno-organ",
+    displayName: "suno-api",
     district: "the-graveyard",
     lines: ["ai"],
-    position: { x: 1080, y: 360 },
+    position: { x: 1133, y: 447 },
     blurb: "Music-generation API workbench.",
     glyph: {
       label: "pipe organ",
@@ -74,12 +73,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/FogOfDog",
-    stopId: "the-kennel",
+    displayName: "FogOfDog",
     district: "the-graveyard",
     lines: ["web"],
-    position: { x: 960, y: 200 },
+    position: { x: 1233, y: 361 },
     blurb: "Backend for FogOfDog.",
     glyph: {
       label: "kennel",
@@ -87,12 +87,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/epsilon",
-    stopId: "the-compilers-forge",
+    displayName: "epsilon",
     district: "the-graveyard",
     lines: ["workshop"],
-    position: { x: 1040, y: 280 },
+    position: { x: 1033, y: 321 },
     blurb: "LLVM dabbling.",
     glyph: {
       label: "compiler forge",
@@ -100,12 +101,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/gene-builder",
-    stopId: "the-gene-greenhouse",
+    displayName: "gene-builder",
     district: "the-graveyard",
     lines: ["workshop"],
-    position: { x: 1120, y: 200 },
+    position: { x: 1259, y: 462 },
     blurb: "Bio side project.",
     glyph: {
       label: "gene greenhouse",
@@ -113,12 +115,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/go-playground",
-    stopId: "the-go-workbench",
+    displayName: "go-playground",
     district: "the-graveyard",
     lines: ["workshop"],
-    position: { x: 1000, y: 320 },
+    position: { x: 1291, y: 581 },
     blurb: "Go language experiments and scratch work.",
     glyph: {
       label: "workbench",
@@ -126,12 +129,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/dotFiles",
-    stopId: "the-dotfile-cabinet",
+    displayName: "dotFiles",
     district: "the-graveyard",
     lines: [],
-    position: { x: 920, y: 280 },
+    position: { x: 1336, y: 400 },
     blurb: "Personal shell, editor, and machine setup files.",
     glyph: {
       label: "file cabinet",
@@ -141,13 +145,12 @@ export const HEURISTICS: Heuristic[] = [
     },
   },
 
-  // Gates of Hell
   {
     repo: "ScienceIsNeato/ganglia-core",
-    stopId: "the-reactor",
+    displayName: "ganglia-core",
     district: "gates-of-hell",
     lines: ["ai"],
-    position: { x: 1320, y: 660 },
+    position: { x: 972, y: 947 },
     blurb: "Chatbot interface and orchestration.",
     glyph: {
       label: "reactor",
@@ -161,12 +164,13 @@ export const HEURISTICS: Heuristic[] = [
       priority: 2,
     },
   },
+
   {
     repo: "ScienceIsNeato/ganglia-studio",
-    stopId: "the-atelier",
+    displayName: "ganglia-studio",
     district: "gates-of-hell",
     lines: ["ai", "halloween"],
-    position: { x: 1420, y: 700 },
+    position: { x: 1181, y: 888 },
     blurb: "Multimedia generation suite. Spooky-capable.",
     glyph: {
       label: "studio easel",
@@ -174,12 +178,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/ganglia-common",
-    stopId: "the-toolworks",
+    displayName: "ganglia-common",
     district: "gates-of-hell",
     lines: ["ai"],
-    position: { x: 1380, y: 780 },
+    position: { x: 886, y: 1027 },
     blurb: "Shared utilities for the GANGLIA ecosystem.",
     glyph: {
       label: "tool chest",
@@ -187,12 +192,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/HalloweenTracker",
-    stopId: "the-watchful-pumpkin",
+    displayName: "HalloweenTracker",
     district: "gates-of-hell",
     lines: ["halloween", "workshop"],
-    position: { x: 1460, y: 820 },
+    position: { x: 1059, y: 865 },
     blurb: "OpenCV + Arduino head that tracks movement.",
     glyph: {
       label: "watchful pumpkin",
@@ -207,27 +213,32 @@ export const HEURISTICS: Heuristic[] = [
     },
   },
 
-  // Slop Wharf
   {
     repo: "ScienceIsNeato/slop-mop",
-    stopId: "the-mop-bucket",
+    displayName: "slop-mop",
     district: "slop-wharf",
     lines: ["quality"],
-    position: { x: 180, y: 480 },
+    position: { x: 401, y: 696 },
     blurb: "Harm reduction for addicted agents.",
     glyph: {
       label: "mop bucket",
       prompt: "wooden mop bucket with brass wringer and tidy mop",
       state: "placeholder",
     },
-    queue: { active: true, milestone: "v1.1 release", etaDays: 2, priority: 1 },
+    queue: {
+      active: true,
+      milestone: "v1.1 release",
+      etaDays: 2,
+      priority: 1,
+    },
   },
+
   {
     repo: "ScienceIsNeato/slop-mop-action",
-    stopId: "the-action-dock",
+    displayName: "slop-mop-action",
     district: "slop-wharf",
     lines: ["quality"],
-    position: { x: 280, y: 520 },
+    position: { x: 455, y: 602 },
     blurb: "GitHub Actions wrapper for slop-mop.",
     glyph: {
       label: "action dock",
@@ -235,12 +246,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/bucket-o-slop",
-    stopId: "the-slop-bucket",
+    displayName: "bucket-o-slop",
     district: "slop-wharf",
     lines: ["quality"],
-    position: { x: 200, y: 600 },
+    position: { x: 510, y: 780 },
     blurb: "Intentionally-broken test fixture for slop-mop.",
     glyph: {
       label: "slop bucket",
@@ -248,12 +260,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/cursor-rules",
-    stopId: "the-rulebook",
+    displayName: "cursor-rules",
     district: "slop-wharf",
     lines: ["quality"],
-    position: { x: 120, y: 580 },
+    position: { x: 302, y: 754 },
     blurb: "Configuration and rules for AI-assisted development.",
     glyph: {
       label: "rulebook",
@@ -262,13 +275,12 @@ export const HEURISTICS: Heuristic[] = [
     },
   },
 
-  // The Halls of Judgement
   {
     repo: "ScienceIsNeato/swe-audit",
-    stopId: "the-audit-house",
+    displayName: "swe-audit",
     district: "halls-of-judgement",
     lines: ["quality", "ai"],
-    position: { x: 1280, y: 360 },
+    position: { x: 1077, y: 680 },
     blurb: "SWE audits.",
     glyph: {
       label: "scales",
@@ -276,12 +288,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/imperium-swe-traces",
-    stopId: "the-trace-station",
+    displayName: "imperium-swe-traces",
     district: "halls-of-judgement",
     lines: ["ai"],
-    position: { x: 1420, y: 360 },
+    position: { x: 1058, y: 541 },
     blurb: "Recorded agent traces from the Imperium runs.",
     glyph: {
       label: "trace spool",
@@ -289,12 +302,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/snorkelAI-tasks",
-    stopId: "the-task-forge",
+    displayName: "snorkelAI-tasks",
     district: "halls-of-judgement",
     lines: ["ai"],
-    position: { x: 1320, y: 440 },
+    position: { x: 980, y: 518 },
     blurb: "Terminal-Bench tasks for Snorkel AI evaluation.",
     glyph: {
       label: "task forge",
@@ -302,12 +316,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/hard-collesium",
-    stopId: "the-colosseum",
+    displayName: "hard-collesium",
     district: "halls-of-judgement",
     lines: ["ai"],
-    position: { x: 1460, y: 440 },
+    position: { x: 1194, y: 633 },
     blurb: "30 rounds of Gladiator evaluations.",
     glyph: {
       label: "colosseum",
@@ -315,12 +330,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/apertus_task_scaffolding",
-    stopId: "the-apertus-drafting-desk",
+    displayName: "apertus_task_scaffolding",
     district: "halls-of-judgement",
     lines: ["quality"],
-    position: { x: 1380, y: 470 },
+    position: { x: 941, y: 628 },
     blurb: "Task scaffolding and documentation for Apertus work.",
     glyph: {
       label: "drafting desk",
@@ -328,12 +344,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/pr-task-scaffolding",
-    stopId: "the-pr-scaffold",
+    displayName: "pr-task-scaffolding",
     district: "halls-of-judgement",
     lines: ["quality"],
-    position: { x: 1500, y: 480 },
+    position: { x: 1152, y: 716 },
     blurb: "Templates and rubrics for PR task creation.",
     glyph: {
       label: "scaffold",
@@ -342,12 +359,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/codebase-navigation",
-    stopId: "the-map-room",
+    displayName: "codebase-navigation",
     district: "halls-of-judgement",
     lines: ["quality"],
-    position: { x: 1400, y: 500 },
+    position: { x: 1118, y: 572 },
     blurb: "Navigation aids for understanding unfamiliar codebases.",
     glyph: {
       label: "map table",
@@ -355,12 +373,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/mystery",
-    stopId: "the-mystery-manor",
+    displayName: "mystery",
     district: "halls-of-judgement",
     lines: ["halloween", "writing"],
-    position: { x: 1300, y: 500 },
+    position: { x: 1014, y: 666 },
     blurb: "Best-guess placement — override via .willville.json.",
     glyph: {
       label: "mystery manor",
@@ -369,13 +388,12 @@ export const HEURISTICS: Heuristic[] = [
     },
   },
 
-  // The Zeitgeist
   {
     repo: "ScienceIsNeato/ChronicChronicler",
-    stopId: "the-chroniclers-tower",
+    displayName: "ChronicChronicler",
     district: "the-zeitgeist",
     lines: ["web", "writing"],
-    position: { x: 520, y: 180 },
+    position: { x: 731, y: 149 },
     blurb: "Long-form chronicling app.",
     glyph: {
       label: "chronicle tower",
@@ -389,38 +407,41 @@ export const HEURISTICS: Heuristic[] = [
       priority: 3,
     },
   },
+
   {
     repo: "ScienceIsNeato/fogofdog-frontend",
-    stopId: "the-kennel-storefront",
+    displayName: "fogofdog-frontend",
     district: "the-zeitgeist",
     lines: ["web"],
-    position: { x: 740, y: 240 },
-    blurb: "Frontend for FogOfDog.",
+    position: { x: 932, y: 266 },
+    blurb: "Explore your neighborhood from the perspective of a dog",
     glyph: {
       label: "storefront",
       prompt: "small web storefront with striped awning and glowing display",
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/lonely_little_vampire",
-    stopId: "the-vampires-crypt",
-    district: "the-zeitgeist",
+    displayName: "lonely_little_vampire",
+    district: "mirrored-mile",
     lines: ["halloween", "writing"],
-    position: { x: 660, y: 200 },
-    blurb: "Best-guess placement — override via .willville.json.",
+    position: { x: 580, y: 230 },
+    blurb: "Childrens' Story about a little boy named Vlad",
     glyph: {
       label: "vampire crypt",
       prompt: "small gothic crypt with velvet-lined coffin and purple candles",
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/loopcloser",
-    stopId: "the-roundabout",
+    displayName: "loopcloser",
     district: "the-zeitgeist",
     lines: ["quality"],
-    position: { x: 600, y: 160 },
+    position: { x: 792, y: 363 },
     blurb: "Closes the developer feedback loop.",
     glyph: {
       label: "roundabout",
@@ -428,12 +449,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/razer-ripple",
-    stopId: "the-light-mill",
+    displayName: "razer-ripple",
     district: "the-zeitgeist",
     lines: ["workshop"],
-    position: { x: 780, y: 180 },
+    position: { x: 942, y: 391 },
     blurb: "Razer Chroma LED tinkering.",
     glyph: {
       label: "light mill",
@@ -442,13 +464,12 @@ export const HEURISTICS: Heuristic[] = [
     },
   },
 
-  // Town Square
   {
     repo: "ScienceIsNeato/welcome-to-willville",
-    stopId: "willville-town-hall",
+    displayName: "welcome-to-willville",
     district: "town-square",
     lines: ["web"],
-    position: { x: 800, y: 500 },
+    position: { x: 533, y: 462 },
     blurb: "The town itself: map, transit, bell, and project registry.",
     glyph: {
       label: "town hall",
@@ -457,13 +478,12 @@ export const HEURISTICS: Heuristic[] = [
     },
   },
 
-  // Dogwallow Ramble II
   {
     repo: "ScienceIsNeato/grocery-automation",
-    stopId: "the-pantry-bot",
+    displayName: "grocery-automation",
     district: "dogwallow-ramble-ii",
     lines: ["workshop"],
-    position: { x: 240, y: 880 },
+    position: { x: 643, y: 996 },
     blurb: "Automating the grocery loop.",
     glyph: {
       label: "pantry bot",
@@ -471,12 +491,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/RANDY-SHARON",
-    stopId: "randy-sharons-cottage",
+    displayName: "RANDY-SHARON",
     district: "dogwallow-ramble-ii",
     lines: [],
-    position: { x: 180, y: 820 },
+    position: { x: 703, y: 821 },
     blurb: "Parents. Care, calls, calendar.",
     glyph: {
       label: "cottage",
@@ -484,12 +505,13 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+
   {
     repo: "ScienceIsNeato/TheWallow",
-    stopId: "the-wallow",
+    displayName: "TheWallow",
     district: "dogwallow-ramble-ii",
     lines: ["halloween"],
-    position: { x: 320, y: 860 },
+    position: { x: 724, y: 1054 },
     blurb: "Best-guess placement — override via .willville.json.",
     glyph: {
       label: "wallow pool",

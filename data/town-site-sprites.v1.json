@@ -9,7 +9,7 @@
   "generatedFrom": "lib/willville.heuristics.ts",
   "sprites": [
     {
-      "stopId": "the-solitude-stacks",
+      "stopId": "10000_years_of_solitude",
       "district": "mirrored-mile",
       "kind": "bespoke",
       "src": "/art/stops/the-solitude-stacks-dandelion-resin-totem.png",
@@ -19,7 +19,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-furnace",
+      "stopId": "ganglia",
       "district": "the-graveyard",
       "kind": "monument",
       "src": "/art/stops/the-furnace.png",
@@ -29,9 +29,9 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-suno-organ",
+      "stopId": "suno-api",
       "district": "the-graveyard",
-      "kind": "tower",
+      "kind": "bespoke",
       "src": "/art/stops/the-suno-organ.png",
       "width": 100,
       "height": 100,
@@ -39,9 +39,9 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-kennel",
+      "stopId": "fogofdog",
       "district": "the-graveyard",
-      "kind": "workshop",
+      "kind": "bespoke",
       "src": "/art/stops/the-kennel.png",
       "width": 100,
       "height": 100,
@@ -49,9 +49,9 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-compilers-forge",
+      "stopId": "epsilon",
       "district": "the-graveyard",
-      "kind": "forge",
+      "kind": "bespoke",
       "src": "/art/stops/the-compilers-forge.png",
       "width": 100,
       "height": 100,
@@ -59,9 +59,9 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-gene-greenhouse",
+      "stopId": "gene-builder",
       "district": "the-graveyard",
-      "kind": "greenhouse",
+      "kind": "bespoke",
       "src": "/art/stops/the-gene-greenhouse.png",
       "width": 100,
       "height": 100,
@@ -69,9 +69,9 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-go-workbench",
+      "stopId": "go-playground",
       "district": "the-graveyard",
-      "kind": "workshop",
+      "kind": "bespoke",
       "src": "/art/stops/the-go-workbench.png",
       "width": 100,
       "height": 100,
@@ -79,9 +79,9 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-dotfile-cabinet",
+      "stopId": "dotfiles",
       "district": "the-graveyard",
-      "kind": "workshop",
+      "kind": "bespoke",
       "src": "/art/stops/the-dotfile-cabinet.png",
       "width": 100,
       "height": 100,
@@ -89,7 +89,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-reactor",
+      "stopId": "ganglia-core",
       "district": "gates-of-hell",
       "kind": "bespoke",
       "src": "/art/stops/the-reactor.png",
@@ -99,7 +99,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-atelier",
+      "stopId": "ganglia-studio",
       "district": "gates-of-hell",
       "kind": "bespoke",
       "src": "/art/stops/the-atelier-ganglia-studio-totem.png",
@@ -109,7 +109,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-toolworks",
+      "stopId": "ganglia-common",
       "district": "gates-of-hell",
       "kind": "bespoke",
       "src": "/art/stops/the-toolworks-ganglia-common-totem.png",
@@ -119,7 +119,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-watchful-pumpkin",
+      "stopId": "halloweentracker",
       "district": "gates-of-hell",
       "kind": "bespoke",
       "src": "/art/stops/the-watchful-pumpkin-halloween-tracker-totem.png",
@@ -129,7 +129,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-mop-bucket",
+      "stopId": "slop-mop",
       "district": "slop-wharf",
       "kind": "bespoke",
       "src": "/art/stops/the-mop-bucket-slopmop-totem.png",
@@ -139,7 +139,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-action-dock",
+      "stopId": "slop-mop-action",
       "district": "slop-wharf",
       "kind": "bespoke",
       "src": "/art/stops/the-action-dock-slop-mop-action-totem.png",
@@ -149,7 +149,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-slop-bucket",
+      "stopId": "bucket-o-slop",
       "district": "slop-wharf",
       "kind": "bespoke",
       "src": "/art/stops/the-slop-bucket-bucket-o-slop-totem.png",
@@ -159,7 +159,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-rulebook",
+      "stopId": "cursor-rules",
       "district": "slop-wharf",
       "kind": "bespoke",
       "src": "/art/stops/the-rulebook-cursor-rules-totem.png",
@@ -169,7 +169,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-audit-house",
+      "stopId": "swe-audit",
       "district": "halls-of-judgement",
       "kind": "workshop",
       "src": "/art/stops/the-audit-house.png",
@@ -179,7 +179,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-trace-station",
+      "stopId": "imperium-swe-traces",
       "district": "halls-of-judgement",
       "kind": "workshop",
       "src": "/art/stops/the-trace-station.png",
@@ -189,7 +189,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-task-forge",
+      "stopId": "snorkelai-tasks",
       "district": "halls-of-judgement",
       "kind": "forge",
       "src": "/art/stops/the-task-forge.png",
@@ -199,7 +199,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-colosseum",
+      "stopId": "hard-collesium",
       "district": "halls-of-judgement",
       "kind": "workshop",
       "src": "/art/stops/the-colosseum.png",
@@ -209,7 +209,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-apertus-drafting-desk",
+      "stopId": "apertus_task_scaffolding",
       "district": "halls-of-judgement",
       "kind": "workshop",
       "src": "/art/stops/the-apertus-drafting-desk.png",
@@ -219,7 +219,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-pr-scaffold",
+      "stopId": "pr-task-scaffolding",
       "district": "halls-of-judgement",
       "kind": "civic",
       "src": "/art/stops/the-pr-scaffold.png",
@@ -229,7 +229,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-map-room",
+      "stopId": "codebase-navigation",
       "district": "halls-of-judgement",
       "kind": "workshop",
       "src": "/art/stops/the-map-room.png",
@@ -239,7 +239,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-mystery-manor",
+      "stopId": "mystery",
       "district": "halls-of-judgement",
       "kind": "workshop",
       "src": "/art/stops/the-mystery-manor.png",
@@ -249,7 +249,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-chroniclers-tower",
+      "stopId": "chronicchronicler",
       "district": "the-zeitgeist",
       "kind": "bespoke",
       "src": "/art/stops/the-chroniclers-tower-chronicchronicler-totem.png",
@@ -259,7 +259,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-kennel-storefront",
+      "stopId": "fogofdog-frontend",
       "district": "the-zeitgeist",
       "kind": "bespoke",
       "src": "/art/stops/the-kennel-storefront-fogofdog-totem.png",
@@ -269,7 +269,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-vampires-crypt",
+      "stopId": "lonely_little_vampire",
       "district": "the-zeitgeist",
       "kind": "bespoke",
       "src": "/art/stops/the-vampires-crypt-lonely-vampire-totem.png",
@@ -279,7 +279,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-roundabout",
+      "stopId": "loopcloser",
       "district": "the-zeitgeist",
       "kind": "bespoke",
       "src": "/art/stops/the-roundabout-loopcloser-totem.png",
@@ -289,7 +289,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-light-mill",
+      "stopId": "razer-ripple",
       "district": "the-zeitgeist",
       "kind": "bespoke",
       "src": "/art/stops/the-light-mill-razer-ripple-totem.png",
@@ -299,7 +299,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "willville-town-hall",
+      "stopId": "welcome-to-willville",
       "district": "town-square",
       "kind": "bespoke",
       "src": "/art/stops/willville-town-hall-totem.png",
@@ -309,7 +309,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-pantry-bot",
+      "stopId": "grocery-automation",
       "district": "dogwallow-ramble-ii",
       "kind": "workshop",
       "src": "/art/stops/the-pantry-bot.png",
@@ -319,7 +319,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "randy-sharons-cottage",
+      "stopId": "randy-sharon",
       "district": "dogwallow-ramble-ii",
       "kind": "workshop",
       "src": "/art/stops/randy-sharons-cottage.png",
@@ -329,7 +329,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-wallow",
+      "stopId": "thewallow",
       "district": "dogwallow-ramble-ii",
       "kind": "workshop",
       "src": "/art/stops/the-wallow.png",

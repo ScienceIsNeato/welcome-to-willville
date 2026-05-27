@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Fixing the real-site data split so prod shows the same live status and bell updates as local",
-    "direction": "Bridge the real site back to the live town feed while the domain routing gets sorted",
-    "last_update": "2026-05-27T08:41:39Z"
+    "status": "Polishing the Department of Tourism so the sign actually reads in the live town view instead of only in the raw art",
+    "direction": "Next is bundling this tourism follow-up into the normal cleanup and commit flow",
+    "last_update": "2026-05-27T19:02:23Z"
   }
 }

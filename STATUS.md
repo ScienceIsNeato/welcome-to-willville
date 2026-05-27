@@ -1,13 +1,42 @@
 <!-- willville
-doing: PR #9 buff loop — CI green, Bugbot threads resolved
-done: eslint .venv ignore, fork-PR guard, cache headers, displayName fix, deploy PID hardening, dead code cleanup
-next: merge PR #9; Workers Builds Cloudflare check is pre-existing on main
+doing: PR #11 coordinates and stopId refactor — verification green
+done: coordinate persistence, town merge pipeline position fix, stopId layer removal, dynamic slugs standard, sprite manifests migration
+next: merge PR #11
 risk: low
 milestone: Isthmus town generation
-eta: 2026-05-22
+eta: 2026-05-27
 -->
 
 # Status
+
+## Done (2026-05-27) — Reposition Coordinates Persistence & StopId Abstraction Removal
+
+- Persisted the live-dragged coordinates for all 33 repositories in `lib/willville.heuristics.ts`, carefully retaining all visual `glyph` and `queue` definitions to prevent asset regression.
+- Resolved a pipeline layout bug inside `lib/town.ts` where both `buildStop` (live path) and `buildInitialStops` (offline path) ignored the manual `heuristic.position` overrides and dynamically forced stops back to auto-calculated locations.
+- Pulled out the `stopId` metaphorical translation layer entirely from the codebase, standardizing on lowercase repository names as the single source of truth for routing, layouts, and assets.
+- Cleaned up dynamic routing slug generation in `lib/slugs.ts` and `app/[district]/[stop]/page.tsx`, and migrated the `"stopId"` mappings in `data/town-site-sprites.v1.json` and `data/canal-ship-sprites.v1.json` to use repository-centric IDs without breaking existing binary PNG paths.
+- Renamed the bespoke sprite config file `the-reactor.tti.json` to `ganglia-core.tti.json` and resolved all unmigrated references inside `functions/api/canal.ts` and `functions/api/manifests.ts`.
+- Validation: `npx tsc --noEmit` passed with zero errors; `npm run build` compiled all routes successfully with Next.js prerendering the new repository slugs; direct local deploy via `scripts/deploy_app.sh` succeeded at `http://127.0.0.1:3740/`.
+
+## Done (2026-05-27) — Tourism Sign Reads In The Actual Town View
+
+- Reworked the Department of Tourism art prompt so Ganglia Studio is required to render a big, high-contrast `DEPT. OF TOURISM` sign on the front of the building instead of suppressing readable text.
+- Regenerated the tourism sprite, bumped the stage asset URL to `tourism-v2`, and scaled the Town Square landmark up so the sign is still legible in the live town view instead of only in the raw render.
+- Validation: `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio ./scripts/generate-bespoke-sprite.sh department-of-tourism --force --skip-manifest` passed; fresh local deploy via `./scripts/deploy_app.sh` confirmed the updated `tourism-v2` asset on `http://127.0.0.1:3740/?site_type=desktop`; live stage screenshot showed the marker grow from roughly `44px` to `60px`; `sm swab --no-cache` passed.
+
+## Done (2026-05-27) — Department Of Tourism Gets Real Town Art
+
+- Extended the bespoke sprite rail so special town-only landmarks can use the Ganglia Studio generation path without force-writing bogus stop manifest entries.
+- Generated the Department of Tourism sprite through the real Ganglia Studio checkout and installed the finished 100x100 PNG into the town art set.
+- Kept the updated hover copy as `add your own stop to Willville` and verified the tourism click still returns the Digital Detail board to its default `Select a site in Willville` state while Time Central flips over to the tourism pitch plus contact email.
+- Validation: `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio ./scripts/generate-bespoke-sprite.sh department-of-tourism --force --skip-manifest` passed; `sm swab --no-cache` passed; local browser verification on `http://127.0.0.1:3740/?site_type=desktop` confirmed the sprite render, hover copy, empty Digital Detail board state, and the Time Central tourism announcement with `unique.will.martin@gmail.com`.
+
+## Done (2026-05-27) — Town Square Gets A Department Of Tourism
+
+- Added a special Town Square landmark for the Department of Tourism in the same non-repo landmark lane as the other town-only interactions, with hover copy that says `Come visit Willville!`.
+- Clicking the tourism kiosk now clears the selected stop, routes back to the town overview, restores the desktop Digital Detail board to its default `Select a site in Willville` empty state, and swaps Time Central over to the tourism pitch plus contact email.
+- Finished the landmark extraction properly by routing the bell, egg, Hollywood sign, and tourism kiosk through the shared `SpecialTownLandmarks` component instead of leaving a stale inline landmark block in `TownStage`.
+- Validation: `sm swab -g myopia:code-sprawl --no-cache` passed; `sm swab --no-cache` passed; local browser verification on `http://127.0.0.1:3740/?site_type=desktop` confirmed the tourism hover text, the empty Digital Detail board state, and the updated Time Central tourism announcement.
 
 ## Done (2026-05-27) — Prod Custom Domain Falls Back To Pages API
 

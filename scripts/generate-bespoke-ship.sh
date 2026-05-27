@@ -42,7 +42,7 @@ if [[ -z "${1:-}" || -z "${2:-}" ]]; then
   echo "       scripts/generate-bespoke-ship.sh --list"
   echo ""
   echo "Example:"
-  echo "  scripts/generate-bespoke-ship.sh the-reactor \"coffin-shaped black pirate ship with glowing purple claw marks and a skull figurehead\""
+  echo "  scripts/generate-bespoke-ship.sh ganglia-core \"coffin-shaped black pirate ship with glowing purple claw marks and a skull figurehead\""
   exit 1
 fi
 

@@ -220,17 +220,18 @@ function repoStopId(fullName: string): string {
 
 function registerRepo(repo: GitHubRepo): RegisteredRepo {
   const heuristic = heuristicForRepo(repo.full_name);
+  const stopId = repo.full_name.split("/")[1]!.toLowerCase();
   if (heuristic) {
     return {
       fullName: repo.full_name,
       source: "registry",
-      stopId: heuristic.stopId,
+      stopId,
     };
   }
   return {
     fullName: repo.full_name,
     source: "auto",
-    stopId: repoStopId(repo.full_name),
+    stopId,
   };
 }
 

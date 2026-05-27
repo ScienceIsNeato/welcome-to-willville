@@ -15,6 +15,10 @@ type Props = {
   recentlyUpdated: boolean;
   onClick: (e: MouseEvent<SVGGElement>) => void;
   onDoubleClick: (e: MouseEvent<SVGGElement>) => void;
+  draggable?: boolean;
+  onDragStart?: (e: React.PointerEvent<SVGGElement>) => void;
+  onDragMove?: (e: React.PointerEvent<SVGGElement>) => void;
+  onDragEnd?: (e: React.PointerEvent<SVGGElement>) => void;
 };
 
 const STATE_COLOR: Record<Stop["status"]["state"], string> = {
@@ -38,6 +42,10 @@ export function StopMarker({
   recentlyUpdated,
   onClick,
   onDoubleClick,
+  draggable,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
 }: Props) {
   const color = STATE_COLOR[stop.status.state];
   const sprite = SITE_SPRITES.get(stop.id);
@@ -49,8 +57,9 @@ export function StopMarker({
       data-stop-marker
       data-stop-id={stop.id}
       data-district-id={stop.district}
+      data-no-pan={draggable ? "true" : undefined}
       transform={`translate(${stop.position.x}, ${stop.position.y})`}
-      style={{ cursor: "pointer" }}
+      style={{ cursor: draggable ? "move" : "pointer" }}
       onClick={(e) => {
         e.stopPropagation();
         onClick(e);
@@ -58,6 +67,21 @@ export function StopMarker({
       onDoubleClick={(e) => {
         e.stopPropagation();
         onDoubleClick(e);
+      }}
+      onPointerDown={(e) => {
+        if (!draggable) return;
+        e.stopPropagation();
+        onDragStart?.(e);
+      }}
+      onPointerMove={(e) => {
+        if (!draggable) return;
+        e.stopPropagation();
+        onDragMove?.(e);
+      }}
+      onPointerUp={(e) => {
+        if (!draggable) return;
+        e.stopPropagation();
+        onDragEnd?.(e);
       }}
       aria-label={label}
     >
@@ -77,6 +101,18 @@ export function StopMarker({
           fill={color}
           fillOpacity={0.25}
           className="whistle"
+        />
+      )}
+      {draggable && (
+        <circle
+          r={Math.max(22, spriteWidth / 2 + 4)}
+          cx={SITE_ART_CENTER.x}
+          cy={SITE_ART_CENTER.y}
+          fill="none"
+          stroke="#e6c66a"
+          strokeWidth={1.5}
+          strokeDasharray="4 3"
+          className="reposition-pulse"
         />
       )}
       {sprite && (
@@ -141,6 +177,19 @@ export function StopMarker({
       >
         {label}
       </text>
+
+      {draggable && (
+        <style>{`
+          @keyframes reposition-spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          .reposition-pulse {
+            transform-origin: ${SITE_ART_CENTER.x}px ${SITE_ART_CENTER.y}px;
+            animation: reposition-spin 12s linear infinite;
+          }
+        `}</style>
+      )}
     </g>
   );
 }

@@ -268,7 +268,7 @@ function normalizeBoardText(input: string): string {
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/&/g, "AND")
-    .replace(/[^A-Z0-9 .,'#/:!?…-]/gi, " ")
+    .replace(/[^A-Z0-9 .,'#/:!?…@-]/gi, " ")
     .replace(/\s+/g, " ")
     .trim()
     .toUpperCase();
@@ -413,6 +413,20 @@ export function buildBellBoardAnnouncement(
   return {
     label: "Status Update",
     rows,
+  };
+}
+
+export function buildTourismBoardAnnouncement(): BoardAnnouncement {
+  return {
+    label: "Department of Tourism",
+    rows: [
+      centerBoardText("Want your own stop in town?"),
+      centerBoardText("Hire me to turn your"),
+      centerBoardText("crazy ideas into reality."),
+      centerBoardText("unique.will.martin@gmail.com"),
+      CENTRAL_BOARD_EMPTY_ROW,
+      CENTRAL_BOARD_EMPTY_ROW,
+    ],
   };
 }
 

@@ -76,7 +76,12 @@ query ($q: String!) {
 
 function repoToStop(repo: string) {
   const h = HEURISTICS.find((x) => x.repo.toLowerCase() === repo.toLowerCase());
-  return h ? { district: h.district, stopId: h.stopId } : undefined;
+  return h
+    ? {
+        district: h.district,
+        stopId: h.repo.split("/")[1]!.toLowerCase(),
+      }
+    : undefined;
 }
 
 function mapPr(pr: GraphQLPR): CanalBoat {

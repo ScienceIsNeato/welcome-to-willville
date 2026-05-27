@@ -265,9 +265,9 @@ export function useTownCamera(
           hudDragRef.current = true;
           return;
         }
-        hudDragRef.current = !!(event.target as Element)?.closest?.(
-          "[data-project-hud]",
-        );
+        hudDragRef.current =
+          !!(event.target as Element)?.closest?.("[data-project-hud]") ||
+          !!(event.target as Element)?.closest?.('[data-no-pan="true"]');
         if (!hudDragRef.current) {
           stopAnims();
           didTriggerDragRef.current = false;

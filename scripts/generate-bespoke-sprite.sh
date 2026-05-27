@@ -6,8 +6,9 @@ set -euo pipefail
 #
 # Usage:
 #   scripts/generate-bespoke-sprite.sh <stop-id>
-#   scripts/generate-bespoke-sprite.sh the-reactor
-#   scripts/generate-bespoke-sprite.sh the-reactor --force
+#   scripts/generate-bespoke-sprite.sh ganglia-core
+#   scripts/generate-bespoke-sprite.sh ganglia-core --force
+#   scripts/generate-bespoke-sprite.sh department-of-tourism --skip-manifest
 #   scripts/generate-bespoke-sprite.sh --list
 #
 # Set GANGLIA_STUDIO_DIR to the ganglia-studio checkout if it is not in a
@@ -22,6 +23,7 @@ SPRITE_DIR="$ROOT/public/art/stops"
 GANGLIA_STUDIO="${GANGLIA_STUDIO_DIR:-}"
 
 FORCE=""
+SKIP_MANIFEST=""
 
 # ── parse args ───────────────────────────────────────────────────────────────
 
@@ -38,14 +40,29 @@ if [[ "${1:-}" == "--list" ]]; then
 fi
 
 if [[ -z "${1:-}" ]]; then
-  echo "Usage: scripts/generate-bespoke-sprite.sh <stop-id> [--force]"
+  echo "Usage: scripts/generate-bespoke-sprite.sh <stop-id> [--force] [--skip-manifest]"
   echo "       scripts/generate-bespoke-sprite.sh --list"
   exit 1
 fi
 
 STOP_ID="$1"
 shift
-[[ "${1:-}" == "--force" ]] && FORCE="--force"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --force)
+      FORCE="--force"
+      ;;
+    --skip-manifest)
+      SKIP_MANIFEST="1"
+      ;;
+    *)
+      echo "ERROR: Unknown option: $1" >&2
+      echo "Usage: scripts/generate-bespoke-sprite.sh <stop-id> [--force] [--skip-manifest]" >&2
+      exit 1
+      ;;
+  esac
+  shift
+done
 
 CONFIG="$BESPOKE_DIR/$STOP_ID.tti.json"
 if [[ ! -f "$CONFIG" ]]; then
@@ -142,8 +159,9 @@ const sharp = require('sharp');
 
 # ── update manifest ──────────────────────────────────────────────────────────
 
-MANIFEST="$ROOT/data/town-site-sprites.v1.json"
-node -e "
+if [[ -z "$SKIP_MANIFEST" ]]; then
+  MANIFEST="$ROOT/data/town-site-sprites.v1.json"
+  node -e "
 const fs = require('fs');
 const manifest = JSON.parse(fs.readFileSync('$MANIFEST', 'utf8'));
 const idx = manifest.sprites.findIndex(s => s.stopId === '$STOP_ID');
@@ -164,12 +182,19 @@ if (idx >= 0) {
   manifest.sprites.push(entry);
   console.log('Added new manifest entry for $STOP_ID');
 }
-fs.writeFileSync('$MANIFEST', JSON.stringify(manifest, null, 2) + '\\n');
+fs.writeFileSync('$MANIFEST', JSON.stringify(manifest, null, 2) + '\n');
 "
+else
+  echo "Manifest update skipped (--skip-manifest)."
+fi
 
 echo ""
 echo "=== Done ==="
 echo "  Sprite: $FINAL_PNG"
-echo "  Manifest updated: $MANIFEST"
+if [[ -z "$SKIP_MANIFEST" ]]; then
+  echo "  Manifest updated: $MANIFEST"
+else
+  echo "  Manifest unchanged"
+fi
 echo ""
 echo "  Rebuild to see it: scripts/deploy_app.sh"

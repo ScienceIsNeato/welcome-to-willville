@@ -162,7 +162,7 @@ export function TownStageChrome({
         </div>
       )}
 
-      {!mobileSafeMode && detailBoardVisible && boardStop && (
+      {!mobileSafeMode && detailBoardVisible && (
         <div
           style={{
             gridRow: "3 / 4",

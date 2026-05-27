@@ -13,7 +13,7 @@ export function normalizeBoardText(input: string): string {
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/&/g, "AND")
-    .replace(/[^A-Z0-9 .,'#/:!?…-]/gi, " ")
+    .replace(/[^A-Z0-9 .,'#/:!?…@-]/gi, " ")
     .replace(/\s+/g, " ")
     .trim()
     .toUpperCase();
