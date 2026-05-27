@@ -393,10 +393,10 @@ echo "════════════════════════�
 
 if $MOBILE_MODE; then
   MOBILE_DEFAULT_ARGS=()
-  if ! has_arg "--path" "${MOBILE_ARGS[@]}"; then
+  if ! has_arg "--path" ${MOBILE_ARGS[@]+"${MOBILE_ARGS[@]}"}; then
     MOBILE_DEFAULT_ARGS+=(--path /)
   fi
-  if ! has_arg "--device" "${MOBILE_ARGS[@]}"; then
+  if ! has_arg "--device" ${MOBILE_ARGS[@]+"${MOBILE_ARGS[@]}"}; then
     MOBILE_DEFAULT_ARGS+=(--device iphone-14)
   fi
 
@@ -405,6 +405,6 @@ if $MOBILE_MODE; then
   "$ROOT/scripts/mobile_preview.sh" \
     --url "http://127.0.0.1:$WRANGLER_PORT" \
     --headed \
-    "${MOBILE_DEFAULT_ARGS[@]}" \
-    "${MOBILE_ARGS[@]}"
+    ${MOBILE_DEFAULT_ARGS[@]+"${MOBILE_DEFAULT_ARGS[@]}"} \
+    ${MOBILE_ARGS[@]+"${MOBILE_ARGS[@]}"}
 fi
