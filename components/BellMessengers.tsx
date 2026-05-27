@@ -136,6 +136,25 @@ export function BellMessengers({
 
   const [frameTime, setFrameTime] = useState(0);
   const audioRef = useRef<BellAudioSession | null>(null);
+  const animationEndTime = useMemo(() => {
+    if (phase !== "done" || startedAt === null) {
+      return null;
+    }
+
+    const lastArrivalSeconds = messengers.reduce((latest, messenger, index) => {
+      const outboundStart = index * stagger;
+      const outboundEnd = outboundStart + OUTBOUND_SECONDS;
+      const completedAt = completedAtByStopId[messenger.stopId];
+      const resolvedAtSeconds =
+        completedAt === undefined
+          ? outboundEnd
+          : Math.max(0, (completedAt - startedAt) / 1000);
+      const returnStart = Math.max(resolvedAtSeconds, outboundEnd);
+      return Math.max(latest, returnStart + RETURN_SECONDS);
+    }, 0);
+
+    return startedAt + lastArrivalSeconds * 1000;
+  }, [completedAtByStopId, messengers, phase, stagger, startedAt]);
 
   useEffect(() => {
     if ((phase !== "running" && phase !== "done") || startedAt === null) {
@@ -145,6 +164,9 @@ export function BellMessengers({
     let raf = 0;
     const tick = (timestamp: number) => {
       setFrameTime(timestamp);
+      if (animationEndTime !== null && timestamp >= animationEndTime) {
+        return;
+      }
       raf = window.requestAnimationFrame(tick);
     };
 
@@ -152,7 +174,7 @@ export function BellMessengers({
     return () => {
       window.cancelAnimationFrame(raf);
     };
-  }, [phase, startedAt]);
+  }, [animationEndTime, phase, startedAt]);
 
   useEffect(() => {
     if (phase !== "running" || startedAt === null || messengers.length === 0) {
@@ -201,6 +223,22 @@ export function BellMessengers({
     stopBellAudioSession(audioRef.current);
     audioRef.current = null;
   }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "done" || animationEndTime === null) {
+      return;
+    }
+
+    const remaining = Math.max(0, animationEndTime - performance.now());
+    const timer = window.setTimeout(() => {
+      stopBellAudioSession(audioRef.current);
+      audioRef.current = null;
+    }, remaining);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [animationEndTime, phase]);
 
   useEffect(
     () => () => {

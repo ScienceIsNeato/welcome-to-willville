@@ -57,8 +57,7 @@ if [[ -z "$GANGLIA_STUDIO" ]]; then
   for candidate in \
     "$ROOT/../ganglia-studio" \
     "$ROOT/../ganglia-core/ganglia-studio" \
-    "$ROOT/../../ganglia-core/ganglia-studio" \
-    "/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio"; do
+    "$ROOT/../../ganglia-core/ganglia-studio"; do
     if [[ -d "$candidate/.git" ]] || [[ -d "$candidate/src" ]]; then
       GANGLIA_STUDIO="$candidate"
       break
@@ -79,23 +78,37 @@ mkdir -p "$OUTPUT_DIR"
 STYLE="A single tall sailing ship seen from the SIDE (profile view, broadside), facing RIGHT. Board-game miniature piece style. Dense hand-painted diorama style, warm saturated colors, crisp tiny details, wobbly hand-inked outlines, painted wood texture. Transparent background (PNG alpha). No water, no waves, no background — just the ship on nothing. IMPORTANT: side-on profile view, not top-down."
 
 CONFIG="$OUTPUT_DIR/$STOP_ID-ship.tti.json"
-node -e "
-  const config = {
-    style: '',
-    backend: 'dalle',
-    model: 'gpt-image-1',
-    size: '1024x1024',
-    quality: 'high',
-    output_dir: '$OUTPUT_DIR',
-    images: [{
-      id: '$STOP_ID-ship',
-      prompt: \`$STYLE $DESCRIPTION\`,
-      raw_prompt: true,
-    }],
-  };
-  require('fs').writeFileSync('$CONFIG', JSON.stringify(config, null, 2) + '\n');
-  console.log('Config written: $CONFIG');
-"
+env \
+  BESPOKE_OUTPUT_DIR="$OUTPUT_DIR" \
+  BESPOKE_STOP_ID="$STOP_ID" \
+  BESPOKE_STYLE="$STYLE" \
+  BESPOKE_DESCRIPTION="$DESCRIPTION" \
+  BESPOKE_CONFIG="$CONFIG" \
+  node -e '
+    const fs = require("fs");
+    const {
+      BESPOKE_OUTPUT_DIR,
+      BESPOKE_STOP_ID,
+      BESPOKE_STYLE,
+      BESPOKE_DESCRIPTION,
+      BESPOKE_CONFIG,
+    } = process.env;
+    const config = {
+      style: "",
+      backend: "dalle",
+      model: "gpt-image-1",
+      size: "1024x1024",
+      quality: "high",
+      output_dir: BESPOKE_OUTPUT_DIR,
+      images: [{
+        id: `${BESPOKE_STOP_ID}-ship`,
+        prompt: `${BESPOKE_STYLE} ${BESPOKE_DESCRIPTION}`,
+        raw_prompt: true,
+      }],
+    };
+    fs.writeFileSync(BESPOKE_CONFIG, JSON.stringify(config, null, 2) + "\n");
+    console.log(`Config written: ${BESPOKE_CONFIG}`);
+  '
 
 # ── generate image ───────────────────────────────────────────────────────────
 
@@ -126,10 +139,12 @@ echo "Raw image: $RAW_IMAGE"
 
 FINAL_PNG="$SHIP_DIR/$STOP_ID-ship.png"
 
-node -e "
-const sharp = require('sharp');
+env RAW_IMAGE="$RAW_IMAGE" FINAL_PNG="$FINAL_PNG" node -e '
+const sharp = require("sharp");
+
 (async () => {
-  const trimmed = await sharp('$RAW_IMAGE')
+  const { RAW_IMAGE, FINAL_PNG } = process.env;
+  const trimmed = await sharp(RAW_IMAGE)
     .trim()
     .toBuffer({ resolveWithObject: true });
 
@@ -139,39 +154,50 @@ const sharp = require('sharp');
   const h = Math.round(trimmed.info.height * scale);
 
   const resized = await sharp(trimmed.data)
-    .resize(w, h, { fit: 'inside' })
+    .resize(w, h, { fit: "inside" })
     .toBuffer();
 
   const left = Math.round((88 - w) / 2);
   const top = Math.round((100 - h) / 2);
 
   await sharp({
-    create: { width: 88, height: 100, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+    create: {
+      width: 88,
+      height: 100,
+      channels: 4,
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    },
   })
     .composite([{ input: resized, left, top }])
     .png()
-    .toFile('$FINAL_PNG');
+    .toFile(FINAL_PNG);
 
-  console.log('Ship sprite saved: $FINAL_PNG (' + w + 'x' + h + ' in 88x100)');
+  console.log(`Ship sprite saved: ${FINAL_PNG} (${w}x${h} in 88x100)`);
 })();
-"
+'
 
 # ── update manifest ──────────────────────────────────────────────────────────
 
-node -e "
-const fs = require('fs');
-const manifest = JSON.parse(fs.readFileSync('$MANIFEST', 'utf8'));
-const idx = manifest.ships.findIndex(s => s.stopId === '$STOP_ID');
-const entry = { stopId: '$STOP_ID', src: '/art/stops/$STOP_ID-ship.png' };
+env MANIFEST="$MANIFEST" BESPOKE_STOP_ID="$STOP_ID" node -e '
+const fs = require("fs");
+const { MANIFEST, BESPOKE_STOP_ID } = process.env;
+const manifest = JSON.parse(fs.readFileSync(MANIFEST, "utf8"));
+const idx = manifest.ships.findIndex((ship) => ship.stopId === BESPOKE_STOP_ID);
+const entry = {
+  stopId: BESPOKE_STOP_ID,
+  src: `/art/stops/${BESPOKE_STOP_ID}-ship.png`,
+};
+
 if (idx >= 0) {
   manifest.ships[idx] = entry;
-  console.log('Updated existing ship entry for $STOP_ID');
+  console.log(`Updated existing ship entry for ${BESPOKE_STOP_ID}`);
 } else {
   manifest.ships.push(entry);
-  console.log('Added new ship entry for $STOP_ID');
+  console.log(`Added new ship entry for ${BESPOKE_STOP_ID}`);
 }
-fs.writeFileSync('$MANIFEST', JSON.stringify(manifest, null, 2) + '\n');
-"
+
+fs.writeFileSync(MANIFEST, JSON.stringify(manifest, null, 2) + "\n");
+'
 
 echo ""
 echo "=== Done ==="

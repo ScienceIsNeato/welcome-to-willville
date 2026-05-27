@@ -266,10 +266,19 @@ export const onRequestPost: PagesFunction<Env> = async ({ env }) => {
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
+      let streamClosed = false;
       const push = (
         event: ManifestStartEvent | ManifestRepoEvent | ManifestCompleteEvent,
       ) => {
-        controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+        if (streamClosed) {
+          return;
+        }
+
+        try {
+          controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+        } catch {
+          streamClosed = true;
+        }
       };
 
       push({
@@ -361,7 +370,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ env }) => {
         newlyRegistered,
         total: candidates.length,
       });
-      controller.close();
+
+      if (!streamClosed) {
+        try {
+          controller.close();
+        } catch {
+          streamClosed = true;
+        }
+      }
     },
   });
 
