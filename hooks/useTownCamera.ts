@@ -94,7 +94,7 @@ export function screenToWorld(
 
 export function useTownCamera(
   svgRef: RefObject<SVGSVGElement | null>,
-  stageRef: RefObject<HTMLDivElement | null>,
+  _stageRef: RefObject<HTMLDivElement | null>,
   perf?: TownPerfProbe,
 ) {
   // MotionValues drive the visual transform directly — no React renders mid-drag.
@@ -317,11 +317,11 @@ export function useTownCamera(
       },
     },
     {
-      target: stageRef,
+      target: svgRef,
       drag: {
         filterTaps: true,
         threshold: 4,
-        pointer: { capture: false, touch: true },
+        pointer: { capture: false },
       },
       wheel: { eventOptions: { passive: false } },
     },

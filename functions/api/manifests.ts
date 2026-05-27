@@ -56,6 +56,32 @@ type RegisteredRepo = {
   stopId: string;
 };
 
+type ManifestStartEvent = {
+  type: "start";
+  discovered: string[];
+  registered: RegisteredRepo[];
+  newlyRegistered: string[];
+  total: number;
+};
+
+type ManifestRepoEvent = {
+  type: "repo";
+  repo: string;
+  stopId: string;
+  result: "updated" | "skipped" | "error";
+};
+
+type ManifestCompleteEvent = {
+  type: "complete";
+  updated: string[];
+  skipped: string[];
+  errors: string[];
+  discovered: string[];
+  registered: RegisteredRepo[];
+  newlyRegistered: string[];
+  total: number;
+};
+
 // ---------------------------------------------------------------------------
 // GitHub helpers
 // ---------------------------------------------------------------------------
@@ -229,68 +255,120 @@ export const onRequestPost: PagesFunction<Env> = async ({ env }) => {
   const newlyRegistered = registered
     .filter((r) => r.source === "auto")
     .map((r) => r.fullName);
+  const registeredByRepo = new Map(
+    registered.map((repo) => [repo.fullName, repo] as const),
+  );
 
   const updated: string[] = [];
   const skipped: string[] = [];
   const errors: string[] = [];
+  const discovered = candidates.map((repo) => repo.full_name);
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const push = (
+        event: ManifestStartEvent | ManifestRepoEvent | ManifestCompleteEvent,
+      ) => {
+        controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
+      };
 
-  await Promise.allSettled(
-    candidates.map(async (r) => {
-      try {
-        const milestones = await fetchMilestones(r.full_name, token);
-        const meta: RepoMeta = {
-          fullName: r.full_name,
-          defaultBranch: r.default_branch,
-          description: r.description,
-          pushedAt: r.pushed_at,
-          openMilestones: milestones,
-        };
-        const packet = buildPacket(meta);
-        const existing = await getStatusMd(
-          r.full_name,
-          r.default_branch,
-          token,
-        );
-        const newBody = applyPacket(existing?.body ?? null, packet);
+      push({
+        type: "start",
+        discovered,
+        registered,
+        newlyRegistered,
+        total: candidates.length,
+      });
 
-        // Skip if content is identical
-        if (existing && existing.body.trim() === newBody.trim()) {
-          skipped.push(r.full_name);
-          return;
-        }
+      await Promise.allSettled(
+        candidates.map(async (repo) => {
+          const registeredRepo = registeredByRepo.get(repo.full_name);
 
-        const ok = await putStatusMd(
-          r.full_name,
-          r.default_branch,
-          token,
-          newBody,
-          existing?.sha,
-          "chore: update willville status packet",
-        );
+          try {
+            const milestones = await fetchMilestones(repo.full_name, token);
+            const meta: RepoMeta = {
+              fullName: repo.full_name,
+              defaultBranch: repo.default_branch,
+              description: repo.description,
+              pushedAt: repo.pushed_at,
+              openMilestones: milestones,
+            };
+            const packet = buildPacket(meta);
+            const existing = await getStatusMd(
+              repo.full_name,
+              repo.default_branch,
+              token,
+            );
+            const newBody = applyPacket(existing?.body ?? null, packet);
 
-        if (ok) updated.push(r.full_name);
-        else errors.push(r.full_name);
-      } catch {
-        errors.push(r.full_name);
-      }
-    }),
-  );
+            if (existing && existing.body.trim() === newBody.trim()) {
+              skipped.push(repo.full_name);
+              push({
+                type: "repo",
+                repo: repo.full_name,
+                stopId: registeredRepo?.stopId ?? repoStopId(repo.full_name),
+                result: "skipped",
+              });
+              return;
+            }
 
-  return new Response(
-    JSON.stringify({
-      updated,
-      skipped,
-      errors,
-      discovered: candidates.map((r) => r.full_name),
-      registered,
-      newlyRegistered,
-      total: candidates.length,
-    }),
-    {
-      headers: {
-        "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "no-store",
-      },
+            const ok = await putStatusMd(
+              repo.full_name,
+              repo.default_branch,
+              token,
+              newBody,
+              existing?.sha,
+              "chore: update willville status packet",
+            );
+
+            if (ok) {
+              updated.push(repo.full_name);
+              push({
+                type: "repo",
+                repo: repo.full_name,
+                stopId: registeredRepo?.stopId ?? repoStopId(repo.full_name),
+                result: "updated",
+              });
+              return;
+            }
+
+            errors.push(repo.full_name);
+            push({
+              type: "repo",
+              repo: repo.full_name,
+              stopId: registeredRepo?.stopId ?? repoStopId(repo.full_name),
+              result: "error",
+            });
+          } catch {
+            errors.push(repo.full_name);
+            push({
+              type: "repo",
+              repo: repo.full_name,
+              stopId: registeredRepo?.stopId ?? repoStopId(repo.full_name),
+              result: "error",
+            });
+          }
+        }),
+      );
+
+      push({
+        type: "complete",
+        updated,
+        skipped,
+        errors,
+        discovered,
+        registered,
+        newlyRegistered,
+        total: candidates.length,
+      });
+      controller.close();
     },
-  );
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "application/x-ndjson; charset=utf-8",
+      "Cache-Control": "no-store",
+    },
+  });
 };

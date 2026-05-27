@@ -12,6 +12,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ```bash
 scripts/deploy_app.sh          # build + start (auto-allocates a port)
+scripts/deploy_app.sh --mobile # build + start + open headed mobile preview
 scripts/deploy_app.sh --stop   # tear down this worktree's deployment
 scripts/deploy_app.sh --status # show all running deployments
 ```

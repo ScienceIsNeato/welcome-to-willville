@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Cleaning up the town map markers so buildings are the clickable target",
-    "direction": "Check the map for any remaining marker alignment weirdness",
-    "last_update": "2026-05-26T16:57:23Z"
+    "status": "Tightening the town bell so the couriers keep circling and humming until each site actually finishes, while the phone detail toggle lives in the corner where that old refresh button used to be",
+    "direction": "Keep smoothing the live town feedback until the bell and mobile controls feel intentional instead of stitched together",
+    "last_update": "2026-05-27T06:59:42Z"
   }
 }
