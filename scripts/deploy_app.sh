@@ -137,6 +137,64 @@ cleanup_stale() {
   done
 }
 
+# ── kill orphan node/workerd processes ────────────────────────────────────────
+
+cleanup_orphans() {
+  # Collect ports claimed by live lockfiles
+  local claimed_ports=""
+  for lockfile in "$DEPLOY_DIR"/*.json; do
+    [[ -f "$lockfile" ]] || continue
+    local data
+    data=$(cat "$lockfile")
+    claimed_ports="$claimed_ports $(jq_field "$data" "wranglerPort")"
+  done
+
+  # Find node/workerd listeners in our port range that aren't claimed
+  local orphan_pids=""
+  for port in $(seq "$PORT_RANGE_START" 2 "$PORT_RANGE_END"); do
+    if echo "$claimed_ports" | grep -qw "$port"; then
+      continue
+    fi
+    local pids
+    pids=$(lsof -ti :"$port" 2>/dev/null || true)
+    if [[ -n "$pids" ]]; then
+      orphan_pids="$orphan_pids $pids"
+    fi
+  done
+
+  if [[ -n "${orphan_pids// /}" ]]; then
+    echo "  Killing orphan processes on unclaimed ports..."
+    for pid in $(echo "$orphan_pids" | tr ' ' '\n' | sort -u); do
+      [[ -n "$pid" ]] && kill "$pid" 2>/dev/null || true
+    done
+    sleep 1
+    for pid in $(echo "$orphan_pids" | tr ' ' '\n' | sort -u); do
+      [[ -n "$pid" ]] && kill -9 "$pid" 2>/dev/null || true
+    done
+  fi
+
+  # Also clean up any dead willville screen sessions
+  local stale_screens
+  stale_screens=$(screen -ls 2>/dev/null | grep -o '[0-9]*\.willville-[a-f0-9]*' || true)
+  for sess in $stale_screens; do
+    local sess_name="${sess#*.}"
+    local found=false
+    for lockfile in "$DEPLOY_DIR"/*.json; do
+      [[ -f "$lockfile" ]] || continue
+      local data
+      data=$(cat "$lockfile")
+      if [[ "$(jq_field "$data" "screenSession")" == "$sess_name" ]]; then
+        found=true
+        break
+      fi
+    done
+    if ! $found; then
+      echo "  Killing orphan screen: $sess_name"
+      screen -S "$sess_name" -X quit 2>/dev/null || true
+    fi
+  done
+}
+
 # ── kill this worktree's deployment ──────────────────────────────────────────
 
 stop_deployment() {
@@ -286,11 +344,13 @@ BRANCH=$(git -C "$ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown
 case "$ACTION" in
   stop)
     stop_deployment "$ROOT"
+    cleanup_orphans
     exit 0
     ;;
   status)
     echo "Willville deployments:"
     cleanup_stale
+    cleanup_orphans
     show_status
     exit 0
     ;;
@@ -304,6 +364,7 @@ echo ""
 # 1. Clean up stale deployments everywhere
 echo "Cleaning stale deployments..."
 cleanup_stale
+cleanup_orphans
 
 # 2. Stop any existing deployment from THIS worktree
 stop_deployment "$ROOT"
