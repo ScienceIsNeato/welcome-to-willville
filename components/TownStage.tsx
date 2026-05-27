@@ -31,6 +31,7 @@ import { Canal } from "./Canal";
 import { ChimneySmoke } from "./ChimneySmoke";
 import { DynamicWalls } from "./DynamicWalls";
 import { GeneratedTownBase } from "./GeneratedTownBase";
+import { TownGlyphHalos } from "./TownGlyphHalos";
 import { WorldWorkerLayer } from "./WorldWorkerLayer";
 import { SpecialTownLandmarks } from "./SpecialTownLandmarks";
 import { BellMessengers } from "./BellMessengers";
@@ -1031,6 +1032,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
 
               <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
                 <GeneratedTownBase stops={currentStops} />
+                <TownGlyphHalos stops={currentStops} />
                 {!mobileSafeMode && <ChimneySmoke />}
                 {!mobileSafeMode && <DynamicWalls />}
                 <Canal boats={boats} layer="base" />

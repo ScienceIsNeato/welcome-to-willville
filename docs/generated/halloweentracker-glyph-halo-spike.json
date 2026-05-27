@@ -1,0 +1,25 @@
+{
+  "stopId": "halloweentracker",
+  "districtId": "gates-of-hell",
+  "sourceImage": "/art/town/districts/gates-of-hell.png",
+  "overlayOutput": "/art/town/glyph-halos/halloweentracker.png",
+  "maskBox": {
+    "x": 989,
+    "y": 795,
+    "width": 140,
+    "height": 140
+  },
+  "cropBox": {
+    "x": 965,
+    "y": 771,
+    "width": 188,
+    "height": 188
+  },
+  "authoringCrop": {
+    "left": 3860,
+    "top": 3084,
+    "width": 752,
+    "height": 752
+  },
+  "dryRun": true
+}
