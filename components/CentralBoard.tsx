@@ -364,12 +364,13 @@ function selectedStopRows(stop: Stop): string[] {
   return rows.slice(0, BOARD_ROWS);
 }
 
-function commitSummary(stop: Stop): string {
+function commitSummary(stop: Stop, long: boolean): string {
   const c3 = stop.commits3d ?? 0;
   const c7 = stop.commits7d ?? 0;
   const c21 = stop.commits21d ?? 0;
   if (c3 + c7 + c21 === 0) return "";
-  return `${c3}/${c7}/${c21} COMMITS`;
+  if (long) return `${c3}/${c7}/${c21} COMMITS PER 3/7/21 DAYS`;
+  return `${c3}/${c7}/${c21}`;
 }
 
 function districtRows(districtId: string, stops: Stop[]): string[] {
@@ -401,7 +402,7 @@ function districtRows(districtId: string, stops: Stop[]): string[] {
     }
 
     const leftPart = `${String(i + 1).padStart(2, "0")} ${stopLabel(stop)}`;
-    const rightPart = commitSummary(stop);
+    const rightPart = commitSummary(stop, i === 0);
 
     let rowStr = "";
     if (leftPart.length + 1 + rightPart.length <= BOARD_COLUMNS) {
@@ -438,7 +439,7 @@ function timetableRows(queue: Stop[]): string[] {
       rows.push(EMPTY_ROW);
       continue;
     }
-    const activity = commitSummary(stop);
+    const activity = commitSummary(stop, i === 0);
     rows.push(
       formatBoardRow(
         `${String(i + 1).padStart(2, "0")} ${stopLabel(stop)} ${activity}`,
