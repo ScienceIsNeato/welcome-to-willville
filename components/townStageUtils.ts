@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { TOWN_OFFSET } from "@/lib/willville";
+import { TOWN_CENTER, TOWN_OFFSET } from "@/lib/willville";
 import { mostActiveStops, type Stop } from "@/lib/town";
 import {
   BOARD_COLUMNS as CENTRAL_BOARD_COLUMNS,
@@ -8,6 +8,14 @@ import {
 } from "./centralBoardConstants";
 
 const STOP_HIT_RADIUS = 24;
+const PAGES_API_ORIGIN = "https://welcome-to-willville.pages.dev";
+const API_FALLBACK_HOSTS = new Set(["willville.ai", "www.willville.ai"]);
+
+export const MOBILE_TOWN_CAMERA = {
+  cx: TOWN_CENTER.x,
+  cy: TOWN_CENTER.y,
+  scale: 1.35,
+};
 
 export type BoardAnnouncement = {
   rows: string[];
@@ -18,6 +26,60 @@ export type ClientPoint = {
   clientX: number;
   clientY: number;
 };
+
+function fallbackApiUrl(path: string): string | null {
+  if (typeof window === "undefined") return null;
+  if (!path.startsWith("/api/")) return null;
+  if (!API_FALLBACK_HOSTS.has(window.location.hostname)) return null;
+  return `${PAGES_API_ORIGIN}${path}`;
+}
+
+function buildFallbackRequestInit(init?: RequestInit): RequestInit {
+  return {
+    ...init,
+    mode: "cors",
+    credentials: "omit",
+  };
+}
+
+export async function fetchApiRoute(
+  path: string,
+  init?: RequestInit,
+): Promise<Response> {
+  let primaryResponse: Response | null = null;
+
+  try {
+    primaryResponse = await fetch(path, init);
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw error;
+    }
+  }
+
+  if (primaryResponse?.ok) {
+    return primaryResponse;
+  }
+
+  const fallbackUrl = fallbackApiUrl(path);
+  if (!fallbackUrl) {
+    if (primaryResponse) {
+      return primaryResponse;
+    }
+    throw new Error(`Failed to fetch ${path}`);
+  }
+
+  try {
+    return await fetch(fallbackUrl, buildFallbackRequestInit(init));
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw error;
+    }
+    if (primaryResponse) {
+      return primaryResponse;
+    }
+    throw error;
+  }
+}
 
 export function waitForNextFrame(): Promise<void> {
   return new Promise((resolve) => {
@@ -217,7 +279,7 @@ function normalizeBoardText(input: string): string {
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/&/g, "AND")
-    .replace(/[^A-Z0-9 .,'#/:!?…-]/gi, " ")
+    .replace(/[^A-Z0-9 .,'#/:!?…@-]/gi, " ")
     .replace(/\s+/g, " ")
     .trim()
     .toUpperCase();
@@ -362,6 +424,20 @@ export function buildBellBoardAnnouncement(
   return {
     label: "Status Update",
     rows,
+  };
+}
+
+export function buildTourismBoardAnnouncement(): BoardAnnouncement {
+  return {
+    label: "Department of Tourism",
+    rows: [
+      centerBoardText("Want your own stop in town?"),
+      centerBoardText("Hire me to turn your"),
+      centerBoardText("crazy ideas into reality."),
+      centerBoardText("unique.will.martin@gmail.com"),
+      CENTRAL_BOARD_EMPTY_ROW,
+      CENTRAL_BOARD_EMPTY_ROW,
+    ],
   };
 }
 

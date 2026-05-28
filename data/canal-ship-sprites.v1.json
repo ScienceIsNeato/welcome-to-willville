@@ -7,75 +7,75 @@
       "src": "/art/stops/canal-ship.png"
     },
     {
-      "stopId": "the-mop-bucket",
+      "stopId": "slop-mop",
       "src": "/art/stops/the-mop-bucket-ship.png"
     },
     {
-      "stopId": "the-reactor",
+      "stopId": "ganglia-core",
       "src": "/art/stops/the-reactor-ship.png"
     },
     {
-      "stopId": "willville-town-hall",
+      "stopId": "welcome-to-willville",
       "src": "/art/stops/willville-town-hall-ship.png"
     },
     {
-      "stopId": "the-kennel-storefront",
+      "stopId": "fogofdog-frontend",
       "src": "/art/stops/the-kennel-storefront-ship.png"
     },
     {
-      "stopId": "the-solitude-stacks",
+      "stopId": "10000_years_of_solitude",
       "src": "/art/stops/the-solitude-stacks-ship.png"
     },
     {
-      "stopId": "the-atelier",
+      "stopId": "ganglia-studio",
       "src": "/art/stops/the-atelier-ship.png"
     },
     {
-      "stopId": "the-toolworks",
+      "stopId": "ganglia-common",
       "src": "/art/stops/the-toolworks-ship.png"
     },
     {
-      "stopId": "the-watchful-pumpkin",
+      "stopId": "halloweentracker",
       "src": "/art/stops/the-watchful-pumpkin-ship.png"
     },
     {
-      "stopId": "the-action-dock",
+      "stopId": "slop-mop-action",
       "src": "/art/stops/the-action-dock-ship.png"
     },
     {
-      "stopId": "the-slop-bucket",
+      "stopId": "bucket-o-slop",
       "src": "/art/stops/the-slop-bucket-ship.png"
     },
     {
-      "stopId": "the-rulebook",
+      "stopId": "cursor-rules",
       "src": "/art/stops/the-rulebook-ship.png"
     },
     {
-      "stopId": "the-chroniclers-tower",
+      "stopId": "chronicchronicler",
       "src": "/art/stops/the-chroniclers-tower-ship.png"
     },
     {
-      "stopId": "the-vampires-crypt",
+      "stopId": "lonely_little_vampire",
       "src": "/art/stops/the-vampires-crypt-ship.png"
     },
     {
-      "stopId": "the-roundabout",
+      "stopId": "loopcloser",
       "src": "/art/stops/the-roundabout-ship.png"
     },
     {
-      "stopId": "the-light-mill",
+      "stopId": "razer-ripple",
       "src": "/art/stops/the-light-mill-ship.png"
     },
     {
-      "stopId": "the-pantry-bot",
+      "stopId": "grocery-automation",
       "src": "/art/stops/the-pantry-bot-ship.png"
     },
     {
-      "stopId": "randy-sharons-cottage",
+      "stopId": "randy-sharon",
       "src": "/art/stops/randy-sharons-cottage-ship.png"
     },
     {
-      "stopId": "the-wallow",
+      "stopId": "thewallow",
       "src": "/art/stops/the-wallow-ship.png"
     }
   ]

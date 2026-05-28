@@ -59,6 +59,7 @@ next-env.d.ts
 
 # Agent/session runtime locks
 .claude/*.lock
+.specstory/
 
 # slop-mop working directory (machine-local state)
 .slopmop/

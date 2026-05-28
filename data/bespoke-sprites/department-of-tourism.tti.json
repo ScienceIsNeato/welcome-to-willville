@@ -1,0 +1,14 @@
+{
+  "style": "Dense board-game diorama miniature, elevated three-quarter top-down view, hand-painted texture, crisp tiny details, warm saturated colors, soft drop shadow beneath, transparent background (PNG alpha). The object should be a self-contained sprite about 100x120 pixels conceptually, centered in frame with empty space around it.",
+  "backend": "dalle",
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "quality": "high",
+  "output_dir": "./output/bespoke-sprites",
+  "images": [
+    {
+      "id": "department-of-tourism",
+      "prompt": "A grand Department of Tourism kiosk for a whimsical town square, seen from an elevated three-quarter top-down angle as a tiny board-game miniature building. The structure should feel epic but readable at small size: a welcoming civic pavilion with a teal-blue roof, polished brass trim, glowing lanterns, a little observation deck, map plaques, compass-rose mosaic details, travel banners, flower boxes, and a warm magical invitation vibe. The front facade must feature a huge, crisp, easy-to-read sign emblazoned directly on the building that says exactly: DEPT. OF TOURISM. Make the sign the hero detail of the sprite, with bold capital letters, high contrast, and enough scale that the words stay readable even after the art is shrunk into a small game marker. No other readable text, no logos, no watermarks, transparent background."
+    }
+  ]
+}

@@ -14,6 +14,7 @@
 
 import type { PagesFunction } from "../types";
 import { heuristicForRepo } from "../../lib/willville.heuristics";
+import { withCorsHeaders } from "./cors";
 
 interface Env {
   GITHUB_PAT?: string;
@@ -219,17 +220,18 @@ function repoStopId(fullName: string): string {
 
 function registerRepo(repo: GitHubRepo): RegisteredRepo {
   const heuristic = heuristicForRepo(repo.full_name);
+  const stopId = repo.full_name.split("/")[1]!.toLowerCase();
   if (heuristic) {
     return {
       fullName: repo.full_name,
       source: "registry",
-      stopId: heuristic.stopId,
+      stopId,
     };
   }
   return {
     fullName: repo.full_name,
     source: "auto",
-    stopId: repoStopId(repo.full_name),
+    stopId,
   };
 }
 
@@ -237,12 +239,19 @@ function registerRepo(repo: GitHubRepo): RegisteredRepo {
 // Handler
 // ---------------------------------------------------------------------------
 
-export const onRequestPost: PagesFunction<Env> = async ({ env }) => {
+export const onRequestOptions: PagesFunction = async ({ request }) => {
+  return new Response(null, {
+    status: 204,
+    headers: withCorsHeaders(request),
+  });
+};
+
+export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const token = env.GITHUB_PAT;
   if (!token) {
     return new Response(JSON.stringify({ error: "No GITHUB_PAT configured" }), {
       status: 403,
-      headers: { "Content-Type": "application/json" },
+      headers: withCorsHeaders(request, { "Content-Type": "application/json" }),
     });
   }
 
@@ -382,9 +391,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ env }) => {
   });
 
   return new Response(stream, {
-    headers: {
+    headers: withCorsHeaders(request, {
       "Content-Type": "application/x-ndjson; charset=utf-8",
       "Cache-Control": "no-store",
-    },
+    }),
   });
 };

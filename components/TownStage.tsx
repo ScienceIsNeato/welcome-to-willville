@@ -7,7 +7,6 @@ import {
   useState,
   useRef,
   useCallback,
-  useDeferredValue,
   type MouseEvent,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
@@ -15,12 +14,13 @@ import { motion } from "framer-motion";
 import {
   DISTRICTS,
   TOWN,
-  TOWN_CENTER,
   TOWN_OFFSET,
   WORLD,
+  MANUAL_STOPS,
 } from "@/lib/willville";
 import type { Stop } from "@/lib/town";
 import { isKnownDistrict } from "@/lib/slugs";
+import { HEURISTICS } from "@/lib/willville.heuristics";
 import type { CanalBoat } from "@/lib/canal";
 import { DistrictZone } from "./DistrictZone";
 import { WorldSubstrate } from "./WorldSubstrate";
@@ -31,8 +31,9 @@ import { Canal } from "./Canal";
 import { ChimneySmoke } from "./ChimneySmoke";
 import { DynamicWalls } from "./DynamicWalls";
 import { GeneratedTownBase } from "./GeneratedTownBase";
+import { TownGlyphHalos } from "./TownGlyphHalos";
 import { WorldWorkerLayer } from "./WorldWorkerLayer";
-import { HollywoodSign } from "./HollywoodSign";
+import { SpecialTownLandmarks } from "./SpecialTownLandmarks";
 import { BellMessengers } from "./BellMessengers";
 import { TownPerfPanel } from "./TownPerfPanel";
 import { PanelChromeControls } from "./PanelChromeControls";
@@ -40,13 +41,15 @@ import { TownStageChrome } from "./TownStageChrome";
 import { screenToWorld, useTownCamera } from "@/hooks/useTownCamera";
 import { useTownInteractionProfiler } from "@/hooks/useTownInteractionProfiler";
 import { useTownPerfJourney } from "@/hooks/useTownPerfJourney";
-import { GENERATED_TOWN_LAYOUT } from "@/lib/town-layout";
 import {
   BELL_BOARD_FLASH_MS,
   DAY_MS,
+  MOBILE_TOWN_CAMERA,
   TOWN_ART_FEATHER,
   buildBellBoardAnnouncement,
   buildEasterEggAnnouncement,
+  buildTourismBoardAnnouncement,
+  fetchApiRoute,
   findStopAt,
   getBellErrorDetail,
   mergeStops,
@@ -59,11 +62,91 @@ import {
   readManifestProgress,
 } from "./townStageManifestProgress";
 
-const MOBILE_TOWN_CAMERA = {
-  cx: TOWN_CENTER.x,
-  cy: TOWN_CENTER.y,
-  scale: 1.35,
-};
+function formatHeuristics(
+  heuristics: typeof HEURISTICS,
+  updatedStops: Stop[],
+): string {
+  const repoStops = updatedStops.filter((s) => s.repo && s.isManual !== true);
+
+  const items = repoStops.map((stop) => {
+    const orig = heuristics.find(
+      (h) => h.repo.toLowerCase() === stop.repo?.toLowerCase(),
+    );
+
+    const linesStr = JSON.stringify(stop.lines);
+    const posStr = `{ x: ${stop.position.x}, y: ${stop.position.y} }`;
+
+    let parts = [
+      `    repo: ${JSON.stringify(stop.repo)},`,
+      `    displayName: ${JSON.stringify(stop.displayName)},`,
+      `    district: ${JSON.stringify(stop.district)},`,
+      `    lines: ${linesStr},`,
+      `    position: ${posStr},`,
+    ];
+
+    if (orig) {
+      if (orig.blurb) parts.push(`    blurb: ${JSON.stringify(orig.blurb)},`);
+      if (orig.queue) {
+        const q = orig.queue;
+        const queueStr =
+          `{\n      active: ${q.active},` +
+          (q.milestone
+            ? `\n      milestone: ${JSON.stringify(q.milestone)},`
+            : "") +
+          (q.etaDays !== undefined ? `\n      etaDays: ${q.etaDays},` : "") +
+          (q.priority !== undefined ? `\n      priority: ${q.priority},` : "") +
+          `\n    }`;
+        parts.push(`    queue: ${queueStr},`);
+      }
+    } else if (stop.blurb) {
+      parts.push(`    blurb: ${JSON.stringify(stop.blurb)},`);
+    }
+
+    return `  {\n${parts.join("\n")}\n  }`;
+  });
+
+  return `export const HEURISTICS: Heuristic[] = [\n${items.join(",\n\n")}\n];`;
+}
+
+function formatManualStops(
+  manualStops: typeof MANUAL_STOPS,
+  updatedStops: Stop[],
+): string {
+  const manualStopsInUpdated = updatedStops.filter((s) => s.isManual === true);
+
+  const items = manualStopsInUpdated.map((stop) => {
+    const orig = manualStops.find((m) => m.id === stop.id);
+
+    const linesStr = JSON.stringify(stop.lines);
+    const posStr = `{ x: ${stop.position.x}, y: ${stop.position.y} }`;
+
+    let parts = [
+      `    id: ${JSON.stringify(stop.id)},`,
+      `    displayName: ${JSON.stringify(stop.displayName)},`,
+      `    district: ${JSON.stringify(stop.district)},`,
+      `    lines: ${linesStr},`,
+      `    position: ${posStr},`,
+    ];
+
+    if (orig) {
+      if (orig.homepage)
+        parts.push(`    homepage: ${JSON.stringify(orig.homepage)},`);
+      if (orig.blurb) parts.push(`    blurb: ${JSON.stringify(orig.blurb)},`);
+      if (orig.statusState)
+        parts.push(`    statusState: ${JSON.stringify(orig.statusState)},`);
+    } else {
+      if (stop.homepage)
+        parts.push(`    homepage: ${JSON.stringify(stop.homepage)},`);
+      if (stop.blurb) parts.push(`    blurb: ${JSON.stringify(stop.blurb)},`);
+      if (stop.status?.state)
+        parts.push(`    statusState: ${JSON.stringify(stop.status.state)},`);
+    }
+
+    return `  {\n${parts.join("\n")}\n  }`;
+  });
+
+  return `export const MANUAL_STOPS: ManualStop[] = [\n${items.join(",\n\n")}\n];`;
+}
 
 /**
  * Persistent SVG stage with viewport camera (pan/zoom) and center HUD for stops.
@@ -71,21 +154,25 @@ const MOBILE_TOWN_CAMERA = {
 export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
-  const [stops] = useState<Stop[]>(initialStops);
+  const [localStops, setLocalStops] = useState<Stop[]>(initialStops);
   const isClient = useIsClient();
-  const deferredPathname = useDeferredValue(pathname);
-  const perfSearchParams = useMemo(() => {
-    if (!isClient) return null;
-    return new URLSearchParams(window.location.search);
-  }, [deferredPathname, isClient]);
-  const perfEnabled = perfSearchParams?.get("perf") === "1";
-  const perfAutorun = perfSearchParams?.get("autorun") === "1";
+  const searchParamsString = isClient ? window.location.search.slice(1) : "";
+  const query = new URLSearchParams(searchParamsString);
+  const siteTypeOverride = query.get("site_type");
+  const forcedMobileSafeMode =
+    siteTypeOverride === "mobile"
+      ? true
+      : siteTypeOverride === "desktop"
+        ? false
+        : null;
+  const perfEnabled = query.get("perf") === "1";
+  const perfAutorun = query.get("autorun") === "1";
   const routeWithCurrentSearch = useCallback(
     (path: string) => {
-      if (!isClient || !window.location.search) return path;
-      return `${path}${window.location.search}`;
+      if (!isClient || !searchParamsString) return path;
+      return `${path}?${searchParamsString}`;
     },
-    [isClient],
+    [isClient, searchParamsString],
   );
   const [now, setNow] = useState<number | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -116,7 +203,14 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const transitioningToStopIdRef = useRef<string | null>(null);
   const boardAnnouncementTimerRef = useRef<number | null>(null);
   const populateResetTimerRef = useRef<number | null>(null);
+  const activeDragIdRef = useRef<string | null>(null);
 
+  const [movedStops, setMovedStops] = useState<
+    Record<
+      string,
+      { original: { x: number; y: number }; current: { x: number; y: number } }
+    >
+  >({});
   const [liveStops, setLiveStops] = useState<Stop[] | null>(null);
   const [showCentralBoard, setShowCentralBoard] = useState(true);
   const [showDigitalBoard, setShowDigitalBoard] = useState(false);
@@ -124,7 +218,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const [digitalBoardOpacity, setDigitalBoardOpacity] = useState(0.75);
   const [showPerfPanel, setShowPerfPanel] = useState(true);
   const [perfPanelOpacity, setPerfPanelOpacity] = useState(0.94);
-  const [mobileSafeMode, setMobileSafeMode] = useState(false);
+  const [responsiveMobileSafeMode, setResponsiveMobileSafeMode] =
+    useState(false);
+  const mobileSafeMode = forcedMobileSafeMode ?? responsiveMobileSafeMode;
   const [mobileDrawerExpanded, setMobileDrawerExpanded] = useState(false);
   const [populating, setPopulating] = useState<
     "idle" | "running" | "done" | "error"
@@ -134,15 +230,133 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     Record<string, number>
   >({});
   const [bellErrorMessage, setBellErrorMessage] = useState("✕ Bell failed");
-  const [bellHovered, setBellHovered] = useState(false);
-  const [eggHovered, setEggHovered] = useState(false);
   const [boardAnnouncement, setBoardAnnouncement] =
     useState<BoardAnnouncement | null>(null);
   const mobileDefaultCameraAppliedRef = useRef(false);
 
-  const currentStops = useMemo(
-    () => mergeStops(stops, liveStops),
-    [liveStops, stops],
+  const isRepositionMode = pathname.startsWith("/reposition");
+
+  const currentStops = useMemo(() => {
+    if (isRepositionMode) {
+      return localStops;
+    }
+    return mergeStops(localStops, liveStops);
+  }, [localStops, liveStops, isRepositionMode]);
+
+  const handleMarkerDragStart = useCallback(
+    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
+      e.currentTarget.setPointerCapture(e.pointerId);
+      activeDragIdRef.current = stop.id;
+      setMovedStops((prev) => {
+        if (prev[stop.id]) return prev;
+        return {
+          ...prev,
+          [stop.id]: {
+            original: { ...stop.position },
+            current: { ...stop.position },
+          },
+        };
+      });
+    },
+    [],
+  );
+
+  const handleMarkerDragMove = useCallback(
+    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
+      if (activeDragIdRef.current !== stop.id) return;
+      const svg = svgRef.current;
+      if (!svg) return;
+      const snap = getCameraSnapshot();
+      const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
+
+      const newX = Math.round(wx - TOWN_OFFSET.x);
+      const newY = Math.round(wy - TOWN_OFFSET.y);
+
+      const clampedX = Math.max(0, Math.min(TOWN.width, newX));
+      const clampedY = Math.max(0, Math.min(TOWN.height, newY));
+
+      setLocalStops((prevStops) =>
+        prevStops.map((s) =>
+          s.id === stop.id
+            ? { ...s, position: { x: clampedX, y: clampedY } }
+            : s,
+        ),
+      );
+
+      setMovedStops((prev) => {
+        if (!prev[stop.id]) return prev;
+        return {
+          ...prev,
+          [stop.id]: {
+            ...prev[stop.id],
+            current: { x: clampedX, y: clampedY },
+          },
+        };
+      });
+    },
+    [getCameraSnapshot],
+  );
+
+  const handleMarkerDragEnd = useCallback(
+    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
+      if (activeDragIdRef.current === stop.id) {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+        activeDragIdRef.current = null;
+      }
+    },
+    [],
+  );
+
+  const handleResetStop = useCallback(
+    (stopId: string) => {
+      const item = movedStops[stopId];
+      if (!item) return;
+
+      setLocalStops((prevStops) =>
+        prevStops.map((s) =>
+          s.id === stopId ? { ...s, position: { ...item.original } } : s,
+        ),
+      );
+
+      setMovedStops((prev) => {
+        const next = { ...prev };
+        delete next[stopId];
+        return next;
+      });
+    },
+    [movedStops],
+  );
+
+  const handleResetAll = useCallback(() => {
+    setLocalStops((prevStops) =>
+      prevStops.map((s) => {
+        const item = movedStops[s.id];
+        return item ? { ...s, position: { ...item.original } } : s;
+      }),
+    );
+    setMovedStops({});
+  }, [movedStops]);
+
+  const [copied, setCopied] = useState(false);
+  const handleCopy = useCallback(() => {
+    const text = `// WELCOME TO WILLVILLE - UPDATED SITE POSITIONS
+// Copy the blocks below to update the coordinates in the codebase.
+
+// --- IN lib/willville.heuristics.ts ---
+${formatHeuristics(HEURISTICS, localStops)}
+
+// --- IN lib/willville.ts ---
+${formatManualStops(MANUAL_STOPS, localStops)}
+`;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
+  }, [localStops]);
+
+  const changedStops = Object.entries(movedStops).filter(
+    ([_, item]) =>
+      item.original.x !== item.current.x || item.original.y !== item.current.y,
   );
 
   const loadTown = useCallback(
@@ -150,7 +364,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       const url = options.fresh
         ? `/api/town?refresh=${encodeURIComponent(String(Date.now()))}`
         : "/api/town";
-      return fetch(url, {
+      return fetchApiRoute(url, {
         cache: options.fresh ? "no-store" : "default",
         signal: options.signal,
       })
@@ -174,6 +388,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   }, [loadTown]);
 
   useEffect(() => {
+    if (forcedMobileSafeMode !== null) return;
     if (!isClient || typeof window.matchMedia !== "function") {
       return;
     }
@@ -184,7 +399,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     );
 
     const apply = () => {
-      setMobileSafeMode(compactViewport.matches || touchLikeInput.matches);
+      setResponsiveMobileSafeMode(
+        compactViewport.matches || touchLikeInput.matches,
+      );
     };
 
     apply();
@@ -207,7 +424,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       compactViewport.removeListener(apply);
       touchLikeInput.removeListener(apply);
     };
-  }, [isClient]);
+  }, [forcedMobileSafeMode, isClient]);
 
   useEffect(
     () => () => {
@@ -233,7 +450,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     setBellCompletedAtByStopId({});
     setPopulating("running");
     setBellErrorMessage("✕ Bell failed");
-    fetch("/api/manifests", { method: "POST" })
+    fetchApiRoute("/api/manifests", { method: "POST" })
       .then(async (response) => {
         if (response.ok) {
           return readManifestProgress(response, (event) => {
@@ -308,11 +525,29 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     }, BELL_BOARD_FLASH_MS);
   }, []);
 
+  const handleTourism = useCallback(() => {
+    if (boardAnnouncementTimerRef.current !== null) {
+      window.clearTimeout(boardAnnouncementTimerRef.current);
+      boardAnnouncementTimerRef.current = null;
+    }
+    transitioningToStopIdRef.current = dismissedStopIdRef.current = null;
+    setSelectedStop(null);
+    setShowDigitalBoard(true);
+    setMobileDrawerExpanded(false);
+    setShowCentralBoard(true);
+    setBoardAnnouncement(buildTourismBoardAnnouncement());
+    boardAnnouncementTimerRef.current = window.setTimeout(() => {
+      setBoardAnnouncement(null);
+      boardAnnouncementTimerRef.current = null;
+    }, BELL_BOARD_FLASH_MS);
+    router.replace(routeWithCurrentSearch("/"), { scroll: false });
+  }, [routeWithCurrentSearch, router]);
+
   const [boats, setBoats] = useState<CanalBoat[]>([]);
   useEffect(() => {
     let cancelled = false;
     const load = () =>
-      fetch("/api/canal")
+      fetchApiRoute("/api/canal")
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
           if (!cancelled && data && Array.isArray(data.boats)) {
@@ -377,7 +612,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         ) ?? null)
       : null;
   const boardStop = hydratedSelectedStop ?? pathSelectedStop;
-  const detailBoardVisible = !!boardStop && showDigitalBoard;
+  const detailBoardVisible =
+    showDigitalBoard && (!mobileSafeMode || !!boardStop);
   const mobileDrawerVisible = mobileSafeMode && detailBoardVisible;
   const areChromeBoardsHidden = !showCentralBoard && !detailBoardVisible;
 
@@ -463,6 +699,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
   const enterDistrict = useCallback(
     (district: (typeof DISTRICTS)[number]) => {
+      if (isRepositionMode) return;
       transitioningToStopIdRef.current = null;
       dismissedStopIdRef.current = pathStopId;
       setSelectedStop(null);
@@ -472,11 +709,12 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         scroll: false,
       });
     },
-    [pathStopId, routeWithCurrentSearch, router],
+    [pathStopId, routeWithCurrentSearch, router, isRepositionMode],
   );
 
   const handleStageClick = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
+      if (isRepositionMode) return;
       const svg = svgRef.current;
       if (!svg || wasDragging()) return;
       const snap = getCameraSnapshot();
@@ -484,11 +722,18 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       const hit = findStopAt(currentStops, wx, wy, snap.scale);
       if (hit) openStopHud(hit);
     },
-    [currentStops, getCameraSnapshot, wasDragging, openStopHud],
+    [
+      currentStops,
+      getCameraSnapshot,
+      wasDragging,
+      openStopHud,
+      isRepositionMode,
+    ],
   );
 
   const handleStageDoubleClick = useCallback(
     (e: MouseEvent<HTMLDivElement>) => {
+      if (isRepositionMode) return;
       markSkipDrag();
       const svg = svgRef.current;
       if (!svg) return;
@@ -513,6 +758,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       openStopHud,
       selectedStop,
       zoomAtWorldPoint,
+      isRepositionMode,
     ],
   );
 
@@ -538,7 +784,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   );
 
   const showWelcomeHint =
-    !mobileSafeMode && !boardStop && pathDistrict === null;
+    !mobileSafeMode && !boardStop && pathDistrict === null && !showDigitalBoard;
   const stageControlTop = mobileSafeMode
     ? showCentralBoard
       ? 132
@@ -589,9 +835,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         boats={boats}
         announcementRows={boardAnnouncement?.rows}
         announcementLabel={boardAnnouncement?.label}
-        showCentralBoard={showCentralBoard}
-        showDigitalBoard={showDigitalBoard}
-        detailBoardVisible={detailBoardVisible}
+        showCentralBoard={!isRepositionMode && showCentralBoard}
+        showDigitalBoard={!isRepositionMode && showDigitalBoard}
+        detailBoardVisible={!isRepositionMode && detailBoardVisible}
         mobileDrawerExpanded={mobileDrawerExpanded}
         centralBoardOpacity={centralBoardOpacity}
         digitalBoardOpacity={digitalBoardOpacity}
@@ -793,6 +1039,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
               <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
                 <GeneratedTownBase stops={currentStops} />
+                <TownGlyphHalos stops={currentStops} />
                 {!mobileSafeMode && <ChimneySmoke />}
                 {!mobileSafeMode && <DynamicWalls />}
                 <Canal boats={boats} layer="base" />
@@ -838,8 +1085,16 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                         boardStop?.id === stop.id
                       }
                       recentlyUpdated={recently}
-                      onClick={(e) => handleStopClick(e, stop)}
-                      onDoubleClick={(e) => handleStopDoubleClick(e, stop)}
+                      onClick={(e) => {
+                        if (!isRepositionMode) handleStopClick(e, stop);
+                      }}
+                      onDoubleClick={(e) => {
+                        if (!isRepositionMode) handleStopDoubleClick(e, stop);
+                      }}
+                      draggable={isRepositionMode}
+                      onDragStart={(e) => handleMarkerDragStart(stop, e)}
+                      onDragMove={(e) => handleMarkerDragMove(stop, e)}
+                      onDragEnd={(e) => handleMarkerDragEnd(stop, e)}
                     />
                   );
                 })}
@@ -851,105 +1106,22 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                     onEnterDistrict={enterDistrict}
                   />
                 ))}
-                {!mobileSafeMode && <HollywoodSign />}
-
-                {/* Easter egg — tucked in the bottom-right */}
-                <g
-                  transform="translate(1440, 1100)"
-                  style={{ cursor: "pointer" }}
-                  onMouseEnter={() => setEggHovered(true)}
-                  onMouseLeave={() => setEggHovered(false)}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    markSkipDrag();
-                    handleEasterEgg();
-                  }}
-                >
-                  <circle r={18} fill="transparent" pointerEvents="all" />
-                  <image
-                    href="/art/egg.png"
-                    x={-14}
-                    y={-18}
-                    width={28}
-                    height={36}
-                    opacity={eggHovered ? 1 : 0.6}
-                    style={{ transition: "opacity 0.3s" }}
-                  />
-                </g>
-
-                {/* Town square — clock tower bell */}
-                <g
-                  transform={`translate(${GENERATED_TOWN_LAYOUT.landmarks.bellTower.x}, ${GENERATED_TOWN_LAYOUT.landmarks.bellTower.y})`}
-                  style={{
-                    cursor: populating === "running" ? "wait" : "pointer",
-                  }}
-                  onMouseEnter={() => setBellHovered(true)}
-                  onMouseLeave={() => setBellHovered(false)}
-                  onClick={(e) => {
-                    e.stopPropagation();
+                <SpecialTownLandmarks
+                  mobileSafeMode={mobileSafeMode}
+                  populating={populating}
+                  onBell={() => {
                     markSkipDrag();
                     handlePopulate();
                   }}
-                >
-                  {/* large invisible hit area — generous polygon covering the full tower */}
-                  <polygon
-                    points="0,-155 42,-130 54,-88 58,-42 64,6 42,24 0,32 -42,24 -64,6 -58,-42 -54,-88 -42,-130"
-                    fill="transparent"
-                    pointerEvents="all"
-                  />
-
-                  {/* hover outline — traces the tower silhouette */}
-                  {bellHovered && populating === "idle" && (
-                    <polygon
-                      points="0,-145 38,-122 48,-80 50,-38 58,4 38,20 0,28 -38,20 -58,4 -50,-38 -48,-80 -38,-122"
-                      fill="none"
-                      stroke="rgba(230,198,106,0.55)"
-                      strokeWidth={2}
-                      strokeDasharray="6 4"
-                      strokeLinejoin="round"
-                    />
-                  )}
-
-                  {/* running pulse outline */}
-                  {populating === "running" && (
-                    <polygon
-                      points="0,-145 38,-122 48,-80 50,-38 58,4 38,20 0,28 -38,20 -58,4 -50,-38 -48,-80 -38,-122"
-                      fill="none"
-                      stroke="rgba(230,198,106,0.8)"
-                      strokeWidth={2}
-                      strokeLinejoin="round"
-                    />
-                  )}
-
-                  {/* tooltip */}
-                  {bellHovered &&
-                    (populating === "idle" || populating === "running") && (
-                      <g style={{ pointerEvents: "none" }}>
-                        <rect
-                          x={populating === "running" ? -86 : -68}
-                          y={-88}
-                          width={populating === "running" ? 172 : 136}
-                          height={24}
-                          rx={5}
-                          fill="rgba(12,7,22,0.88)"
-                          stroke="rgba(230,198,106,0.35)"
-                          strokeWidth={1}
-                        />
-                        <text
-                          x={0}
-                          y={-71}
-                          textAnchor="middle"
-                          fontSize={13}
-                          fill="#e6c66a"
-                          fontFamily="var(--font-sans, sans-serif)"
-                        >
-                          {populating === "running"
-                            ? "The Town Bell Sees All"
-                            : "Ring the town bell"}
-                        </text>
-                      </g>
-                    )}
-                </g>
+                  onEgg={() => {
+                    markSkipDrag();
+                    handleEasterEgg();
+                  }}
+                  onTourism={() => {
+                    markSkipDrag();
+                    handleTourism();
+                  }}
+                />
               </g>
             </g>
           </svg>
@@ -983,7 +1155,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             </div>
           )}
 
-          {showWelcomeHint && (
+          {showWelcomeHint && !isRepositionMode && (
             <motion.div
               style={{
                 position: "absolute",
@@ -1038,6 +1210,288 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                 }}
                 onOpacityChange={setPerfPanelOpacity}
               />
+            </div>
+          )}
+
+          {isRepositionMode && (
+            <div
+              style={{
+                position: "absolute",
+                top: 16,
+                left: 16,
+                width: 340,
+                maxHeight: "calc(100vh - 32px)",
+                display: "flex",
+                flexDirection: "column",
+                background:
+                  "linear-gradient(180deg, rgba(28,20,38,0.92) 0%, rgba(15,10,22,0.96) 100%)",
+                color: "var(--willville-paper)",
+                borderRadius: 12,
+                border: "1px solid rgba(230,198,106,0.35)",
+                boxShadow: "0 20px 50px rgba(0,0,0,0.6)",
+                backdropFilter: "blur(12px)",
+                WebkitBackdropFilter: "blur(12px)",
+                padding: "16px 18px",
+                fontFamily: "var(--font-sans), sans-serif",
+                zIndex: 2500,
+                overflow: "hidden",
+                pointerEvents: "auto",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  marginBottom: 6,
+                }}
+              >
+                <span style={{ fontSize: 20 }}>🗺️</span>
+                <h2
+                  style={{
+                    margin: 0,
+                    fontSize: 18,
+                    fontWeight: 700,
+                    color: "#e6c66a",
+                    letterSpacing: 0.5,
+                  }}
+                >
+                  Willville Planner
+                </h2>
+              </div>
+
+              <p
+                style={{
+                  margin: "0 0 14px",
+                  fontSize: 13,
+                  lineHeight: 1.45,
+                  opacity: 0.85,
+                }}
+              >
+                Click and drag any stop marker to reposition it live on the map.
+                Coordinates will update in real time.
+              </p>
+
+              <div
+                style={{
+                  flex: 1,
+                  overflowY: "auto",
+                  minHeight: 0,
+                  margin: "0 0 16px",
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                    color: "#e6c66a",
+                    marginBottom: 8,
+                  }}
+                >
+                  Modified Coordinates ({changedStops.length})
+                </div>
+                {changedStops.length === 0 ? (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      fontStyle: "italic",
+                      opacity: 0.6,
+                      padding: "8px 0",
+                    }}
+                  >
+                    No sites moved yet.
+                  </div>
+                ) : (
+                  <div
+                    style={{ display: "flex", flexDirection: "column", gap: 8 }}
+                  >
+                    {changedStops.map(([id, item]) => {
+                      const s = localStops.find((x) => x.id === id);
+                      if (!s) return null;
+                      return (
+                        <div
+                          key={id}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            background: "rgba(255,255,255,0.04)",
+                            borderRadius: 6,
+                            padding: "6px 8px",
+                            border: "1px solid rgba(255,255,255,0.06)",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 2,
+                              minWidth: 0,
+                              flex: 1,
+                            }}
+                          >
+                            <span
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 600,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {s.displayName}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontFamily: "monospace",
+                                opacity: 0.7,
+                              }}
+                            >
+                              ({item.original.x}, {item.original.y}) ➔ (
+                              {item.current.x}, {item.current.y})
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleResetStop(id)}
+                            style={{
+                              background: "transparent",
+                              border: 0,
+                              color: "#f4a0a0",
+                              cursor: "pointer",
+                              fontSize: 11,
+                              padding: "2px 6px",
+                              borderRadius: 4,
+                              transition: "background 0.2s",
+                            }}
+                            onMouseEnter={(e) =>
+                              (e.currentTarget.style.background =
+                                "rgba(244,160,160,0.15)")
+                            }
+                            onMouseLeave={(e) =>
+                              (e.currentTarget.style.background = "transparent")
+                            }
+                          >
+                            Reset
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  borderTop: "1px solid rgba(230,198,106,0.18)",
+                  paddingTop: 14,
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  style={{
+                    width: "100%",
+                    background: copied
+                      ? "#7bd389"
+                      : "linear-gradient(90deg, #b8862c 0%, #e6c66a 100%)",
+                    border: 0,
+                    color: "#1a1233",
+                    borderRadius: 6,
+                    padding: "10px 14px",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    transition: "all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)",
+                    boxShadow: "0 4px 12px rgba(230,198,106,0.25)",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!copied) {
+                      e.currentTarget.style.transform = "translateY(-1px)";
+                      e.currentTarget.style.boxShadow =
+                        "0 6px 16px rgba(230,198,106,0.4)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!copied) {
+                      e.currentTarget.style.transform = "translateY(0px)";
+                      e.currentTarget.style.boxShadow =
+                        "0 4px 12px rgba(230,198,106,0.25)";
+                    }
+                  }}
+                >
+                  {copied ? "✓ Copied!" : "📋 Copy Heuristics Code"}
+                </button>
+
+                <div style={{ display: "flex", gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={handleResetAll}
+                    disabled={changedStops.length === 0}
+                    style={{
+                      flex: 1,
+                      background: "transparent",
+                      border: "1px solid rgba(255,255,255,0.2)",
+                      color: "var(--willville-paper)",
+                      borderRadius: 6,
+                      padding: "8px 10px",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor:
+                        changedStops.length === 0 ? "not-allowed" : "pointer",
+                      opacity: changedStops.length === 0 ? 0.5 : 1,
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (changedStops.length > 0)
+                        e.currentTarget.style.background =
+                          "rgba(255,255,255,0.06)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                    }}
+                  >
+                    Reset All
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => router.push("/")}
+                    style={{
+                      flex: 1,
+                      background: "rgba(220,80,80,0.12)",
+                      border: "1px solid rgba(220,80,80,0.4)",
+                      color: "#f4a0a0",
+                      borderRadius: 6,
+                      padding: "8px 10px",
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background = "rgba(220,80,80,0.2)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background =
+                        "rgba(220,80,80,0.12)")
+                    }
+                  >
+                    Exit Editor
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

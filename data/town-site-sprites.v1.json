@@ -9,7 +9,7 @@
   "generatedFrom": "lib/willville.heuristics.ts",
   "sprites": [
     {
-      "stopId": "the-solitude-stacks",
+      "stopId": "10000_years_of_solitude",
       "district": "mirrored-mile",
       "kind": "bespoke",
       "src": "/art/stops/the-solitude-stacks-dandelion-resin-totem.png",
@@ -19,7 +19,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-furnace",
+      "stopId": "ganglia",
       "district": "the-graveyard",
       "kind": "monument",
       "src": "/art/stops/the-furnace.png",
@@ -29,9 +29,9 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-suno-organ",
+      "stopId": "suno-api",
       "district": "the-graveyard",
-      "kind": "tower",
+      "kind": "bespoke",
       "src": "/art/stops/the-suno-organ.png",
       "width": 100,
       "height": 100,
@@ -39,9 +39,9 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-kennel",
+      "stopId": "fogofdog",
       "district": "the-graveyard",
-      "kind": "workshop",
+      "kind": "bespoke",
       "src": "/art/stops/the-kennel.png",
       "width": 100,
       "height": 100,
@@ -49,9 +49,9 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-compilers-forge",
+      "stopId": "epsilon",
       "district": "the-graveyard",
-      "kind": "forge",
+      "kind": "bespoke",
       "src": "/art/stops/the-compilers-forge.png",
       "width": 100,
       "height": 100,
@@ -59,9 +59,9 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-gene-greenhouse",
+      "stopId": "gene-builder",
       "district": "the-graveyard",
-      "kind": "greenhouse",
+      "kind": "bespoke",
       "src": "/art/stops/the-gene-greenhouse.png",
       "width": 100,
       "height": 100,
@@ -69,9 +69,9 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-go-workbench",
+      "stopId": "go-playground",
       "district": "the-graveyard",
-      "kind": "workshop",
+      "kind": "bespoke",
       "src": "/art/stops/the-go-workbench.png",
       "width": 100,
       "height": 100,
@@ -79,9 +79,9 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-dotfile-cabinet",
+      "stopId": "dotfiles",
       "district": "the-graveyard",
-      "kind": "workshop",
+      "kind": "bespoke",
       "src": "/art/stops/the-dotfile-cabinet.png",
       "width": 100,
       "height": 100,
@@ -89,7 +89,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-reactor",
+      "stopId": "ganglia-core",
       "district": "gates-of-hell",
       "kind": "bespoke",
       "src": "/art/stops/the-reactor.png",
@@ -99,37 +99,70 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-atelier",
+      "stopId": "ganglia-studio",
       "district": "gates-of-hell",
       "kind": "bespoke",
       "src": "/art/stops/the-atelier-ganglia-studio-totem.png",
       "width": 140,
       "height": 140,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the Ganglia Studio infernal atelier glyph directly into the Gates of Hell paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the studio feel built into the district art: violet ember spill, soot-dusted workshop glow, scorched brass filings, occult paint drips, warm kiln light, subtle reel-shadow geometry, and charred cobbles that match the whimsical spooky town style. Keep the center composition open enough for the foreground studio glyph to sit on top cleanly without doubling the silhouette. Match the surrounding Gates of Hell palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "ganglia-studio-halo-v5",
+        "radialScale": 1.2,
+        "alphaBounds": {
+          "x": 11,
+          "y": 0,
+          "width": 118,
+          "height": 140
+        }
+      }
     },
     {
-      "stopId": "the-toolworks",
+      "stopId": "ganglia-common",
       "district": "gates-of-hell",
       "kind": "bespoke",
       "src": "/art/stops/the-toolworks-ganglia-common-totem.png",
       "width": 140,
       "height": 140,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the ganglia-common infernal toolworks glyph directly into the Gates of Hell paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the toolworks feel built into the district art: ember-lit brass dust, hot rivet glints, cable-scorch shadows, copper workshop glow, soot-softened cobbles, and subtle foundry heat bloom that match the whimsical spooky town style. Keep the center composition open enough for the foreground toolworks glyph to sit on top cleanly without doubling the silhouette. Match the surrounding Gates of Hell palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "ganglia-common-halo-v3",
+        "radialScale": 1.2,
+        "alphaBounds": {
+          "x": 7,
+          "y": 0,
+          "width": 125,
+          "height": 140
+        }
+      }
     },
     {
-      "stopId": "the-watchful-pumpkin",
+      "stopId": "halloweentracker",
       "district": "gates-of-hell",
       "kind": "bespoke",
       "src": "/art/stops/the-watchful-pumpkin-halloween-tracker-totem.png",
       "width": 140,
       "height": 140,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the HalloweenTracker watchful pumpkin glyph directly into the Gates of Hell paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the pumpkin monument feel built into the district art: ember-orange underglow, smoky pumpkin-light spill, subtle carved-stone pedestal shadow, scorched cobbles, curled black-vine edging, and warm haunted reflections that match the whimsical spooky town style. Keep the center composition open enough for the foreground pumpkin glyph to sit on top cleanly without doubling the silhouette. Match the surrounding Gates of Hell palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "halloweentracker-halo-v10",
+        "radialScale": 1.2,
+        "alphaBounds": {
+          "x": 21,
+          "y": 0,
+          "width": 97,
+          "height": 140
+        }
+      }
     },
     {
-      "stopId": "the-mop-bucket",
+      "stopId": "slop-mop",
       "district": "slop-wharf",
       "kind": "bespoke",
       "src": "/art/stops/the-mop-bucket-slopmop-totem.png",
@@ -139,7 +172,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-action-dock",
+      "stopId": "slop-mop-action",
       "district": "slop-wharf",
       "kind": "bespoke",
       "src": "/art/stops/the-action-dock-slop-mop-action-totem.png",
@@ -149,7 +182,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-slop-bucket",
+      "stopId": "bucket-o-slop",
       "district": "slop-wharf",
       "kind": "bespoke",
       "src": "/art/stops/the-slop-bucket-bucket-o-slop-totem.png",
@@ -159,7 +192,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-rulebook",
+      "stopId": "cursor-rules",
       "district": "slop-wharf",
       "kind": "bespoke",
       "src": "/art/stops/the-rulebook-cursor-rules-totem.png",
@@ -169,7 +202,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-audit-house",
+      "stopId": "swe-audit",
       "district": "halls-of-judgement",
       "kind": "workshop",
       "src": "/art/stops/the-audit-house.png",
@@ -179,7 +212,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-trace-station",
+      "stopId": "imperium-swe-traces",
       "district": "halls-of-judgement",
       "kind": "workshop",
       "src": "/art/stops/the-trace-station.png",
@@ -189,7 +222,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-task-forge",
+      "stopId": "snorkelai-tasks",
       "district": "halls-of-judgement",
       "kind": "forge",
       "src": "/art/stops/the-task-forge.png",
@@ -199,7 +232,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-colosseum",
+      "stopId": "hard-collesium",
       "district": "halls-of-judgement",
       "kind": "workshop",
       "src": "/art/stops/the-colosseum.png",
@@ -209,7 +242,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-apertus-drafting-desk",
+      "stopId": "apertus_task_scaffolding",
       "district": "halls-of-judgement",
       "kind": "workshop",
       "src": "/art/stops/the-apertus-drafting-desk.png",
@@ -219,7 +252,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-pr-scaffold",
+      "stopId": "pr-task-scaffolding",
       "district": "halls-of-judgement",
       "kind": "civic",
       "src": "/art/stops/the-pr-scaffold.png",
@@ -229,7 +262,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-map-room",
+      "stopId": "codebase-navigation",
       "district": "halls-of-judgement",
       "kind": "workshop",
       "src": "/art/stops/the-map-room.png",
@@ -239,7 +272,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-mystery-manor",
+      "stopId": "mystery",
       "district": "halls-of-judgement",
       "kind": "workshop",
       "src": "/art/stops/the-mystery-manor.png",
@@ -249,28 +282,50 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-chroniclers-tower",
+      "stopId": "chronicchronicler",
       "district": "the-zeitgeist",
       "kind": "bespoke",
       "src": "/art/stops/the-chroniclers-tower-chronicchronicler-totem.png",
       "width": 140,
       "height": 140,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the ChronicChronicler scribe tower glyph directly into The Zeitgeist paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the tower feel built into the district art: cool blue lantern spill, brass pen-nib glints, soft paper-white glow on stone, faint ink-shadow traces, polished plaza reflections, and subtle editorial bustle that match the whimsical luminous city style. Keep the center composition open enough for the foreground tower glyph to sit on top cleanly without doubling the silhouette. Match The Zeitgeist palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, logos, UI, stickers, or hard outline.",
+        "cacheKey": "chronicchronicler-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": {
+          "x": 23,
+          "y": 0,
+          "width": 93,
+          "height": 140
+        }
+      }
     },
     {
-      "stopId": "the-kennel-storefront",
+      "stopId": "fogofdog-frontend",
       "district": "the-zeitgeist",
       "kind": "bespoke",
       "src": "/art/stops/the-kennel-storefront-fogofdog-totem.png",
       "width": 140,
       "height": 140,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the fogofdog-frontend kennel storefront glyph directly into The Zeitgeist paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the storefront feel built into the district art: cool storefront glow, blue-glass reflections, faint pawpath wear in the paving, brushed brass trim highlights, soft streetlamp spill, and subtle neighborhood shimmer that match the whimsical luminous city style. Keep the center composition open enough for the foreground storefront glyph to sit on top cleanly without doubling the silhouette. Match The Zeitgeist palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, logos, UI, stickers, or hard outline.",
+        "cacheKey": "fogofdog-frontend-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": {
+          "x": 10,
+          "y": 0,
+          "width": 119,
+          "height": 140
+        }
+      }
     },
     {
-      "stopId": "the-vampires-crypt",
-      "district": "the-zeitgeist",
+      "stopId": "lonely_little_vampire",
+      "district": "mirrored-mile",
       "kind": "bespoke",
       "src": "/art/stops/the-vampires-crypt-lonely-vampire-totem.png",
       "width": 140,
@@ -279,27 +334,49 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-roundabout",
+      "stopId": "loopcloser",
       "district": "the-zeitgeist",
       "kind": "bespoke",
       "src": "/art/stops/the-roundabout-loopcloser-totem.png",
       "width": 140,
       "height": 140,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the loopcloser roundabout glyph directly into The Zeitgeist paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the roundabout feel built into the district art: cobalt signal bloom, violet neon cable shimmer, brass switchwork reflections, circular wear marks in the stone, cool rail-shadow arcs, and subtle transit energy that match the whimsical luminous city style. Keep the center composition open enough for the foreground roundabout glyph to sit on top cleanly without doubling the silhouette. Match The Zeitgeist palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, logos, UI, stickers, or hard outline.",
+        "cacheKey": "loopcloser-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": {
+          "x": 9,
+          "y": 0,
+          "width": 122,
+          "height": 140
+        }
+      }
     },
     {
-      "stopId": "the-light-mill",
+      "stopId": "razer-ripple",
       "district": "the-zeitgeist",
       "kind": "bespoke",
       "src": "/art/stops/the-light-mill-razer-ripple-totem.png",
       "width": 140,
       "height": 140,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the razer-ripple light mill glyph directly into The Zeitgeist paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the light mill feel built into the district art: prismatic LED spill, cool glass reflections, soft electric haze, brushed brass hardware glints, rainbow refractions in the paving, and subtle workshop power shimmer that match the whimsical luminous city style. Keep the center composition open enough for the foreground light mill glyph to sit on top cleanly without doubling the silhouette. Match The Zeitgeist palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, logos, UI, stickers, or hard outline.",
+        "cacheKey": "razer-ripple-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": {
+          "x": 0,
+          "y": 0,
+          "width": 140,
+          "height": 139
+        }
+      }
     },
     {
-      "stopId": "willville-town-hall",
+      "stopId": "welcome-to-willville",
       "district": "town-square",
       "kind": "bespoke",
       "src": "/art/stops/willville-town-hall-totem.png",
@@ -309,7 +386,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-pantry-bot",
+      "stopId": "grocery-automation",
       "district": "dogwallow-ramble-ii",
       "kind": "workshop",
       "src": "/art/stops/the-pantry-bot.png",
@@ -319,7 +396,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "randy-sharons-cottage",
+      "stopId": "randy-sharon",
       "district": "dogwallow-ramble-ii",
       "kind": "workshop",
       "src": "/art/stops/randy-sharons-cottage.png",
@@ -329,7 +406,7 @@
       "anchorY": 78
     },
     {
-      "stopId": "the-wallow",
+      "stopId": "thewallow",
       "district": "dogwallow-ramble-ii",
       "kind": "workshop",
       "src": "/art/stops/the-wallow.png",

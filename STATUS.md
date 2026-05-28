@@ -1,13 +1,119 @@
 <!-- willville
-doing: PR #9 buff loop — CI green, Bugbot threads resolved
-done: eslint .venv ignore, fork-PR guard, cache headers, displayName fix, deploy PID hardening, dead code cleanup
-next: merge PR #9; Workers Builds Cloudflare check is pre-existing on main
+doing: Slop Wharf inpaint pass wrapped and the district layer is live
+done: fixed the masked-edit polarity, regenerated the Gates of Hell halo plates, finished the Zeitgeist plates, and added the Slop Wharf landmark pass
+next: keep the inpaint rail ready for the next district that needs a similar treatment
 risk: low
-milestone: Isthmus town generation
-eta: 2026-05-22
+milestone: Glyph halo integration
+eta: 2026-05-27
 -->
 
 # Status
+
+## Done (2026-05-28) — Reverted PR Tip Buffed For Merge
+
+- Fixed the tourism announcement so it now auto-clears on the same timer as the other Time Central flashes instead of lingering over later stop selections.
+- Moved the reposition pulse animation out of per-marker SVG style tags, so reposition mode no longer injects the same global CSS block once per stop.
+- Hardened the Pages API fallback by making the cross-origin fallback request explicit and adding a real `OPTIONS` preflight response for `/api/manifests`.
+- Replaced the reposition drag gate's async state with a ref so the first pointer-move after pointer-down now lands immediately instead of bailing on a stale `null` drag id.
+- Validation: `sm swab` passed; `./scripts/deploy_app.sh` rebuilt and served `http://127.0.0.1:3740/`; local `OPTIONS /api/manifests` with `Origin: https://willville.ai` returned `204` plus the expected `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, and `Access-Control-Allow-Headers` headers; live `/reposition/` validation moved `epsilon` from `(1033, 321)` to `(1072, 346)` on the first drag and updated the Modified Coordinates panel immediately.
+
+## Done (2026-05-27) — Slop Wharf Landmark Pass Is Live
+
+- Ran the existing Slop Wharf site-inpaint rail on the Slop-Mop landmark and regenerated the district layer from the new masked-edit path.
+- Fixed the site-inpaint script to prefer the Ganglia Studio venv Python instead of the global interpreter so the district pass could actually execute.
+- Confirmed the live Slop Wharf route reloads against the regenerated inpainted district layer with the new landmark visible.
+- Validation: `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio node scripts/apply-town-site-inpaints.mjs --district=slop-wharf` completed successfully after the Python fallback fix; `./scripts/deploy_app.sh` rebuilt and served the updated district on `http://127.0.0.1:3740/`; the live Slop Wharf stop page reloaded cleanly with the new layer.
+
+## Done (2026-05-27) — Zeitgeist Inpaint Plates Regenerated
+
+- Started the Zeitgeist set on the new masked inpaint rail after finishing the Gates of Hell halo fixup.
+- Regenerated the Zeitgeist halo plates for ChronicChronicler, fogofdog-frontend, loopcloser, and razer-ripple using the same district-clipped editing path.
+- Reloaded the live Zeitgeist route and confirmed the updated loopcloser plate is rendering from the new cached asset.
+- Validation: `node scripts/apply-town-glyph-halo.mjs --id=loopcloser --dry-run` resolved `alphaBox.width: 122`, `haloRayPadding: 12`, `maskBox: 146x168`, and `cropBox: 194x216`; real runs for `--id=chronicchronicler`, `--id=fogofdog-frontend`, and `--id=razer-ripple` completed successfully; the live route at `http://127.0.0.1:3740/the-zeitgeist/loopcloser/?site_type=desktop` reloaded against `loopcloser-halo-v1`.
+
+## Done (2026-05-27) — Halo Mask Polarity Fixed And All Three Gates Of Hell Plates Regenerated
+
+- Confirmed the masked-edit bug was a polarity mistake: the generator was only opening the thin outer ring and protecting the center silhouette, which made the paint read like the opposite of the intended mask.
+- Changed the halo authoring mask so the full scaled glyph footprint becomes the editable region, then regenerated Ganglia Studio, ganglia-common, and Halloween Tracker with fresh cache keys.
+- Rebuilt the local preview and confirmed the updated plates now read as painted underlays beneath the foreground glyphs instead of center cut-outs.
+- Validation: dry-run mask inspection showed the editable region move from ring-only to filled silhouette; real `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio node scripts/apply-town-glyph-halo.mjs --id=ganglia-common`, `--id=ganglia-studio`, and `--id=halloweentracker` all completed successfully; `./scripts/deploy_app.sh` rebuilt the app and served the refreshed overlays on `http://127.0.0.1:3740/`.
+
+## Done (2026-05-27) — Halo Extent Now Uses Constant-Length Rays Off The Real Glyph Silhouette
+
+- Replaced the multiplicative silhouette-scaling rule with the actual halo rule: start from the opaque glyph silhouette, then extend every radial line outward by the same short fixed distance, derived from about `10%` of the occupied glyph width rather than from the empty sprite frame.
+- Kept the explicit alpha-bound metadata for Halloween Tracker and Ganglia Studio, but changed the shared box math and the Ganglia authoring mask to add fixed per-ray padding around the real occupied silhouette instead of making already-long rays even longer.
+- Regenerated both halo plates and confirmed the live stage now reflects the capped-ray model: Halloween Tracker renders at about `59x74` on stage around a roughly `53x42` marker box, and Ganglia Studio renders at about `68x76` around a roughly `47x42` marker box.
+- Validation: `node scripts/apply-town-glyph-halo.mjs --id=halloweentracker --dry-run` resolved `alphaBox.width: 97`, `haloRayPadding: 10`, `maskBox: 117x160`, and `cropBox: 165x208`; `node scripts/apply-town-glyph-halo.mjs --id=ganglia-studio --dry-run` resolved `alphaBox.width: 118`, `haloRayPadding: 12`, `maskBox: 142x164`, and `cropBox: 190x212`; both real `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio node scripts/apply-town-glyph-halo.mjs --id=...` passes regenerated `/art/town/glyph-halos/halloweentracker.png` and `/art/town/glyph-halos/ganglia-studio.png`; fresh local deploy via `./scripts/deploy_app.sh` confirmed both routes live; `sm swab --no-cache` passed.
+
+## Done (2026-05-27) — Halloween Tracker Tightened Again And Ganglia Studio Gets Its First Halo
+
+- Pulled the Halloween Tracker spread in one more step from `14px` to `10px`, which brings the editable contour down again from `168x168` to `160x160` around the `140x140` glyph frame.
+- Added the first Ganglia Studio inpaint halo in the same district-clipped contour system, with a Gates of Hell workshop-style underlay and an initial `168x168` contour around the `140x140` studio glyph frame.
+- Regenerated both halo plates, rebuilt the local preview, and confirmed both sites render their updated underlays live in Gates of Hell.
+- Validation: `node scripts/apply-town-glyph-halo.mjs --id=halloweentracker --dry-run` resolved a `160x160` mask box and `208x208` crop; `node scripts/apply-town-glyph-halo.mjs --id=ganglia-studio --dry-run` resolved a `168x168` mask box and `216x216` crop; `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio node scripts/apply-town-glyph-halo.mjs --id=halloweentracker` and `--id=ganglia-studio` regenerated `/art/town/glyph-halos/halloweentracker.png` and `/art/town/glyph-halos/ganglia-studio.png`; fresh local deploy via `./scripts/deploy_app.sh` confirmed both live routes; `sm swab --no-cache` passed.
+
+## Done (2026-05-27) — Halloween Tracker Halo Is District-Clipped And Only About 20% Wider Than The Glyph
+
+- Intersected the contour-based halo mask with the Gates of Hell district art mask so the inpaint area cannot spill into parts of the town the site should not know about.
+- Pulled the Halloween Tracker halo spread in from `25px` to `14px`, which brings the editable contour down to `168x168` around the `140x140` glyph frame instead of the earlier `190x190` footprint.
+- Regenerated the live halo asset and confirmed the stage render tightened again after the district clipping pass.
+- Validation: a dry run of `node scripts/apply-town-glyph-halo.mjs --id=halloweentracker --dry-run` resolved `regionMaskImage: /art/town/masks/district-art/gates-of-hell.png`, a `168x168` contour mask box, and a `216x216` crop; `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio node scripts/apply-town-glyph-halo.mjs --id=halloweentracker` regenerated `/art/town/glyph-halos/halloweentracker.png`; fresh local deploy via `./scripts/deploy_app.sh` confirmed the tighter live route on `http://127.0.0.1:3740/gates-of-hell/halloweentracker?site_type=desktop`; `sm swab --no-cache` passed.
+
+## Done (2026-05-27) — Halloween Tracker Halo Uses The Glyph Contour Instead Of A Rectangle
+
+- Replaced the old rectangular inpaint cutout with a glyph-shaped mask that grows outward from the actual Halloween Tracker alpha silhouette, so the edit boundary now follows the pumpkin/totem form instead of reading like a pasted box.
+- Switched the halo config from the earlier width squeeze to a fixed `25px` contour spread, regenerated the live halo asset, and confirmed the resulting overlay plate now has an irregular contour that matches the glyph footprint.
+- Added a dry-run debug mask artifact so the contour can be checked directly before spending a real Ganglia generation pass.
+- Validation: `node scripts/apply-town-glyph-halo.mjs --id=halloweentracker --dry-run` wrote `/docs/generated/halloweentracker-glyph-halo-mask.png` plus a readable preview and resolved the new `190x190` contour mask box with a `238x238` crop; `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio node scripts/apply-town-glyph-halo.mjs --id=halloweentracker` regenerated `/art/town/glyph-halos/halloweentracker.png`; fresh local deploy via `./scripts/deploy_app.sh` confirmed the updated halo is live on `http://127.0.0.1:3740/gates-of-hell/halloweentracker?site_type=desktop`; `sm swab --no-cache` passed.
+
+## Done (2026-05-27) — Halloween Tracker Halo Width Now Fits The Marked Area Better
+
+- Tightened the Halloween Tracker halo horizontally instead of introducing a more complex new shape system, keeping the full vertical glow while pulling the underlay in from the sides.
+- Regenerated the real halo plate with the narrower bounds and verified it in the live Gates of Hell route, where the underlay now hugs the glyph much more closely instead of bleeding far past the marked boundary.
+- Validation: `node scripts/apply-town-glyph-halo.mjs --id=halloweentracker --dry-run` resolved the narrowed `98x140` halo box and `146x188` context crop; `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio node scripts/apply-town-glyph-halo.mjs --id=halloweentracker` regenerated `/art/town/glyph-halos/halloweentracker.png`; fresh local deploy via `./scripts/deploy_app.sh` confirmed the tighter live stage render on `http://127.0.0.1:3740/gates-of-hell/halloweentracker?site_type=desktop`; `sm swab --no-cache` passed.
+
+## Done (2026-05-27) — Halloween Tracker Glyph Halo Spike Works On The Live Map
+
+- Added a first-pass glyph halo feature directly off the glyph manifest and tried it on Halloween Tracker instead of inventing a separate authoring manifest.
+- Generated a real Halloween Tracker halo plate through Ganglia Studio from the Gates of Hell background crop, then rendered that plate directly above the district art and below the foreground glyph in the live town stage.
+- Kept the spike deliberately simple: square halo bounds from the glyph width, one optional halo block in the glyph manifest, one apply script, one runtime layer.
+- Validation: `node scripts/apply-town-glyph-halo.mjs --id=halloweentracker --dry-run` resolved the expected `140x140` halo box and `188x188` context crop; `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio node scripts/apply-town-glyph-halo.mjs --id=halloweentracker` passed twice and wrote `/art/town/glyph-halos/halloweentracker.png`; `sm swab --no-cache` passed; fresh local deploy via `./scripts/deploy_app.sh` confirmed the halo layer renders under Halloween Tracker on `http://127.0.0.1:3740/gates-of-hell/halloweentracker?site_type=desktop`.
+
+## Done (2026-05-27) — Reposition Coordinates Persistence & StopId Abstraction Removal
+
+- Persisted the live-dragged coordinates for all 33 repositories in `lib/willville.heuristics.ts`, carefully retaining all visual `glyph` and `queue` definitions to prevent asset regression.
+- Resolved a pipeline layout bug inside `lib/town.ts` where both `buildStop` (live path) and `buildInitialStops` (offline path) ignored the manual `heuristic.position` overrides and dynamically forced stops back to auto-calculated locations.
+- Pulled out the `stopId` metaphorical translation layer entirely from the codebase, standardizing on lowercase repository names as the single source of truth for routing, layouts, and assets.
+- Cleaned up dynamic routing slug generation in `lib/slugs.ts` and `app/[district]/[stop]/page.tsx`, and migrated the `"stopId"` mappings in `data/town-site-sprites.v1.json` and `data/canal-ship-sprites.v1.json` to use repository-centric IDs without breaking existing binary PNG paths.
+- Renamed the bespoke sprite config file `the-reactor.tti.json` to `ganglia-core.tti.json` and resolved all unmigrated references inside `functions/api/canal.ts` and `functions/api/manifests.ts`.
+- Validation: `npx tsc --noEmit` passed with zero errors; `npm run build` compiled all routes successfully with Next.js prerendering the new repository slugs; direct local deploy via `scripts/deploy_app.sh` succeeded at `http://127.0.0.1:3740/`.
+
+## Done (2026-05-27) — Tourism Sign Reads In The Actual Town View
+
+- Reworked the Department of Tourism art prompt so Ganglia Studio is required to render a big, high-contrast `DEPT. OF TOURISM` sign on the front of the building instead of suppressing readable text.
+- Regenerated the tourism sprite, bumped the stage asset URL to `tourism-v2`, and scaled the Town Square landmark up so the sign is still legible in the live town view instead of only in the raw render.
+- Validation: `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio ./scripts/generate-bespoke-sprite.sh department-of-tourism --force --skip-manifest` passed; fresh local deploy via `./scripts/deploy_app.sh` confirmed the updated `tourism-v2` asset on `http://127.0.0.1:3740/?site_type=desktop`; live stage screenshot showed the marker grow from roughly `44px` to `60px`; `sm swab --no-cache` passed.
+
+## Done (2026-05-27) — Department Of Tourism Gets Real Town Art
+
+- Extended the bespoke sprite rail so special town-only landmarks can use the Ganglia Studio generation path without force-writing bogus stop manifest entries.
+- Generated the Department of Tourism sprite through the real Ganglia Studio checkout and installed the finished 100x100 PNG into the town art set.
+- Kept the updated hover copy as `add your own stop to Willville` and verified the tourism click still returns the Digital Detail board to its default `Select a site in Willville` state while Time Central flips over to the tourism pitch plus contact email.
+- Validation: `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio ./scripts/generate-bespoke-sprite.sh department-of-tourism --force --skip-manifest` passed; `sm swab --no-cache` passed; local browser verification on `http://127.0.0.1:3740/?site_type=desktop` confirmed the sprite render, hover copy, empty Digital Detail board state, and the Time Central tourism announcement with `unique.will.martin@gmail.com`.
+
+## Done (2026-05-27) — Town Square Gets A Department Of Tourism
+
+- Added a special Town Square landmark for the Department of Tourism in the same non-repo landmark lane as the other town-only interactions, with hover copy that says `Come visit Willville!`.
+- Clicking the tourism kiosk now clears the selected stop, routes back to the town overview, restores the desktop Digital Detail board to its default `Select a site in Willville` empty state, and swaps Time Central over to the tourism pitch plus contact email.
+- Finished the landmark extraction properly by routing the bell, egg, Hollywood sign, and tourism kiosk through the shared `SpecialTownLandmarks` component instead of leaving a stale inline landmark block in `TownStage`.
+- Validation: `sm swab -g myopia:code-sprawl --no-cache` passed; `sm swab --no-cache` passed; local browser verification on `http://127.0.0.1:3740/?site_type=desktop` confirmed the tourism hover text, the empty Digital Detail board state, and the updated Time Central tourism announcement.
+
+## Done (2026-05-27) — Prod Custom Domain Falls Back To Pages API
+
+- Confirmed the production mismatch was not the town merge logic: the real domain was serving `404` HTML for `/api/town` while the Pages hostname still returned live JSON, so the UI stayed on the empty static fallback.
+- Added a client-side retry path for the town, bell, and canal requests so the custom domain can fall back to the known-good Pages API host when same-origin `/api/*` misses.
+- Added explicit cross-origin headers on the Pages town, bell, and canal responses so that fallback can be read from the custom domain instead of dying at the browser boundary.
+- Validation: `npm run build` passed; `npx wrangler pages functions build functions --project-directory . --outdir /tmp/willville_pages_validation_$$ --output-routes-path /tmp/willville_pages_validation_routes_$$.json --build-output-directory out` passed; live probes still show `https://willville.ai/api/town -> 404` and `https://welcome-to-willville.pages.dev/api/town -> 200`, which is the split this patch works around.
 
 ## Done (2026-05-27) — Bell Couriers Hold, Thrum, And Return Per Site
 

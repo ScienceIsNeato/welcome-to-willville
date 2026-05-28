@@ -1,0 +1,36 @@
+{
+  "stopId": "ganglia-common",
+  "districtId": "gates-of-hell",
+  "sourceImage": "/art/town/districts/gates-of-hell.png",
+  "spriteImage": "/art/stops/the-toolworks-ganglia-common-totem.png",
+  "regionMaskImage": "/art/town/masks/district-art/gates-of-hell.png",
+  "overlayOutput": "/art/town/glyph-halos/ganglia-common.png",
+  "alphaBox": {
+    "x": 823,
+    "y": 957,
+    "width": 125,
+    "height": 140
+  },
+  "radialScale": 1.2,
+  "haloRayPadding": 12,
+  "maskBox": {
+    "x": 811,
+    "y": 943,
+    "width": 150,
+    "height": 168
+  },
+  "cropBox": {
+    "x": 787,
+    "y": 919,
+    "width": 198,
+    "height": 216
+  },
+  "authoringCrop": {
+    "left": 3148,
+    "top": 3676,
+    "width": 792,
+    "height": 864
+  },
+  "debugMaskPath": "/docs/generated/ganglia-common-glyph-halo-mask.png",
+  "dryRun": true
+}

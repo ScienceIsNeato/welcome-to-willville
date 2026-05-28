@@ -40,6 +40,16 @@ const gangliaStudioDir =
     resolve(root, "../ganglia-core/ganglia-studio"),
     resolve(root, "../../ganglia-core/ganglia-studio"),
   ].find((candidate) => existsSync(candidate));
+const gangliaPython =
+  args.get("ganglia-python") ??
+  process.env.GANGLIA_PYTHON ??
+  (gangliaStudioDir
+    ? [
+        resolve(gangliaStudioDir, ".venv/bin/python"),
+        resolve(gangliaStudioDir, "venv/bin/python"),
+      ].find((candidate) => existsSync(candidate))
+    : null) ??
+  "python";
 
 const manifest = JSON.parse(
   await readFile(
@@ -96,7 +106,7 @@ async function runGanglia(commandArgs, cwd) {
     console.log(JSON.stringify({ cwd, args: commandArgs }, null, 2));
     return;
   }
-  const { stdout, stderr } = await execFileAsync("python", commandArgs, {
+  const { stdout, stderr } = await execFileAsync(gangliaPython, commandArgs, {
     cwd,
     maxBuffer: 1024 * 1024 * 20,
   });

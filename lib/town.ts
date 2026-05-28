@@ -523,13 +523,11 @@ function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
     normalizeManifestLines(manifestProject?.lines) ??
     heuristic?.lines ??
     topicsToLines(meta.topics ?? []);
-  const stopId =
-    heuristic?.stopId ??
-    manifestProject?.stop ??
-    meta.repo.split("/")[1]!.toLowerCase();
+  const stopId = meta.repo.split("/")[1]!.toLowerCase();
   const displayName =
     manifestProject?.displayName ?? repoDisplayName(meta.repo);
-  const position = autoPosition(district, meta.repo, stopId);
+  const position =
+    heuristic?.position ?? autoPosition(district, meta.repo, stopId);
   const queue = deriveQueue(
     manifest?.queue,
     meta.openMilestones,
@@ -644,12 +642,13 @@ export function buildInitialStops(): Stop[] {
     });
   }
   for (const h of HEURISTICS) {
+    const stopId = h.repo.split("/")[1]!.toLowerCase();
     stops.push({
-      id: h.stopId,
+      id: stopId,
       displayName: repoDisplayName(h.repo),
       district: h.district,
       lines: h.lines,
-      position: autoPosition(h.district, h.repo, h.stopId),
+      position: h.position ?? autoPosition(h.district, h.repo, stopId),
       repo: h.repo,
       blurb: h.blurb,
       glyph: h.glyph ?? defaultGlyphForRepo(h.repo),

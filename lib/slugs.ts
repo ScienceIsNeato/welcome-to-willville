@@ -11,7 +11,10 @@ export type StopRef = {
 
 export const KNOWN_STOPS: StopRef[] = [
   ...MANUAL_STOPS.map<StopRef>((m) => ({ id: m.id, district: m.district })),
-  ...HEURISTICS.map<StopRef>((h) => ({ id: h.stopId, district: h.district })),
+  ...HEURISTICS.map<StopRef>((h) => ({
+    id: h.repo.split("/")[1]!.toLowerCase(),
+    district: h.district,
+  })),
 ];
 
 export function isKnownDistrict(slug: string): slug is DistrictId {
