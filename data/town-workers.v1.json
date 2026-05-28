@@ -22,7 +22,7 @@
     {
       "id": "mop-service",
       "kind": "mop",
-      "homeSiteId": "the-mop-bucket",
+      "homeSiteId": "slop-mop",
       "homeLandmark": "slopDepot",
       "routeStrategy": "home-to-site-loop",
       "routeSiteFilter": {

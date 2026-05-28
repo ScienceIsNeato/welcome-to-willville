@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { memo, useMemo, type CSSProperties } from "react";
 import type {
   WorkerAnimatedArt,
   WorkerAnimation,
@@ -148,19 +148,13 @@ function renderStaticWorker(worker: WorldWorker) {
   );
 }
 
-export function WorldWorkerLayer({ stops, layer = "town-workers" }: Props) {
-  const workers = resolveWorldWorkers(stops).filter(
-    (worker) => worker.layer === layer,
+function WorldWorkerLayerInner({ stops, layer = "town-workers" }: Props) {
+  const workers = useMemo(
+    () => resolveWorldWorkers(stops).filter((worker) => worker.layer === layer),
+    [layer, stops],
   );
-  if (workers.length === 0) return null;
-
-  return (
-    <g
-      id={`world-worker-layer-${layer}`}
-      aria-hidden="true"
-      style={{ pointerEvents: "none" }}
-    >
-      <style>{`
+  const workerStyles = useMemo(
+    () => `
         .world-worker {
           filter: drop-shadow(0 1px 1px rgba(11, 20, 24, 0.4));
         }
@@ -176,7 +170,18 @@ export function WorldWorkerLayer({ stops, layer = "town-workers" }: Props) {
         }
         ${routeStateVisibilityStyles(workers)}
         ${siteEffectStyles(workers)}
-      `}</style>
+      `,
+    [workers],
+  );
+  if (workers.length === 0) return null;
+
+  return (
+    <g
+      id={`world-worker-layer-${layer}`}
+      aria-hidden="true"
+      style={{ pointerEvents: "none" }}
+    >
+      <style>{workerStyles}</style>
       {workers.map((worker) => (
         <g
           key={worker.id}
@@ -221,3 +226,5 @@ export function WorldWorkerLayer({ stops, layer = "town-workers" }: Props) {
     </g>
   );
 }
+
+export const WorldWorkerLayer = memo(WorldWorkerLayerInner);

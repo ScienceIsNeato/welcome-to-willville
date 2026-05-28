@@ -35,6 +35,8 @@ type Messenger = {
   orbitRadiusY: number;
   orbitPhase: number;
   target: Point;
+  statusUpdated?: string;
+  hasManifest: boolean;
 };
 
 type ActiveParticle = {
@@ -56,10 +58,14 @@ type BellAudioSession = {
 const BELL = GENERATED_TOWN_LAYOUT.landmarks.bellTower;
 const OUTBOUND_SECONDS = 2.2;
 const RETURN_SECONDS = 1.6;
+const RETURN_MIN_DELAY = 1.5; // min seconds orbiting before returning
 const MAX_RIPPLE_SECONDS = 1.2;
 const MAX_AUDIO_WHOOSHES = 72;
 const ORBIT_SPEED = 2.9;
 const THRUM_PULSE_HZ = 4.5;
+
+const DAY_MS = 86_400_000;
+const WEEK_MS = 7 * DAY_MS;
 
 function messengerRoute(from: Point, to: Point) {
   const mid = {
@@ -109,6 +115,11 @@ export function BellMessengers({
     () =>
       stops.map((stop, index) => {
         const route = messengerRoute(BELL, stop.position);
+        const hasManifest = !!(
+          stop.status.doing ||
+          stop.status.next ||
+          (stop.status.state && stop.status.state !== "unknown")
+        );
         return {
           stopId: stop.id,
           outboundCurve: route.outbound,
@@ -121,6 +132,8 @@ export function BellMessengers({
           orbitRadiusY: 8 + (index % 4) * 1.5,
           orbitPhase: index * 0.72,
           target: stop.position,
+          statusUpdated: stop.status.updated,
+          hasManifest,
         };
       }),
     [stops],
@@ -381,7 +394,7 @@ function particleForMessenger(options: {
       key: messenger.stopId,
       x: point.x,
       y: point.y,
-      color: "#8cd4a0",
+      color: returnColor(messenger),
       radius: 3,
       opacity: Math.max(0.35, 1 - progress * 0.5),
     };
@@ -396,11 +409,12 @@ function returnStartSeconds(options: {
   outboundEnd: number;
 }): number {
   const { completedAt, startedAt, outboundEnd } = options;
-  const resolvedAtSeconds =
-    completedAt === undefined
-      ? outboundEnd
-      : Math.max(0, (completedAt - startedAt) / 1000);
-  return Math.max(resolvedAtSeconds, outboundEnd);
+  const earliestReturn = outboundEnd + RETURN_MIN_DELAY;
+  if (completedAt === undefined) {
+    return earliestReturn;
+  }
+  const resolvedAtSeconds = Math.max(0, (completedAt - startedAt) / 1000);
+  return Math.max(resolvedAtSeconds, earliestReturn);
 }
 
 function pointOnCurve(curve: Curve, t: number): Point {
@@ -422,6 +436,23 @@ function pointOnCurve(curve: Curve, t: number): Point {
       3 * u * tt * curve.p2.y +
       ttt * curve.p3.y,
   };
+}
+
+/**
+ * Return particle color based on how fresh the stop's data is.
+ * Red = brand new (< few hours), Orange = last day, Yellow = last week,
+ * Blue = older than a week, Grey = empty/default manifest.
+ */
+function returnColor(messenger: Messenger): string {
+  if (!messenger.hasManifest) return "#888888"; // grey — empty/default
+  const updated = messenger.statusUpdated;
+  if (!updated) return "#888888"; // grey — no update timestamp
+  const age = Date.now() - Date.parse(updated);
+  if (Number.isNaN(age)) return "#888888";
+  if (age < 6 * 3_600_000) return "#ff4444"; // red — updated in last 6 hours
+  if (age < DAY_MS) return "#ff8844"; // orange — last day
+  if (age < WEEK_MS) return "#e6c66a"; // yellow — last week
+  return "#5588cc"; // blue — older than a week
 }
 
 function easeTravel(progress: number): number {

@@ -10,14 +10,14 @@
   ],
   "inpaints": [
     {
-      "id": "the-mop-bucket-site",
-      "stopId": "the-mop-bucket",
+      "id": "slop-mop-site",
+      "stopId": "slop-mop",
       "districtId": "slop-wharf",
       "displayName": "Slop-Mop Site Landmark",
       "enabled": true,
       "anchor": { "x": 436, "y": 710 },
-      "maskImage": "/art/town/masks/site-inpaints/the-mop-bucket-site.png",
-      "maskSvg": "/art/town/masks/site-inpaints/the-mop-bucket-site.svg",
+      "maskImage": "/art/town/masks/site-inpaints/slop-mop-site.png",
+      "maskSvg": "/art/town/masks/site-inpaints/slop-mop-site.svg",
       "maskEllipse": {
         "rx": 72,
         "ry": 86,

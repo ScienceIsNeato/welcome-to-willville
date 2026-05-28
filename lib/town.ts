@@ -551,7 +551,8 @@ function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
         (agent?.status || pkt?.doing
           ? "wip"
           : (pkt?.status ?? deriveState(meta.pushedAt, hasOpenMilestone))),
-      doing: manifestStatus?.summary ?? agent?.status ?? pkt?.doing,
+      doing:
+        manifestStatus?.summary ?? agent?.status ?? pkt?.doing ?? pkt?.summary,
       done: pkt?.done,
       next: manifestStatus?.next?.join(" / ") ?? agent?.direction ?? pkt?.next,
       blocked:

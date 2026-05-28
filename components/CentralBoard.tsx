@@ -349,7 +349,7 @@ function selectedStopRows(stop: Stop): string[] {
   const district = DISTRICTS.find((d) => d.id === stop.district);
   const districtName = district?.displayName ?? stop.district;
   const stopName = stopLabel(stop);
-  const descText = stop.status.summary ?? stop.blurb ?? "";
+  const descText = stop.blurb ?? "";
 
   const rows: string[] = [
     formatBoardRow(districtName, "center"),

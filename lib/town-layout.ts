@@ -144,13 +144,6 @@ export function sitePositionForStop(
   return slots[hashStr(seed) % slots.length]!;
 }
 
-export function serviceRouteForStop(position: Point): string {
-  const depot = GENERATED_TOWN_LAYOUT.landmarks.slopDepot;
-  const midX = Math.round((depot.x + position.x) / 2);
-  const canalBias = Math.max(760, Math.min(960, position.y + 80));
-  return `M ${depot.x} ${depot.y} C ${midX} ${canalBias}, ${midX} ${position.y}, ${position.x} ${position.y}`;
-}
-
 export function wallLoopPathForDistrict(districtId: string): string {
   const district = GENERATED_TOWN_LAYOUT.districts.find(
     (d) => d.id === districtId,
