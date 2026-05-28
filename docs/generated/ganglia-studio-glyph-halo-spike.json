@@ -1,0 +1,36 @@
+{
+  "stopId": "ganglia-studio",
+  "districtId": "gates-of-hell",
+  "sourceImage": "/art/town/districts/gates-of-hell.png",
+  "spriteImage": "/art/stops/the-atelier-ganglia-studio-totem.png",
+  "regionMaskImage": "/art/town/masks/district-art/gates-of-hell.png",
+  "overlayOutput": "/art/town/glyph-halos/ganglia-studio.png",
+  "alphaBox": {
+    "x": 1122,
+    "y": 818,
+    "width": 118,
+    "height": 140
+  },
+  "radialScale": 1.2,
+  "haloRayPadding": 12,
+  "maskBox": {
+    "x": 1110,
+    "y": 804,
+    "width": 142,
+    "height": 168
+  },
+  "cropBox": {
+    "x": 1086,
+    "y": 780,
+    "width": 190,
+    "height": 216
+  },
+  "authoringCrop": {
+    "left": 4344,
+    "top": 3120,
+    "width": 760,
+    "height": 864
+  },
+  "debugMaskPath": "/docs/generated/ganglia-studio-glyph-halo-mask.png",
+  "dryRun": true
+}

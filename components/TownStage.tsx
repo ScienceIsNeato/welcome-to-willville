@@ -307,10 +307,10 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     [activeDragId],
   );
 
-  const handleResetStop = useCallback((stopId: string) => {
-    setMovedStops((prev) => {
-      const item = prev[stopId];
-      if (!item) return prev;
+  const handleResetStop = useCallback(
+    (stopId: string) => {
+      const item = movedStops[stopId];
+      if (!item) return;
 
       setLocalStops((prevStops) =>
         prevStops.map((s) =>
@@ -318,11 +318,14 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         ),
       );
 
-      const next = { ...prev };
-      delete next[stopId];
-      return next;
-    });
-  }, []);
+      setMovedStops((prev) => {
+        const next = { ...prev };
+        delete next[stopId];
+        return next;
+      });
+    },
+    [movedStops],
+  );
 
   const handleResetAll = useCallback(() => {
     setLocalStops((prevStops) =>

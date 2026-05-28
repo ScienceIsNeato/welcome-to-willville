@@ -1,15 +1,24 @@
+type AlphaBounds = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 type GlyphHaloConfig = {
   enabled?: boolean;
   description: string;
+  radialScale?: number;
+  alphaBounds?: AlphaBounds;
   padding?: number;
   cacheKey?: string;
   differenceThreshold?: number;
-  widthScale?: number;
 };
 
 type SpriteLike = {
   stopId: string;
   width: number;
+  height: number;
   inpaintHalo?: GlyphHaloConfig;
 };
 
@@ -26,6 +35,7 @@ type Box = {
 };
 
 const GLYPH_HALO_OUTPUT_ROOT = "/art/town/glyph-halos";
+const GLYPH_HALO_DEFAULT_RADIAL_SCALE = 1.2;
 const GLYPH_HALO_DEFAULT_PADDING = 24;
 const GLYPH_HALO_DEFAULT_THRESHOLD = 10;
 
@@ -37,29 +47,61 @@ export function glyphHaloConfigForSprite(
   return sprite.inpaintHalo;
 }
 
-function glyphHaloRadiusForSprite(sprite: Pick<SpriteLike, "width">) {
-  return Math.max(1, Math.round(sprite.width / 2));
+export function glyphHaloRadialScaleForSprite(sprite: SpriteLike) {
+  return Math.max(
+    1,
+    Number(sprite.inpaintHalo?.radialScale ?? GLYPH_HALO_DEFAULT_RADIAL_SCALE),
+  );
 }
 
-function glyphHaloWidthScaleForSprite(sprite: SpriteLike) {
-  const scale = sprite.inpaintHalo?.widthScale ?? 1;
-  return Math.max(0.2, scale);
+export function glyphHaloRayPaddingForSprite(
+  sprite: SpriteLike,
+  alphaWidth = glyphHaloAlphaBoundsForSprite(sprite).width,
+) {
+  const radialScale = glyphHaloRadialScaleForSprite(sprite);
+  if (radialScale <= 1) return 0;
+  return Math.max(1, Math.round((alphaWidth * (radialScale - 1)) / 2));
+}
+
+function glyphHaloAlphaBoundsForSprite(sprite: SpriteLike): AlphaBounds {
+  return (
+    sprite.inpaintHalo?.alphaBounds ?? {
+      x: 0,
+      y: 0,
+      width: sprite.width,
+      height: sprite.height,
+    }
+  );
+}
+
+export function glyphHaloAlphaBoxForSprite(
+  sprite: SpriteLike,
+  center: Point,
+): Box {
+  const alphaBounds = glyphHaloAlphaBoundsForSprite(sprite);
+  return {
+    x: Math.round(center.x - sprite.width / 2 + alphaBounds.x),
+    y: Math.round(center.y - sprite.height / 2 + alphaBounds.y),
+    width: alphaBounds.width,
+    height: alphaBounds.height,
+  };
 }
 
 export function glyphHaloMaskBoxForSprite(
   sprite: SpriteLike,
   center: Point,
 ): Box {
-  const radius = glyphHaloRadiusForSprite(sprite);
-  const width = Math.max(
-    1,
-    Math.round(radius * 2 * glyphHaloWidthScaleForSprite(sprite)),
-  );
+  const alphaBox = glyphHaloAlphaBoxForSprite(sprite, center);
+  const radialScale = glyphHaloRadialScaleForSprite(sprite);
+  const scaledWidth = Math.max(1, Math.round(alphaBox.width * radialScale));
+  const scaledHeight = Math.max(1, Math.round(alphaBox.height * radialScale));
+  const alphaCenterX = alphaBox.x + alphaBox.width / 2;
+  const alphaCenterY = alphaBox.y + alphaBox.height / 2;
   return {
-    x: Math.round(center.x - width / 2),
-    y: Math.round(center.y - radius),
-    width,
-    height: radius * 2,
+    x: Math.round(alphaCenterX - scaledWidth / 2),
+    y: Math.round(alphaCenterY - scaledHeight / 2),
+    width: scaledWidth,
+    height: scaledHeight,
   };
 }
 

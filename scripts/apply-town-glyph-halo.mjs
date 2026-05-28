@@ -9,10 +9,13 @@ import sharp from "sharp";
 import {
   clampBoxToCanvas,
   glyphHaloAssetPath,
+  glyphHaloAlphaBoxForSprite,
   glyphHaloConfigForSprite,
   glyphHaloCropBoxForSprite,
   glyphHaloDifferenceThresholdForSprite,
   glyphHaloMaskBoxForSprite,
+  glyphHaloRayPaddingForSprite,
+  glyphHaloRadialScaleForSprite,
 } from "../lib/glyphHalo.ts";
 
 const execFileAsync = promisify(execFile);
@@ -82,25 +85,92 @@ function slugForHeuristic(heuristic) {
   return heuristic.repo.split("/").pop().toLowerCase();
 }
 
-function buildMask(cropBox, maskBox, scale) {
+async function buildMask(
+  cropBox,
+  spriteCenter,
+  sprite,
+  spritePath,
+  regionMaskPath,
+  scale,
+  radialScale,
+) {
   const width = cropBox.width * scale;
   const height = cropBox.height * scale;
   const buffer = Buffer.alloc(width * height * 4, 255);
-  const localMask = {
-    x: (maskBox.x - cropBox.x) * scale,
-    y: (maskBox.y - cropBox.y) * scale,
-    width: maskBox.width * scale,
-    height: maskBox.height * scale,
+  const spriteWidth = Math.max(1, Math.round(sprite.width * scale));
+  const spriteHeight = Math.max(1, Math.round(sprite.height * scale));
+  const spriteCenterLocal = {
+    x: (spriteCenter.x - cropBox.x) * scale,
+    y: (spriteCenter.y - cropBox.y) * scale,
+  };
+  const { data: spritePixels } = await sharp(spritePath)
+    .ensureAlpha()
+    .resize(spriteWidth, spriteHeight, {
+      fit: "fill",
+    })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const { data: regionMaskPixels } = await sharp(regionMaskPath)
+    .ensureAlpha()
+    .extract({
+      left: cropBox.x,
+      top: cropBox.y,
+      width: cropBox.width,
+      height: cropBox.height,
+    })
+    .resize(width, height, {
+      fit: "fill",
+      kernel: "nearest",
+    })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+
+  const spritePixelCenter = {
+    x: spriteWidth / 2,
+    y: spriteHeight / 2,
+  };
+  const spriteTopLeft = {
+    x: spriteCenterLocal.x - spritePixelCenter.x,
+    y: spriteCenterLocal.y - spritePixelCenter.y,
+  };
+  const safeScale = Math.max(1, radialScale);
+
+  const hasGlyphAlphaAt = (sampleX, sampleY) => {
+    const spriteX = Math.floor(sampleX - spriteTopLeft.x);
+    const spriteY = Math.floor(sampleY - spriteTopLeft.y);
+    if (
+      spriteX < 0 ||
+      spriteY < 0 ||
+      spriteX >= spriteWidth ||
+      spriteY >= spriteHeight
+    ) {
+      return false;
+    }
+    const alpha = spritePixels[(spriteY * spriteWidth + spriteX) * 4 + 3];
+    return alpha > 8;
   };
 
-  const minX = Math.max(0, Math.floor(localMask.x));
-  const minY = Math.max(0, Math.floor(localMask.y));
-  const maxX = Math.min(width - 1, Math.ceil(localMask.x + localMask.width));
-  const maxY = Math.min(height - 1, Math.ceil(localMask.y + localMask.height));
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const regionMaskIndex = (y * width + x) * 4;
+      const regionMaskAlpha = regionMaskPixels[regionMaskIndex + 3];
+      const regionMaskValue = Math.max(
+        regionMaskPixels[regionMaskIndex],
+        regionMaskPixels[regionMaskIndex + 1],
+        regionMaskPixels[regionMaskIndex + 2],
+      );
+      if (regionMaskAlpha <= 8 || regionMaskValue <= 8) continue;
 
-  for (let y = minY; y <= maxY; y += 1) {
-    for (let x = minX; x <= maxX; x += 1) {
-      buffer[(y * width + x) * 4 + 3] = 0;
+      const localX = x + 0.5;
+      const localY = y + 0.5;
+      const dx = localX - spriteCenterLocal.x;
+      const dy = localY - spriteCenterLocal.y;
+      const scaledSampleX = spriteCenterLocal.x + dx / safeScale;
+      const scaledSampleY = spriteCenterLocal.y + dy / safeScale;
+      const inScaledGlyph = hasGlyphAlphaAt(scaledSampleX, scaledSampleY);
+      if (inScaledGlyph) {
+        buffer[(y * width + x) * 4 + 3] = 0;
+      }
     }
   }
 
@@ -195,6 +265,10 @@ const canvas = {
   width: districtLayer.pixelSize.width / (districtLayer.scale ?? 4),
   height: districtLayer.pixelSize.height / (districtLayer.scale ?? 4),
 };
+const alphaBox = clampBoxToCanvas(
+  glyphHaloAlphaBoxForSprite(sprite, heuristic.position),
+  canvas,
+);
 const maskBox = clampBoxToCanvas(
   glyphHaloMaskBoxForSprite(sprite, heuristic.position),
   canvas,
@@ -219,11 +293,21 @@ const cropInput = join(tempDir, `${requestedId}-input.png`);
 const cropMask = join(tempDir, `${requestedId}-mask.png`);
 const cropOutput = join(tempDir, `${requestedId}-output.png`);
 const sourceImage = projectPath(districtLayer.src);
+const spriteImage = projectPath(sprite.src);
+const regionMaskImage = projectPath(districtLayer.mask);
 const overlayOutput = projectPath(glyphHaloAssetPath(requestedId));
 
 await sharp(sourceImage).extract(authoringCrop).toFile(cropInput);
 
-const mask = buildMask(cropBox, maskBox, scale);
+const mask = await buildMask(
+  cropBox,
+  heuristic.position,
+  sprite,
+  spriteImage,
+  regionMaskImage,
+  scale,
+  glyphHaloRadialScaleForSprite(sprite),
+);
 await sharp(mask.buffer, {
   raw: {
     width: mask.width,
@@ -233,6 +317,17 @@ await sharp(mask.buffer, {
 })
   .png()
   .toFile(cropMask);
+
+let debugMaskPath = null;
+if (dryRun) {
+  debugMaskPath = resolve(
+    root,
+    "docs/generated",
+    `${requestedId}-glyph-halo-mask.png`,
+  );
+  await mkdir(dirname(debugMaskPath), { recursive: true });
+  await writeFile(debugMaskPath, await readFile(cropMask));
+}
 
 await runGanglia(
   [
@@ -270,10 +365,18 @@ const summary = {
   stopId: requestedId,
   districtId: sprite.district,
   sourceImage: districtLayer.src,
+  spriteImage: sprite.src,
+  regionMaskImage: districtLayer.mask,
   overlayOutput: glyphHaloAssetPath(requestedId),
+  alphaBox,
+  radialScale: glyphHaloRadialScaleForSprite(sprite),
+  haloRayPadding: glyphHaloRayPaddingForSprite(sprite, alphaBox.width),
   maskBox,
   cropBox,
   authoringCrop,
+  debugMaskPath:
+    debugMaskPath?.replace(`${root}/public`, "")?.replace(`${root}/`, "/") ??
+    null,
   dryRun,
 };
 

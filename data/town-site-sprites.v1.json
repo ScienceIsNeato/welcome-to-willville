@@ -106,7 +106,18 @@
       "width": 140,
       "height": 140,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the Ganglia Studio infernal atelier glyph directly into the Gates of Hell paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the studio feel built into the district art: violet ember spill, soot-dusted workshop glow, scorched brass filings, occult paint drips, warm kiln light, subtle reel-shadow geometry, and charred cobbles that match the whimsical spooky town style. Keep the center composition open enough for the foreground studio glyph to sit on top cleanly without doubling the silhouette. Match the surrounding Gates of Hell palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "ganglia-studio-halo-v5",
+        "radialScale": 1.2,
+        "alphaBounds": {
+          "x": 11,
+          "y": 0,
+          "width": 118,
+          "height": 140
+        }
+      }
     },
     {
       "stopId": "ganglia-common",
@@ -116,7 +127,18 @@
       "width": 140,
       "height": 140,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the ganglia-common infernal toolworks glyph directly into the Gates of Hell paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the toolworks feel built into the district art: ember-lit brass dust, hot rivet glints, cable-scorch shadows, copper workshop glow, soot-softened cobbles, and subtle foundry heat bloom that match the whimsical spooky town style. Keep the center composition open enough for the foreground toolworks glyph to sit on top cleanly without doubling the silhouette. Match the surrounding Gates of Hell palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "ganglia-common-halo-v3",
+        "radialScale": 1.2,
+        "alphaBounds": {
+          "x": 7,
+          "y": 0,
+          "width": 125,
+          "height": 140
+        }
+      }
     },
     {
       "stopId": "halloweentracker",
@@ -129,8 +151,14 @@
       "anchorY": 78,
       "inpaintHalo": {
         "description": "Paint a native background integration layer for the HalloweenTracker watchful pumpkin glyph directly into the Gates of Hell paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the pumpkin monument feel built into the district art: ember-orange underglow, smoky pumpkin-light spill, subtle carved-stone pedestal shadow, scorched cobbles, curled black-vine edging, and warm haunted reflections that match the whimsical spooky town style. Keep the center composition open enough for the foreground pumpkin glyph to sit on top cleanly without doubling the silhouette. Match the surrounding Gates of Hell palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
-        "cacheKey": "halloweentracker-halo-v2",
-        "widthScale": 0.7
+        "cacheKey": "halloweentracker-halo-v10",
+        "radialScale": 1.2,
+        "alphaBounds": {
+          "x": 21,
+          "y": 0,
+          "width": 97,
+          "height": 140
+        }
       }
     },
     {

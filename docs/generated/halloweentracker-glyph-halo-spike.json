@@ -2,24 +2,35 @@
   "stopId": "halloweentracker",
   "districtId": "gates-of-hell",
   "sourceImage": "/art/town/districts/gates-of-hell.png",
+  "spriteImage": "/art/stops/the-watchful-pumpkin-halloween-tracker-totem.png",
+  "regionMaskImage": "/art/town/masks/district-art/gates-of-hell.png",
   "overlayOutput": "/art/town/glyph-halos/halloweentracker.png",
-  "maskBox": {
+  "alphaBox": {
     "x": 1010,
     "y": 795,
-    "width": 98,
+    "width": 97,
     "height": 140
   },
+  "radialScale": 1.2,
+  "haloRayPadding": 10,
+  "maskBox": {
+    "x": 1001,
+    "y": 781,
+    "width": 116,
+    "height": 168
+  },
   "cropBox": {
-    "x": 986,
-    "y": 771,
-    "width": 146,
-    "height": 188
+    "x": 977,
+    "y": 757,
+    "width": 164,
+    "height": 216
   },
   "authoringCrop": {
-    "left": 3944,
-    "top": 3084,
-    "width": 584,
-    "height": 752
+    "left": 3908,
+    "top": 3028,
+    "width": 656,
+    "height": 864
   },
+  "debugMaskPath": "/docs/generated/halloweentracker-glyph-halo-mask.png",
   "dryRun": true
 }

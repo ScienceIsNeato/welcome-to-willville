@@ -1,13 +1,54 @@
 <!-- willville
-doing: PR #11 coordinates and stopId refactor — verification green
-done: coordinate persistence, town merge pipeline position fix, stopId layer removal, dynamic slugs standard, sprite manifests migration
-next: merge PR #11
+doing: Wrapping the Gates of Hell halo pass and moving into Zeitgeist underlays
+done: fixed the masked-edit polarity, regenerated the three Gates of Hell halo plates, and confirmed the updated underlays live
+next: adapt the same masked inpaint rail for the Zeitgeist sites
 risk: low
-milestone: Isthmus town generation
+milestone: Glyph halo integration
 eta: 2026-05-27
 -->
 
 # Status
+
+## Done (2026-05-27) — Halo Mask Polarity Fixed And All Three Gates Of Hell Plates Regenerated
+
+- Confirmed the masked-edit bug was a polarity mistake: the generator was only opening the thin outer ring and protecting the center silhouette, which made the paint read like the opposite of the intended mask.
+- Changed the halo authoring mask so the full scaled glyph footprint becomes the editable region, then regenerated Ganglia Studio, ganglia-common, and Halloween Tracker with fresh cache keys.
+- Rebuilt the local preview and confirmed the updated plates now read as painted underlays beneath the foreground glyphs instead of center cut-outs.
+- Validation: dry-run mask inspection showed the editable region move from ring-only to filled silhouette; real `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio node scripts/apply-town-glyph-halo.mjs --id=ganglia-common`, `--id=ganglia-studio`, and `--id=halloweentracker` all completed successfully; `./scripts/deploy_app.sh` rebuilt the app and served the refreshed overlays on `http://127.0.0.1:3740/`.
+
+## Done (2026-05-27) — Halo Extent Now Uses Constant-Length Rays Off The Real Glyph Silhouette
+
+- Replaced the multiplicative silhouette-scaling rule with the actual halo rule: start from the opaque glyph silhouette, then extend every radial line outward by the same short fixed distance, derived from about `10%` of the occupied glyph width rather than from the empty sprite frame.
+- Kept the explicit alpha-bound metadata for Halloween Tracker and Ganglia Studio, but changed the shared box math and the Ganglia authoring mask to add fixed per-ray padding around the real occupied silhouette instead of making already-long rays even longer.
+- Regenerated both halo plates and confirmed the live stage now reflects the capped-ray model: Halloween Tracker renders at about `59x74` on stage around a roughly `53x42` marker box, and Ganglia Studio renders at about `68x76` around a roughly `47x42` marker box.
+- Validation: `node scripts/apply-town-glyph-halo.mjs --id=halloweentracker --dry-run` resolved `alphaBox.width: 97`, `haloRayPadding: 10`, `maskBox: 117x160`, and `cropBox: 165x208`; `node scripts/apply-town-glyph-halo.mjs --id=ganglia-studio --dry-run` resolved `alphaBox.width: 118`, `haloRayPadding: 12`, `maskBox: 142x164`, and `cropBox: 190x212`; both real `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio node scripts/apply-town-glyph-halo.mjs --id=...` passes regenerated `/art/town/glyph-halos/halloweentracker.png` and `/art/town/glyph-halos/ganglia-studio.png`; fresh local deploy via `./scripts/deploy_app.sh` confirmed both routes live; `sm swab --no-cache` passed.
+
+## Done (2026-05-27) — Halloween Tracker Tightened Again And Ganglia Studio Gets Its First Halo
+
+- Pulled the Halloween Tracker spread in one more step from `14px` to `10px`, which brings the editable contour down again from `168x168` to `160x160` around the `140x140` glyph frame.
+- Added the first Ganglia Studio inpaint halo in the same district-clipped contour system, with a Gates of Hell workshop-style underlay and an initial `168x168` contour around the `140x140` studio glyph frame.
+- Regenerated both halo plates, rebuilt the local preview, and confirmed both sites render their updated underlays live in Gates of Hell.
+- Validation: `node scripts/apply-town-glyph-halo.mjs --id=halloweentracker --dry-run` resolved a `160x160` mask box and `208x208` crop; `node scripts/apply-town-glyph-halo.mjs --id=ganglia-studio --dry-run` resolved a `168x168` mask box and `216x216` crop; `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio node scripts/apply-town-glyph-halo.mjs --id=halloweentracker` and `--id=ganglia-studio` regenerated `/art/town/glyph-halos/halloweentracker.png` and `/art/town/glyph-halos/ganglia-studio.png`; fresh local deploy via `./scripts/deploy_app.sh` confirmed both live routes; `sm swab --no-cache` passed.
+
+## Done (2026-05-27) — Halloween Tracker Halo Is District-Clipped And Only About 20% Wider Than The Glyph
+
+- Intersected the contour-based halo mask with the Gates of Hell district art mask so the inpaint area cannot spill into parts of the town the site should not know about.
+- Pulled the Halloween Tracker halo spread in from `25px` to `14px`, which brings the editable contour down to `168x168` around the `140x140` glyph frame instead of the earlier `190x190` footprint.
+- Regenerated the live halo asset and confirmed the stage render tightened again after the district clipping pass.
+- Validation: a dry run of `node scripts/apply-town-glyph-halo.mjs --id=halloweentracker --dry-run` resolved `regionMaskImage: /art/town/masks/district-art/gates-of-hell.png`, a `168x168` contour mask box, and a `216x216` crop; `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio node scripts/apply-town-glyph-halo.mjs --id=halloweentracker` regenerated `/art/town/glyph-halos/halloweentracker.png`; fresh local deploy via `./scripts/deploy_app.sh` confirmed the tighter live route on `http://127.0.0.1:3740/gates-of-hell/halloweentracker?site_type=desktop`; `sm swab --no-cache` passed.
+
+## Done (2026-05-27) — Halloween Tracker Halo Uses The Glyph Contour Instead Of A Rectangle
+
+- Replaced the old rectangular inpaint cutout with a glyph-shaped mask that grows outward from the actual Halloween Tracker alpha silhouette, so the edit boundary now follows the pumpkin/totem form instead of reading like a pasted box.
+- Switched the halo config from the earlier width squeeze to a fixed `25px` contour spread, regenerated the live halo asset, and confirmed the resulting overlay plate now has an irregular contour that matches the glyph footprint.
+- Added a dry-run debug mask artifact so the contour can be checked directly before spending a real Ganglia generation pass.
+- Validation: `node scripts/apply-town-glyph-halo.mjs --id=halloweentracker --dry-run` wrote `/docs/generated/halloweentracker-glyph-halo-mask.png` plus a readable preview and resolved the new `190x190` contour mask box with a `238x238` crop; `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio node scripts/apply-town-glyph-halo.mjs --id=halloweentracker` regenerated `/art/town/glyph-halos/halloweentracker.png`; fresh local deploy via `./scripts/deploy_app.sh` confirmed the updated halo is live on `http://127.0.0.1:3740/gates-of-hell/halloweentracker?site_type=desktop`; `sm swab --no-cache` passed.
+
+## Done (2026-05-27) — Halloween Tracker Halo Width Now Fits The Marked Area Better
+
+- Tightened the Halloween Tracker halo horizontally instead of introducing a more complex new shape system, keeping the full vertical glow while pulling the underlay in from the sides.
+- Regenerated the real halo plate with the narrower bounds and verified it in the live Gates of Hell route, where the underlay now hugs the glyph much more closely instead of bleeding far past the marked boundary.
+- Validation: `node scripts/apply-town-glyph-halo.mjs --id=halloweentracker --dry-run` resolved the narrowed `98x140` halo box and `146x188` context crop; `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio node scripts/apply-town-glyph-halo.mjs --id=halloweentracker` regenerated `/art/town/glyph-halos/halloweentracker.png`; fresh local deploy via `./scripts/deploy_app.sh` confirmed the tighter live stage render on `http://127.0.0.1:3740/gates-of-hell/halloweentracker?site_type=desktop`; `sm swab --no-cache` passed.
 
 ## Done (2026-05-27) — Halloween Tracker Glyph Halo Spike Works On The Live Map
 
