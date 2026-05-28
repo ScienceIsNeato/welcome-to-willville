@@ -1,0 +1,36 @@
+{
+  "stopId": "loopcloser",
+  "districtId": "the-zeitgeist",
+  "sourceImage": "/art/town/districts/the-zeitgeist.png",
+  "spriteImage": "/art/stops/the-roundabout-loopcloser-totem.png",
+  "regionMaskImage": "/art/town/masks/district-art/the-zeitgeist.png",
+  "overlayOutput": "/art/town/glyph-halos/loopcloser.png",
+  "alphaBox": {
+    "x": 731,
+    "y": 293,
+    "width": 122,
+    "height": 140
+  },
+  "radialScale": 1.2,
+  "haloRayPadding": 12,
+  "maskBox": {
+    "x": 719,
+    "y": 279,
+    "width": 146,
+    "height": 168
+  },
+  "cropBox": {
+    "x": 695,
+    "y": 255,
+    "width": 194,
+    "height": 216
+  },
+  "authoringCrop": {
+    "left": 2780,
+    "top": 1020,
+    "width": 776,
+    "height": 864
+  },
+  "debugMaskPath": "/docs/generated/loopcloser-glyph-halo-mask.png",
+  "dryRun": true
+}

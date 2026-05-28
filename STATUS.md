@@ -1,13 +1,20 @@
 <!-- willville
-doing: Wrapping the Gates of Hell halo pass and moving into Zeitgeist underlays
-done: fixed the masked-edit polarity, regenerated the three Gates of Hell halo plates, and confirmed the updated underlays live
-next: adapt the same masked inpaint rail for the Zeitgeist sites
+doing: Zeitgeist inpaint pass in progress after closing out the Gates of Hell halo work
+done: fixed the masked-edit polarity, regenerated the Gates of Hell halo plates, and confirmed the corrected underlays live
+next: finish the Zeitgeist plates and reload the district view for a final pass
 risk: low
 milestone: Glyph halo integration
 eta: 2026-05-27
 -->
 
 # Status
+
+## In Progress (2026-05-27) — Zeitgeist Inpaint Plates Are Being Regenerated
+
+- Started the Zeitgeist set on the new masked inpaint rail after finishing the Gates of Hell halo fixup.
+- Regenerated the Zeitgeist halo plates for ChronicChronicler, fogofdog-frontend, loopcloser, and razer-ripple using the same district-clipped editing path.
+- Reloaded the live Zeitgeist route and confirmed the updated loopcloser plate is rendering from the new cached asset.
+- Validation: `node scripts/apply-town-glyph-halo.mjs --id=loopcloser --dry-run` resolved `alphaBox.width: 122`, `haloRayPadding: 12`, `maskBox: 146x168`, and `cropBox: 194x216`; real runs for `--id=chronicchronicler`, `--id=fogofdog-frontend`, and `--id=razer-ripple` completed successfully; the live route at `http://127.0.0.1:3740/the-zeitgeist/loopcloser/?site_type=desktop` reloaded against `loopcloser-halo-v1`.
 
 ## Done (2026-05-27) — Halo Mask Polarity Fixed And All Three Gates Of Hell Plates Regenerated
 
