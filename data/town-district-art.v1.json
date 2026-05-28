@@ -150,8 +150,8 @@
     {
       "id": "slop-wharf",
       "displayName": "Slop Wharf",
-      "src": "/art/town/districts/slop-wharf.png",
-      "contentHash": "district-art-slop-wharf-remasked-2026-05-26",
+      "src": "/art/town/districts-inpainted/slop-wharf.png",
+      "contentHash": "district-art-slop-wharf-site-inpaint-2026-05-28-0201",
       "mask": "/art/town/masks/district-art/slop-wharf.png",
       "components": [
         {
@@ -188,7 +188,8 @@
       "pixelSize": {
         "width": 6400,
         "height": 4960
-      }
+      },
+      "originalSrc": "/art/town/districts/slop-wharf.png"
     },
     {
       "id": "dogwallow-ramble-ii",

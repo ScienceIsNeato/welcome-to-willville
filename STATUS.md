@@ -1,7 +1,7 @@
 <!-- willville
-doing: Zeitgeist inpaint pass in progress after closing out the Gates of Hell halo work
-done: fixed the masked-edit polarity, regenerated the Gates of Hell halo plates, and confirmed the corrected underlays live
-next: finish the Zeitgeist plates and reload the district view for a final pass
+doing: Slop Wharf inpaint pass wrapped and the district layer is live
+done: fixed the masked-edit polarity, regenerated the Gates of Hell halo plates, finished the Zeitgeist plates, and added the Slop Wharf landmark pass
+next: keep the inpaint rail ready for the next district that needs a similar treatment
 risk: low
 milestone: Glyph halo integration
 eta: 2026-05-27
@@ -9,7 +9,14 @@ eta: 2026-05-27
 
 # Status
 
-## In Progress (2026-05-27) — Zeitgeist Inpaint Plates Are Being Regenerated
+## Done (2026-05-27) — Slop Wharf Landmark Pass Is Live
+
+- Ran the existing Slop Wharf site-inpaint rail on the Slop-Mop landmark and regenerated the district layer from the new masked-edit path.
+- Fixed the site-inpaint script to prefer the Ganglia Studio venv Python instead of the global interpreter so the district pass could actually execute.
+- Confirmed the live Slop Wharf route reloads against the regenerated inpainted district layer with the new landmark visible.
+- Validation: `GANGLIA_STUDIO_DIR=/Users/pacey/Documents/SourceCode/ganglia_repos/ganglia-core/ganglia-studio node scripts/apply-town-site-inpaints.mjs --district=slop-wharf` completed successfully after the Python fallback fix; `./scripts/deploy_app.sh` rebuilt and served the updated district on `http://127.0.0.1:3740/`; the live Slop Wharf stop page reloaded cleanly with the new layer.
+
+## Done (2026-05-27) — Zeitgeist Inpaint Plates Regenerated
 
 - Started the Zeitgeist set on the new masked inpaint rail after finishing the Gates of Hell halo fixup.
 - Regenerated the Zeitgeist halo plates for ChronicChronicler, fogofdog-frontend, loopcloser, and razer-ripple using the same district-clipped editing path.
