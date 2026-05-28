@@ -1,13 +1,24 @@
-<!-- willville
-doing: Slop Wharf inpaint pass wrapped and the district layer is live
-done: fixed the masked-edit polarity, regenerated the Gates of Hell halo plates, finished the Zeitgeist plates, and added the Slop Wharf landmark pass
-next: keep the inpaint rail ready for the next district that needs a similar treatment
-risk: low
-milestone: Glyph halo integration
-eta: 2026-05-27
--->
-
 # Status
+
+## Done (2026-05-28) — Read-Only Manifest Branch Is Green For PR Update
+
+- Added the missing `detect-secrets` tool dependency so the configured slop-mop security sweep actually runs in the repo venv instead of dying on a missing module.
+- Ignored the local `.claude`, `.roo`, `.clinerules`, and `.windsurf` editor-agent folders so machine-local metadata stops polluting the branch.
+- Revalidated the full branch on the fresh `codex/read-only-bell-sync` line after syncing it with the latest `main`; both `sm swab --no-cache` and `activate && sm scour --no-cache` are green now.
+
+## Done (2026-05-28) — Bell Sync Is Read-Only And Ephemeral Now
+
+- Removed the last Willville write-back path so the town now only reads committed `.willville.json` packets from repo branches and never pushes anything back out.
+- Changed the bell flow to scrape repo manifests into in-memory cache only, and tightened the detail/status rendering so status and direction come only from repo-authored packets instead of generated fallback copy.
+- Deleted the old populate script hook, updated the manifest docs to spell out the read-only bell/cache model, and cleaned out the leftover dead helper code from the old writer path.
+- Validation: touched-file diagnostics were clean; stale write-back/event-name symbols were grep-clean; `sm swab --no-cache --json --output-file .slopmop/last_swab.json` reported `all_passed: true` with `13` passed gates and `0` failed.
+
+## Done (2026-05-28) — Willville Now Reads And Writes Canonical .willville.json Manifests
+
+- Removed the live runtime compatibility rail for `<!-- willville -->` STATUS packets. The town API now reads only `.willville.json` from the active branch, with fallback to the default branch when the active branch has no manifest.
+- Removed hybrid branch-manifest merging too, so Willville now uses the exact active-branch manifest packet instead of stitching fields together across PR/default/recent branches.
+- Switched the bell manifest writer and the standalone populate script over to canonical `.willville.json` writes, removed the dead STATUS packet parser, and updated the manifest docs/examples so the contract matches the code again.
+- Validation: touched-file diagnostics were clean; `sm swab -g myopia:code-sprawl` passed after helper extraction; `sm swab -g overconfidence:type-blindness.js` passed after the status-state typing fix; full `sm swab --json --output-file .slopmop/last_swab.json` reported `all_passed: true` with `13` passed gates and `0` failed.
 
 ## Done (2026-05-28) — Dead GeneratedTownBase Prop Removed After Final PR Comment
 

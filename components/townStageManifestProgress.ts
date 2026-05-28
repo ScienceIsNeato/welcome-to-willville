@@ -8,13 +8,13 @@ export type ManifestRepoProgressEvent = {
   type: "repo";
   repo: string;
   stopId: string;
-  result: "updated" | "skipped" | "error";
+  result: "cached" | "missing" | "error";
 };
 
 export type ManifestCompleteEvent = {
   type: "complete";
-  updated: string[];
-  skipped: string[];
+  cached: string[];
+  missing: string[];
   errors: string[];
   discovered: string[];
   registered: RegisteredManifestRepo[];

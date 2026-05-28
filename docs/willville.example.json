@@ -3,8 +3,8 @@
   "project": {
     "name": "your-repo-name",
     "display_name": "The Building's Sign",
-    "district": "the-foundry",
-    "stop": "the-building",
+    "district": "the-zeitgeist",
+    "stop": "your-repo-name",
     "lines": ["ai"],
     "visibility": "public",
     "homepage": "https://example.com"
@@ -21,5 +21,10 @@
     "milestone": "What's the next big shipment?",
     "eta_days": 7,
     "priority": 2
+  },
+  "agent": {
+    "status": "What you're doing right now, plain English.",
+    "direction": "Where it's headed next.",
+    "last_update": "2026-05-28T00:00:00Z"
   }
 }

@@ -12,6 +12,9 @@ the sign on the door says. Repos without a manifest still appear — they just
 fall back to baked-in heuristics for placement and show "no manifest yet" in
 their SPOG card.
 
+`.willville.json` is the only live packet. Willville does not read STATUS.md
+packets.
+
 ## Spec (v1)
 
 All fields are optional. Anything you omit falls back to heuristics or to
@@ -23,8 +26,8 @@ GitHub repo metadata.
   "project": {
     "name": "ChronicChronicler",
     "display_name": "The Chronicler's Tower",
-    "district": "web-row",
-    "stop": "the-chroniclers-tower",
+    "district": "the-zeitgeist",
+    "stop": "chronicchronicler",
     "lines": ["web", "writing"],
     "visibility": "public",
     "homepage": "https://chronicchronicler.example.com"
@@ -41,6 +44,11 @@ GitHub repo metadata.
     "milestone": "Closed beta invites",
     "eta_days": 14,
     "priority": 3
+  },
+  "agent": {
+    "status": "Perf testing, art cleanup, and deploy fixes",
+    "direction": "Get prod serving the same live story the local map already shows",
+    "last_update": "2026-05-28T00:00:00Z"
   }
 }
 ```
@@ -90,6 +98,19 @@ session, update `queue.eta_days` as the milestone moves. When the project
 ships, set `queue.active: false` to take it off the Express until the next
 milestone.
 
+### `agent` fields
+
+The `agent` block is the plain-English committed standup packet used for the
+detail boards when active work is happening.
+
+| Field          | Type     | Notes                                           |
+| -------------- | -------- | ----------------------------------------------- |
+| `status`       | string   | What you're doing right now, in plain English.  |
+| `direction`    | string   | Where the work is headed next.                  |
+| `difficulties` | string   | Optional current blocker summary.               |
+| `needs_human`  | string   | Optional human-input request.                   |
+| `last_update`  | ISO date | Freshness stamp for the committed agent packet. |
+
 ## The Canal (PR live status)
 
 Willville is a coastal town. A canal runs along the bottom of the map with six
@@ -112,16 +133,16 @@ No manifest setup is required — the canal infers everything from GitHub.
 
 ## Districts (current)
 
-| ID                     | Vibe                                                     |
-| ---------------------- | -------------------------------------------------------- |
-| `the-press-row`        | Writing, novels, substack                                |
-| `the-foundry`          | GANGLIA / AI engines                                     |
-| `slop-wharf`           | slop-mop family + dev quality scaffolding                |
-| `the-audit-yard`       | SWE / AI evaluation & traces                             |
-| `web-row`              | Customer-facing websites & apps                          |
-| `the-sawmill-district` | Tinkering, hardware, side experiments, physical woodwork |
-| `hallow-hollow`        | Halloween, spooky storytelling                           |
-| `the-hearth`           | Personal productivity & life management                  |
+| ID                    | Vibe                                                   |
+| --------------------- | ------------------------------------------------------ |
+| `mirrored-mile`       | Writing, novels, and reflective long-form work         |
+| `slop-wharf`          | slop-mop family and dev quality scaffolding            |
+| `halls-of-judgement`  | AI evaluations and training work                       |
+| `the-zeitgeist`       | Customer-facing websites and apps                      |
+| `gates-of-hell`       | Halloween and spooky storytelling                      |
+| `dogwallow-ramble-ii` | Homesteading projects and household work               |
+| `town-square`         | The civic hub and town-only landmarks                  |
+| `the-graveyard`       | Inactive projects, old experiments, and reference work |
 
 ## Lines (current)
 
@@ -145,6 +166,12 @@ regardless of the `visibility` field.
 
 ## Updating
 
-Just commit a new `.willville.json` to your default branch. The edge function
-caches results for ~60 seconds with stale-while-revalidate, so updates show up
-within a minute or two.
+Commit a new `.willville.json` in the repo you're working in, then ring the
+bell in Willville to scrape fresh packets into runtime memory.
+
+Ringing the bell does a read-only scrape of repo manifests into ephemeral
+runtime memory. It does not write anything back to GitHub, and that runtime
+cache disappears if the server process resets.
+
+Willville never invents status or direction text. Those fields only come from
+repo-authored `.willville.json` packets.

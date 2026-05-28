@@ -41,7 +41,7 @@ export function normalizeDetailText(
 export function detailBoardStatus(
   stop: Stop | null | undefined,
 ): string | undefined {
-  return stop?.status.doing ?? stop?.agent?.status ?? stop?.status.summary;
+  return stop?.status.doing ?? stop?.agent?.status;
 }
 
 export function detailBoardDirection(

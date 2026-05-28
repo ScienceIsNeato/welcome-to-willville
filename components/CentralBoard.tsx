@@ -345,6 +345,33 @@ function wrapText(text: string, maxLen: number): string[] {
   return lines;
 }
 
+function repoAge(createdAt: string | undefined): string {
+  if (!createdAt) return "?";
+  const ms = Date.now() - Date.parse(createdAt);
+  if (Number.isNaN(ms)) return "?";
+  const totalMonths = Math.max(0, Math.floor(ms / (30.44 * 86_400_000)));
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+  if (years > 0 && months > 0) return `${years}Y ${months}M`;
+  if (years > 0) return `${years}Y`;
+  return `${months}M`;
+}
+
+function formatSize(kb: number | undefined): string {
+  if (!kb || kb <= 0) return "?";
+  if (kb < 1024) return `${kb}KB`;
+  const mb = kb / 1024;
+  if (mb < 1024) return `${Math.round(mb)}MB`;
+  return `${(mb / 1024).toFixed(1)}GB`;
+}
+
+function stopFooter(stop: Stop): string {
+  const age = `AGE: ${repoAge(stop.createdAt)}`;
+  const commits = `COMMITS: ${stop.totalCommits ?? "?"}`;
+  const size = `SIZE: ${formatSize(stop.sizeKb)}`;
+  return `${age}  ${commits}  ${size}`;
+}
+
 function selectedStopRows(stop: Stop): string[] {
   const district = DISTRICTS.find((d) => d.id === stop.district);
   const districtName = district?.displayName ?? stop.district;
@@ -357,10 +384,12 @@ function selectedStopRows(stop: Stop): string[] {
   ];
 
   const wrapped = wrapText(descText, BOARD_COLUMNS);
-  for (let i = 0; i < 4; i += 1) {
+  for (let i = 0; i < 3; i += 1) {
     const line = wrapped[i] ?? "";
     rows.push(formatBoardRow(line, "center"));
   }
+
+  rows.push(formatBoardRow(stopFooter(stop), "center"));
 
   return rows.slice(0, BOARD_ROWS);
 }
