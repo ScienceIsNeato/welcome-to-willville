@@ -1082,7 +1082,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
               <WorldSubstrate />
 
               <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
-                <GeneratedTownBase stops={currentStops} />
+                <GeneratedTownBase />
                 <TownGlyphHalos stops={currentStops} />
                 {!mobileSafeMode && <ChimneySmoke />}
                 {!mobileSafeMode && <DynamicWalls />}

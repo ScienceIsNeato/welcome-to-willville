@@ -1,10 +1,5 @@
 import { GENERATED_TOWN_LAYOUT } from "@/lib/town-layout";
-import type { Stop } from "@/lib/town";
 import districtArt from "@/data/town-district-art.v1.json";
-
-type Props = {
-  stops: Stop[];
-};
 
 const FALLBACK_TOWN_ART = "/art/town/willville-isthmus-v1.png";
 const RENDER_PADDING = 6;
@@ -45,7 +40,7 @@ function districtRenderBox(layer: DistrictLayer) {
   return { x: left, y: top, width: right - left, height: bottom - top };
 }
 
-export function GeneratedTownBase({ stops: _stops }: Props) {
+export function GeneratedTownBase() {
   const districtLayers = districtArt.layers;
 
   return (

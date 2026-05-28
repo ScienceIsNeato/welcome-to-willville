@@ -9,6 +9,11 @@ eta: 2026-05-27
 
 # Status
 
+## Done (2026-05-28) — Dead GeneratedTownBase Prop Removed After Final PR Comment
+
+- Removed the now-unused `stops` prop from `GeneratedTownBase` and stopped passing `currentStops` into it from `TownStage` after the earlier Slop Wharf overlay cleanup made that dependency obsolete.
+- Validation: touched-file diagnostics were clean; `sm swab -g laziness:dead-code.js` passed; full `sm swab` passed.
+
 ## Done (2026-05-28) — Reposition Mode Click Guard Restored After PR Feedback
 
 - Restored the reposition-mode guard inside the shared stop click and double-click handlers so marker interactions no longer open the HUD or navigate away while dragging stops in `/reposition/`.
