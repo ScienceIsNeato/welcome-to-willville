@@ -203,8 +203,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const transitioningToStopIdRef = useRef<string | null>(null);
   const boardAnnouncementTimerRef = useRef<number | null>(null);
   const populateResetTimerRef = useRef<number | null>(null);
+  const activeDragIdRef = useRef<string | null>(null);
 
-  const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [movedStops, setMovedStops] = useState<
     Record<
       string,
@@ -246,7 +246,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const handleMarkerDragStart = useCallback(
     (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
       e.currentTarget.setPointerCapture(e.pointerId);
-      setActiveDragId(stop.id);
+      activeDragIdRef.current = stop.id;
       setMovedStops((prev) => {
         if (prev[stop.id]) return prev;
         return {
@@ -263,7 +263,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
   const handleMarkerDragMove = useCallback(
     (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
-      if (activeDragId !== stop.id) return;
+      if (activeDragIdRef.current !== stop.id) return;
       const svg = svgRef.current;
       if (!svg) return;
       const snap = getCameraSnapshot();
@@ -294,17 +294,17 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         };
       });
     },
-    [activeDragId, getCameraSnapshot],
+    [getCameraSnapshot],
   );
 
   const handleMarkerDragEnd = useCallback(
     (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
-      if (activeDragId === stop.id) {
+      if (activeDragIdRef.current === stop.id) {
         e.currentTarget.releasePointerCapture(e.pointerId);
-        setActiveDragId(null);
+        activeDragIdRef.current = null;
       }
     },
-    [activeDragId],
+    [],
   );
 
   const handleResetStop = useCallback(

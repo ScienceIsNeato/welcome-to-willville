@@ -14,7 +14,8 @@ eta: 2026-05-27
 - Fixed the tourism announcement so it now auto-clears on the same timer as the other Time Central flashes instead of lingering over later stop selections.
 - Moved the reposition pulse animation out of per-marker SVG style tags, so reposition mode no longer injects the same global CSS block once per stop.
 - Hardened the Pages API fallback by making the cross-origin fallback request explicit and adding a real `OPTIONS` preflight response for `/api/manifests`.
-- Validation: `sm swab` passed; `./scripts/deploy_app.sh` rebuilt and served `http://127.0.0.1:3740/`; local `OPTIONS /api/manifests` with `Origin: https://willville.ai` returned `204` plus the expected `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, and `Access-Control-Allow-Headers` headers.
+- Replaced the reposition drag gate's async state with a ref so the first pointer-move after pointer-down now lands immediately instead of bailing on a stale `null` drag id.
+- Validation: `sm swab` passed; `./scripts/deploy_app.sh` rebuilt and served `http://127.0.0.1:3740/`; local `OPTIONS /api/manifests` with `Origin: https://willville.ai` returned `204` plus the expected `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, and `Access-Control-Allow-Headers` headers; live `/reposition/` validation moved `epsilon` from `(1033, 321)` to `(1072, 346)` on the first drag and updated the Modified Coordinates panel immediately.
 
 ## Done (2026-05-27) — Slop Wharf Landmark Pass Is Live
 
