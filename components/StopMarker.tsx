@@ -170,6 +170,16 @@ function StopMarkerInner({
         e.stopPropagation();
         onDragEnd?.(stop, e);
       }}
+      onPointerCancel={(e) => {
+        if (!draggable) return;
+        e.stopPropagation();
+        onDragEnd?.(stop, e);
+      }}
+      onLostPointerCapture={(e) => {
+        if (!draggable) return;
+        e.stopPropagation();
+        onDragEnd?.(stop, e);
+      }}
       aria-label={label}
     >
       <rect

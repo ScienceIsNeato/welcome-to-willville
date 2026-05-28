@@ -41,6 +41,10 @@ import { TownPerfPanel } from "./TownPerfPanel";
 import { PanelChromeControls } from "./PanelChromeControls";
 import { TownStageChrome } from "./TownStageChrome";
 import { screenToWorld, useTownCamera } from "@/hooks/useTownCamera";
+import {
+  useEscapeReleaseInteraction,
+  type ActiveDragPointer,
+} from "@/hooks/useEscapeReleaseInteraction";
 import { useTownInteractionProfiler } from "@/hooks/useTownInteractionProfiler";
 import { useTownPerfJourney } from "@/hooks/useTownPerfJourney";
 import {
@@ -113,6 +117,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     isDragging,
     cameraTransform,
     markSkipDrag,
+    resetDragInteraction,
     setCameraImmediate,
     zoomAtWorldPoint,
     stageHandlers,
@@ -125,6 +130,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const boardAnnouncementTimerRef = useRef<number | null>(null);
   const populateResetTimerRef = useRef<number | null>(null);
   const activeDragIdRef = useRef<string | null>(null);
+  const activeDragPointerRef = useRef<ActiveDragPointer | null>(null);
 
   const [movedStops, setMovedStops] = useState<
     Record<string, RepositionStopDelta>
@@ -184,10 +190,26 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     [effectivePlannerStopId, repositionableStops],
   );
 
+  const { clearRepositionDrag, releaseHeldInteraction } =
+    useEscapeReleaseInteraction({
+      svgRef,
+      isDragging,
+      activeDragIdRef,
+      activeDragPointerRef,
+      resetDragInteraction,
+    });
+
   const handleMarkerDragStart = useCallback(
     (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
+      if (!isRepositionMode || stop.id !== effectivePlannerStopId) {
+        return;
+      }
       e.currentTarget.setPointerCapture(e.pointerId);
       activeDragIdRef.current = stop.id;
+      activeDragPointerRef.current = {
+        element: e.currentTarget,
+        pointerId: e.pointerId,
+      };
       setMovedStops((prev) => {
         if (prev[stop.id]) return prev;
         return {
@@ -199,7 +221,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         };
       });
     },
-    [],
+    [effectivePlannerStopId, isRepositionMode],
   );
 
   const handleMarkerDragMove = useCallback(
@@ -245,12 +267,12 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
   const handleMarkerDragEnd = useCallback(
     (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
-      if (activeDragIdRef.current === stop.id) {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-        activeDragIdRef.current = null;
+      if (activeDragIdRef.current !== stop.id) return;
+      if (!releaseHeldInteraction()) {
+        clearRepositionDrag(e.currentTarget, e.pointerId);
       }
     },
-    [],
+    [clearRepositionDrag, releaseHeldInteraction],
   );
 
   const handleResetStop = useCallback(
@@ -806,6 +828,8 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
           now !== null &&
           !Number.isNaN(updated) &&
           now - updated < DAY_MS;
+        const markerDraggable =
+          isRepositionMode && stop.id === effectivePlannerStopId;
         return (
           <StopMarker
             key={`${stop.district}-${stop.id}`}
@@ -814,7 +838,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
             recentlyUpdated={recently}
             onClick={handleStopClick}
             onDoubleClick={handleStopDoubleClick}
-            draggable={isRepositionMode}
+            draggable={markerDraggable}
             onDragStart={handleMarkerDragStart}
             onDragMove={handleMarkerDragMove}
             onDragEnd={handleMarkerDragEnd}
@@ -830,6 +854,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
       handleStopClick,
       handleStopDoubleClick,
       isClient,
+      effectivePlannerStopId,
       isRepositionMode,
       now,
     ],
@@ -1290,10 +1315,11 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                   opacity: 0.85,
                 }}
               >
-                Click and drag any stop marker to reposition it live on the map.
-                Use the picker to reassign districts. District changes snap the
-                site to its default slot in the new region so you can fine-tune
-                from there.
+                Select a site here, then drag that specific marker to reposition
+                it live on the map. Dragging anywhere else still pans the map
+                normally. Use the picker to reassign districts. District changes
+                snap the site to its default slot in the new region so you can
+                fine-tune from there.
               </p>
 
               <div

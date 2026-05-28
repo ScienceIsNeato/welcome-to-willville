@@ -116,6 +116,16 @@ export function useTownCamera(
   const didTriggerDragRef = useRef(false);
   const wasDraggingRef = useRef(false);
 
+  const resetDragInteraction = useCallback(() => {
+    setIsDragging(false);
+    hudDragRef.current = false;
+    didTriggerDragRef.current = false;
+    wasDraggingRef.current = false;
+    if (svgRef.current) {
+      svgRef.current.style.pointerEvents = "auto";
+    }
+  }, [svgRef]);
+
   // In-flight spring animations — cancelled when drag starts.
   const animsRef = useRef<AnimationPlaybackControls[]>([]);
   const stopAnims = useCallback(() => {
@@ -288,14 +298,7 @@ export function useTownCamera(
         // No setIsDragging / setState here — zero React renders mid-drag.
       },
       onDragEnd: () => {
-        if (!hudDragRef.current) {
-          setIsDragging(false);
-          didTriggerDragRef.current = false;
-          if (svgRef.current) {
-            svgRef.current.style.pointerEvents = "auto";
-          }
-        }
-        hudDragRef.current = false;
+        resetDragInteraction();
         setTimeout(() => {
           wasDraggingRef.current = false;
         }, 50);
@@ -357,6 +360,7 @@ export function useTownCamera(
     focusWorldPoint,
     panByPixels,
     resetToTown,
+    resetDragInteraction,
     setCameraImmediate,
     wheelZoomAtViewportPoint,
     zoomAtWorldPoint,

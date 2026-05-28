@@ -1,5 +1,17 @@
 # Status
 
+## Done (2026-05-28) — Escape Releases Stuck Reposition Hold
+
+- Added an explicit Escape release path so a stuck reposition or pan interaction can always be dropped immediately.
+- Moved that Escape-release plumbing into a small hook, kept the drag cleanup path clearing pointer capture plus camera drag state when the browser ends the drag indirectly, and now reuse that same forced-release rail at normal left-mouse release during reposition.
+- Validation: rebuilt locally with `./scripts/deploy_app.sh`; `sm swab --no-cache --json --output-file .slopmop/last_swab.json` reported `all_passed: true` with `13` passed gates and `0` failed; Escape behavior was already user-verified live, and the normal mouse-up path now routes through the same release logic.
+
+## Done (2026-05-28) — Reposition Drag Is Limited To The Selected Site
+
+- Tightened reposition mode so only the site chosen in the planner blocks map panning and accepts drag-to-move input.
+- Every other marker now falls back to the normal town interaction path, so clicking and dragging outside the selected site pans the map instead of starting a reposition.
+- Validation: rebuilt locally with `./scripts/deploy_app.sh`; confirmed the camera hook still keys pan suppression off `[data-no-pan="true"]` and the selected marker is now the only reposition target; `sm swab --no-cache --json --output-file .slopmop/last_swab.json` reported `all_passed: true` with `13` passed gates and `0` failed.
+
 ## Done (2026-05-28) — Reposition Mode Can Reassign Site Districts
 
 - Added a planner-side region picker in `/reposition/` so repo sites can be reassigned between districts without hand-editing heuristics first.
