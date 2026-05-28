@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Wrapping the read-only manifest branch and getting the last local rails green for the PR update",
-    "direction": "Push the branch cleanly and get CI and review back in shape around the bell-sync contract",
-    "last_update": "2026-05-28T10:59:47Z"
+    "status": "Adding the slop-mop website stop in Slop Wharf and mapping out how new repos should auto-land without git writes",
+    "direction": "Use provisional site placement for new repos until a real packet or curated override shows up",
+    "last_update": "2026-05-28T11:14:47Z"
   }
 }

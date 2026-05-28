@@ -1,5 +1,11 @@
 # Status
 
+## Done (2026-05-28) — Slop-Mop Website Now Lands In Slop Wharf
+
+- Added a curated fallback site entry for `slop-mop-website` so it shows up in Slop Wharf even before that repo ships its own `.willville.json`.
+- Cleaned up the heuristics comment too: unknown repos are not really "out of town" anymore, they already get provisional placement from topic mapping plus deterministic auto-positioning.
+- Local behavior check: rebuilt with `./scripts/deploy_app.sh` and confirmed `/api/town` now returns `slop-mop-website` with district `slop-wharf`.
+
 ## Done (2026-05-28) — Read-Only Manifest Branch Is Green For PR Update
 
 - Added the missing `detect-secrets` tool dependency so the configured slop-mop security sweep actually runs in the repo venv instead of dying on a missing module.

@@ -5,8 +5,10 @@
  * repo here for sensible defaults (district, lines, position).
  * A .willville.json in the repo overrides any of these fields.
  *
- * Repos not listed here are assumed to be "out of town" until someone drops
- * a manifest in them — they appear in the holding pen on the map's edge.
+ * Repos not listed here still get provisional town placement from repo topics
+ * and deterministic auto-positioning. This table is for curated district
+ * overrides, blurbs, glyph hints, and queue defaults when we want a repo to
+ * feel intentional before it ships its own `.willville.json`.
  */
 import type { DistrictId, LineId, SiteGlyph } from "./willville";
 
@@ -243,6 +245,20 @@ export const HEURISTICS: Heuristic[] = [
     glyph: {
       label: "action dock",
       prompt: "tiny loading dock with crates stamped action and a mop icon",
+      state: "placeholder",
+    },
+  },
+
+  {
+    repo: "ScienceIsNeato/slop-mop-website",
+    displayName: "slop-mop-website",
+    district: "slop-wharf",
+    lines: ["quality", "web"],
+    blurb: "The public front door for slop-mop.",
+    glyph: {
+      label: "harbor sign",
+      prompt:
+        "painted harbor signboard for slop-mop with tidy dock hardware and a small mop emblem",
       state: "placeholder",
     },
   },
