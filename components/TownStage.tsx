@@ -1163,7 +1163,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
               }}
             >
               {populating === "running" && "The Town Bell Sees All"}
-              {populating === "done" && "✓ Manifests updated"}
+              {populating === "done" && "✓ Manifests synced"}
               {populating === "error" && bellErrorMessage}
             </div>
           )}

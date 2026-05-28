@@ -12,7 +12,6 @@
     "build": "next build",
     "type-check": "tsc --noEmit",
     "start": "next start",
-    "populate": "node scripts/populate-manifests.mjs",
     "town:validate": "node scripts/validate-town-layout.mjs",
     "town:masks": "node scripts/validate-town-layout.mjs && node scripts/generate-town-mask-contract.mjs",
     "town:base-art": "node scripts/generate-town-base-art.mjs",

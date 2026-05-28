@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Closing the last PR thread by stripping the dead town-base prop that got left behind after the overlay cleanup",
-    "direction": "Finish the review loop with no stale dependencies or unresolved bot comments left on the branch",
-    "last_update": "2026-05-28T08:55:10Z"
+    "status": "Wrapping the read-only manifest branch and getting the last local rails green for the PR update",
+    "direction": "Push the branch cleanly and get CI and review back in shape around the bell-sync contract",
+    "last_update": "2026-05-28T10:59:47Z"
   }
 }

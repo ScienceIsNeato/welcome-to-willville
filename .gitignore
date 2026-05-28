@@ -58,6 +58,11 @@ next-env.d.ts
 .github/instructions/*.instructions.md
 
 # Agent/session runtime locks
+.claude/
+.clinerules/
+.roo/
+.windsurf/
+.aider.conf.yml
 .claude/*.lock
 .specstory/
 

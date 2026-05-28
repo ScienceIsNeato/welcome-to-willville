@@ -6,7 +6,7 @@
  *   2. Per-repo heuristics from willville.heuristics.ts (position, district, lines)
  *   3. Live GitHub repo metadata (description, pushed_at, open milestones)
  *
- * No .willville.json required — everything is derived from the repo itself.
+ * Repo manifests are hydrated separately by the bell path and held in memory.
  * The result is a flat array of Stop objects that the SVG layer renders.
  */
 import {
@@ -113,11 +113,17 @@ export type Stop = {
     blocked?: string;
     /** Risk level + reason. */
     risk?: string;
-    /** Legacy summary (fallback if no doing/done). */
+    /** Repo-authored summary/headline. */
     summary?: string;
     updated?: string;
   };
   queue?: QueueEntry;
+  /** When the repo was created (ISO string). */
+  createdAt?: string;
+  /** Repo size in KB as reported by GitHub. */
+  sizeKb?: number;
+  /** Total commits on the default branch. */
+  totalCommits?: number;
   /** Open issues + PRs on GitHub. */
   openIssues?: number;
   /** GitHub star count. */
@@ -220,37 +226,6 @@ type OpenMilestone = {
   openIssues: number;
 };
 
-/**
- * Structured data parsed from a `<!-- willville ... -->` block in STATUS.md.
- * Agents write this; Willville reads it. Designed as a compressed standup:
- * what's happening, what just happened, what's stuck, should I worry.
- */
-export type WillvillePacket = {
-  /** What the agent is actively working on right now. */
-  doing?: string;
-  /** Most recent completed items (comma-separated). */
-  done?: string;
-  /** What comes after the current task. */
-  next?: string;
-  /** Single most important blocker, if any. */
-  blocked?: string;
-  /** low | medium | high — with brief reason if not low. */
-  risk?: string;
-  /** Active milestone title. */
-  milestone?: string;
-  /** ISO date string (YYYY-MM-DD) for milestone target. */
-  eta?: string;
-  // ---- backward compat (old-format fields still parsed) ----
-  /** @deprecated Use `doing` instead. */
-  status?: StatusState;
-  /** @deprecated Use `doing` + `done` instead. */
-  summary?: string;
-  /** @deprecated Renamed to `eta`. */
-  etaDate?: string;
-  /** @deprecated Use singular `blocked` instead. */
-  blockers?: string[];
-};
-
 type WillvilleAgentPacket = {
   status?: string;
   direction?: string;
@@ -276,16 +251,19 @@ export type RepoMeta = {
   isFork: boolean;
   isArchived: boolean;
   pushedAt: string;
+  createdAt?: string;
   defaultBranch: string;
   homepage?: string;
   /** GitHub repo description — fallback summary if no willville packet. */
   description?: string;
+  /** Repo size in KB as reported by GitHub. */
+  sizeKb?: number;
+  /** Total commits on default branch. */
+  totalCommits?: number;
   /** GitHub topics — used to auto-assign district and transit lines. */
   topics?: string[];
   /** Open milestones sorted by due date ascending. */
   openMilestones?: OpenMilestone[];
-  /** Parsed willville packet from STATUS.md, if present. Agent-written data. */
-  willvillePacket?: WillvillePacket;
   /** Parsed committed .willville.json manifest, if present. */
   willvilleManifest?: WillvilleManifest;
   /** Open issues + PRs count from GitHub. */
@@ -455,18 +433,6 @@ function defaultGlyphForRepo(repo: string): SiteGlyph {
 // ---------------------------------------------------------------------------
 
 /**
- * Derive project status state from GitHub push recency and milestone presence.
- * Open milestone → wip. Recent push → shipping. Otherwise maintenance/dormant.
- */
-function deriveState(pushedAt: string, hasOpenMilestone: boolean): StatusState {
-  if (hasOpenMilestone) return "wip";
-  const daysSince = (Date.now() - Date.parse(pushedAt)) / 86_400_000;
-  if (daysSince <= 14) return "shipping";
-  if (daysSince <= 90) return "maintenance";
-  return "dormant";
-}
-
-/**
  * Derive queue entry from GitHub open milestones.
  * Falls back to heuristic queue if no milestones exist.
  */
@@ -509,12 +475,10 @@ function deriveQueue(
 
 /** Build a Stop from GitHub repo metadata + optional heuristic layout overrides. */
 function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
-  const pkt = meta.willvillePacket;
   const manifest = meta.willvilleManifest;
   const manifestProject = manifest?.project;
   const manifestStatus = manifest?.status;
   const agent = manifest?.agent;
-  const hasOpenMilestone = (meta.openMilestones?.length ?? 0) > 0;
   const district =
     normalizeManifestDistrict(manifestProject?.district) ??
     heuristic?.district ??
@@ -546,25 +510,18 @@ function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
     visibility: manifestProject?.visibility ?? "public",
     isPrivate: meta.isPrivate,
     status: {
-      state:
-        manifestStatus?.state ??
-        (agent?.status || pkt?.doing
-          ? "wip"
-          : (pkt?.status ?? deriveState(meta.pushedAt, hasOpenMilestone))),
-      doing:
-        manifestStatus?.summary ?? agent?.status ?? pkt?.doing ?? pkt?.summary,
-      done: pkt?.done,
-      next: manifestStatus?.next?.join(" / ") ?? agent?.direction ?? pkt?.next,
+      state: manifestStatus?.state ?? "unknown",
+      doing: agent?.status,
+      next: agent?.direction,
       blocked:
-        manifestStatus?.blockers?.[0] ??
-        normalizeNone(agent?.difficulties) ??
-        pkt?.blocked ??
-        pkt?.blockers?.[0],
-      risk: pkt?.risk,
-      summary: manifestStatus?.summary ?? pkt?.summary ?? meta.description,
-      updated: manifestStatus?.updated ?? agent?.lastUpdate ?? meta.pushedAt,
+        manifestStatus?.blockers?.[0] ?? normalizeNone(agent?.difficulties),
+      summary: manifestStatus?.summary,
+      updated: agent?.lastUpdate ?? manifestStatus?.updated,
     },
     queue,
+    createdAt: meta.createdAt,
+    sizeKb: meta.sizeKb,
+    totalCommits: meta.totalCommits,
     openIssues: meta.openIssuesCount,
     stars: meta.stars,
     language: meta.language,

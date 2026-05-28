@@ -4,9 +4,10 @@
  * Discovers the town's live state by:
  *   1. Listing repos under ScienceIsNeato (non-fork, non-archived, <2y stale)
  *   2. For each, fetching open GitHub milestones (queue + ETA data)
- *   3. Merging with baked-in heuristics for layout (position, district, lines)
+ *   3. Reading bell-hydrated .willville.json manifests from the in-memory cache
+ *   4. Merging with baked-in heuristics for layout (position, district, lines)
  *
- * No .willville.json required — everything is derived from the repo itself.
+ * Bell hydration is ephemeral. If the runtime resets, ring the bell again.
  *
  * Tourists see public repos only. Mayors (with the willville_mayor cookie)
  * also see private repos and stops marked visibility: mayor.
@@ -21,7 +22,7 @@ import {
   type RepoMeta,
 } from "../../lib/town";
 import { withCorsHeaders } from "./cors";
-import { WillvilleManifestClient } from "./town-manifests";
+import { readCachedRepoManifest } from "./town-manifests";
 
 interface Env {
   GITHUB_PAT?: string;
@@ -60,6 +61,7 @@ type GitHubRepo = {
   fork: boolean;
   archived: boolean;
   pushed_at: string;
+  created_at: string;
   default_branch: string;
   homepage: string | null;
   description: string | null;
@@ -67,6 +69,7 @@ type GitHubRepo = {
   stargazers_count: number;
   language: string | null;
   topics: string[];
+  size: number;
 };
 
 async function listOwnerRepos(token?: string): Promise<GitHubRepo[]> {
@@ -194,6 +197,7 @@ type RepoSignals = {
   branchCount?: number;
   lastMergeAt?: string;
   latestRelease?: RepoMeta["latestRelease"];
+  totalCommits?: number;
 };
 
 const REPO_SIGNALS_QUERY = `
@@ -218,6 +222,15 @@ query ($owner: String!, $name: String!) {
       name
       tagName
       publishedAt
+    }
+    defaultBranchRef {
+      target {
+        ... on Commit {
+          history {
+            totalCount
+          }
+        }
+      }
     }
   }
 }`;
@@ -366,6 +379,11 @@ async function fetchRepoSignals(
             tagName?: string | null;
             publishedAt?: string | null;
           } | null;
+          defaultBranchRef?: {
+            target?: {
+              history?: { totalCount?: number | null } | null;
+            } | null;
+          } | null;
         } | null;
       };
     };
@@ -389,6 +407,8 @@ async function fetchRepoSignals(
       branchCount: repository.refs?.totalCount ?? undefined,
       lastMergeAt: repository.mergedPulls?.nodes?.[0]?.mergedAt ?? undefined,
       latestRelease,
+      totalCommits:
+        repository.defaultBranchRef?.target?.history?.totalCount ?? undefined,
     };
   } catch {
     return undefined;
@@ -407,7 +427,6 @@ function compareUrl(
 
 type RecentBranchesResult = {
   activeBranch: NonNullable<RepoMeta["activeBranch"]>;
-  recentBranches: Array<{ name: string; commitHash?: string }>;
 };
 
 async function fetchRecentBranches(
@@ -427,7 +446,6 @@ async function fetchRecentBranches(
       compareUrl: compareUrl(fullName, defaultBranch, defaultBranch),
       isDefault: true,
     },
-    recentBranches: [],
   };
 
   try {
@@ -449,18 +467,8 @@ async function fetchRecentBranches(
       (e) => e.type === "PushEvent" && e.payload?.ref,
     );
 
-    // Collect unique recently-pushed feature branches (for manifest lookup)
-    const seen = new Set<string>();
-    const recentBranches: RecentBranchesResult["recentBranches"] = [];
-    for (const push of pushes) {
-      const name = (push.payload.ref ?? "").replace(/^refs\/heads\//, "");
-      if (!name || name === defaultBranch || seen.has(name)) continue;
-      seen.add(name);
-      recentBranches.push({ name, commitHash: push.payload.head });
-      if (recentBranches.length >= 5) break;
-    }
-
-    // The "active branch" shown on the board is the most recent feature push
+    // The "active branch" shown on the board is the most recent feature push.
+    // Manifest loading only reads active branch, then falls back to default.
     const latestPush =
       pushes.find((e) => {
         const ref = (e.payload.ref ?? "").replace(/^refs\/heads\//, "");
@@ -478,7 +486,6 @@ async function fetchRecentBranches(
         compareUrl: compareUrl(fullName, defaultBranch, branchName),
         isDefault: branchName === defaultBranch,
       },
-      recentBranches,
     };
   } catch {
     return fallback;
@@ -488,7 +495,6 @@ async function fetchRecentBranches(
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   // Always use PAT when available to avoid unauthenticated rate limits (60/hr).
   const token = env.GITHUB_PAT;
-  const manifestClient = new WillvilleManifestClient(token);
   const repos = await listOwnerRepos(token);
   const cutoff = Date.now() - TWO_YEARS_MS;
   const candidates = repos.filter((r) => {
@@ -506,30 +512,26 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
         fetchWorkflowRuns(r.full_name, token),
       ]);
     const activeBranch = branchResult.activeBranch;
-    const { willvilleManifest, willvillePacket } =
-      await manifestClient.fetchRepoPackets(
-        r.full_name,
-        r.default_branch,
-        activeBranch,
-        branchResult.recentBranches,
-      );
+    const willvilleManifest = readCachedRepoManifest(r.full_name);
     return {
       repo: r.full_name,
       isPrivate: r.private,
       isFork: r.fork,
       isArchived: r.archived,
       pushedAt: r.pushed_at,
+      createdAt: r.created_at,
       defaultBranch: r.default_branch,
       homepage: r.homepage ?? undefined,
       description: r.description ?? undefined,
       topics: r.topics ?? [],
+      sizeKb: r.size > 0 ? r.size : undefined,
+      totalCommits: repoSignals?.totalCommits,
       openMilestones: milestones.map((m) => ({
         title: m.title,
         dueOn: m.due_on,
         openIssues: m.open_issues,
       })),
       willvilleManifest,
-      willvillePacket,
       openIssuesCount: Math.max(
         0,
         r.open_issues_count - (repoSignals?.openPrCount ?? 0),
