@@ -9,6 +9,11 @@ eta: 2026-05-27
 
 # Status
 
+## Done (2026-05-28) — Reposition Mode Click Guard Restored After PR Feedback
+
+- Restored the reposition-mode guard inside the shared stop click and double-click handlers so marker interactions no longer open the HUD or navigate away while dragging stops in `/reposition/`.
+- Validation: rebuilt locally with `./scripts/deploy_app.sh`; live browser check on `/reposition/?site_type=desktop` confirmed both click and double-click on `slop-mop` stay on the reposition route; `sm swab` passed.
+
 ## Done (2026-05-28) — Regional Transit Layer Removed, Mayor's Express Left In Place
 
 - Removed the decorative per-region transit loops from the stage so the only remaining train system is the Mayor's Express.

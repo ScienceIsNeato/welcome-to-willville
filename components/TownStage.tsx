@@ -767,22 +767,24 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
   const handleStopClick = useCallback(
     (stop: Stop, e: MouseEvent<SVGGElement>) => {
       e.stopPropagation();
+      if (isRepositionMode) return;
       markSkipDrag();
       openStopHud(stop);
     },
-    [markSkipDrag, openStopHud],
+    [isRepositionMode, markSkipDrag, openStopHud],
   );
 
   const handleStopDoubleClick = useCallback(
     (stop: Stop, e: MouseEvent<SVGGElement>) => {
       e.stopPropagation();
+      if (isRepositionMode) return;
       markSkipDrag();
       const wx = TOWN_OFFSET.x + stop.position.x;
       const wy = TOWN_OFFSET.y + stop.position.y;
       zoomAtWorldPoint(wx, wy);
       openStopHud(stop);
     },
-    [markSkipDrag, openStopHud, zoomAtWorldPoint],
+    [isRepositionMode, markSkipDrag, openStopHud, zoomAtWorldPoint],
   );
 
   const stopMarkers = useMemo(
