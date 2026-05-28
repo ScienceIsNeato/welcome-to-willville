@@ -3,6 +3,8 @@
 import type { CSSProperties } from "react";
 import {
   countLabel,
+  detailBoardDirection,
+  detailBoardStatus,
   followLink,
   normalizeDetailText as normalizeText,
   repoShortName,
@@ -102,10 +104,10 @@ export function MobileDetailBoard({ stop, boats, panelOpacity = 1 }: Props) {
           <p
             style={textValueStyle}
             title={tooltipText(
-              normalizeText(stop.status.doing, "No active work logged."),
+              normalizeText(detailBoardStatus(stop), "No active work logged."),
             )}
           >
-            {normalizeText(stop.status.doing, "No active work logged.")}
+            {normalizeText(detailBoardStatus(stop), "No active work logged.")}
           </p>
         </div>
 
@@ -114,10 +116,10 @@ export function MobileDetailBoard({ stop, boats, panelOpacity = 1 }: Props) {
           <p
             style={textValueStyle}
             title={tooltipText(
-              normalizeText(stop.status.next, "No direction logged."),
+              normalizeText(detailBoardDirection(stop), "No direction logged."),
             )}
           >
-            {normalizeText(stop.status.next, "No direction logged.")}
+            {normalizeText(detailBoardDirection(stop), "No direction logged.")}
           </p>
         </div>
       </section>

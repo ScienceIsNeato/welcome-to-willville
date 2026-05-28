@@ -1,5 +1,5 @@
 import type { MouseEvent } from "react";
-import type { GitHubWorkflowRun } from "@/lib/town";
+import type { GitHubWorkflowRun, Stop } from "@/lib/town";
 
 export function followLink(event: MouseEvent<HTMLAnchorElement>) {
   event.preventDefault();
@@ -36,6 +36,18 @@ export function normalizeDetailText(
 ): string {
   if (!value || value.trim().toLowerCase() === "none") return fallback;
   return value;
+}
+
+export function detailBoardStatus(
+  stop: Stop | null | undefined,
+): string | undefined {
+  return stop?.status.doing ?? stop?.agent?.status ?? stop?.status.summary;
+}
+
+export function detailBoardDirection(
+  stop: Stop | null | undefined,
+): string | undefined {
+  return stop?.status.next ?? stop?.agent?.direction;
 }
 
 export function tooltipText(value: string | undefined): string | undefined {

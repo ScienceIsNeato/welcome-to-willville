@@ -3,6 +3,8 @@
 import type { CSSProperties, ReactNode } from "react";
 import {
   countLabel,
+  detailBoardDirection,
+  detailBoardStatus,
   followLink,
   normalizeDetailText as normalizePanelText,
   repoShortName,
@@ -87,12 +89,12 @@ export function DigitalDetailBoard({ stop, boats, panelOpacity = 1 }: Props) {
           <section style={workColumnStyle}>
             <TextSection
               label="Status"
-              value={stop.status.doing}
+              value={detailBoardStatus(stop)}
               fallback="No active work logged."
             />
             <TextSection
               label="Direction"
-              value={stop.status.next}
+              value={detailBoardDirection(stop)}
               fallback="No direction logged."
             />
           </section>
