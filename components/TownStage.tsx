@@ -24,7 +24,11 @@ import { isKnownDistrict } from "@/lib/slugs";
 import { HEURISTICS } from "@/lib/willville.heuristics";
 import type { CanalBoat } from "@/lib/canal";
 import { sitePositionForStop } from "@/lib/town-layout";
-import { formatHeuristics, formatManualStops } from "./repositionPlannerUtils";
+import {
+  formatHeuristics,
+  formatManualStops,
+  type RepositionStopDelta,
+} from "./repositionPlannerUtils";
 import { DistrictZone } from "./DistrictZone";
 import { WorldSubstrate } from "./WorldSubstrate";
 import { StopMarker } from "./StopMarker";
@@ -67,11 +71,6 @@ import {
   markBellRepoCompletion,
   readManifestProgress,
 } from "./townStageManifestProgress";
-
-type RepositionStopDelta = {
-  original: { x: number; y: number; district: DistrictId };
-  current: { x: number; y: number; district: DistrictId };
-};
 
 /**
  * Persistent SVG stage with viewport camera (pan/zoom) and center HUD for stops.

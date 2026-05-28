@@ -8,6 +8,7 @@ import { DigitalDetailBoard } from "./DigitalDetailBoard";
 import { MobileCentralBoard } from "./MobileCentralBoard";
 import { MobileDetailDrawer } from "./MobileDetailDrawer";
 import { PanelChromeControls } from "./PanelChromeControls";
+import type { RepositionStopDelta } from "./repositionPlannerUtils";
 
 type Props = {
   children: ReactNode;
@@ -259,11 +260,6 @@ export function TownStageChrome({
     </>
   );
 }
-
-type RepositionStopDelta = {
-  original: { x: number; y: number; district: DistrictId };
-  current: { x: number; y: number; district: DistrictId };
-};
 
 type RepaintQueueState = "idle" | "running" | "queued" | "error";
 

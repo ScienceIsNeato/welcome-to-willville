@@ -2,6 +2,11 @@ import type { Stop } from "@/lib/town";
 import type { ManualStop } from "@/lib/willville";
 import type { Heuristic } from "@/lib/willville.heuristics";
 
+export type RepositionStopDelta = {
+  original: { x: number; y: number; district: ManualStop["district"] };
+  current: { x: number; y: number; district: ManualStop["district"] };
+};
+
 export function formatHeuristics(
   heuristics: readonly Heuristic[],
   updatedStops: Stop[],
@@ -80,22 +85,30 @@ export function formatManualStops(
       `    position: ${position},`,
     ];
 
-    if (original?.homepage) {
-      parts.push(`    homepage: ${JSON.stringify(original.homepage)},`);
-    } else if (stop.homepage) {
-      parts.push(`    homepage: ${JSON.stringify(stop.homepage)},`);
-    }
+    if (original) {
+      if (original.homepage) {
+        parts.push(`    homepage: ${JSON.stringify(original.homepage)},`);
+      }
 
-    if (original?.blurb) {
-      parts.push(`    blurb: ${JSON.stringify(original.blurb)},`);
-    } else if (stop.blurb) {
-      parts.push(`    blurb: ${JSON.stringify(stop.blurb)},`);
-    }
+      if (original.blurb) {
+        parts.push(`    blurb: ${JSON.stringify(original.blurb)},`);
+      }
 
-    if (original?.statusState) {
-      parts.push(`    statusState: ${JSON.stringify(original.statusState)},`);
-    } else if (stop.status?.state) {
-      parts.push(`    statusState: ${JSON.stringify(stop.status.state)},`);
+      if (original.statusState) {
+        parts.push(`    statusState: ${JSON.stringify(original.statusState)},`);
+      }
+    } else {
+      if (stop.homepage) {
+        parts.push(`    homepage: ${JSON.stringify(stop.homepage)},`);
+      }
+
+      if (stop.blurb) {
+        parts.push(`    blurb: ${JSON.stringify(stop.blurb)},`);
+      }
+
+      if (stop.status?.state) {
+        parts.push(`    statusState: ${JSON.stringify(stop.status.state)},`);
+      }
     }
 
     return `  {
