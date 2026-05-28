@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Got the new look-and-repaint flow steady and cleared the blocker that was tripping local checks",
-    "direction": "Next is making the queue durable and tightening the rollback and audit path so updates and reverts are safer",
-    "last_update": "2026-05-28T21:15:00Z"
+    "status": "Closed the planner gap so a selected site can be sent to repaint without dragging it first",
+    "direction": "Next is finishing the durable backup, audit, and revert path behind the repaint flow",
+    "last_update": "2026-05-28T20:46:00Z"
   }
 }

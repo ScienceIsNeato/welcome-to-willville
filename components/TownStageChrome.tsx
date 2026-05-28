@@ -275,6 +275,8 @@ type RepositionPlannerPanelProps = {
   onCopy: () => void;
   copied: boolean;
   onQueueRepaint: () => void;
+  canQueueRepaint: boolean;
+  queueRepaintLabel: string;
   repaintQueueState: RepaintQueueState;
   repaintQueueMessage: string;
   onResetAll: () => void;
@@ -293,6 +295,8 @@ export function RepositionPlannerPanel({
   onCopy,
   copied,
   onQueueRepaint,
+  canQueueRepaint,
+  queueRepaintLabel,
   repaintQueueState,
   repaintQueueMessage,
   onResetAll,
@@ -635,9 +639,7 @@ export function RepositionPlannerPanel({
         <button
           type="button"
           onClick={onQueueRepaint}
-          disabled={
-            changedStops.length === 0 || repaintQueueState === "running"
-          }
+          disabled={!canQueueRepaint || repaintQueueState === "running"}
           style={{
             width: "100%",
             background:
@@ -653,20 +655,18 @@ export function RepositionPlannerPanel({
             fontSize: 13,
             fontWeight: 700,
             cursor:
-              changedStops.length === 0 || repaintQueueState === "running"
+              !canQueueRepaint || repaintQueueState === "running"
                 ? "not-allowed"
                 : "pointer",
             opacity:
-              changedStops.length === 0 || repaintQueueState === "running"
-                ? 0.65
-                : 1,
+              !canQueueRepaint || repaintQueueState === "running" ? 0.65 : 1,
             transition: "all 0.2s",
             boxShadow: "0 4px 12px rgba(20,132,196,0.28)",
           }}
         >
           {repaintQueueState === "running"
             ? "⏳ Queueing Repaint Jobs"
-            : "🎨 Queue Repaint Jobs"}
+            : queueRepaintLabel}
         </button>
 
         {repaintQueueState !== "idle" && repaintQueueMessage && (

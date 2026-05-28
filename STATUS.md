@@ -1,5 +1,11 @@
 # Status
 
+## Done (2026-05-28) — Planner Can Queue The Selected Site Without Moving It First
+
+- Closed the queue-affordance gap in `/reposition/`: the planner now queues the currently selected site even when `Modified Sites` is still `0`, instead of requiring a drag before the button wakes up.
+- The queue button now reflects the current target directly, so the panel makes it obvious which site will be added to the repaint queue.
+- Validation: `sm swab -g overconfidence:type-blindness.js --json --output-file .slopmop/last_swab.json` passed; rebuilt with `scripts/deploy_app.sh`; live `/reposition/?site_type=desktop` now shows the selected-site queue button while `Modified Sites (0)`; full `sm swab --json --output-file .slopmop/last_swab.json` passed with `all_passed: true`.
+
 ## Done (2026-05-28) — Reposition Planner Split Is Stable And Swab Is Green
 
 - Kept the appearance + repaint queue implementation intact and removed the flaky missing-module path by wiring the extracted planner panel through an existing stage chrome module.

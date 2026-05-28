@@ -393,26 +393,52 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
   );
 
   const handleQueueRepaint = useCallback(() => {
-    if (changedStops.length === 0 || repaintQueueState === "running") {
+    if (!plannerStop || repaintQueueState === "running") {
       return;
     }
 
-    const changes = changedStops.map(([stopId, item]) => ({
-      stopId,
-      from: {
-        x: item.original.x,
-        y: item.original.y,
-        district: item.original.district,
-      },
-      to: {
-        x: item.current.x,
-        y: item.current.y,
-        district: item.current.district,
-      },
-    }));
+    const changes =
+      changedStops.length > 0
+        ? changedStops.map(([stopId, item]) => ({
+            stopId,
+            from: {
+              x: item.original.x,
+              y: item.original.y,
+              district: item.original.district,
+            },
+            to: {
+              x: item.current.x,
+              y: item.current.y,
+              district: item.current.district,
+            },
+          }))
+        : [
+            {
+              stopId: plannerStop.id,
+              from: {
+                x: plannerStop.position.x,
+                y: plannerStop.position.y,
+                district: plannerStop.district,
+              },
+              to: {
+                x: plannerStop.position.x,
+                y: plannerStop.position.y,
+                district: plannerStop.district,
+              },
+            },
+          ];
+
+    const reason =
+      changedStops.length > 0
+        ? "Reposition planner submitted changed site coordinates"
+        : `Reposition planner queued ${plannerStop.displayName} for repaint`;
 
     setRepaintQueueState("running");
-    setRepaintQueueMessage("Queueing repaint jobs...");
+    setRepaintQueueMessage(
+      changedStops.length > 0
+        ? "Queueing repaint jobs..."
+        : `Queueing ${plannerStop.displayName} for repaint...`,
+    );
 
     fetch("/api/reposition", {
       method: "POST",
@@ -421,7 +447,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
       },
       body: JSON.stringify({
         action: "update_appearance",
-        reason: "Reposition planner submitted changed site coordinates",
+        reason,
         changes,
       }),
     })
@@ -449,7 +475,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
         setRepaintQueueState("error");
         setRepaintQueueMessage(`Queue request failed: ${detail}`);
       });
-  }, [changedStops, repaintQueueState]);
+  }, [changedStops, plannerStop, repaintQueueState]);
 
   const loadTown = useCallback(
     (options: { signal?: AbortSignal; fresh?: boolean } = {}) => {
@@ -1335,6 +1361,14 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
               onCopy={handleCopy}
               copied={copied}
               onQueueRepaint={handleQueueRepaint}
+              canQueueRepaint={Boolean(plannerStop)}
+              queueRepaintLabel={
+                changedStops.length > 0
+                  ? "🎨 Queue Repaint Jobs"
+                  : plannerStop
+                    ? `🎨 Queue ${plannerStop.displayName}`
+                    : "🎨 Queue Repaint Jobs"
+              }
               repaintQueueState={repaintQueueState}
               repaintQueueMessage={repaintQueueMessage}
               onResetAll={handleResetAll}
