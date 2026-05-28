@@ -1,5 +1,19 @@
 # Status
 
+## Done (2026-05-28) — Reposition Planner Split Is Stable And Swab Is Green
+
+- Kept the appearance + repaint queue implementation intact and removed the flaky missing-module path by wiring the extracted planner panel through an existing stage chrome module.
+- Preserved the smaller `TownStage` structure (so the code-sprawl rail stays satisfied) while unblocking the dead-code rail that had been failing on an unresolved planner import.
+- Validation: `activate && sm swab -g laziness:dead-code.js --json --output-file .slopmop/last_swab.json` passed; full `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with `all_passed: true`.
+
+## Done (2026-05-28) — Site Appearance Pipeline Increment Started
+
+- Started the new site-appearance flow by adding a dedicated appearance manifest so background integration is no longer tied directly to glyph-halo config on sprite entries.
+- Replaced the stage halo renderer with a new site-appearance underlay renderer and added a foreground mode switch that already supports background-only markers as an option while keeping click targets obvious.
+- Added an authoring-only reposition endpoint that accepts changed coordinates and districts, writes audit entries in memory, and queues deduped repaint jobs for follow-up processing.
+- Wired the reposition planner with a new Queue Repaint Jobs action so reposition edits can trigger repaint intent submission directly from the editor flow.
+- Validation: `sm swab -g laziness:sloppy-formatting.js --json --output-file .slopmop/last_swab.json` passed; full `sm swab --json --output-file .slopmop/last_swab.json` now fails only on the pre-existing `myopia:code-sprawl` rail for `components/TownStage.tsx` being over the file-size limit.
+
 ## Done (2026-05-28) — Escape Releases Stuck Reposition Hold
 
 - Added an explicit Escape release path so a stuck reposition or pan interaction can always be dropped immediately.

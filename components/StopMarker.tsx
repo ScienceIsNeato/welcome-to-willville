@@ -8,6 +8,7 @@ import {
   repoLabelForStop,
   spriteSizeForStop,
 } from "@/lib/stop-marker-hitbox";
+import { siteForegroundModeForStop } from "@/lib/siteAppearance";
 
 type Props = {
   stop: Stop;
@@ -136,6 +137,8 @@ function StopMarkerInner({
 }: Props) {
   const color = STATE_COLOR[stop.status.state];
   const sprite = SITE_SPRITES.get(stop.id);
+  const foregroundMode = siteForegroundModeForStop(stop.id);
+  const showSprite = Boolean(sprite) && foregroundMode !== "background-only";
   const { width: spriteWidth, height: spriteHeight } = spriteSizeForStop(stop);
   const label = repoLabelForStop(stop);
   const labelHitBox = labelHitBoxForStop(stop);
@@ -192,7 +195,7 @@ function StopMarkerInner({
       />
       {recentlyUpdated && !isFocused && <RecentUpdatePulse color={color} />}
       {draggable && <RepositionPulse spriteWidth={spriteWidth} />}
-      {sprite && (
+      {showSprite && sprite && (
         <image
           href={`${sprite.src}?v=${SPRITE_CACHE_VERSION}`}
           x={SITE_ART_CENTER.x - spriteWidth / 2}
@@ -205,7 +208,7 @@ function StopMarkerInner({
       )}
       {isFocused ? (
         <FocusRings />
-      ) : !sprite ? (
+      ) : !showSprite ? (
         <circle
           r={6}
           cx={SITE_ART_CENTER.x}
@@ -215,7 +218,7 @@ function StopMarkerInner({
           strokeWidth={2}
         />
       ) : null}
-      <StopLabel label={label} spriteHeight={sprite ? spriteHeight : 0} />
+      <StopLabel label={label} spriteHeight={showSprite ? spriteHeight : 0} />
     </g>
   );
 }

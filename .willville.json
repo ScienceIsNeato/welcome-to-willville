@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Mouse-up in reposition mode now reuses the same release rail as Escape so stuck drag state drops cleanly",
-    "direction": "Keep map movement feeling normal - release the mouse and navigation should just work again without needing a rescue key",
-    "last_update": "2026-05-28T19:19:07Z"
+    "status": "Got the new look-and-repaint flow steady and cleared the blocker that was tripping local checks",
+    "direction": "Next is making the queue durable and tightening the rollback and audit path so updates and reverts are safer",
+    "last_update": "2026-05-28T21:15:00Z"
   }
 }

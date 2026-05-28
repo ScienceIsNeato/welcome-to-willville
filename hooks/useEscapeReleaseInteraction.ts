@@ -18,6 +18,10 @@ type UseEscapeReleaseInteractionArgs = {
   resetDragInteraction: () => void;
 };
 
+type ReleaseHeldInteractionOptions = {
+  dispatchSyntheticEvents?: boolean;
+};
+
 export function useEscapeReleaseInteraction({
   svgRef,
   isDragging,
@@ -41,47 +45,51 @@ export function useEscapeReleaseInteraction({
     [activeDragIdRef, activeDragPointerRef, resetDragInteraction],
   );
 
-  const releaseHeldInteraction = useCallback(() => {
-    const activeDrag = activeDragPointerRef.current;
-    const hadActiveInteraction =
-      activeDragIdRef.current !== null || activeDrag !== null || isDragging;
-    if (!hadActiveInteraction) {
-      return false;
-    }
+  const releaseHeldInteraction = useCallback(
+    (options: ReleaseHeldInteractionOptions = {}) => {
+      const { dispatchSyntheticEvents = true } = options;
+      const activeDrag = activeDragPointerRef.current;
+      const hadActiveInteraction =
+        activeDragIdRef.current !== null || activeDrag !== null || isDragging;
+      if (!hadActiveInteraction) {
+        return false;
+      }
 
-    clearRepositionDrag(activeDrag?.element, activeDrag?.pointerId);
+      clearRepositionDrag(activeDrag?.element, activeDrag?.pointerId);
 
-    const svg = svgRef.current;
-    if (svg) {
-      const pointerId = activeDrag?.pointerId ?? 1;
-      svg.dispatchEvent(
-        new PointerEvent("pointerup", {
-          bubbles: true,
-          cancelable: true,
-          pointerId,
-          pointerType: "mouse",
-          button: 0,
-          buttons: 0,
-        }),
-      );
-      svg.dispatchEvent(
-        new MouseEvent("mouseup", {
-          bubbles: true,
-          cancelable: true,
-          button: 0,
-          buttons: 0,
-        }),
-      );
-    }
+      const svg = svgRef.current;
+      if (dispatchSyntheticEvents && svg) {
+        const pointerId = activeDrag?.pointerId ?? 1;
+        svg.dispatchEvent(
+          new PointerEvent("pointerup", {
+            bubbles: true,
+            cancelable: true,
+            pointerId,
+            pointerType: "mouse",
+            button: 0,
+            buttons: 0,
+          }),
+        );
+        svg.dispatchEvent(
+          new MouseEvent("mouseup", {
+            bubbles: true,
+            cancelable: true,
+            button: 0,
+            buttons: 0,
+          }),
+        );
+      }
 
-    return true;
-  }, [
-    activeDragIdRef,
-    activeDragPointerRef,
-    clearRepositionDrag,
-    isDragging,
-    svgRef,
-  ]);
+      return true;
+    },
+    [
+      activeDragIdRef,
+      activeDragPointerRef,
+      clearRepositionDrag,
+      isDragging,
+      svgRef,
+    ],
+  );
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

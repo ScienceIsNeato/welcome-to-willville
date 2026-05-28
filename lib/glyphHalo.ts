@@ -144,10 +144,6 @@ export function glyphHaloAssetPath(stopId: string) {
   return `${GLYPH_HALO_OUTPUT_ROOT}/${stopId}.png`;
 }
 
-export function glyphHaloCacheKeyForSprite(sprite: SpriteLike) {
-  return sprite.inpaintHalo?.cacheKey ?? "glyph-halo-v1";
-}
-
 export function glyphHaloDifferenceThresholdForSprite(sprite: SpriteLike) {
   return Math.max(
     0,
