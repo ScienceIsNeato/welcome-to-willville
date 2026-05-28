@@ -239,6 +239,13 @@ function registerRepo(repo: GitHubRepo): RegisteredRepo {
 // Handler
 // ---------------------------------------------------------------------------
 
+export const onRequestOptions: PagesFunction = async ({ request }) => {
+  return new Response(null, {
+    status: 204,
+    headers: withCorsHeaders(request),
+  });
+};
+
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const token = env.GITHUB_PAT;
   if (!token) {

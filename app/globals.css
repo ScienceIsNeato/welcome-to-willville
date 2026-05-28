@@ -276,6 +276,19 @@ body {
   animation: focus-ring-pulse 2s ease-in-out infinite;
 }
 
+@keyframes reposition-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.reposition-pulse {
+  animation: reposition-spin 12s linear infinite;
+}
+
 @keyframes hallow-flicker {
   0%,
   100% {

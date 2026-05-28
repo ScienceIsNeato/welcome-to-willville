@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Slop Wharf inpaint pass wrapped and the district layer is live",
-    "direction": "Keep the inpaint rail ready for the next district that needs a similar treatment",
-    "last_update": "2026-05-27T21:03:00Z"
+    "status": "Polishing the reverted branch so the PR can land cleanly",
+    "direction": "Get the remaining feedback and deploy checks out of the way so this branch is ready to merge",
+    "last_update": "2026-05-28T05:44:15Z"
   }
 }

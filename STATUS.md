@@ -9,6 +9,13 @@ eta: 2026-05-27
 
 # Status
 
+## Done (2026-05-28) — Reverted PR Tip Buffed For Merge
+
+- Fixed the tourism announcement so it now auto-clears on the same timer as the other Time Central flashes instead of lingering over later stop selections.
+- Moved the reposition pulse animation out of per-marker SVG style tags, so reposition mode no longer injects the same global CSS block once per stop.
+- Hardened the Pages API fallback by making the cross-origin fallback request explicit and adding a real `OPTIONS` preflight response for `/api/manifests`.
+- Validation: `sm swab` passed; `./scripts/deploy_app.sh` rebuilt and served `http://127.0.0.1:3740/`; local `OPTIONS /api/manifests` with `Origin: https://willville.ai` returned `204` plus the expected `Access-Control-Allow-Origin`, `Access-Control-Allow-Methods`, and `Access-Control-Allow-Headers` headers.
+
 ## Done (2026-05-27) — Slop Wharf Landmark Pass Is Live
 
 - Ran the existing Slop Wharf site-inpaint rail on the Slop-Mop landmark and regenerated the district layer from the new masked-edit path.

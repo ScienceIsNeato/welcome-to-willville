@@ -536,6 +536,10 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
     setMobileDrawerExpanded(false);
     setShowCentralBoard(true);
     setBoardAnnouncement(buildTourismBoardAnnouncement());
+    boardAnnouncementTimerRef.current = window.setTimeout(() => {
+      setBoardAnnouncement(null);
+      boardAnnouncementTimerRef.current = null;
+    }, BELL_BOARD_FLASH_MS);
     router.replace(routeWithCurrentSearch("/"), { scroll: false });
   }, [routeWithCurrentSearch, router]);
 

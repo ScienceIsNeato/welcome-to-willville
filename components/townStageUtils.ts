@@ -34,6 +34,14 @@ function fallbackApiUrl(path: string): string | null {
   return `${PAGES_API_ORIGIN}${path}`;
 }
 
+function buildFallbackRequestInit(init?: RequestInit): RequestInit {
+  return {
+    ...init,
+    mode: "cors",
+    credentials: "omit",
+  };
+}
+
 export async function fetchApiRoute(
   path: string,
   init?: RequestInit,
@@ -61,7 +69,7 @@ export async function fetchApiRoute(
   }
 
   try {
-    return await fetch(fallbackUrl, init);
+    return await fetch(fallbackUrl, buildFallbackRequestInit(init));
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
       throw error;

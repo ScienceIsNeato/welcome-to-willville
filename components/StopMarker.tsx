@@ -113,6 +113,9 @@ export function StopMarker({
           strokeWidth={1.5}
           strokeDasharray="4 3"
           className="reposition-pulse"
+          style={{
+            transformOrigin: `${SITE_ART_CENTER.x}px ${SITE_ART_CENTER.y}px`,
+          }}
         />
       )}
       {sprite && (
@@ -177,19 +180,6 @@ export function StopMarker({
       >
         {label}
       </text>
-
-      {draggable && (
-        <style>{`
-          @keyframes reposition-spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-          .reposition-pulse {
-            transform-origin: ${SITE_ART_CENTER.x}px ${SITE_ART_CENTER.y}px;
-            animation: reposition-spin 12s linear infinite;
-          }
-        `}</style>
-      )}
     </g>
   );
 }
