@@ -120,7 +120,6 @@ export function useTownCamera(
     setIsDragging(false);
     hudDragRef.current = false;
     didTriggerDragRef.current = false;
-    wasDraggingRef.current = false;
     if (svgRef.current) {
       svgRef.current.style.pointerEvents = "auto";
     }

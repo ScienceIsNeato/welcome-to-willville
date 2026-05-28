@@ -62,6 +62,7 @@ next-env.d.ts
 .clinerules/
 .roo/
 .windsurf/
+.vscode/
 .aider.conf.yml
 .claude/*.lock
 .specstory/

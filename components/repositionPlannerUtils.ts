@@ -22,8 +22,10 @@ export function formatHeuristics(
       `    position: ${position},`,
     ];
 
-    if (original?.blurb) {
-      parts.push(`    blurb: ${JSON.stringify(original.blurb)},`);
+    if (original) {
+      if (original.blurb) {
+        parts.push(`    blurb: ${JSON.stringify(original.blurb)},`);
+      }
     } else if (stop.blurb) {
       parts.push(`    blurb: ${JSON.stringify(stop.blurb)},`);
     }
