@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Adding the slop-mop website stop in Slop Wharf and mapping out how new repos should auto-land without git writes",
-    "direction": "Use provisional site placement for new repos until a real packet or curated override shows up",
-    "last_update": "2026-05-28T11:14:47Z"
+    "status": "Planner district reassignment is cleaned up and locally green for new site placement",
+    "direction": "Next step is getting this branch ready so new repos can be dropped into the right region first and tuned later when needed",
+    "last_update": "2026-05-28T18:18:22Z"
   }
 }

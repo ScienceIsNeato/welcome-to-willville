@@ -1,5 +1,12 @@
 # Status
 
+## Done (2026-05-28) — Reposition Mode Can Reassign Site Districts
+
+- Added a planner-side region picker in `/reposition/` so repo sites can be reassigned between districts without hand-editing heuristics first.
+- District changes now count as real planner edits, reset cleanly, and snap the selected site into the deterministic default slot for its new district so placement starts from a sane baseline.
+- Follow-up cleanup pulled the planner export formatting into a helper and replaced the effect-driven site selection with derived fallback state so the new picker stays inside the local size and hook rails.
+- Validation: `sm swab --no-cache --json --output-file .slopmop/last_swab.json` reported `all_passed: true`; rebuilt with `./scripts/deploy_app.sh`, opened `/reposition/?site_type=desktop`, selected `slop-mop-website`, changed it from `slop-wharf` to `the-zeitgeist`, and confirmed the planner updated both district and coordinates in the modified-sites panel.
+
 ## Done (2026-05-28) — Slop-Mop Website Now Lands In Slop Wharf
 
 - Added a curated fallback site entry for `slop-mop-website` so it shows up in Slop Wharf even before that repo ships its own `.willville.json`.

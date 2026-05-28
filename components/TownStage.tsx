@@ -17,11 +17,14 @@ import {
   TOWN_OFFSET,
   WORLD,
   MANUAL_STOPS,
+  type DistrictId,
 } from "@/lib/willville";
 import type { Stop } from "@/lib/town";
 import { isKnownDistrict } from "@/lib/slugs";
 import { HEURISTICS } from "@/lib/willville.heuristics";
 import type { CanalBoat } from "@/lib/canal";
+import { sitePositionForStop } from "@/lib/town-layout";
+import { formatHeuristics, formatManualStops } from "./repositionPlannerUtils";
 import { DistrictZone } from "./DistrictZone";
 import { WorldSubstrate } from "./WorldSubstrate";
 import { StopMarker } from "./StopMarker";
@@ -61,91 +64,10 @@ import {
   readManifestProgress,
 } from "./townStageManifestProgress";
 
-function formatHeuristics(
-  heuristics: typeof HEURISTICS,
-  updatedStops: Stop[],
-): string {
-  const repoStops = updatedStops.filter((s) => s.repo && s.isManual !== true);
-
-  const items = repoStops.map((stop) => {
-    const orig = heuristics.find(
-      (h) => h.repo.toLowerCase() === stop.repo?.toLowerCase(),
-    );
-
-    const linesStr = JSON.stringify(stop.lines);
-    const posStr = `{ x: ${stop.position.x}, y: ${stop.position.y} }`;
-
-    let parts = [
-      `    repo: ${JSON.stringify(stop.repo)},`,
-      `    displayName: ${JSON.stringify(stop.displayName)},`,
-      `    district: ${JSON.stringify(stop.district)},`,
-      `    lines: ${linesStr},`,
-      `    position: ${posStr},`,
-    ];
-
-    if (orig) {
-      if (orig.blurb) parts.push(`    blurb: ${JSON.stringify(orig.blurb)},`);
-      if (orig.queue) {
-        const q = orig.queue;
-        const queueStr =
-          `{\n      active: ${q.active},` +
-          (q.milestone
-            ? `\n      milestone: ${JSON.stringify(q.milestone)},`
-            : "") +
-          (q.etaDays !== undefined ? `\n      etaDays: ${q.etaDays},` : "") +
-          (q.priority !== undefined ? `\n      priority: ${q.priority},` : "") +
-          `\n    }`;
-        parts.push(`    queue: ${queueStr},`);
-      }
-    } else if (stop.blurb) {
-      parts.push(`    blurb: ${JSON.stringify(stop.blurb)},`);
-    }
-
-    return `  {\n${parts.join("\n")}\n  }`;
-  });
-
-  return `export const HEURISTICS: Heuristic[] = [\n${items.join(",\n\n")}\n];`;
-}
-
-function formatManualStops(
-  manualStops: typeof MANUAL_STOPS,
-  updatedStops: Stop[],
-): string {
-  const manualStopsInUpdated = updatedStops.filter((s) => s.isManual === true);
-
-  const items = manualStopsInUpdated.map((stop) => {
-    const orig = manualStops.find((m) => m.id === stop.id);
-
-    const linesStr = JSON.stringify(stop.lines);
-    const posStr = `{ x: ${stop.position.x}, y: ${stop.position.y} }`;
-
-    let parts = [
-      `    id: ${JSON.stringify(stop.id)},`,
-      `    displayName: ${JSON.stringify(stop.displayName)},`,
-      `    district: ${JSON.stringify(stop.district)},`,
-      `    lines: ${linesStr},`,
-      `    position: ${posStr},`,
-    ];
-
-    if (orig) {
-      if (orig.homepage)
-        parts.push(`    homepage: ${JSON.stringify(orig.homepage)},`);
-      if (orig.blurb) parts.push(`    blurb: ${JSON.stringify(orig.blurb)},`);
-      if (orig.statusState)
-        parts.push(`    statusState: ${JSON.stringify(orig.statusState)},`);
-    } else {
-      if (stop.homepage)
-        parts.push(`    homepage: ${JSON.stringify(stop.homepage)},`);
-      if (stop.blurb) parts.push(`    blurb: ${JSON.stringify(stop.blurb)},`);
-      if (stop.status?.state)
-        parts.push(`    statusState: ${JSON.stringify(stop.status.state)},`);
-    }
-
-    return `  {\n${parts.join("\n")}\n  }`;
-  });
-
-  return `export const MANUAL_STOPS: ManualStop[] = [\n${items.join(",\n\n")}\n];`;
-}
+type RepositionStopDelta = {
+  original: { x: number; y: number; district: DistrictId };
+  current: { x: number; y: number; district: DistrictId };
+};
 
 /**
  * Persistent SVG stage with viewport camera (pan/zoom) and center HUD for stops.
@@ -205,10 +127,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const activeDragIdRef = useRef<string | null>(null);
 
   const [movedStops, setMovedStops] = useState<
-    Record<
-      string,
-      { original: { x: number; y: number }; current: { x: number; y: number } }
-    >
+    Record<string, RepositionStopDelta>
   >({});
   const [liveStops, setLiveStops] = useState<Stop[] | null>(null);
   const [showCentralBoard, setShowCentralBoard] = useState(true);
@@ -242,6 +161,29 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     return mergeStops(localStops, liveStops);
   }, [localStops, liveStops, isRepositionMode]);
 
+  const repositionableStops = useMemo(
+    () =>
+      localStops
+        .filter((stop) => stop.repo && stop.isManual !== true)
+        .sort((left, right) =>
+          left.displayName.localeCompare(right.displayName),
+        ),
+    [localStops],
+  );
+  const [plannerStopId, setPlannerStopId] = useState<string | null>(null);
+  const effectivePlannerStopId =
+    plannerStopId &&
+    repositionableStops.some((stop) => stop.id === plannerStopId)
+      ? plannerStopId
+      : (repositionableStops[0]?.id ?? "");
+
+  const plannerStop = useMemo(
+    () =>
+      repositionableStops.find((stop) => stop.id === effectivePlannerStopId) ??
+      null,
+    [effectivePlannerStopId, repositionableStops],
+  );
+
   const handleMarkerDragStart = useCallback(
     (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
       e.currentTarget.setPointerCapture(e.pointerId);
@@ -251,8 +193,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         return {
           ...prev,
           [stop.id]: {
-            original: { ...stop.position },
-            current: { ...stop.position },
+            original: { ...stop.position, district: stop.district },
+            current: { ...stop.position, district: stop.district },
           },
         };
       });
@@ -283,12 +225,17 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       );
 
       setMovedStops((prev) => {
-        if (!prev[stop.id]) return prev;
+        const existing = prev[stop.id];
+        if (!existing) return prev;
         return {
           ...prev,
           [stop.id]: {
-            ...prev[stop.id],
-            current: { x: clampedX, y: clampedY },
+            ...existing,
+            current: {
+              ...existing.current,
+              x: clampedX,
+              y: clampedY,
+            },
           },
         };
       });
@@ -313,7 +260,13 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
       setLocalStops((prevStops) =>
         prevStops.map((s) =>
-          s.id === stopId ? { ...s, position: { ...item.original } } : s,
+          s.id === stopId
+            ? {
+                ...s,
+                district: item.original.district,
+                position: { x: item.original.x, y: item.original.y },
+              }
+            : s,
         ),
       );
 
@@ -330,11 +283,64 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     setLocalStops((prevStops) =>
       prevStops.map((s) => {
         const item = movedStops[s.id];
-        return item ? { ...s, position: { ...item.original } } : s;
+        return item
+          ? {
+              ...s,
+              district: item.original.district,
+              position: { x: item.original.x, y: item.original.y },
+            }
+          : s;
       }),
     );
     setMovedStops({});
   }, [movedStops]);
+
+  const handleDistrictChange = useCallback(
+    (stopId: string, nextDistrict: DistrictId) => {
+      const stop = localStops.find((item) => item.id === stopId);
+      if (!stop?.repo || stop.district === nextDistrict) {
+        return;
+      }
+
+      const nextPosition = sitePositionForStop(
+        nextDistrict,
+        stop.id,
+        stop.repo,
+      );
+
+      setLocalStops((prevStops) =>
+        prevStops.map((item) =>
+          item.id === stopId
+            ? {
+                ...item,
+                district: nextDistrict,
+                position: { x: nextPosition.x, y: nextPosition.y },
+              }
+            : item,
+        ),
+      );
+
+      setMovedStops((prev) => {
+        const existing = prev[stopId];
+        return {
+          ...prev,
+          [stopId]: {
+            original: existing?.original ?? {
+              x: stop.position.x,
+              y: stop.position.y,
+              district: stop.district,
+            },
+            current: {
+              x: nextPosition.x,
+              y: nextPosition.y,
+              district: nextDistrict,
+            },
+          },
+        };
+      });
+    },
+    [localStops],
+  );
 
   const [copied, setCopied] = useState(false);
   const handleCopy = useCallback(() => {
@@ -355,7 +361,9 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
 
   const changedStops = Object.entries(movedStops).filter(
     ([_, item]) =>
-      item.original.x !== item.current.x || item.original.y !== item.current.y,
+      item.original.x !== item.current.x ||
+      item.original.y !== item.current.y ||
+      item.original.district !== item.current.district,
   );
 
   const loadTown = useCallback(
@@ -1283,8 +1291,113 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                 }}
               >
                 Click and drag any stop marker to reposition it live on the map.
-                Coordinates will update in real time.
+                Use the picker to reassign districts. District changes snap the
+                site to its default slot in the new region so you can fine-tune
+                from there.
               </p>
+
+              <div
+                style={{
+                  marginBottom: 16,
+                  padding: "10px 12px",
+                  borderRadius: 8,
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 10,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    letterSpacing: 1,
+                    color: "#e6c66a",
+                  }}
+                >
+                  Region Picker
+                </div>
+                <label
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                    fontSize: 12,
+                  }}
+                >
+                  <span style={{ opacity: 0.8 }}>Site</span>
+                  <select
+                    value={effectivePlannerStopId}
+                    onChange={(event) => setPlannerStopId(event.target.value)}
+                    style={{
+                      background: "rgba(10, 8, 18, 0.88)",
+                      color: "var(--willville-paper)",
+                      border: "1px solid rgba(230,198,106,0.25)",
+                      borderRadius: 6,
+                      padding: "8px 10px",
+                      fontSize: 12,
+                    }}
+                  >
+                    {repositionableStops.map((stop) => (
+                      <option key={stop.id} value={stop.id}>
+                        {stop.displayName}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 6,
+                    fontSize: 12,
+                  }}
+                >
+                  <span style={{ opacity: 0.8 }}>District</span>
+                  <select
+                    value={plannerStop?.district ?? ""}
+                    onChange={(event) => {
+                      if (
+                        !plannerStop ||
+                        !isKnownDistrict(event.target.value)
+                      ) {
+                        return;
+                      }
+                      handleDistrictChange(plannerStop.id, event.target.value);
+                    }}
+                    disabled={!plannerStop}
+                    style={{
+                      background: "rgba(10, 8, 18, 0.88)",
+                      color: "var(--willville-paper)",
+                      border: "1px solid rgba(230,198,106,0.25)",
+                      borderRadius: 6,
+                      padding: "8px 10px",
+                      fontSize: 12,
+                      opacity: plannerStop ? 1 : 0.6,
+                    }}
+                  >
+                    {DISTRICTS.map((district) => (
+                      <option key={district.id} value={district.id}>
+                        {district.displayName}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {plannerStop && (
+                  <div
+                    style={{
+                      fontSize: 11,
+                      lineHeight: 1.45,
+                      opacity: 0.72,
+                    }}
+                  >
+                    Current: {plannerStop.displayName} in {plannerStop.district}{" "}
+                    at ({plannerStop.position.x}, {plannerStop.position.y})
+                  </div>
+                )}
+              </div>
 
               <div
                 style={{
@@ -1304,7 +1417,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                     marginBottom: 8,
                   }}
                 >
-                  Modified Coordinates ({changedStops.length})
+                  Modified Sites ({changedStops.length})
                 </div>
                 {changedStops.length === 0 ? (
                   <div
@@ -1315,7 +1428,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                       padding: "8px 0",
                     }}
                   >
-                    No sites moved yet.
+                    No site changes yet.
                   </div>
                 ) : (
                   <div
@@ -1324,6 +1437,8 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                     {changedStops.map(([id, item]) => {
                       const s = localStops.find((x) => x.id === id);
                       if (!s) return null;
+                      const districtChanged =
+                        item.original.district !== item.current.district;
                       return (
                         <div
                           key={id}
@@ -1356,6 +1471,17 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                               }}
                             >
                               {s.displayName}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: 11,
+                                fontFamily: "monospace",
+                                opacity: 0.7,
+                              }}
+                            >
+                              {districtChanged
+                                ? `${item.original.district} ➔ ${item.current.district}`
+                                : s.district}
                             </span>
                             <span
                               style={{
