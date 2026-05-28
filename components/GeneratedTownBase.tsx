@@ -1,4 +1,4 @@
-import { GENERATED_TOWN_LAYOUT, serviceRouteForStop } from "@/lib/town-layout";
+import { GENERATED_TOWN_LAYOUT } from "@/lib/town-layout";
 import type { Stop } from "@/lib/town";
 import districtArt from "@/data/town-district-art.v1.json";
 
@@ -45,7 +45,7 @@ function districtRenderBox(layer: DistrictLayer) {
   return { x: left, y: top, width: right - left, height: bottom - top };
 }
 
-export function GeneratedTownBase({ stops }: Props) {
+export function GeneratedTownBase({ stops: _stops }: Props) {
   const districtLayers = districtArt.layers;
 
   return (
@@ -75,18 +75,6 @@ export function GeneratedTownBase({ stops }: Props) {
           {...districtRenderBox(layer)}
           preserveAspectRatio="none"
           clipPath="url(#generated-town-footprint-clip)"
-        />
-      ))}
-
-      {stops.slice(0, 28).map((stop) => (
-        <path
-          key={`service-${stop.id}`}
-          d={serviceRouteForStop(stop.position)}
-          fill="none"
-          stroke="rgba(245,230,200,0.16)"
-          strokeWidth={2}
-          strokeDasharray="5 12"
-          strokeLinecap="round"
         />
       ))}
     </g>

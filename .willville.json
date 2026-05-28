@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Polishing the reverted branch so the PR can land cleanly",
-    "direction": "Get the remaining feedback and deploy checks out of the way so this branch is ready to merge",
-    "last_update": "2026-05-28T05:53:49Z"
+    "status": "Trimming the map back to one train system so the Mayor's Express is the only rail motion left on screen",
+    "direction": "Keep simplifying the town visuals where the extra decoration is not earning its keep",
+    "last_update": "2026-05-28T08:27:29Z"
   }
 }

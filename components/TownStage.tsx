@@ -24,7 +24,6 @@ import { HEURISTICS } from "@/lib/willville.heuristics";
 import type { CanalBoat } from "@/lib/canal";
 import { DistrictZone } from "./DistrictZone";
 import { WorldSubstrate } from "./WorldSubstrate";
-import { TransitLines } from "./TransitLines";
 import { StopMarker } from "./StopMarker";
 import { MainLine } from "./MainLine";
 import { Canal } from "./Canal";
@@ -612,6 +611,9 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
         ) ?? null)
       : null;
   const boardStop = hydratedSelectedStop ?? pathSelectedStop;
+  const focusedStopKey = boardStop
+    ? `${boardStop.district}/${boardStop.id}`
+    : null;
   const detailBoardVisible =
     showDigitalBoard && (!mobileSafeMode || !!boardStop);
   const mobileDrawerVisible = mobileSafeMode && detailBoardVisible;
@@ -763,7 +765,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
   );
 
   const handleStopClick = useCallback(
-    (e: MouseEvent<SVGGElement>, stop: Stop) => {
+    (stop: Stop, e: MouseEvent<SVGGElement>) => {
       e.stopPropagation();
       markSkipDrag();
       openStopHud(stop);
@@ -772,7 +774,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
   );
 
   const handleStopDoubleClick = useCallback(
-    (e: MouseEvent<SVGGElement>, stop: Stop) => {
+    (stop: Stop, e: MouseEvent<SVGGElement>) => {
       e.stopPropagation();
       markSkipDrag();
       const wx = TOWN_OFFSET.x + stop.position.x;
@@ -781,6 +783,46 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
       openStopHud(stop);
     },
     [markSkipDrag, openStopHud, zoomAtWorldPoint],
+  );
+
+  const stopMarkers = useMemo(
+    () =>
+      currentStops.map((stop) => {
+        const updated = stop.status.updated
+          ? Date.parse(stop.status.updated)
+          : NaN;
+        const recently =
+          isClient &&
+          now !== null &&
+          !Number.isNaN(updated) &&
+          now - updated < DAY_MS;
+        return (
+          <StopMarker
+            key={`${stop.district}-${stop.id}`}
+            stop={stop}
+            isFocused={focusedStopKey === `${stop.district}/${stop.id}`}
+            recentlyUpdated={recently}
+            onClick={handleStopClick}
+            onDoubleClick={handleStopDoubleClick}
+            draggable={isRepositionMode}
+            onDragStart={handleMarkerDragStart}
+            onDragMove={handleMarkerDragMove}
+            onDragEnd={handleMarkerDragEnd}
+          />
+        );
+      }),
+    [
+      currentStops,
+      focusedStopKey,
+      handleMarkerDragEnd,
+      handleMarkerDragMove,
+      handleMarkerDragStart,
+      handleStopClick,
+      handleStopDoubleClick,
+      isClient,
+      isRepositionMode,
+      now,
+    ],
   );
 
   const showWelcomeHint =
@@ -1051,7 +1093,6 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                     onEnterDistrict={enterDistrict}
                   />
                 ))}
-                <TransitLines />
                 <MainLine
                   stops={currentStops}
                   onEngineClick={closeHud}
@@ -1067,37 +1108,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                     completedAtByStopId={bellCompletedAtByStopId}
                   />
                 )}
-                {currentStops.map((stop) => {
-                  const updated = stop.status.updated
-                    ? Date.parse(stop.status.updated)
-                    : NaN;
-                  const recently =
-                    isClient &&
-                    now !== null &&
-                    !Number.isNaN(updated) &&
-                    now - updated < DAY_MS;
-                  return (
-                    <StopMarker
-                      key={`${stop.district}-${stop.id}`}
-                      stop={stop}
-                      isFocused={
-                        boardStop?.district === stop.district &&
-                        boardStop?.id === stop.id
-                      }
-                      recentlyUpdated={recently}
-                      onClick={(e) => {
-                        if (!isRepositionMode) handleStopClick(e, stop);
-                      }}
-                      onDoubleClick={(e) => {
-                        if (!isRepositionMode) handleStopDoubleClick(e, stop);
-                      }}
-                      draggable={isRepositionMode}
-                      onDragStart={(e) => handleMarkerDragStart(stop, e)}
-                      onDragMove={(e) => handleMarkerDragMove(stop, e)}
-                      onDragEnd={(e) => handleMarkerDragEnd(stop, e)}
-                    />
-                  );
-                })}
+                {stopMarkers}
                 {DISTRICTS.map((d) => (
                   <DistrictZone
                     key={`label-${d.id}`}

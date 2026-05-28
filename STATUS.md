@@ -9,6 +9,39 @@ eta: 2026-05-27
 
 # Status
 
+## Done (2026-05-28) — Regional Transit Layer Removed, Mayor's Express Left In Place
+
+- Removed the decorative per-region transit loops from the stage so the only remaining train system is the Mayor's Express.
+- Deleted the now-dead `TransitLines` and `Train` components after confirming the stage only rendered that regional layer from one place.
+- Validation: `./scripts/deploy_app.sh` rebuilt and served `http://127.0.0.1:3740/`; live DOM check found `0` old dashed regional rail paths and still found the Mayor's Express group with `3` motion tracks; `sm swab` passed.
+
+## Done (2026-05-28) — Legacy Repo Status Packets Show Up Again On The Detail Boards
+
+- Checked the live prod/local town payloads after the report that only some repos were showing active status text. The split is not public vs private: both payloads currently include `36` repo stops with `26` private repos.
+- Root cause was the merge layer in `lib/town.ts`: the UI reads `status.doing`, but older repos that still only commit legacy `summary:` text in `STATUS.md` were not being promoted into `doing`, so they rendered as `No active work logged.` even though status text existed.
+- Promoted legacy packet `summary` into `status.doing` as a fallback. After the change, repos with populated active-status text rose from `7` to `20`; the remaining blanks are repos that genuinely still lack active-status text.
+- Validation: `./scripts/deploy_app.sh` rebuilt and served `http://127.0.0.1:3740/`; live API inspection confirmed previously blank legacy-summary repos like `pr-task-scaffolding` and `apertus_task_scaffolding` now expose `status.doing`; `sm swab` passed.
+
+## Done (2026-05-28) — Split-Flap Board Ignores Stop Status Copy Again
+
+- Restored the standard selected-stop split-flap behavior by making the Time Central board use the stop blurb instead of swapping in `status.summary` when a status packet exists.
+- Rebuilt the local app and verified on the live Slop-Mop stop route that the board now shows the normal stop copy again instead of the PR/status line.
+- Validation: `./scripts/deploy_app.sh` rebuilt and served `http://127.0.0.1:3740/`; browser check on `/slop-wharf/slop-mop/?site_type=desktop` showed the board text using the normal stop copy; `sm swab` passed.
+
+## Done (2026-05-28) — Slop Wharf Fan-Out Cleanup Landed And The Moving Stuff Is Accounted For
+
+- Removed the Slop Wharf fan-out clutter by deleting the generated depot service-route overlay from the town base layer. Those pale dashed curves were not train tracks or worker routes; they were extra decorative paths radiating out from the Slop Depot.
+- Left the actual canal styling alone after confirming that was not the clutter the user was pointing at.
+- Revalidated the live app after the cleanup: `./scripts/deploy_app.sh` rebuilt and served `http://127.0.0.1:3740/`, a browser probe confirmed the old service overlay is gone from `#generated-town-base`, and the slop-mop worker layer is still present with `12` workers.
+- Final validation: `sm swab` passed clean after removing the now-dead helper/export that only existed for the deleted overlay.
+
+## Done (2026-05-28) — Stop And Worker Layer Perf Hygiene Landed On Main
+
+- Memoized the stop-marker path so unrelated stage UI state no longer rebuilds the whole marker layer every time: markers now take stable parent handlers, the marker component is memoized, and the rendered marker list is cached behind stop-specific dependencies.
+- Memoized the world-worker layer so it only re-resolves workers and regenerates its animation CSS when the stop data or worker layer actually changes.
+- Validation: `sm swab` passed after the refactor; `./scripts/deploy_app.sh` rebuilt and restarted the local app on `http://127.0.0.1:3742/`.
+- Perf check: reran the official local perf journey on the rebuilt app. One measured pass improved from about `5101ms` to `4872ms` total and dropped long tasks out of the run, but a follow-up pass was noisy and the dominant cost still remained camera settling during the initial zoom sequence. Net: the rerender hygiene is safer now, but the obvious next bottleneck is still the camera path rather than the stop or worker layers.
+
 ## Done (2026-05-28) — Reverted PR Tip Buffed For Merge
 
 - Fixed the tourism announcement so it now auto-clears on the same timer as the other Time Central flashes instead of lingering over later stop selections.
@@ -298,7 +331,7 @@ eta: 2026-05-27
 
 - Fixed the repo-selection bug in dense districts by tightening `StopMarker` click targets to the visible label and sprite instead of one tall invisible rectangle that could overlap neighboring stops.
 - This was the root cause behind Slop Wharf repos sometimes opening the wrong board content, because overlapping marker hitboxes let a nearby stop intercept clicks even when the visible label or sprite belonged to another repo.
-- Validation: rebuilt with `./scripts/deploy_app.sh`, then ran a browser DOM probe against the live `http://127.0.0.1:3752/slop-wharf/the-rulebook/` page to confirm the `text`, `image`, `circle`, and label hitbox centers for `the-mop-bucket`, `the-action-dock`, `the-slop-bucket`, and `the-rulebook` all resolve to their own stop IDs; `sm swab` also passed.
+- Validation: rebuilt with `./scripts/deploy_app.sh`, then ran a browser DOM probe against the live `http://127.0.0.1:3752/slop-wharf/the-rulebook/` page to confirm the `text`, `image`, `circle`, and label hitbox centers for `slop-mop`, `the-action-dock`, `the-slop-bucket`, and `the-rulebook` all resolve to their own stop IDs; `sm swab` also passed.
 
 ## Done (2026-05-25) — Local Token Verification For Town Data
 
