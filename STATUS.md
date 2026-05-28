@@ -1,5 +1,36 @@
 # Status
 
+## Done (2026-05-28) — Replacement Repaints No Longer Draw A Marker On Top
+
+- Fixed the stage render path so a live preview or accepted replacement underlay now actually replaces the foreground marker instead of rendering underneath it. The old sprite is no longer drawn on top while reviewing or after acceptance.
+- Also corrected the already-accepted `10000_years_of_solitude` appearance record so rebuilds keep treating it as `background-only` even without the live sidecar state.
+- Validation: `sm swab -g overconfidence:type-blindness.js --json --output-file .slopmop/last_swab.json` passed with `all_passed: true`; rebuilt locally with `scripts/deploy_app.sh`, now live again on `http://127.0.0.1:3740/` with the repaint runner on `http://127.0.0.1:3741/`.
+
+## Done (2026-05-28) — Cancel Works Mid-Run And Accept Hides The Separate Glyph
+
+- Fixed the repaint planner control bug so `Cancel Run` is no longer disabled during the actual live run. The UI now tracks in-flight control actions separately from the pipeline's own `running` state, so cancel stays clickable while the generation is underway.
+- Updated the repaint flow so accepted previews are the final baked version of the site. The generator prompt now tells the art pass to recreate the landmark directly in the painted scene instead of leaving an empty center for a foreground sprite, and `Accept` now switches the site to `background-only` so the separate glyph disappears after approval.
+- Validation: `node scripts/apply-town-glyph-halo.mjs --id=10000_years_of_solitude --dry-run` confirmed the new baked-landmark prompt and the removal of the old open-center wording; generated dry-run artifacts were removed; `node --check scripts/repaint-pipeline-server.mjs` passed; `sm swab -g overconfidence:type-blindness.js --json --output-file .slopmop/last_swab.json` passed with `all_passed: true`; rebuilt locally with `scripts/deploy_app.sh`, now live on `http://127.0.0.1:3742/` with the repaint runner on `http://127.0.0.1:3743/`.
+
+## Done (2026-05-28) — Sprite-Backed Sites Now Get A Default Live Repaint Config
+
+- Closed the last dead-end in the repaint planner by giving any site with a sprite config a sane default halo prompt and default crop behavior, instead of requiring a hand-written `inpaintHalo` block before the live pipeline can even start.
+- The shared repaint support check and the local sidecar now agree on that rule, so the planner no longer says a sprite-backed site is unsupported just because it has not been tuned yet. Explicitly disabled repaint configs still stay disabled.
+- Validation: `node scripts/apply-town-glyph-halo.mjs --id=10000_years_of_solitude --dry-run` passed and produced a real summary instead of the old missing-config failure; `node --check scripts/repaint-pipeline-server.mjs` passed; `sm swab -g overconfidence:type-blindness.js --json --output-file .slopmop/last_swab.json` passed with `all_passed: true`; local preview was rebuilt with `scripts/deploy_app.sh` and is live again on `http://127.0.0.1:3740/` with the repaint runner on `http://127.0.0.1:3741/`.
+
+## Done (2026-05-28) — Live Repaint Runner Streams Real CLI Output And Uses Review Gates
+
+- The repaint flow in `/reposition/` now runs the real local art pipeline instead of only flipping in-memory queue state. A local sidecar starts with `scripts/deploy_app.sh`, executes the repaint CLI, streams stdout/stderr back into the planner, and exposes the live candidate underlay for map preview.
+- The preview phase is now intentionally non-destructive to the appearance manifest: generating a candidate only changes the candidate art file. `Accept` is the step that locks the manifest/cache-key change in, while `Reject` restores the previous underlay backup. That matches the intended review gate instead of mutating source-of-truth files too early.
+- Unsupported sites are blocked up front. If a stop has no enabled `inpaintHalo` config, the planner now says so before any live run starts.
+- Validation: `node --check scripts/repaint-pipeline-server.mjs` passed; `bash -n scripts/deploy_app.sh` passed; `sm swab -g overconfidence:type-blindness.js --json --output-file .slopmop/last_swab.json` passed; full `sm swab --json --output-file .slopmop/last_swab.json` passed with `all_passed: true`. Live smoke checks on local deploys confirmed: unsupported stops are disabled, supported stops stream real CLI output from `apply-town-glyph-halo.mjs`, preview generation leaves `data/town-site-appearance.v1.json` untouched until accept, and rejecting a candidate restores the underlay artifact cleanly.
+
+## Done (2026-05-28) — Repaint Queue Is Single-Slot And Has A Real Done State
+
+- Locked the repaint flow to a single global slot instead of letting the planner imply a bigger queue than we actually want to support.
+- The planner now queues only the currently selected site, shows when that one slot is occupied, blocks every other queue attempt while it is full, and exposes a `Mark Repaint Done` action so the slot can be reopened after the external repaint work lands.
+- Validation: `sm swab -g overconfidence:type-blindness.js --json --output-file .slopmop/last_swab.json` passed; rebuilt with `scripts/deploy_app.sh`; live `/reposition/?site_type=desktop` showed `Queued for Repaint`, `Mark Repaint Done`, and the single-slot helper copy; clicking `Mark Repaint Done` reopened the queue; `/api/reposition?limit=5` returned `capacity: 1`, `available: true`, `activeJob: null`, and preserved audit history after clearing.
+
 ## Done (2026-05-28) — Planner Can Queue The Selected Site Without Moving It First
 
 - Closed the queue-affordance gap in `/reposition/`: the planner now queues the currently selected site even when `Modified Sites` is still `0`, instead of requiring a drag before the button wakes up.

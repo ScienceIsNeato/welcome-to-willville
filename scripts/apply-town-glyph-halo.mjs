@@ -14,6 +14,7 @@ import {
   glyphHaloCropBoxForSprite,
   glyphHaloDifferenceThresholdForSprite,
   glyphHaloMaskBoxForSprite,
+  glyphHaloPromptForSprite,
   glyphHaloRayPaddingForSprite,
   glyphHaloRadialScaleForSprite,
 } from "../lib/glyphHalo.ts";
@@ -246,6 +247,10 @@ if (!halo) {
     `Glyph ${requestedId} does not have an enabled inpaintHalo config.`,
   );
 }
+const haloPrompt = glyphHaloPromptForSprite(sprite);
+if (!haloPrompt) {
+  throw new Error(`Glyph ${requestedId} does not have a repaint prompt.`);
+}
 
 const heuristic = HEURISTICS.find(
   (item) => slugForHeuristic(item) === requestedId,
@@ -339,7 +344,7 @@ await runGanglia(
     "--mask",
     cropMask,
     "--description",
-    halo.description,
+    haloPrompt,
     "--output",
     cropOutput,
     "--model",

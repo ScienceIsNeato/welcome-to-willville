@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Closed the planner gap so a selected site can be sent to repaint without dragging it first",
-    "direction": "Next is finishing the durable backup, audit, and revert path behind the repaint flow",
-    "last_update": "2026-05-28T20:46:00Z"
+    "status": "Making the repaint truly replace the old marker instead of sitting underneath it",
+    "direction": "Next is tightening the baked art so replacement sites still read clearly without any extra overlay",
+    "last_update": "2026-05-28T22:40:00Z"
   }
 }

@@ -62,6 +62,51 @@
         "src": "/art/town/glyph-halos/razer-ripple.png",
         "cacheKey": "razer-ripple-halo-v1"
       }
+    },
+    {
+      "stopId": "10000_years_of_solitude",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/10000_years_of_solitude.png",
+        "cacheKey": "auto-v1-1780006093380"
+      }
+    },
+    {
+      "stopId": "lonely_little_vampire",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/lonely_little_vampire.png",
+        "cacheKey": "auto-v1-1780007988336"
+      }
+    },
+    {
+      "stopId": "welcome-to-willville",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/welcome-to-willville.png",
+        "cacheKey": "auto-v1-1780009321629"
+      }
+    },
+    {
+      "stopId": "cursor-rules",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/cursor-rules.png",
+        "cacheKey": "auto-v1-1780010510856"
+      }
+    },
+    {
+      "stopId": "slop-mop",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/slop-mop.png",
+        "cacheKey": "auto-v1-1780011201842"
+      }
     }
   ]
 }
