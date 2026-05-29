@@ -37,6 +37,10 @@
 # temp files
 .tmp/
 
+# local repaint trail
+/data/backups/
+/data/town-site-appearance-audit.v1.json
+
 # debug
 npm-debug.log*
 yarn-debug.log*

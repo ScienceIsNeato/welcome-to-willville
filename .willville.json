@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Making the repaint truly replace the old marker instead of sitting underneath it",
-    "direction": "Next is tightening the baked art so replacement sites still read clearly without any extra overlay",
-    "last_update": "2026-05-28T22:40:00Z"
+    "status": "Moving town landmarks around so the map staging matches the latest layout decisions",
+    "direction": "Next is checking whether any other special landmarks want to live outside the town edge too",
+    "last_update": "2026-05-28T23:59:00Z"
   }
 }

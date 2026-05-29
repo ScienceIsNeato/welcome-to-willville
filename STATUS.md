@@ -1,5 +1,21 @@
 # Status
 
+## Done (2026-05-28) — Department Of Tourism Moved Outside Town Near The Graveyard Coast
+
+- Moved the Department of Tourism landmark out of Town Square and onto the grass strip east of The Graveyard so it now sits outside the town edge near the marked coastal spot.
+- Validation: `./scripts/deploy_app.sh` rebuilt successfully and brought the updated preview back up on `http://127.0.0.1:3742/` with the repaint runner on `http://127.0.0.1:3743`.
+
+## Done (2026-05-28) — Repaint Prompt Now Favors Built Landmarks And Uses Tighter Spread
+
+- Tightened the shared repaint prompt so future generations bias toward compact buildings, statues, shrines, kiosks, gates, and other 3D landmark reads instead of flat floor symbols or mural-like overlays.
+- Pulled the effective inpaint spread back by about 30 percent at the shared halo-math layer, so the repaint footprint reaches less aggressively into the surrounding district art.
+- Validation: `node scripts/apply-town-glyph-halo.mjs --id=razer-ripple --dry-run` confirmed the new building/statue prompt wording, `radialScale: 1.14`, and tighter `haloRayPadding`; dry-run artifacts were removed; `sm swab -g overconfidence:type-blindness.js --json --output-file .slopmop/last_swab.json` passed with `all_passed: true`.
+
+## Done (2026-05-28) — Local Repaint Trail Is Ignored
+
+- Added repo ignore rules for the local repaint backup snapshots and append-only audit log so the branch stays clean after using the live repaint authoring flow.
+- Validation target is `git status --short`: the repaint trail should disappear from status once the new ignore rules are in place.
+
 ## Done (2026-05-28) — Replacement Repaints No Longer Draw A Marker On Top
 
 - Fixed the stage render path so a live preview or accepted replacement underlay now actually replaces the foreground marker instead of rendering underneath it. The old sprite is no longer drawn on top while reviewing or after acceptance.
