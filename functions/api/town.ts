@@ -22,7 +22,10 @@ import {
   type RepoMeta,
 } from "../../lib/town";
 import { withCorsHeaders } from "./cors";
-import { readCachedRepoManifest } from "./town-manifests";
+import {
+  readCachedRepoManifest,
+  WillvilleManifestClient,
+} from "./town-manifests";
 
 interface Env {
   GITHUB_PAT?: string;
@@ -279,7 +282,7 @@ async function fetchCommitCounts(
     Accept: "application/vnd.github+json",
   };
   if (token) headers.Authorization = `Bearer ${token}`;
-  const since = new Date(Date.now() - 21 * 86_400_000).toISOString();
+  const since = new Date(Date.now() - 28 * 86_400_000).toISOString();
 
   type CommitEntry = {
     html_url?: string | null;
@@ -345,7 +348,7 @@ async function fetchCommitCounts(
       const daysAgo = (now - t) / 86_400_000;
       if (daysAgo <= 3) d3++;
       if (daysAgo <= 7) d7++;
-      d21++; // all commits from the `since` window count
+      if (daysAgo <= 21) d21++;
     }
     return { d3, d7, d21, latestCommitAt, recentCommits };
   } catch {
@@ -506,6 +509,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const token = env.GITHUB_PAT;
   const repos = await listOwnerRepos(token);
   const cutoff = Date.now() - TWO_YEARS_MS;
+  const manifestClient = new WillvilleManifestClient(token);
   const candidates = repos.filter((r) => {
     if (r.fork || r.archived) return false;
     return Date.parse(r.pushed_at) >= cutoff;
@@ -521,7 +525,13 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
         fetchWorkflowRuns(r.full_name, token),
       ]);
     const activeBranch = branchResult.activeBranch;
-    const willvilleManifest = readCachedRepoManifest(r.full_name);
+    const willvilleManifest =
+      readCachedRepoManifest(r.full_name) ??
+      (await manifestClient.fetchRepoManifest(
+        r.full_name,
+        r.default_branch,
+        activeBranch,
+      ));
     return {
       repo: r.full_name,
       isPrivate: r.private,
