@@ -1,0 +1,67 @@
+{
+  "version": "town-site-appearance-v1",
+  "defaults": {
+    "foregroundMode": "sprite",
+    "underlay": {
+      "enabled": false
+    }
+  },
+  "sites": [
+    {
+      "stopId": "ganglia-studio",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/ganglia-studio.png",
+        "cacheKey": "ganglia-studio-halo-v5"
+      }
+    },
+    {
+      "stopId": "ganglia-common",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/ganglia-common.png",
+        "cacheKey": "ganglia-common-halo-v3"
+      }
+    },
+    {
+      "stopId": "halloweentracker",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/halloweentracker.png",
+        "cacheKey": "halloweentracker-halo-v10"
+      }
+    },
+    {
+      "stopId": "chronicchronicler",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/chronicchronicler.png",
+        "cacheKey": "chronicchronicler-halo-v1"
+      }
+    },
+    {
+      "stopId": "fogofdog-frontend",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/fogofdog-frontend.png",
+        "cacheKey": "fogofdog-frontend-halo-v1"
+      }
+    },
+    {
+      "stopId": "loopcloser",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/loopcloser.png",
+        "cacheKey": "loopcloser-halo-v1"
+      }
+    },
+    {
+      "stopId": "razer-ripple",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/razer-ripple.png",
+        "cacheKey": "razer-ripple-halo-v1"
+      }
+    }
+  ]
+}

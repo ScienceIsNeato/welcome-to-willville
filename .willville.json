@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Wrapping the read-only manifest branch and getting the last local rails green for the PR update",
-    "direction": "Push the branch cleanly and get CI and review back in shape around the bell-sync contract",
-    "last_update": "2026-05-28T10:59:47Z"
+    "status": "Closed the planner gap so a selected site can be sent to repaint without dragging it first",
+    "direction": "Next is finishing the durable backup, audit, and revert path behind the repaint flow",
+    "last_update": "2026-05-28T20:46:00Z"
   }
 }

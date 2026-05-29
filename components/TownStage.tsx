@@ -17,11 +17,18 @@ import {
   TOWN_OFFSET,
   WORLD,
   MANUAL_STOPS,
+  type DistrictId,
 } from "@/lib/willville";
 import type { Stop } from "@/lib/town";
 import { isKnownDistrict } from "@/lib/slugs";
 import { HEURISTICS } from "@/lib/willville.heuristics";
 import type { CanalBoat } from "@/lib/canal";
+import { sitePositionForStop } from "@/lib/town-layout";
+import {
+  formatHeuristics,
+  formatManualStops,
+  type RepositionStopDelta,
+} from "./repositionPlannerUtils";
 import { DistrictZone } from "./DistrictZone";
 import { WorldSubstrate } from "./WorldSubstrate";
 import { StopMarker } from "./StopMarker";
@@ -30,14 +37,18 @@ import { Canal } from "./Canal";
 import { ChimneySmoke } from "./ChimneySmoke";
 import { DynamicWalls } from "./DynamicWalls";
 import { GeneratedTownBase } from "./GeneratedTownBase";
-import { TownGlyphHalos } from "./TownGlyphHalos";
+import { TownSiteAppearances } from "./TownSiteAppearances";
 import { WorldWorkerLayer } from "./WorldWorkerLayer";
 import { SpecialTownLandmarks } from "./SpecialTownLandmarks";
 import { BellMessengers } from "./BellMessengers";
 import { TownPerfPanel } from "./TownPerfPanel";
 import { PanelChromeControls } from "./PanelChromeControls";
-import { TownStageChrome } from "./TownStageChrome";
+import { RepositionPlannerPanel, TownStageChrome } from "./TownStageChrome";
 import { screenToWorld, useTownCamera } from "@/hooks/useTownCamera";
+import {
+  useEscapeReleaseInteraction,
+  type ActiveDragPointer,
+} from "@/hooks/useEscapeReleaseInteraction";
 import { useTownInteractionProfiler } from "@/hooks/useTownInteractionProfiler";
 import { useTownPerfJourney } from "@/hooks/useTownPerfJourney";
 import {
@@ -60,92 +71,6 @@ import {
   markBellRepoCompletion,
   readManifestProgress,
 } from "./townStageManifestProgress";
-
-function formatHeuristics(
-  heuristics: typeof HEURISTICS,
-  updatedStops: Stop[],
-): string {
-  const repoStops = updatedStops.filter((s) => s.repo && s.isManual !== true);
-
-  const items = repoStops.map((stop) => {
-    const orig = heuristics.find(
-      (h) => h.repo.toLowerCase() === stop.repo?.toLowerCase(),
-    );
-
-    const linesStr = JSON.stringify(stop.lines);
-    const posStr = `{ x: ${stop.position.x}, y: ${stop.position.y} }`;
-
-    let parts = [
-      `    repo: ${JSON.stringify(stop.repo)},`,
-      `    displayName: ${JSON.stringify(stop.displayName)},`,
-      `    district: ${JSON.stringify(stop.district)},`,
-      `    lines: ${linesStr},`,
-      `    position: ${posStr},`,
-    ];
-
-    if (orig) {
-      if (orig.blurb) parts.push(`    blurb: ${JSON.stringify(orig.blurb)},`);
-      if (orig.queue) {
-        const q = orig.queue;
-        const queueStr =
-          `{\n      active: ${q.active},` +
-          (q.milestone
-            ? `\n      milestone: ${JSON.stringify(q.milestone)},`
-            : "") +
-          (q.etaDays !== undefined ? `\n      etaDays: ${q.etaDays},` : "") +
-          (q.priority !== undefined ? `\n      priority: ${q.priority},` : "") +
-          `\n    }`;
-        parts.push(`    queue: ${queueStr},`);
-      }
-    } else if (stop.blurb) {
-      parts.push(`    blurb: ${JSON.stringify(stop.blurb)},`);
-    }
-
-    return `  {\n${parts.join("\n")}\n  }`;
-  });
-
-  return `export const HEURISTICS: Heuristic[] = [\n${items.join(",\n\n")}\n];`;
-}
-
-function formatManualStops(
-  manualStops: typeof MANUAL_STOPS,
-  updatedStops: Stop[],
-): string {
-  const manualStopsInUpdated = updatedStops.filter((s) => s.isManual === true);
-
-  const items = manualStopsInUpdated.map((stop) => {
-    const orig = manualStops.find((m) => m.id === stop.id);
-
-    const linesStr = JSON.stringify(stop.lines);
-    const posStr = `{ x: ${stop.position.x}, y: ${stop.position.y} }`;
-
-    let parts = [
-      `    id: ${JSON.stringify(stop.id)},`,
-      `    displayName: ${JSON.stringify(stop.displayName)},`,
-      `    district: ${JSON.stringify(stop.district)},`,
-      `    lines: ${linesStr},`,
-      `    position: ${posStr},`,
-    ];
-
-    if (orig) {
-      if (orig.homepage)
-        parts.push(`    homepage: ${JSON.stringify(orig.homepage)},`);
-      if (orig.blurb) parts.push(`    blurb: ${JSON.stringify(orig.blurb)},`);
-      if (orig.statusState)
-        parts.push(`    statusState: ${JSON.stringify(orig.statusState)},`);
-    } else {
-      if (stop.homepage)
-        parts.push(`    homepage: ${JSON.stringify(stop.homepage)},`);
-      if (stop.blurb) parts.push(`    blurb: ${JSON.stringify(stop.blurb)},`);
-      if (stop.status?.state)
-        parts.push(`    statusState: ${JSON.stringify(stop.status.state)},`);
-    }
-
-    return `  {\n${parts.join("\n")}\n  }`;
-  });
-
-  return `export const MANUAL_STOPS: ManualStop[] = [\n${items.join(",\n\n")}\n];`;
-}
 
 /**
  * Persistent SVG stage with viewport camera (pan/zoom) and center HUD for stops.
@@ -191,6 +116,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     isDragging,
     cameraTransform,
     markSkipDrag,
+    resetDragInteraction,
     setCameraImmediate,
     zoomAtWorldPoint,
     stageHandlers,
@@ -203,12 +129,10 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const boardAnnouncementTimerRef = useRef<number | null>(null);
   const populateResetTimerRef = useRef<number | null>(null);
   const activeDragIdRef = useRef<string | null>(null);
+  const activeDragPointerRef = useRef<ActiveDragPointer | null>(null);
 
   const [movedStops, setMovedStops] = useState<
-    Record<
-      string,
-      { original: { x: number; y: number }; current: { x: number; y: number } }
-    >
+    Record<string, RepositionStopDelta>
   >({});
   const [liveStops, setLiveStops] = useState<Stop[] | null>(null);
   const [showCentralBoard, setShowCentralBoard] = useState(true);
@@ -242,22 +166,61 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     return mergeStops(localStops, liveStops);
   }, [localStops, liveStops, isRepositionMode]);
 
+  const repositionableStops = useMemo(
+    () =>
+      localStops
+        .filter((stop) => stop.repo && stop.isManual !== true)
+        .sort((left, right) =>
+          left.displayName.localeCompare(right.displayName),
+        ),
+    [localStops],
+  );
+  const [plannerStopId, setPlannerStopId] = useState<string | null>(null);
+  const effectivePlannerStopId =
+    plannerStopId &&
+    repositionableStops.some((stop) => stop.id === plannerStopId)
+      ? plannerStopId
+      : (repositionableStops[0]?.id ?? "");
+
+  const plannerStop = useMemo(
+    () =>
+      repositionableStops.find((stop) => stop.id === effectivePlannerStopId) ??
+      null,
+    [effectivePlannerStopId, repositionableStops],
+  );
+
+  const { clearRepositionDrag, releaseHeldInteraction } =
+    useEscapeReleaseInteraction({
+      svgRef,
+      isDragging,
+      activeDragIdRef,
+      activeDragPointerRef,
+      resetDragInteraction,
+    });
+
   const handleMarkerDragStart = useCallback(
     (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
+      if (!isRepositionMode || stop.id !== effectivePlannerStopId) {
+        return;
+      }
       e.currentTarget.setPointerCapture(e.pointerId);
       activeDragIdRef.current = stop.id;
+      activeDragPointerRef.current = {
+        element: e.currentTarget,
+        pointerId: e.pointerId,
+      };
       setMovedStops((prev) => {
         if (prev[stop.id]) return prev;
         return {
           ...prev,
           [stop.id]: {
-            original: { ...stop.position },
-            current: { ...stop.position },
+            original: { ...stop.position, district: stop.district },
+            current: { ...stop.position, district: stop.district },
           },
         };
       });
     },
-    [],
+    [effectivePlannerStopId, isRepositionMode],
   );
 
   const handleMarkerDragMove = useCallback(
@@ -283,12 +246,17 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       );
 
       setMovedStops((prev) => {
-        if (!prev[stop.id]) return prev;
+        const existing = prev[stop.id];
+        if (!existing) return prev;
         return {
           ...prev,
           [stop.id]: {
-            ...prev[stop.id],
-            current: { x: clampedX, y: clampedY },
+            ...existing,
+            current: {
+              ...existing.current,
+              x: clampedX,
+              y: clampedY,
+            },
           },
         };
       });
@@ -298,12 +266,12 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
   const handleMarkerDragEnd = useCallback(
     (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
-      if (activeDragIdRef.current === stop.id) {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-        activeDragIdRef.current = null;
+      if (activeDragIdRef.current !== stop.id) return;
+      if (!releaseHeldInteraction({ dispatchSyntheticEvents: false })) {
+        clearRepositionDrag(e.currentTarget, e.pointerId);
       }
     },
-    [],
+    [clearRepositionDrag, releaseHeldInteraction],
   );
 
   const handleResetStop = useCallback(
@@ -313,7 +281,13 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
       setLocalStops((prevStops) =>
         prevStops.map((s) =>
-          s.id === stopId ? { ...s, position: { ...item.original } } : s,
+          s.id === stopId
+            ? {
+                ...s,
+                district: item.original.district,
+                position: { x: item.original.x, y: item.original.y },
+              }
+            : s,
         ),
       );
 
@@ -330,13 +304,71 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     setLocalStops((prevStops) =>
       prevStops.map((s) => {
         const item = movedStops[s.id];
-        return item ? { ...s, position: { ...item.original } } : s;
+        return item
+          ? {
+              ...s,
+              district: item.original.district,
+              position: { x: item.original.x, y: item.original.y },
+            }
+          : s;
       }),
     );
     setMovedStops({});
   }, [movedStops]);
 
+  const handleDistrictChange = useCallback(
+    (stopId: string, nextDistrict: DistrictId) => {
+      const stop = localStops.find((item) => item.id === stopId);
+      if (!stop?.repo || stop.district === nextDistrict) {
+        return;
+      }
+
+      const nextPosition = sitePositionForStop(
+        nextDistrict,
+        stop.id,
+        stop.repo,
+      );
+
+      setLocalStops((prevStops) =>
+        prevStops.map((item) =>
+          item.id === stopId
+            ? {
+                ...item,
+                district: nextDistrict,
+                position: { x: nextPosition.x, y: nextPosition.y },
+              }
+            : item,
+        ),
+      );
+
+      setMovedStops((prev) => {
+        const existing = prev[stopId];
+        return {
+          ...prev,
+          [stopId]: {
+            original: existing?.original ?? {
+              x: stop.position.x,
+              y: stop.position.y,
+              district: stop.district,
+            },
+            current: {
+              x: nextPosition.x,
+              y: nextPosition.y,
+              district: nextDistrict,
+            },
+          },
+        };
+      });
+    },
+    [localStops],
+  );
+
   const [copied, setCopied] = useState(false);
+  const [repaintQueueState, setRepaintQueueState] = useState<
+    "idle" | "running" | "queued" | "error"
+  >("idle");
+  const [repaintQueueMessage, setRepaintQueueMessage] = useState("");
+
   const handleCopy = useCallback(() => {
     const text = `// WELCOME TO WILLVILLE - UPDATED SITE POSITIONS
 // Copy the blocks below to update the coordinates in the codebase.
@@ -355,8 +387,95 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
 
   const changedStops = Object.entries(movedStops).filter(
     ([_, item]) =>
-      item.original.x !== item.current.x || item.original.y !== item.current.y,
+      item.original.x !== item.current.x ||
+      item.original.y !== item.current.y ||
+      item.original.district !== item.current.district,
   );
+
+  const handleQueueRepaint = useCallback(() => {
+    if (!plannerStop || repaintQueueState === "running") {
+      return;
+    }
+
+    const changes =
+      changedStops.length > 0
+        ? changedStops.map(([stopId, item]) => ({
+            stopId,
+            from: {
+              x: item.original.x,
+              y: item.original.y,
+              district: item.original.district,
+            },
+            to: {
+              x: item.current.x,
+              y: item.current.y,
+              district: item.current.district,
+            },
+          }))
+        : [
+            {
+              stopId: plannerStop.id,
+              from: {
+                x: plannerStop.position.x,
+                y: plannerStop.position.y,
+                district: plannerStop.district,
+              },
+              to: {
+                x: plannerStop.position.x,
+                y: plannerStop.position.y,
+                district: plannerStop.district,
+              },
+            },
+          ];
+
+    const reason =
+      changedStops.length > 0
+        ? "Reposition planner submitted changed site coordinates"
+        : `Reposition planner queued ${plannerStop.displayName} for repaint`;
+
+    setRepaintQueueState("running");
+    setRepaintQueueMessage(
+      changedStops.length > 0
+        ? "Queueing repaint jobs..."
+        : `Queueing ${plannerStop.displayName} for repaint...`,
+    );
+
+    fetch("/api/reposition", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "update_appearance",
+        reason,
+        changes,
+      }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(await getBellErrorDetail(response));
+        }
+
+        return response.json() as Promise<{
+          queued: number;
+          deduped: number;
+        }>;
+      })
+      .then((result) => {
+        setRepaintQueueState("queued");
+        setRepaintQueueMessage(
+          `Queued ${result.queued} repaint job(s), deduped ${result.deduped}.`,
+        );
+      })
+      .catch((error: unknown) => {
+        const detail =
+          error instanceof Error && error.message
+            ? error.message
+            : "Unknown error";
+        setRepaintQueueState("error");
+        setRepaintQueueMessage(`Queue request failed: ${detail}`);
+      });
+  }, [changedStops, plannerStop, repaintQueueState]);
 
   const loadTown = useCallback(
     (options: { signal?: AbortSignal; fresh?: boolean } = {}) => {
@@ -798,6 +917,8 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
           now !== null &&
           !Number.isNaN(updated) &&
           now - updated < DAY_MS;
+        const markerDraggable =
+          isRepositionMode && stop.id === effectivePlannerStopId;
         return (
           <StopMarker
             key={`${stop.district}-${stop.id}`}
@@ -806,7 +927,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
             recentlyUpdated={recently}
             onClick={handleStopClick}
             onDoubleClick={handleStopDoubleClick}
-            draggable={isRepositionMode}
+            draggable={markerDraggable}
             onDragStart={handleMarkerDragStart}
             onDragMove={handleMarkerDragMove}
             onDragEnd={handleMarkerDragEnd}
@@ -822,6 +943,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
       handleStopClick,
       handleStopDoubleClick,
       isClient,
+      effectivePlannerStopId,
       isRepositionMode,
       now,
     ],
@@ -1083,7 +1205,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
 
               <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
                 <GeneratedTownBase />
-                <TownGlyphHalos stops={currentStops} />
+                <TownSiteAppearances stops={currentStops} />
                 {!mobileSafeMode && <ChimneySmoke />}
                 {!mobileSafeMode && <DynamicWalls />}
                 <Canal boats={boats} layer="base" />
@@ -1227,285 +1349,31 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
           )}
 
           {isRepositionMode && (
-            <div
-              style={{
-                position: "absolute",
-                top: 16,
-                left: 16,
-                width: 340,
-                maxHeight: "calc(100vh - 32px)",
-                display: "flex",
-                flexDirection: "column",
-                background:
-                  "linear-gradient(180deg, rgba(28,20,38,0.92) 0%, rgba(15,10,22,0.96) 100%)",
-                color: "var(--willville-paper)",
-                borderRadius: 12,
-                border: "1px solid rgba(230,198,106,0.35)",
-                boxShadow: "0 20px 50px rgba(0,0,0,0.6)",
-                backdropFilter: "blur(12px)",
-                WebkitBackdropFilter: "blur(12px)",
-                padding: "16px 18px",
-                fontFamily: "var(--font-sans), sans-serif",
-                zIndex: 2500,
-                overflow: "hidden",
-                pointerEvents: "auto",
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10,
-                  marginBottom: 6,
-                }}
-              >
-                <span style={{ fontSize: 20 }}>🗺️</span>
-                <h2
-                  style={{
-                    margin: 0,
-                    fontSize: 18,
-                    fontWeight: 700,
-                    color: "#e6c66a",
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  Willville Planner
-                </h2>
-              </div>
-
-              <p
-                style={{
-                  margin: "0 0 14px",
-                  fontSize: 13,
-                  lineHeight: 1.45,
-                  opacity: 0.85,
-                }}
-              >
-                Click and drag any stop marker to reposition it live on the map.
-                Coordinates will update in real time.
-              </p>
-
-              <div
-                style={{
-                  flex: 1,
-                  overflowY: "auto",
-                  minHeight: 0,
-                  margin: "0 0 16px",
-                }}
-              >
-                <div
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: 1,
-                    color: "#e6c66a",
-                    marginBottom: 8,
-                  }}
-                >
-                  Modified Coordinates ({changedStops.length})
-                </div>
-                {changedStops.length === 0 ? (
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontStyle: "italic",
-                      opacity: 0.6,
-                      padding: "8px 0",
-                    }}
-                  >
-                    No sites moved yet.
-                  </div>
-                ) : (
-                  <div
-                    style={{ display: "flex", flexDirection: "column", gap: 8 }}
-                  >
-                    {changedStops.map(([id, item]) => {
-                      const s = localStops.find((x) => x.id === id);
-                      if (!s) return null;
-                      return (
-                        <div
-                          key={id}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            background: "rgba(255,255,255,0.04)",
-                            borderRadius: 6,
-                            padding: "6px 8px",
-                            border: "1px solid rgba(255,255,255,0.06)",
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 2,
-                              minWidth: 0,
-                              flex: 1,
-                            }}
-                          >
-                            <span
-                              style={{
-                                fontSize: 12,
-                                fontWeight: 600,
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              {s.displayName}
-                            </span>
-                            <span
-                              style={{
-                                fontSize: 11,
-                                fontFamily: "monospace",
-                                opacity: 0.7,
-                              }}
-                            >
-                              ({item.original.x}, {item.original.y}) ➔ (
-                              {item.current.x}, {item.current.y})
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleResetStop(id)}
-                            style={{
-                              background: "transparent",
-                              border: 0,
-                              color: "#f4a0a0",
-                              cursor: "pointer",
-                              fontSize: 11,
-                              padding: "2px 6px",
-                              borderRadius: 4,
-                              transition: "background 0.2s",
-                            }}
-                            onMouseEnter={(e) =>
-                              (e.currentTarget.style.background =
-                                "rgba(244,160,160,0.15)")
-                            }
-                            onMouseLeave={(e) =>
-                              (e.currentTarget.style.background = "transparent")
-                            }
-                          >
-                            Reset
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 8,
-                  borderTop: "1px solid rgba(230,198,106,0.18)",
-                  paddingTop: 14,
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  style={{
-                    width: "100%",
-                    background: copied
-                      ? "#7bd389"
-                      : "linear-gradient(90deg, #b8862c 0%, #e6c66a 100%)",
-                    border: 0,
-                    color: "#1a1233",
-                    borderRadius: 6,
-                    padding: "10px 14px",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                    transition: "all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)",
-                    boxShadow: "0 4px 12px rgba(230,198,106,0.25)",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!copied) {
-                      e.currentTarget.style.transform = "translateY(-1px)";
-                      e.currentTarget.style.boxShadow =
-                        "0 6px 16px rgba(230,198,106,0.4)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!copied) {
-                      e.currentTarget.style.transform = "translateY(0px)";
-                      e.currentTarget.style.boxShadow =
-                        "0 4px 12px rgba(230,198,106,0.25)";
-                    }
-                  }}
-                >
-                  {copied ? "✓ Copied!" : "📋 Copy Heuristics Code"}
-                </button>
-
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={handleResetAll}
-                    disabled={changedStops.length === 0}
-                    style={{
-                      flex: 1,
-                      background: "transparent",
-                      border: "1px solid rgba(255,255,255,0.2)",
-                      color: "var(--willville-paper)",
-                      borderRadius: 6,
-                      padding: "8px 10px",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor:
-                        changedStops.length === 0 ? "not-allowed" : "pointer",
-                      opacity: changedStops.length === 0 ? 0.5 : 1,
-                      transition: "all 0.2s",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (changedStops.length > 0)
-                        e.currentTarget.style.background =
-                          "rgba(255,255,255,0.06)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = "transparent";
-                    }}
-                  >
-                    Reset All
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => router.push("/")}
-                    style={{
-                      flex: 1,
-                      background: "rgba(220,80,80,0.12)",
-                      border: "1px solid rgba(220,80,80,0.4)",
-                      color: "#f4a0a0",
-                      borderRadius: 6,
-                      padding: "8px 10px",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      transition: "all 0.2s",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = "rgba(220,80,80,0.2)")
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.background =
-                        "rgba(220,80,80,0.12)")
-                    }
-                  >
-                    Exit Editor
-                  </button>
-                </div>
-              </div>
-            </div>
+            <RepositionPlannerPanel
+              effectivePlannerStopId={effectivePlannerStopId}
+              repositionableStops={repositionableStops}
+              plannerStop={plannerStop}
+              onPlannerStopChange={setPlannerStopId}
+              onDistrictChange={handleDistrictChange}
+              changedStops={changedStops}
+              localStops={localStops}
+              onResetStop={handleResetStop}
+              onCopy={handleCopy}
+              copied={copied}
+              onQueueRepaint={handleQueueRepaint}
+              canQueueRepaint={Boolean(plannerStop)}
+              queueRepaintLabel={
+                changedStops.length > 0
+                  ? "🎨 Queue Repaint Jobs"
+                  : plannerStop
+                    ? `🎨 Queue ${plannerStop.displayName}`
+                    : "🎨 Queue Repaint Jobs"
+              }
+              repaintQueueState={repaintQueueState}
+              repaintQueueMessage={repaintQueueMessage}
+              onResetAll={handleResetAll}
+              onExitEditor={() => router.push("/")}
+            />
           )}
         </div>
       </TownStageChrome>

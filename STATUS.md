@@ -1,5 +1,50 @@
 # Status
 
+## Done (2026-05-28) — Planner Can Queue The Selected Site Without Moving It First
+
+- Closed the queue-affordance gap in `/reposition/`: the planner now queues the currently selected site even when `Modified Sites` is still `0`, instead of requiring a drag before the button wakes up.
+- The queue button now reflects the current target directly, so the panel makes it obvious which site will be added to the repaint queue.
+- Validation: `sm swab -g overconfidence:type-blindness.js --json --output-file .slopmop/last_swab.json` passed; rebuilt with `scripts/deploy_app.sh`; live `/reposition/?site_type=desktop` now shows the selected-site queue button while `Modified Sites (0)`; full `sm swab --json --output-file .slopmop/last_swab.json` passed with `all_passed: true`.
+
+## Done (2026-05-28) — Reposition Planner Split Is Stable And Swab Is Green
+
+- Kept the appearance + repaint queue implementation intact and removed the flaky missing-module path by wiring the extracted planner panel through an existing stage chrome module.
+- Preserved the smaller `TownStage` structure (so the code-sprawl rail stays satisfied) while unblocking the dead-code rail that had been failing on an unresolved planner import.
+- Validation: `activate && sm swab -g laziness:dead-code.js --json --output-file .slopmop/last_swab.json` passed; full `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with `all_passed: true`.
+
+## Done (2026-05-28) — Site Appearance Pipeline Increment Started
+
+- Started the new site-appearance flow by adding a dedicated appearance manifest so background integration is no longer tied directly to glyph-halo config on sprite entries.
+- Replaced the stage halo renderer with a new site-appearance underlay renderer and added a foreground mode switch that already supports background-only markers as an option while keeping click targets obvious.
+- Added an authoring-only reposition endpoint that accepts changed coordinates and districts, writes audit entries in memory, and queues deduped repaint jobs for follow-up processing.
+- Wired the reposition planner with a new Queue Repaint Jobs action so reposition edits can trigger repaint intent submission directly from the editor flow.
+- Validation: `sm swab -g laziness:sloppy-formatting.js --json --output-file .slopmop/last_swab.json` passed; full `sm swab --json --output-file .slopmop/last_swab.json` now fails only on the pre-existing `myopia:code-sprawl` rail for `components/TownStage.tsx` being over the file-size limit.
+
+## Done (2026-05-28) — Escape Releases Stuck Reposition Hold
+
+- Added an explicit Escape release path so a stuck reposition or pan interaction can always be dropped immediately.
+- Moved that Escape-release plumbing into a small hook, kept the drag cleanup path clearing pointer capture plus camera drag state when the browser ends the drag indirectly, and now reuse that same forced-release rail at normal left-mouse release during reposition.
+- Validation: rebuilt locally with `./scripts/deploy_app.sh`; `sm swab --no-cache --json --output-file .slopmop/last_swab.json` reported `all_passed: true` with `13` passed gates and `0` failed; Escape behavior was already user-verified live, and the normal mouse-up path now routes through the same release logic.
+
+## Done (2026-05-28) — Reposition Drag Is Limited To The Selected Site
+
+- Tightened reposition mode so only the site chosen in the planner blocks map panning and accepts drag-to-move input.
+- Every other marker now falls back to the normal town interaction path, so clicking and dragging outside the selected site pans the map instead of starting a reposition.
+- Validation: rebuilt locally with `./scripts/deploy_app.sh`; confirmed the camera hook still keys pan suppression off `[data-no-pan="true"]` and the selected marker is now the only reposition target; `sm swab --no-cache --json --output-file .slopmop/last_swab.json` reported `all_passed: true` with `13` passed gates and `0` failed.
+
+## Done (2026-05-28) — Reposition Mode Can Reassign Site Districts
+
+- Added a planner-side region picker in `/reposition/` so repo sites can be reassigned between districts without hand-editing heuristics first.
+- District changes now count as real planner edits, reset cleanly, and snap the selected site into the deterministic default slot for its new district so placement starts from a sane baseline.
+- Follow-up cleanup pulled the planner export formatting into a helper and replaced the effect-driven site selection with derived fallback state so the new picker stays inside the local size and hook rails.
+- Validation: `sm swab --no-cache --json --output-file .slopmop/last_swab.json` reported `all_passed: true`; rebuilt with `./scripts/deploy_app.sh`, opened `/reposition/?site_type=desktop`, selected `slop-mop-website`, changed it from `slop-wharf` to `the-zeitgeist`, and confirmed the planner updated both district and coordinates in the modified-sites panel.
+
+## Done (2026-05-28) — Slop-Mop Website Now Lands In Slop Wharf
+
+- Added a curated fallback site entry for `slop-mop-website` so it shows up in Slop Wharf even before that repo ships its own `.willville.json`.
+- Cleaned up the heuristics comment too: unknown repos are not really "out of town" anymore, they already get provisional placement from topic mapping plus deterministic auto-positioning.
+- Local behavior check: rebuilt with `./scripts/deploy_app.sh` and confirmed `/api/town` now returns `slop-mop-website` with district `slop-wharf`.
+
 ## Done (2026-05-28) — Read-Only Manifest Branch Is Green For PR Update
 
 - Added the missing `detect-secrets` tool dependency so the configured slop-mop security sweep actually runs in the repo venv instead of dying on a missing module.
