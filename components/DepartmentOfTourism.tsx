@@ -15,7 +15,7 @@ export function DepartmentOfTourism({ onActivate }: Props) {
 
   return (
     <g
-      transform="translate(815, 618)"
+      transform="translate(1370, 285)"
       style={{ cursor: "pointer" }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}

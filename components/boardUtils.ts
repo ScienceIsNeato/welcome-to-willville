@@ -18,3 +18,16 @@ export function normalizeBoardText(input: string): string {
     .trim()
     .toUpperCase();
 }
+
+function clampAlpha(alpha: number): number {
+  return Math.max(0, Math.min(1, Number(alpha.toFixed(3))));
+}
+
+export function alphaColor(
+  red: number,
+  green: number,
+  blue: number,
+  alpha: number,
+): string {
+  return `rgba(${red}, ${green}, ${blue}, ${clampAlpha(alpha)})`;
+}

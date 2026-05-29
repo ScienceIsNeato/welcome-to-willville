@@ -10,6 +10,7 @@ import {
 import { activeQueue, mostActiveStops, type Stop } from "@/lib/town";
 import { DISTRICTS } from "@/lib/willville";
 import {
+  alphaColor,
   isNumberedRow,
   normalizeBoardText as normalize,
   stopLabel,
@@ -63,18 +64,15 @@ export function MobileCentralBoard({
         ? `district-${activeDistrict}`
         : "timetable";
 
+  const splitFlapCellCss = splitFlapCellStyles(panelOpacity);
+
   return (
     <section
       className="mobile-central-split-flap"
       aria-label="Time Central Station mobile split-flap board"
-      style={
-        {
-          ...shellStyle,
-          "--panel-opacity": String(panelOpacity),
-        } as CSSProperties
-      }
+      style={shellStyle}
     >
-      <div style={headerStyle}>
+      <div style={headerStyle(panelOpacity)}>
         <span>Time Central</span>
         <span>
           {announcementRows?.length
@@ -85,18 +83,30 @@ export function MobileCentralBoard({
         </span>
       </div>
 
-      <div style={boardStyle}>
+      <div style={boardStyle(panelOpacity)}>
         {rows.map((row, rowIndex) => (
           <SplitFlapRow
             key={rowIndex}
             row={row}
             rowIndex={rowIndex}
             boardKey={selectedKey}
+            panelOpacity={panelOpacity}
           />
         ))}
       </div>
 
-      <style>{`
+      <style>{splitFlapCellCss}</style>
+    </section>
+  );
+}
+
+function splitFlapCellStyles(panelOpacity: number): string {
+  const topGlow = alphaColor(255, 255, 255, panelOpacity * 0.08);
+  const topBorder = alphaColor(255, 255, 255, panelOpacity * 0.055);
+  const cellShadow = alphaColor(255, 255, 255, panelOpacity * 0.08);
+  const cellBackground = alphaColor(23, 23, 23, panelOpacity);
+
+  return `
         .mobile-central-split-flap .split-flap-cell {
           filter: brightness(0.94);
         }
@@ -109,10 +119,10 @@ export function MobileCentralBoard({
           right: 0;
           height: calc(50% - 1px);
           background:
-            linear-gradient(180deg, rgb(255 255 255 / calc(0.08 * var(--panel-opacity, 1))), rgb(255 255 255 / 0)),
-            rgb(23 23 23 / var(--panel-opacity, 1));
-          border: 1px solid rgb(255 255 255 / calc(0.055 * var(--panel-opacity, 1)));
-          box-shadow: inset 0 1px 0 rgb(255 255 255 / calc(0.08 * var(--panel-opacity, 1)));
+            linear-gradient(180deg, ${topGlow}, rgba(255, 255, 255, 0)),
+            ${cellBackground};
+          border: 1px solid ${topBorder};
+          box-shadow: inset 0 1px 0 ${cellShadow};
           z-index: 0;
         }
 
@@ -156,19 +166,19 @@ export function MobileCentralBoard({
           0%, 40% { transform: rotateX(76deg); }
           100% { transform: rotateX(0deg); }
         }
-      `}</style>
-    </section>
-  );
+      `;
 }
 
 function SplitFlapRow({
   row,
   rowIndex,
   boardKey,
+  panelOpacity,
 }: {
   row: string;
   rowIndex: number;
   boardKey: string;
+  panelOpacity: number;
 }) {
   const chars = padRenderedRow(row).split("");
 
@@ -186,6 +196,7 @@ function SplitFlapRow({
           index={index}
           rowIndex={rowIndex}
           boardKey={boardKey}
+          panelOpacity={panelOpacity}
         />
       ))}
     </div>
@@ -197,11 +208,13 @@ function SplitFlapCell({
   index,
   rowIndex,
   boardKey,
+  panelOpacity,
 }: {
   char: string;
   index: number;
   rowIndex: number;
   boardKey: string;
+  panelOpacity: number;
 }) {
   const [displayChar, setDisplayChar] = useState(char);
   const [isFlipping, setIsFlipping] = useState(false);
@@ -241,13 +254,13 @@ function SplitFlapCell({
       data-filled={visible}
       data-flipping={isFlipping}
       style={{
-        ...cellStyle,
+        ...cellStyle(panelOpacity),
         transitionDelay: `${delay}ms`,
       }}
       aria-hidden={!visible}
     >
       <span style={characterStyle}>{visible ? displayChar : ""}</span>
-      <span style={creaseStyle} />
+      <span style={creaseStyle(panelOpacity)} />
     </span>
   );
 }
@@ -372,36 +385,37 @@ const shellStyle: CSSProperties = {
   perspective: 760,
 };
 
-const headerStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "1fr auto",
-  alignItems: "center",
-  gap: 10,
-  padding: "8px 92px 7px 12px",
-  background:
-    "linear-gradient(180deg, rgb(26 26 26 / var(--panel-opacity, 1)) 0%, rgb(7 7 7 / var(--panel-opacity, 1)) 100%)",
-  border: "1px solid rgb(245 230 200 / calc(0.18 * var(--panel-opacity, 1)))",
-  borderBottom: 0,
-  borderRadius: "12px 12px 0 0",
-  color: "#f1e7ce",
-  fontSize: 10,
-  fontWeight: 800,
-  letterSpacing: 1.3,
-  textTransform: "uppercase",
-};
+function headerStyle(panelOpacity: number): CSSProperties {
+  return {
+    display: "grid",
+    gridTemplateColumns: "1fr auto",
+    alignItems: "center",
+    gap: 10,
+    padding: "8px 92px 7px 12px",
+    background: `linear-gradient(180deg, ${alphaColor(26, 26, 26, panelOpacity)} 0%, ${alphaColor(7, 7, 7, panelOpacity)} 100%)`,
+    border: `1px solid ${alphaColor(245, 230, 200, panelOpacity * 0.18)}`,
+    borderBottom: 0,
+    borderRadius: "12px 12px 0 0",
+    color: "#f1e7ce",
+    fontSize: 10,
+    fontWeight: 800,
+    letterSpacing: 1.3,
+    textTransform: "uppercase",
+  };
+}
 
-const boardStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateRows: `repeat(${MOBILE_BOARD_ROWS}, minmax(0, 1fr))`,
-  gap: 1.5,
-  padding: 3,
-  background:
-    "linear-gradient(180deg, rgb(15 15 15 / calc(0.99 * var(--panel-opacity, 1))) 0%, rgb(3 3 3 / calc(0.99 * var(--panel-opacity, 1))) 100%)",
-  border: "1px solid rgb(245 230 200 / calc(0.18 * var(--panel-opacity, 1)))",
-  borderRadius: "0 0 12px 12px",
-  boxShadow:
-    "inset 0 1px 0 rgb(255 255 255 / calc(0.06 * var(--panel-opacity, 1))), inset 0 -18px 40px rgb(0 0 0 / calc(0.75 * var(--panel-opacity, 1)))",
-};
+function boardStyle(panelOpacity: number): CSSProperties {
+  return {
+    display: "grid",
+    gridTemplateRows: `repeat(${MOBILE_BOARD_ROWS}, minmax(0, 1fr))`,
+    gap: 1.5,
+    padding: 3,
+    background: `linear-gradient(180deg, ${alphaColor(15, 15, 15, panelOpacity * 0.99)} 0%, ${alphaColor(3, 3, 3, panelOpacity * 0.99)} 100%)`,
+    border: `1px solid ${alphaColor(245, 230, 200, panelOpacity * 0.18)}`,
+    borderRadius: "0 0 12px 12px",
+    boxShadow: `inset 0 1px 0 ${alphaColor(255, 255, 255, panelOpacity * 0.06)}, inset 0 -18px 40px ${alphaColor(0, 0, 0, panelOpacity * 0.75)}`,
+  };
+}
 
 const rowStyle: CSSProperties = {
   display: "grid",
@@ -410,19 +424,20 @@ const rowStyle: CSSProperties = {
   minWidth: 0,
 };
 
-const cellStyle: CSSProperties = {
-  position: "relative",
-  aspectRatio: "0.88 / 1",
-  minWidth: 0,
-  display: "grid",
-  placeItems: "center",
-  background: "rgb(9 9 9 / var(--panel-opacity, 1))",
-  borderRadius: 2,
-  boxShadow:
-    "inset 0 0 0 1px rgb(255 255 255 / calc(0.04 * var(--panel-opacity, 1))), 0 1px 0 rgb(255 255 255 / calc(0.04 * var(--panel-opacity, 1)))",
-  overflow: "hidden",
-  transformStyle: "preserve-3d",
-};
+function cellStyle(panelOpacity: number): CSSProperties {
+  return {
+    position: "relative",
+    aspectRatio: "0.88 / 1",
+    minWidth: 0,
+    display: "grid",
+    placeItems: "center",
+    background: alphaColor(9, 9, 9, panelOpacity),
+    borderRadius: 2,
+    boxShadow: `inset 0 0 0 1px ${alphaColor(255, 255, 255, panelOpacity * 0.04)}, 0 1px 0 ${alphaColor(255, 255, 255, panelOpacity * 0.04)}`,
+    overflow: "hidden",
+    transformStyle: "preserve-3d",
+  };
+}
 
 const characterStyle: CSSProperties = {
   position: "relative",
@@ -436,14 +451,16 @@ const characterStyle: CSSProperties = {
   transform: "none",
 };
 
-const creaseStyle: CSSProperties = {
-  position: "absolute",
-  left: 0,
-  right: 0,
-  top: "50%",
-  height: 1,
-  transform: "translateY(-50%)",
-  zIndex: 2,
-  background: "rgb(0 0 0 / calc(0.45 * var(--panel-opacity, 1)))",
-  boxShadow: "0 -1px 0 rgb(255 255 255 / calc(0.06 * var(--panel-opacity, 1)))",
-};
+function creaseStyle(panelOpacity: number): CSSProperties {
+  return {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: "50%",
+    height: 1,
+    transform: "translateY(-50%)",
+    zIndex: 2,
+    background: alphaColor(0, 0, 0, panelOpacity * 0.45),
+    boxShadow: `0 -1px 0 ${alphaColor(255, 255, 255, panelOpacity * 0.06)}`,
+  };
+}

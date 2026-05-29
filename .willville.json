@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Closed the planner gap so a selected site can be sent to repaint without dragging it first",
-    "direction": "Next is finishing the durable backup, audit, and revert path behind the repaint flow",
-    "last_update": "2026-05-28T20:46:00Z"
+    "status": "Cleared every review note on the open PR - fixed a couple of real bugs, de-duplicated some styling code, and generated the two missing town landmark paintings that were 404ing (a domed town-square pavilion and a brooding little vampire shrine)",
+    "direction": "All six review threads resolved; waiting on CI to go green so it can merge",
+    "last_update": "2026-05-29T18:45:00Z"
   }
 }

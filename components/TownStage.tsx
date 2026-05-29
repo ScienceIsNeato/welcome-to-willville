@@ -40,7 +40,7 @@ import { GeneratedTownBase } from "./GeneratedTownBase";
 import { TownSiteAppearances } from "./TownSiteAppearances";
 import { WorldWorkerLayer } from "./WorldWorkerLayer";
 import { SpecialTownLandmarks } from "./SpecialTownLandmarks";
-import { BellMessengers } from "./BellMessengers";
+import { BellMessengers, summarizeTownHealth } from "./BellMessengers";
 import { TownPerfPanel } from "./TownPerfPanel";
 import { PanelChromeControls } from "./PanelChromeControls";
 import { RepositionPlannerPanel, TownStageChrome } from "./TownStageChrome";
@@ -165,6 +165,17 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     }
     return mergeStops(localStops, liveStops);
   }, [localStops, liveStops, isRepositionMode]);
+
+  // The bell's closing verdict: a one-line tally of what the messengers found.
+  const bellTownHealthSummary = useMemo(() => {
+    const tally = summarizeTownHealth(currentStops);
+    const parts: string[] = [];
+    if (tally.healthy > 0) parts.push(`${tally.healthy} healthy`);
+    if (tally.running > 0) parts.push(`${tally.running} building`);
+    if (tally.attention > 0) parts.push(`${tally.attention} need you`);
+    if (tally.dormant > 0) parts.push(`${tally.dormant} quiet`);
+    return parts.length > 0 ? `🔔 ${parts.join(" · ")}` : "✓ Manifests synced";
+  }, [currentStops]);
 
   const repositionableStops = useMemo(
     () =>
@@ -674,8 +685,11 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
         })
         .catch(() => undefined);
     load();
+    // Re-poll so boats shift locks as CI, threads, and buff rounds change.
+    const interval = window.setInterval(load, 60_000);
     return () => {
       cancelled = true;
+      window.clearInterval(interval);
     };
   }, []);
 
@@ -1207,7 +1221,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                 <GeneratedTownBase />
                 <TownSiteAppearances stops={currentStops} />
                 {!mobileSafeMode && <ChimneySmoke />}
-                {!mobileSafeMode && <DynamicWalls />}
+                <DynamicWalls />
                 <Canal boats={boats} layer="base" />
                 {DISTRICTS.map((d) => (
                   <DistrictZone
@@ -1285,7 +1299,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
               }}
             >
               {populating === "running" && "The Town Bell Sees All"}
-              {populating === "done" && "✓ Manifests synced"}
+              {populating === "done" && bellTownHealthSummary}
               {populating === "error" && bellErrorMessage}
             </div>
           )}

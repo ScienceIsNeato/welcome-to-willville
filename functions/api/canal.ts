@@ -35,6 +35,8 @@ type GraphQLPR = {
   reviewDecision: "APPROVED" | "CHANGES_REQUESTED" | "REVIEW_REQUIRED" | null;
   author: { login: string } | null;
   repository: { nameWithOwner: string; isPrivate: boolean };
+  labels: { nodes: Array<{ name: string }> } | null;
+  reviewThreads: { nodes: Array<{ isResolved: boolean }> } | null;
   commits: {
     nodes: Array<{
       commit: {
@@ -62,6 +64,8 @@ query ($q: String!) {
         reviewDecision
         author { login }
         repository { nameWithOwner isPrivate }
+        labels(first: 20) { nodes { name } }
+        reviewThreads(first: 50) { nodes { isResolved } }
         commits(last: 1) {
           nodes {
             commit {
@@ -84,6 +88,20 @@ function repoToStop(repo: string) {
     : undefined;
 }
 
+const BUFF_ROUNDS_PREFIX = "buff-rounds/";
+
+/** Highest `buff-rounds/N` label value on the PR, or 0 when none present. */
+function roundsFromLabels(pr: GraphQLPR): number {
+  const names = pr.labels?.nodes ?? [];
+  let rounds = 0;
+  for (const { name } of names) {
+    if (!name.startsWith(BUFF_ROUNDS_PREFIX)) continue;
+    const n = Number.parseInt(name.slice(BUFF_ROUNDS_PREFIX.length), 10);
+    if (Number.isFinite(n) && n > rounds) rounds = n;
+  }
+  return rounds;
+}
+
 function mapPr(pr: GraphQLPR): CanalBoat {
   const checkState =
     pr.commits.nodes[0]?.commit?.statusCheckRollup?.state ?? null;
@@ -95,19 +113,16 @@ function mapPr(pr: GraphQLPR): CanalBoat {
         : checkState === "FAILURE" || checkState === "ERROR"
           ? "failure"
           : null;
-  const mergeable =
-    pr.mergeable === "MERGEABLE"
-      ? true
-      : pr.mergeable === "CONFLICTING"
-        ? false
-        : null;
+  const hasOpenComments = (pr.reviewThreads?.nodes ?? []).some(
+    (t) => !t.isResolved,
+  );
+  const rounds = roundsFromLabels(pr);
   const lock: LockId = lockForPr({
     state: pr.state === "OPEN" ? "open" : "closed",
     merged: pr.state === "MERGED",
     draft: pr.isDraft,
-    reviewDecision: pr.reviewDecision,
     checksState,
-    mergeable,
+    hasOpenComments,
   });
   const stop = repoToStop(pr.repository.nameWithOwner);
   return {
@@ -122,6 +137,9 @@ function mapPr(pr: GraphQLPR): CanalBoat {
     updatedAt: pr.updatedAt,
     district: stop?.district,
     stopId: stop?.stopId,
+    rounds,
+    ciState: checksState,
+    hasOpenComments,
   };
 }
 
@@ -189,7 +207,8 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   // within the last 24h so the lock doesn't fill up forever.
   const cutoff = Date.now() - 24 * 60 * 60 * 1000;
   boats = boats.filter((b) => {
-    if (b.lock !== "open-sea") return true;
+    // Terminal locks (merged / scuttled) only linger for a day.
+    if (b.lock !== "open-sea" && b.lock !== "scuttle") return true;
     return Date.parse(b.updatedAt) > cutoff;
   });
 

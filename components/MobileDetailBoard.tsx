@@ -13,6 +13,7 @@ import {
   tooltipText,
   workflowRunStatusLabel,
 } from "./detailBoardUtils";
+import { alphaColor } from "./boardUtils";
 import type { CanalBoat } from "@/lib/canal";
 import type { GitHubWorkflowRun, Stop } from "@/lib/town";
 
@@ -32,6 +33,10 @@ export function MobileDetailBoard({ stop, boats, panelOpacity = 1 }: Props) {
   const openPrCount = stop.openPrCount ?? openPrs.length;
   const recentCommits = stop.recentCommits ?? [];
   const workflowRuns = stop.workflowRuns ?? [];
+  const heroCardChrome = heroCardChromeStyle(panelOpacity);
+  const cardChrome = cardChromeStyle(panelOpacity);
+  const dividerBorder = dividerBorderStyle(panelOpacity);
+  const badgeChrome = badgeChromeStyle(panelOpacity);
   const facts: Array<[string, string]> = [
     ["Language", stop.language ?? "Mixed"],
     ["Branches", countLabel(stop.branchCount)],
@@ -48,14 +53,9 @@ export function MobileDetailBoard({ stop, boats, panelOpacity = 1 }: Props) {
   return (
     <section
       aria-label="Willville mobile site detail display"
-      style={
-        {
-          ...shellStyle,
-          "--panel-opacity": String(panelOpacity),
-        } as CSSProperties
-      }
+      style={shellStyle}
     >
-      <section style={heroCardStyle}>
+      <section style={{ ...heroCardStyle, ...heroCardChrome }}>
         <span style={eyebrowStyle}>Project</span>
         <h2 style={titleStyle}>
           <a
@@ -84,11 +84,14 @@ export function MobileDetailBoard({ stop, boats, panelOpacity = 1 }: Props) {
         </div>
       </section>
 
-      <section style={cardStyle}>
+      <section style={{ ...cardStyle, ...cardChrome }}>
         <span style={sectionLabelStyle}>Snapshot</span>
         <dl style={factGridStyle}>
           {facts.map(([label, value]) => (
-            <div key={label} style={factItemStyle}>
+            <div
+              key={label}
+              style={{ ...factItemStyle, borderBottom: dividerBorder }}
+            >
               <dt style={factLabelStyle}>{label}</dt>
               <dd style={factValueStyle} title={tooltipText(value)}>
                 {value}
@@ -98,7 +101,7 @@ export function MobileDetailBoard({ stop, boats, panelOpacity = 1 }: Props) {
         </dl>
       </section>
 
-      <section style={cardStyle}>
+      <section style={{ ...cardStyle, ...cardChrome }}>
         <div style={textSectionStyle}>
           <span style={sectionLabelStyle}>Status</span>
           <p
@@ -124,12 +127,17 @@ export function MobileDetailBoard({ stop, boats, panelOpacity = 1 }: Props) {
         </div>
       </section>
 
-      <section style={cardStyle}>
+      <section style={{ ...cardStyle, ...cardChrome }}>
         <span style={sectionLabelStyle}>Recent Commits</span>
         <ul style={activityListStyle}>
           {recentCommits.map((commit, index) => (
-            <li key={`${commit.url}-${index}`} style={activityItemStyle}>
-              <span style={badgeStyle}>{timeAgo(commit.committedAt)}</span>
+            <li
+              key={`${commit.url}-${index}`}
+              style={{ ...activityItemStyle, borderBottom: dividerBorder }}
+            >
+              <span style={{ ...badgeStyle, ...badgeChrome }}>
+                {timeAgo(commit.committedAt)}
+              </span>
               <a
                 href={commit.url}
                 onClick={followLink}
@@ -146,12 +154,15 @@ export function MobileDetailBoard({ stop, boats, panelOpacity = 1 }: Props) {
         </ul>
       </section>
 
-      <section style={cardStyle}>
+      <section style={{ ...cardStyle, ...cardChrome }}>
         <span style={sectionLabelStyle}>GitHub Actions</span>
         <ul style={activityListStyle}>
           {workflowRuns.map((run, index) => (
-            <li key={`${run.url}-${index}`} style={activityItemStyle}>
-              <span style={workflowRunStatusStyle(run.status)}>
+            <li
+              key={`${run.url}-${index}`}
+              style={{ ...activityItemStyle, borderBottom: dividerBorder }}
+            >
+              <span style={workflowRunStatusStyle(run.status, panelOpacity)}>
                 {workflowRunStatusLabel(run.status)}
               </span>
               <a
@@ -175,10 +186,14 @@ export function MobileDetailBoard({ stop, boats, panelOpacity = 1 }: Props) {
 
 function workflowRunStatusStyle(
   status: GitHubWorkflowRun["status"],
+  panelOpacity: number,
 ): CSSProperties {
+  const badgeChrome = badgeChromeStyle(panelOpacity);
+
   if (status === "success") {
     return {
       ...badgeStyle,
+      ...badgeChrome,
       color: "#9bffb4",
       borderColor: "rgba(155, 255, 180, 0.38)",
       background: "rgba(28, 96, 42, 0.45)",
@@ -187,6 +202,7 @@ function workflowRunStatusStyle(
   if (status === "running") {
     return {
       ...badgeStyle,
+      ...badgeChrome,
       color: "#ffe27d",
       borderColor: "rgba(255, 226, 125, 0.34)",
       background: "rgba(97, 74, 18, 0.45)",
@@ -195,6 +211,7 @@ function workflowRunStatusStyle(
   if (status === "failed") {
     return {
       ...badgeStyle,
+      ...badgeChrome,
       color: "#ff9c9c",
       borderColor: "rgba(255, 156, 156, 0.34)",
       background: "rgba(115, 28, 28, 0.42)",
@@ -202,6 +219,7 @@ function workflowRunStatusStyle(
   }
   return {
     ...badgeStyle,
+    ...badgeChrome,
     color: "rgba(51, 255, 87, 0.72)",
     borderColor: "rgba(51, 255, 87, 0.22)",
     background: "rgba(51, 255, 87, 0.08)",
@@ -218,6 +236,32 @@ const shellStyle: CSSProperties = {
   fontFamily: '"Courier New", Courier, monospace',
 };
 
+function heroCardChromeStyle(panelOpacity: number): CSSProperties {
+  return {
+    border: `1px solid ${alphaColor(51, 255, 87, panelOpacity * 0.2)}`,
+    background: `linear-gradient(180deg, ${alphaColor(4, 22, 6, panelOpacity * 0.92)} 0%, ${alphaColor(1, 8, 2, panelOpacity * 0.96)} 100%)`,
+    boxShadow: `inset 0 0 28px ${alphaColor(51, 255, 87, panelOpacity * 0.05)}`,
+  };
+}
+
+function cardChromeStyle(panelOpacity: number): CSSProperties {
+  return {
+    border: `1px solid ${alphaColor(51, 255, 87, panelOpacity * 0.18)}`,
+    background: `linear-gradient(180deg, ${alphaColor(3, 18, 4, panelOpacity * 0.84)} 0%, ${alphaColor(0, 8, 1, panelOpacity * 0.9)} 100%)`,
+  };
+}
+
+function dividerBorderStyle(panelOpacity: number): string {
+  return `1px solid ${alphaColor(51, 255, 87, panelOpacity * 0.13)}`;
+}
+
+function badgeChromeStyle(panelOpacity: number): CSSProperties {
+  return {
+    border: `1px solid ${alphaColor(51, 255, 87, panelOpacity * 0.22)}`,
+    background: alphaColor(51, 255, 87, panelOpacity * 0.08),
+  };
+}
+
 const heroCardStyle: CSSProperties = {
   display: "grid",
   gap: 6,
@@ -225,11 +269,6 @@ const heroCardStyle: CSSProperties = {
   alignContent: "start",
   padding: "12px 12px 14px",
   borderRadius: 14,
-  border: "1px solid rgb(51 255 87 / calc(0.2 * var(--panel-opacity, 1)))",
-  background:
-    "linear-gradient(180deg, rgb(4 22 6 / calc(0.92 * var(--panel-opacity, 1))) 0%, rgb(1 8 2 / calc(0.96 * var(--panel-opacity, 1))) 100%)",
-  boxShadow:
-    "inset 0 0 28px rgb(51 255 87 / calc(0.05 * var(--panel-opacity, 1)))",
 };
 
 const cardStyle: CSSProperties = {
@@ -239,9 +278,6 @@ const cardStyle: CSSProperties = {
   alignContent: "start",
   padding: "12px 12px 14px",
   borderRadius: 14,
-  border: "1px solid rgb(51 255 87 / calc(0.18 * var(--panel-opacity, 1)))",
-  background:
-    "linear-gradient(180deg, rgb(3 18 4 / calc(0.84 * var(--panel-opacity, 1))) 0%, rgb(0 8 1 / calc(0.9 * var(--panel-opacity, 1))) 100%)",
 };
 
 const eyebrowStyle: CSSProperties = {
@@ -311,8 +347,6 @@ const factItemStyle: CSSProperties = {
   gap: 4,
   minWidth: 0,
   paddingBottom: 8,
-  borderBottom:
-    "1px solid rgb(51 255 87 / calc(0.13 * var(--panel-opacity, 1)))",
 };
 
 const factLabelStyle: CSSProperties = {
@@ -365,8 +399,6 @@ const activityItemStyle: CSSProperties = {
   gap: 6,
   minWidth: 0,
   paddingBottom: 8,
-  borderBottom:
-    "1px solid rgb(51 255 87 / calc(0.13 * var(--panel-opacity, 1)))",
   color: "rgba(51, 255, 87, 0.82)",
   fontSize: 14,
   lineHeight: 1.24,
@@ -390,7 +422,6 @@ const badgeStyle: CSSProperties = {
   minWidth: 62,
   width: "fit-content",
   padding: "2px 6px",
-  border: "1px solid rgb(51 255 87 / calc(0.22 * var(--panel-opacity, 1)))",
   borderRadius: 999,
   fontSize: 10,
   fontWeight: 900,
@@ -398,7 +429,6 @@ const badgeStyle: CSSProperties = {
   lineHeight: 1.1,
   textTransform: "uppercase",
   color: "rgba(51, 255, 87, 0.78)",
-  background: "rgb(51 255 87 / calc(0.08 * var(--panel-opacity, 1)))",
 };
 
 const emptyItemStyle: CSSProperties = {

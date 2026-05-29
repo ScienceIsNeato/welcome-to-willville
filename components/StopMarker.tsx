@@ -3,12 +3,16 @@
 import { memo, type MouseEvent, type PointerEvent } from "react";
 import type { Stop } from "@/lib/town";
 import siteSpriteManifest from "@/data/town-site-sprites.v1.json";
+import { glyphHaloCropBoxForSprite } from "@/lib/glyphHalo";
 import {
   labelHitBoxForStop,
   repoLabelForStop,
   spriteSizeForStop,
 } from "@/lib/stop-marker-hitbox";
-import { siteForegroundModeForStop } from "@/lib/siteAppearance";
+import {
+  siteForegroundModeForStop,
+  siteUnderlayForStop,
+} from "@/lib/siteAppearance";
 
 type Props = {
   stop: Stop;
@@ -16,6 +20,7 @@ type Props = {
   recentlyUpdated: boolean;
   onClick: (stop: Stop, e: MouseEvent<SVGGElement>) => void;
   onDoubleClick: (stop: Stop, e: MouseEvent<SVGGElement>) => void;
+  forceHideSprite?: boolean;
   draggable?: boolean;
   onDragStart?: (stop: Stop, e: PointerEvent<SVGGElement>) => void;
   onDragMove?: (stop: Stop, e: PointerEvent<SVGGElement>) => void;
@@ -34,8 +39,91 @@ const STATE_COLOR: Record<Stop["status"]["state"], string> = {
 const SITE_SPRITES = new Map(
   siteSpriteManifest.sprites.map((sprite) => [sprite.stopId, sprite]),
 );
+type SiteSprite = (typeof siteSpriteManifest.sprites)[number];
 const SPRITE_CACHE_VERSION = "repo-labels-20260522";
 const SITE_ART_CENTER = { x: 0, y: 0 };
+
+type HitBox = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+function mergeHitBoxes(...boxes: Array<HitBox | null>): HitBox {
+  const definedBoxes = boxes.filter((box): box is HitBox => box !== null);
+  const left = Math.min(...definedBoxes.map((box) => box.x));
+  const top = Math.min(...definedBoxes.map((box) => box.y));
+  const right = Math.max(...definedBoxes.map((box) => box.x + box.width));
+  const bottom = Math.max(...definedBoxes.map((box) => box.y + box.height));
+
+  return {
+    x: left,
+    y: top,
+    width: right - left,
+    height: bottom - top,
+  };
+}
+
+function spriteHitBoxForSize(
+  spriteWidth: number,
+  spriteHeight: number,
+): HitBox | null {
+  if (spriteWidth <= 0 || spriteHeight <= 0) {
+    return null;
+  }
+
+  return {
+    x: SITE_ART_CENTER.x - spriteWidth / 2,
+    y: SITE_ART_CENTER.y - spriteHeight / 2,
+    width: spriteWidth,
+    height: spriteHeight,
+  };
+}
+
+function replacementHitBoxForStop(
+  stop: Stop,
+  sprite: SiteSprite | undefined,
+  hasReplacementAppearance: boolean,
+): HitBox | null {
+  if (!hasReplacementAppearance || !sprite) {
+    return null;
+  }
+
+  const crop = glyphHaloCropBoxForSprite(sprite, stop.position);
+  return {
+    x: crop.x - stop.position.x,
+    y: crop.y - stop.position.y,
+    width: crop.width,
+    height: crop.height,
+  };
+}
+
+function interactionHitBoxForStop(params: {
+  stop: Stop;
+  sprite: SiteSprite | undefined;
+  spriteWidth: number;
+  spriteHeight: number;
+  labelHitBox: HitBox;
+  showSprite: boolean;
+  hasReplacementAppearance: boolean;
+}): HitBox {
+  const {
+    stop,
+    sprite,
+    spriteWidth,
+    spriteHeight,
+    labelHitBox,
+    showSprite,
+    hasReplacementAppearance,
+  } = params;
+
+  return mergeHitBoxes(
+    labelHitBox,
+    showSprite ? spriteHitBoxForSize(spriteWidth, spriteHeight) : null,
+    replacementHitBoxForStop(stop, sprite, hasReplacementAppearance),
+  );
+}
 
 function RecentUpdatePulse({ color }: { color: string }) {
   return (
@@ -124,12 +212,66 @@ function StopLabel({
   );
 }
 
+function SpriteArt({
+  src,
+  spriteWidth,
+  spriteHeight,
+}: {
+  src: string;
+  spriteWidth: number;
+  spriteHeight: number;
+}) {
+  return (
+    <image
+      href={`${src}?v=${SPRITE_CACHE_VERSION}`}
+      x={SITE_ART_CENTER.x - spriteWidth / 2}
+      y={SITE_ART_CENTER.y - spriteHeight / 2}
+      width={spriteWidth}
+      height={spriteHeight}
+      preserveAspectRatio="xMidYMid meet"
+      style={{ pointerEvents: "all" }}
+    />
+  );
+}
+
+function FallbackMarkerDot({ color }: { color: string }) {
+  return (
+    <circle
+      r={6}
+      cx={SITE_ART_CENTER.x}
+      cy={SITE_ART_CENTER.y}
+      fill={color}
+      stroke="#1a1233"
+      strokeWidth={2}
+    />
+  );
+}
+
+function deriveStopAppearance(
+  stop: Stop,
+  sprite: SiteSprite | undefined,
+  forceHideSprite: boolean,
+): { hasReplacementAppearance: boolean; showSprite: boolean } {
+  const foregroundMode = siteForegroundModeForStop(stop.id);
+  const underlay = siteUnderlayForStop(stop.id);
+  return {
+    hasReplacementAppearance:
+      forceHideSprite ||
+      (foregroundMode === "background-only" && underlay.enabled),
+    showSprite:
+      Boolean(sprite) &&
+      foregroundMode !== "background-only" &&
+      !forceHideSprite,
+  };
+}
+
 function StopMarkerInner({
   stop,
   isFocused,
   recentlyUpdated,
   onClick,
   onDoubleClick,
+  forceHideSprite = false,
   draggable,
   onDragStart,
   onDragMove,
@@ -137,11 +279,23 @@ function StopMarkerInner({
 }: Props) {
   const color = STATE_COLOR[stop.status.state];
   const sprite = SITE_SPRITES.get(stop.id);
-  const foregroundMode = siteForegroundModeForStop(stop.id);
-  const showSprite = Boolean(sprite) && foregroundMode !== "background-only";
   const { width: spriteWidth, height: spriteHeight } = spriteSizeForStop(stop);
+  const { hasReplacementAppearance, showSprite } = deriveStopAppearance(
+    stop,
+    sprite,
+    forceHideSprite,
+  );
   const label = repoLabelForStop(stop);
   const labelHitBox = labelHitBoxForStop(stop);
+  const interactionHitBox = interactionHitBoxForStop({
+    stop,
+    sprite,
+    spriteWidth,
+    spriteHeight,
+    labelHitBox,
+    showSprite,
+    hasReplacementAppearance,
+  });
   return (
     <g
       data-stop-marker
@@ -186,37 +340,26 @@ function StopMarkerInner({
       aria-label={label}
     >
       <rect
-        x={labelHitBox.x}
-        y={labelHitBox.y}
-        width={labelHitBox.width}
-        height={labelHitBox.height}
+        x={interactionHitBox.x}
+        y={interactionHitBox.y}
+        width={interactionHitBox.width}
+        height={interactionHitBox.height}
         fill="transparent"
         pointerEvents="all"
       />
       {recentlyUpdated && !isFocused && <RecentUpdatePulse color={color} />}
       {draggable && <RepositionPulse spriteWidth={spriteWidth} />}
       {showSprite && sprite && (
-        <image
-          href={`${sprite.src}?v=${SPRITE_CACHE_VERSION}`}
-          x={SITE_ART_CENTER.x - spriteWidth / 2}
-          y={SITE_ART_CENTER.y - spriteHeight / 2}
-          width={spriteWidth}
-          height={spriteHeight}
-          preserveAspectRatio="xMidYMid meet"
-          style={{ pointerEvents: "all" }}
+        <SpriteArt
+          src={sprite.src}
+          spriteWidth={spriteWidth}
+          spriteHeight={spriteHeight}
         />
       )}
       {isFocused ? (
         <FocusRings />
-      ) : !showSprite ? (
-        <circle
-          r={6}
-          cx={SITE_ART_CENTER.x}
-          cy={SITE_ART_CENTER.y}
-          fill={color}
-          stroke="#1a1233"
-          strokeWidth={2}
-        />
+      ) : !showSprite && !hasReplacementAppearance ? (
+        <FallbackMarkerDot color={color} />
       ) : null}
       <StopLabel label={label} spriteHeight={showSprite ? spriteHeight : 0} />
     </g>
