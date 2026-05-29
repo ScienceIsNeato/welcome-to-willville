@@ -34,6 +34,9 @@ jobs:
           .venv/bin/pip install 'slopmop[all]==1.5.0'
           echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
 
+      - name: Install slop-mop JS gate tools
+        run: npm install -g find-duplicate-strings@3.1.1
+
       - name: Quality gates
         run: sm scour || (echo "=== Gate logs ===" && cat .slopmop/logs/*.log && exit 1)
 
