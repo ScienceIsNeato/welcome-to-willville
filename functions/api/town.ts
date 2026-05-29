@@ -22,7 +22,10 @@ import {
   type RepoMeta,
 } from "../../lib/town";
 import { withCorsHeaders } from "./cors";
-import { readCachedRepoManifest } from "./town-manifests";
+import {
+  readCachedRepoManifest,
+  WillvilleManifestClient,
+} from "./town-manifests";
 
 interface Env {
   GITHUB_PAT?: string;
@@ -259,7 +262,7 @@ async function fetchMilestones(
 /**
  * Fetch commit counts for the last 3, 7, and 21 days.
  * Uses the commits list endpoint (no async 202 / stats-compute delays).
- * Capped at 100 commits per window — more than enough for portfolio repos.
+ * Paginates until the window is exhausted (no artificial cap).
  */
 async function fetchCommitCounts(
   fullName: string,
@@ -279,23 +282,32 @@ async function fetchCommitCounts(
     Accept: "application/vnd.github+json",
   };
   if (token) headers.Authorization = `Bearer ${token}`;
-  const since = new Date(Date.now() - 21 * 86_400_000).toISOString();
+  const since = new Date(Date.now() - 28 * 86_400_000).toISOString();
+
+  type CommitEntry = {
+    html_url?: string | null;
+    commit?: {
+      message?: string | null;
+      author?: { date?: string | null } | null;
+      committer?: { date?: string | null } | null;
+    } | null;
+  };
+
   try {
-    const r = await fetch(
-      `https://api.github.com/repos/${fullName}/commits?since=${since}&per_page=100`,
-      { headers },
-    );
-    if (!r.ok) return undefined;
-    type CommitEntry = {
-      html_url?: string | null;
-      commit?: {
-        message?: string | null;
-        author?: { date?: string | null } | null;
-        committer?: { date?: string | null } | null;
-      } | null;
-    };
-    const commits = (await r.json()) as CommitEntry[];
-    if (!Array.isArray(commits)) return undefined;
+    const commits: CommitEntry[] = [];
+    let page = 1;
+    while (true) {
+      const r = await fetch(
+        `https://api.github.com/repos/${fullName}/commits?since=${since}&per_page=100&page=${page}`,
+        { headers },
+      );
+      if (!r.ok) return undefined;
+      const batch = (await r.json()) as CommitEntry[];
+      if (!Array.isArray(batch)) return undefined;
+      commits.push(...batch);
+      if (batch.length < 100) break;
+      if (++page > 10) break; // safety cap at 1 000 commits per window
+    }
 
     const now = Date.now();
     let d3 = 0,
@@ -336,7 +348,7 @@ async function fetchCommitCounts(
       const daysAgo = (now - t) / 86_400_000;
       if (daysAgo <= 3) d3++;
       if (daysAgo <= 7) d7++;
-      d21++; // all commits from the `since` window count
+      if (daysAgo <= 21) d21++;
     }
     return { d3, d7, d21, latestCommitAt, recentCommits };
   } catch {
@@ -497,6 +509,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const token = env.GITHUB_PAT;
   const repos = await listOwnerRepos(token);
   const cutoff = Date.now() - TWO_YEARS_MS;
+  const manifestClient = new WillvilleManifestClient(token);
   const candidates = repos.filter((r) => {
     if (r.fork || r.archived) return false;
     return Date.parse(r.pushed_at) >= cutoff;
@@ -512,7 +525,13 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
         fetchWorkflowRuns(r.full_name, token),
       ]);
     const activeBranch = branchResult.activeBranch;
-    const willvilleManifest = readCachedRepoManifest(r.full_name);
+    const willvilleManifest =
+      readCachedRepoManifest(r.full_name) ??
+      (await manifestClient.fetchRepoManifest(
+        r.full_name,
+        r.default_branch,
+        activeBranch,
+      ));
     return {
       repo: r.full_name,
       isPrivate: r.private,

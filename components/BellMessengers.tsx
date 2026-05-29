@@ -16,9 +16,17 @@ type Props = {
 
 /**
  * Pre-attentive health verdict for a stop, ordered by how loudly it should
- * shout for attention. This rides the most instinctive visual channel (color).
+ * shout for attention. Still drives the closing tally banner.
  */
 type Health = "attention" | "running" | "healthy" | "dormant";
+
+/**
+ * Recency verdict for a stop. This now owns the loudest visual channel
+ * (color): a repo that committed today glows fresh and cools toward indigo as
+ * the work ages. Grey (`dormant`) is reserved for repos with no
+ * `.willville.json` at all — the only true "no signal" state.
+ */
+type Recency = "fresh" | "recent" | "aging" | "stale" | "dormant";
 
 type Point = {
   x: number;
@@ -41,8 +49,8 @@ type Messenger = {
   orbitRadiusY: number;
   orbitPhase: number;
   target: Point;
-  /** Health verdict -> core particle color (the headline signal). */
-  health: Health;
+  /** Recency verdict -> core particle color (the headline signal). */
+  recency: Recency;
   /** Commit velocity -> particle size + glow (1 = average, >1 = busy). */
   radiusScale: number;
   /** Recency of last commit -> how fast the messenger rides home. */
@@ -89,13 +97,26 @@ const MAX_PR_SPARKS = 5;
 const DAY_MS = 86_400_000;
 const WEEK_MS = 7 * DAY_MS;
 
-// Health -> core particle color. Color is the loudest channel, so it answers
-// the single most important question: is this repo OK right now?
+// Health -> alarm color, still used for the blocked-orbit flush and the
+// closing tally banner.
 const HEALTH_COLOR: Record<Health, string> = {
   attention: "#ff5a52", // red — CI failing or explicitly blocked
   running: "#e6c66a", // gold — active work in progress
   healthy: "#58c97a", // green — shipping / passing / cruising
   dormant: "#8a8a8a", // grey — quiet or no manifest
+};
+
+// Recency -> core particle color. Color is the loudest channel, so it answers
+// the most glanceable question: how alive is this repo right now? A cooling
+// ramp (fresh mint -> distant indigo) reads as ordinal age. No red here — red
+// stays the alarm color (failing CI / blocked) and must not collide with
+// "fresh", the exact mistake that pushed freshness off color last time.
+const RECENCY_COLOR: Record<Recency, string> = {
+  fresh: "#5ff0a0", // mint — committed in the last day
+  recent: "#58c97a", // green — committed this week
+  aging: "#4a93b8", // teal — committed this month
+  stale: "#5566a6", // indigo — quiet for a month or more
+  dormant: "#8a8a8a", // grey — no .willville.json at all
 };
 
 function messengerRoute(from: Point, to: Point) {
@@ -160,7 +181,7 @@ export function BellMessengers({
           orbitRadiusY: 8 + (index % 4) * 1.5,
           orbitPhase: index * 0.72,
           target: stop.position,
-          health: stopHealth(stop, hasManifest),
+          recency: recencyVerdict(stop.lastCommitAt, hasManifest),
           radiusScale: velocityRadiusScale(stop.commits7d),
           returnSeconds: recencyReturnSeconds(stop.lastCommitAt),
           blocked: hasManifest && !!stop.status.blocked,
@@ -459,7 +480,7 @@ function returnParticles(
       key: messenger.stopId,
       x: point.x,
       y: point.y,
-      color: HEALTH_COLOR[messenger.health],
+      color: RECENCY_COLOR[messenger.recency],
       radius: baseRadius,
       opacity: baseOpacity,
     },
@@ -471,7 +492,7 @@ function returnParticles(
       key: `${messenger.stopId}-pr-${spark}`,
       x: tp.x,
       y: tp.y,
-      color: HEALTH_COLOR[messenger.health],
+      color: RECENCY_COLOR[messenger.recency],
       radius: Math.max(0.8, baseRadius * (1 - spark * 0.16)),
       opacity: Math.max(0.1, baseOpacity * (1 - spark * 0.18)),
     });
@@ -517,9 +538,15 @@ function pointOnCurve(curve: Curve, t: number): Point {
 /**
  * Whether a stop has a real Willville manifest behind it (vs. a default/empty
  * placeholder). No manifest means the messenger rides home grey/dormant.
+ *
+ * Modern `.willville.json` files ship only the `agent` packet
+ * (`agent.status` / `agent.direction`) and leave the legacy `status.state`
+ * at "unknown", so the presence of `stop.agent` is the authoritative signal.
+ * The legacy `status` fields are kept as a fallback for older manifests.
  */
 function stopHasManifest(stop: Stop): boolean {
   return !!(
+    stop.agent ||
     stop.status.doing ||
     stop.status.next ||
     (stop.status.state && stop.status.state !== "unknown")
@@ -591,6 +618,27 @@ function recencyReturnSeconds(lastCommitAt: string | undefined): number {
   if (age < WEEK_MS) return RETURN_SECONDS;
   if (age < 4 * WEEK_MS) return RETURN_SECONDS * 1.25;
   return RETURN_SECONDS * 1.5;
+}
+
+/**
+ * Recency of the last commit -> core particle color bucket. This is the
+ * headline channel now: grey only when the repo has no `.willville.json`,
+ * otherwise a cooling ramp from fresh (committed today) to stale (quiet for a
+ * month or more). `lastCommitAt` comes straight from `/api/town`, so this
+ * colors correctly even before the manifest cache finishes warming.
+ */
+function recencyVerdict(
+  lastCommitAt: string | undefined,
+  hasManifest: boolean,
+): Recency {
+  if (!hasManifest) return "dormant";
+  if (!lastCommitAt) return "stale";
+  const age = Date.now() - Date.parse(lastCommitAt);
+  if (Number.isNaN(age)) return "stale";
+  if (age < DAY_MS) return "fresh";
+  if (age < WEEK_MS) return "recent";
+  if (age < 4 * WEEK_MS) return "aging";
+  return "stale";
 }
 
 /**
