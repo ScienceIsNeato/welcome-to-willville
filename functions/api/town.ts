@@ -259,7 +259,7 @@ async function fetchMilestones(
 /**
  * Fetch commit counts for the last 3, 7, and 21 days.
  * Uses the commits list endpoint (no async 202 / stats-compute delays).
- * Capped at 100 commits per window — more than enough for portfolio repos.
+ * Paginates until the window is exhausted (no artificial cap).
  */
 async function fetchCommitCounts(
   fullName: string,
@@ -280,22 +280,31 @@ async function fetchCommitCounts(
   };
   if (token) headers.Authorization = `Bearer ${token}`;
   const since = new Date(Date.now() - 21 * 86_400_000).toISOString();
+
+  type CommitEntry = {
+    html_url?: string | null;
+    commit?: {
+      message?: string | null;
+      author?: { date?: string | null } | null;
+      committer?: { date?: string | null } | null;
+    } | null;
+  };
+
   try {
-    const r = await fetch(
-      `https://api.github.com/repos/${fullName}/commits?since=${since}&per_page=100`,
-      { headers },
-    );
-    if (!r.ok) return undefined;
-    type CommitEntry = {
-      html_url?: string | null;
-      commit?: {
-        message?: string | null;
-        author?: { date?: string | null } | null;
-        committer?: { date?: string | null } | null;
-      } | null;
-    };
-    const commits = (await r.json()) as CommitEntry[];
-    if (!Array.isArray(commits)) return undefined;
+    const commits: CommitEntry[] = [];
+    let page = 1;
+    while (true) {
+      const r = await fetch(
+        `https://api.github.com/repos/${fullName}/commits?since=${since}&per_page=100&page=${page}`,
+        { headers },
+      );
+      if (!r.ok) return undefined;
+      const batch = (await r.json()) as CommitEntry[];
+      if (!Array.isArray(batch)) return undefined;
+      commits.push(...batch);
+      if (batch.length < 100) break;
+      if (++page > 10) break; // safety cap at 1 000 commits per window
+    }
 
     const now = Date.now();
     let d3 = 0,
