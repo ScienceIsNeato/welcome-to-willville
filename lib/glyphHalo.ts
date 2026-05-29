@@ -17,6 +17,7 @@ type GlyphHaloConfig = {
 
 type SpriteLike = {
   stopId: string;
+  district?: string;
   width: number;
   height: number;
   inpaintHalo?: GlyphHaloConfig;
@@ -38,19 +39,85 @@ const GLYPH_HALO_OUTPUT_ROOT = "/art/town/glyph-halos";
 const GLYPH_HALO_DEFAULT_RADIAL_SCALE = 1.2;
 const GLYPH_HALO_DEFAULT_PADDING = 24;
 const GLYPH_HALO_DEFAULT_THRESHOLD = 10;
+const GLYPH_HALO_SPREAD_TIGHTENING = 0.7;
+const LEGACY_OPEN_CENTER_SENTENCE =
+  /Keep the center composition open enough for the foreground .*?without doubling the silhouette\.\s*/;
+const BAKED_LANDMARK_SUFFIX =
+  "The final accepted state hides the separate foreground sprite, so do not leave an empty center or a placeholder halo. Recreate the landmark itself directly in the painted scene so the site still reads clearly and stays clickable after the sprite disappears. Ground it into the district art with solid structure, readable silhouette, and materials that belong to the environment.";
+const ARCHITECTURAL_LANDMARK_SUFFIX =
+  "Favor compact 3D landmark reads over flat graphics: small building, monument, statue, shrine, kiosk, tower, gate, pavilion, or civic marker integrated into the scene. Avoid floor decals, medallions, painted sigils, logos, abstract symbols, or mural-only solutions.";
+
+function humanizeHaloIdentifier(value: string) {
+  return value
+    .split(/[-_]+/)
+    .filter(Boolean)
+    .map((token) => token.charAt(0).toUpperCase() + token.slice(1))
+    .join(" ");
+}
+
+function defaultGlyphHaloDescription(sprite: SpriteLike) {
+  const districtName = humanizeHaloIdentifier(sprite.district ?? "town");
+  const stopName = humanizeHaloIdentifier(sprite.stopId);
+  return `Paint a native background integration layer for the ${stopName} glyph directly into the ${districtName} ground beneath it. Recreate the landmark itself as a compact building, monument, or statue that feels built into the district art: subtle material spill, soft ambient light, grounded shadowing, local texture wear, and environmental details that match the whimsical town style. Match the surrounding ${districtName} palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline. ${BAKED_LANDMARK_SUFFIX} ${ARCHITECTURAL_LANDMARK_SUFFIX}`;
+}
+
+function tightenGlyphHaloSpread(radialScale: number) {
+  if (radialScale <= 1) {
+    return 1;
+  }
+
+  // Keep the same base halo shape, but pull the extra spread back by 30%.
+  return 1 + (radialScale - 1) * GLYPH_HALO_SPREAD_TIGHTENING;
+}
+
+export function glyphHaloPromptForSprite(sprite: SpriteLike): string | null {
+  const halo = glyphHaloConfigForSprite(sprite);
+  if (!halo) {
+    return null;
+  }
+
+  let prompt = halo.description.trim();
+  prompt = prompt.replace(
+    "This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes",
+    "Recreate the landmark itself directly inside the painted district art so it feels native to the map, and make",
+  );
+  prompt = prompt.replace(LEGACY_OPEN_CENTER_SENTENCE, "");
+
+  if (
+    !prompt.includes(
+      "The final accepted state hides the separate foreground sprite",
+    )
+  ) {
+    prompt = `${prompt} ${BAKED_LANDMARK_SUFFIX}`.trim();
+  }
+
+  if (!prompt.includes("Favor compact 3D landmark reads over flat graphics")) {
+    prompt = `${prompt} ${ARCHITECTURAL_LANDMARK_SUFFIX}`.trim();
+  }
+
+  return prompt;
+}
 
 export function glyphHaloConfigForSprite(
   sprite: SpriteLike,
 ): GlyphHaloConfig | null {
-  if (!sprite.inpaintHalo) return null;
+  if (!sprite.inpaintHalo) {
+    return {
+      description: defaultGlyphHaloDescription(sprite),
+    };
+  }
   if (sprite.inpaintHalo.enabled === false) return null;
   return sprite.inpaintHalo;
 }
 
 export function glyphHaloRadialScaleForSprite(sprite: SpriteLike) {
-  return Math.max(
-    1,
-    Number(sprite.inpaintHalo?.radialScale ?? GLYPH_HALO_DEFAULT_RADIAL_SCALE),
+  return tightenGlyphHaloSpread(
+    Math.max(
+      1,
+      Number(
+        sprite.inpaintHalo?.radialScale ?? GLYPH_HALO_DEFAULT_RADIAL_SCALE,
+      ),
+    ),
   );
 }
 

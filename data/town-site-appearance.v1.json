@@ -44,23 +44,89 @@
       "underlay": {
         "enabled": true,
         "src": "/art/town/glyph-halos/fogofdog-frontend.png",
-        "cacheKey": "fogofdog-frontend-halo-v1"
-      }
+        "cacheKey": "fogofdog-frontend-halo-v2"
+      },
+      "foregroundMode": "background-only"
     },
     {
       "stopId": "loopcloser",
       "underlay": {
         "enabled": true,
         "src": "/art/town/glyph-halos/loopcloser.png",
-        "cacheKey": "loopcloser-halo-v1"
-      }
+        "cacheKey": "loopcloser-halo-v2"
+      },
+      "foregroundMode": "background-only"
     },
     {
       "stopId": "razer-ripple",
       "underlay": {
         "enabled": true,
         "src": "/art/town/glyph-halos/razer-ripple.png",
-        "cacheKey": "razer-ripple-halo-v1"
+        "cacheKey": "razer-ripple-halo-v2"
+      },
+      "foregroundMode": "background-only"
+    },
+    {
+      "stopId": "10000_years_of_solitude",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/10000_years_of_solitude.png",
+        "cacheKey": "auto-v1-1780006093381"
+      }
+    },
+    {
+      "stopId": "lonely_little_vampire",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/lonely_little_vampire.png",
+        "cacheKey": "auto-v1-1780007988336"
+      }
+    },
+    {
+      "stopId": "welcome-to-willville",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/welcome-to-willville.png",
+        "cacheKey": "auto-v1-1780009321629"
+      }
+    },
+    {
+      "stopId": "cursor-rules",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/cursor-rules.png",
+        "cacheKey": "auto-v1-1780010510857"
+      }
+    },
+    {
+      "stopId": "slop-mop",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/slop-mop.png",
+        "cacheKey": "auto-v1-1780011201843"
+      }
+    },
+    {
+      "stopId": "bucket-o-slop",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/bucket-o-slop.png",
+        "cacheKey": "auto-v1-1780025243207"
+      }
+    },
+    {
+      "stopId": "slop-mop-action",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/slop-mop-action.png",
+        "cacheKey": "auto-v1-1780025850860"
       }
     }
   ]

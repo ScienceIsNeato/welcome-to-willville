@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Closed the planner gap so a selected site can be sent to repaint without dragging it first",
-    "direction": "Next is finishing the durable backup, audit, and revert path behind the repaint flow",
-    "last_update": "2026-05-28T20:46:00Z"
+    "status": "Moving town landmarks around so the map staging matches the latest layout decisions",
+    "direction": "Next is checking whether any other special landmarks want to live outside the town edge too",
+    "last_update": "2026-05-28T23:59:00Z"
   }
 }
