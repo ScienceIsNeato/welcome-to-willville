@@ -31,7 +31,7 @@ jobs:
 
       - name: Install slop-mop
         run: |
-          .venv/bin/pip install 'slopmop[all]==1.2.0'
+          .venv/bin/pip install 'slopmop[all]==1.5.0'
           echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
 
       - name: Quality gates
