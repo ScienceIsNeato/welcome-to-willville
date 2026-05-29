@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Made the canal tell the whole PR story at a glance - where a ship sits shows where its PR is in the pipeline, which way the bow points shows whose turn it is (facing into town with a red 'merge me' pulse means it's waiting on me, facing out to sea means it's not my problem yet), and little black flags fly off the mast for each round of back-and-forth it's weathered",
-    "direction": "Canal storytelling is in; want to see it running against live PRs to tune the look",
-    "last_update": "2026-05-29T16:00:00Z"
+    "status": "Worked through the review notes on the open PR - cleaned up a couple of real bugs (a repaint prompt that was being computed then thrown away, and a bell animation that cut off early for blocked repos) and de-duplicated some shared styling code",
+    "direction": "Four of six notes handled and pushed; the last two are about two town sites pointing at artwork that never got generated, so I'm waiting on a call: make the art or drop those two entries",
+    "last_update": "2026-05-29T18:30:00Z"
   }
 }
