@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Moving town landmarks around so the map staging matches the latest layout decisions",
-    "direction": "Next is checking whether any other special landmarks want to live outside the town edge too",
-    "last_update": "2026-05-28T23:59:00Z"
+    "status": "Fixing the repaint interaction regression so baked replacement sites are clickable again",
+    "direction": "Next is checking the rest of the replacement-art flow for any other hidden sprite assumptions",
+    "last_update": "2026-05-29T00:08:00Z"
   }
 }

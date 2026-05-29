@@ -3,6 +3,7 @@
 import { memo, type MouseEvent, type PointerEvent } from "react";
 import type { Stop } from "@/lib/town";
 import siteSpriteManifest from "@/data/town-site-sprites.v1.json";
+import { glyphHaloCropBoxForSprite } from "@/lib/glyphHalo";
 import {
   labelHitBoxForStop,
   repoLabelForStop,
@@ -34,8 +35,91 @@ const STATE_COLOR: Record<Stop["status"]["state"], string> = {
 const SITE_SPRITES = new Map(
   siteSpriteManifest.sprites.map((sprite) => [sprite.stopId, sprite]),
 );
+type SiteSprite = (typeof siteSpriteManifest.sprites)[number];
 const SPRITE_CACHE_VERSION = "repo-labels-20260522";
 const SITE_ART_CENTER = { x: 0, y: 0 };
+
+type HitBox = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
+function mergeHitBoxes(...boxes: Array<HitBox | null>): HitBox {
+  const definedBoxes = boxes.filter((box): box is HitBox => box !== null);
+  const left = Math.min(...definedBoxes.map((box) => box.x));
+  const top = Math.min(...definedBoxes.map((box) => box.y));
+  const right = Math.max(...definedBoxes.map((box) => box.x + box.width));
+  const bottom = Math.max(...definedBoxes.map((box) => box.y + box.height));
+
+  return {
+    x: left,
+    y: top,
+    width: right - left,
+    height: bottom - top,
+  };
+}
+
+function spriteHitBoxForSize(
+  spriteWidth: number,
+  spriteHeight: number,
+): HitBox | null {
+  if (spriteWidth <= 0 || spriteHeight <= 0) {
+    return null;
+  }
+
+  return {
+    x: SITE_ART_CENTER.x - spriteWidth / 2,
+    y: SITE_ART_CENTER.y - spriteHeight / 2,
+    width: spriteWidth,
+    height: spriteHeight,
+  };
+}
+
+function replacementHitBoxForStop(
+  stop: Stop,
+  sprite: SiteSprite | undefined,
+  hasReplacementAppearance: boolean,
+): HitBox | null {
+  if (!hasReplacementAppearance || !sprite) {
+    return null;
+  }
+
+  const crop = glyphHaloCropBoxForSprite(sprite, stop.position);
+  return {
+    x: crop.x - stop.position.x,
+    y: crop.y - stop.position.y,
+    width: crop.width,
+    height: crop.height,
+  };
+}
+
+function interactionHitBoxForStop(params: {
+  stop: Stop;
+  sprite: SiteSprite | undefined;
+  spriteWidth: number;
+  spriteHeight: number;
+  labelHitBox: HitBox;
+  showSprite: boolean;
+  hasReplacementAppearance: boolean;
+}): HitBox {
+  const {
+    stop,
+    sprite,
+    spriteWidth,
+    spriteHeight,
+    labelHitBox,
+    showSprite,
+    hasReplacementAppearance,
+  } = params;
+
+  return mergeHitBoxes(
+    labelHitBox,
+    showSprite ? spriteHitBoxForSize(spriteWidth, spriteHeight) : null,
+    replacementHitBoxForStop(stop, sprite, hasReplacementAppearance),
+  );
+}
 
 function RecentUpdatePulse({ color }: { color: string }) {
   return (
@@ -142,6 +226,15 @@ function StopMarkerInner({
   const { width: spriteWidth, height: spriteHeight } = spriteSizeForStop(stop);
   const label = repoLabelForStop(stop);
   const labelHitBox = labelHitBoxForStop(stop);
+  const interactionHitBox = interactionHitBoxForStop({
+    stop,
+    sprite,
+    spriteWidth,
+    spriteHeight,
+    labelHitBox,
+    showSprite,
+    hasReplacementAppearance,
+  });
   return (
     <g
       data-stop-marker
@@ -186,10 +279,10 @@ function StopMarkerInner({
       aria-label={label}
     >
       <rect
-        x={labelHitBox.x}
-        y={labelHitBox.y}
-        width={labelHitBox.width}
-        height={labelHitBox.height}
+        x={interactionHitBox.x}
+        y={interactionHitBox.y}
+        width={interactionHitBox.width}
+        height={interactionHitBox.height}
         fill="transparent"
         pointerEvents="all"
       />
