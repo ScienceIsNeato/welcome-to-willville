@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Fixing the repaint interaction regression so baked replacement sites are clickable again",
-    "direction": "Next is checking the rest of the replacement-art flow for any other hidden sprite assumptions",
-    "last_update": "2026-05-29T00:08:00Z"
+    "status": "Made the canal tell the whole PR story at a glance - where a ship sits shows where its PR is in the pipeline, which way the bow points shows whose turn it is (facing into town with a red 'merge me' pulse means it's waiting on me, facing out to sea means it's not my problem yet), and little black flags fly off the mast for each round of back-and-forth it's weathered",
+    "direction": "Canal storytelling is in; want to see it running against live PRs to tune the look",
+    "last_update": "2026-05-29T16:00:00Z"
   }
 }

@@ -7,7 +7,12 @@ import {
   GENERATED_TOWN_LAYOUT,
   pointsToPath,
 } from "@/lib/town-layout";
-import { GATE_HALF_WIDTH, LOCKS, boatPosition } from "@/lib/canal";
+import {
+  GATE_HALF_WIDTH,
+  LOCKS,
+  CHANNEL_LOCKS,
+  boatPosition,
+} from "@/lib/canal";
 import { RAINBOW_BRICK_LAYERS } from "@/lib/rainbow-brick-layers";
 import { CanalBoat as Boat } from "./CanalBoat";
 
@@ -181,8 +186,8 @@ export function Canal({ boats, layer = "all" }: Props) {
 
       {(layer === "traffic" || layer === "all") && (
         <g aria-hidden="true">
-          {LOCKS.slice(0, -1).map((lock, i) => {
-            const next = LOCKS[i + 1]!;
+          {CHANNEL_LOCKS.slice(0, -1).map((lock, i) => {
+            const next = CHANNEL_LOCKS[i + 1]!;
             const mx = (lock.centerX + next.centerX) / 2;
             const my = (lock.centerY + next.centerY) / 2;
             const angle =
@@ -255,7 +260,13 @@ export function Canal({ boats, layer = "all" }: Props) {
           {LOCKS.flatMap((lock) => {
             const items = boatsByLock.get(lock.id) ?? [];
             return items.map((boat, idx) => {
-              const pos = boatPosition(lock.id, idx);
+              const depth =
+                lock.id === "edits"
+                  ? boat.ciState === "failure"
+                    ? 1
+                    : 0.4
+                  : 0;
+              const pos = boatPosition(lock.id, idx, { depth });
               return (
                 <Boat
                   key={`${boat.repo}-${boat.prNumber}`}

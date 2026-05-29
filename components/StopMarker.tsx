@@ -247,6 +247,24 @@ function FallbackMarkerDot({ color }: { color: string }) {
   );
 }
 
+function deriveStopAppearance(
+  stop: Stop,
+  sprite: SiteSprite | undefined,
+  forceHideSprite: boolean,
+): { hasReplacementAppearance: boolean; showSprite: boolean } {
+  const foregroundMode = siteForegroundModeForStop(stop.id);
+  const underlay = siteUnderlayForStop(stop.id);
+  return {
+    hasReplacementAppearance:
+      forceHideSprite ||
+      (foregroundMode === "background-only" && underlay.enabled),
+    showSprite:
+      Boolean(sprite) &&
+      foregroundMode !== "background-only" &&
+      !forceHideSprite,
+  };
+}
+
 function StopMarkerInner({
   stop,
   isFocused,
@@ -261,11 +279,12 @@ function StopMarkerInner({
 }: Props) {
   const color = STATE_COLOR[stop.status.state];
   const sprite = SITE_SPRITES.get(stop.id);
-  const foregroundMode = siteForegroundModeForStop(stop.id);
-  const underlay = siteUnderlayForStop(stop.id);
-  const hasReplacementAppearance = forceHideSprite || (foregroundMode === "background-only" && underlay.enabled);
-  const showSprite = Boolean(sprite) && foregroundMode !== "background-only" && !forceHideSprite;
   const { width: spriteWidth, height: spriteHeight } = spriteSizeForStop(stop);
+  const { hasReplacementAppearance, showSprite } = deriveStopAppearance(
+    stop,
+    sprite,
+    forceHideSprite,
+  );
   const label = repoLabelForStop(stop);
   const labelHitBox = labelHitBoxForStop(stop);
   const interactionHitBox = interactionHitBoxForStop({

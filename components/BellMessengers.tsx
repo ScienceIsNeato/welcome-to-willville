@@ -14,6 +14,12 @@ type Props = {
   completedAtByStopId: Record<string, number>;
 };
 
+/**
+ * Pre-attentive health verdict for a stop, ordered by how loudly it should
+ * shout for attention. This rides the most instinctive visual channel (color).
+ */
+type Health = "attention" | "running" | "healthy" | "dormant";
+
 type Point = {
   x: number;
   y: number;
@@ -35,8 +41,18 @@ type Messenger = {
   orbitRadiusY: number;
   orbitPhase: number;
   target: Point;
-  statusUpdated?: string;
-  hasManifest: boolean;
+  /** Health verdict -> core particle color (the headline signal). */
+  health: Health;
+  /** Commit velocity -> particle size + glow (1 = average, >1 = busy). */
+  radiusScale: number;
+  /** Recency of last commit -> how fast the messenger rides home. */
+  returnSeconds: number;
+  /** Explicitly blocked -> messenger struggles to leave (tight, anxious orbit). */
+  blocked: boolean;
+  /** Open PR count -> length of the comet tail it drags home. */
+  prSparks: number;
+  /** Repo importance (stars / priority) -> brighter chime pitch (0–4). */
+  importance: number;
 };
 
 type ActiveParticle = {
@@ -63,9 +79,24 @@ const MAX_RIPPLE_SECONDS = 1.2;
 const MAX_AUDIO_WHOOSHES = 72;
 const ORBIT_SPEED = 2.9;
 const THRUM_PULSE_HZ = 4.5;
+// How much longer a blocked repo lingers in its anxious orbit before it can
+// finally limp home. Blockers become something you literally watch struggle.
+const BLOCKED_ORBIT_BONUS = 1.1;
+// Each open PR adds one trailing spark; cap the tail so a backlog-heavy repo
+// stays a comet, not a smear.
+const MAX_PR_SPARKS = 5;
 
 const DAY_MS = 86_400_000;
 const WEEK_MS = 7 * DAY_MS;
+
+// Health -> core particle color. Color is the loudest channel, so it answers
+// the single most important question: is this repo OK right now?
+const HEALTH_COLOR: Record<Health, string> = {
+  attention: "#ff5a52", // red — CI failing or explicitly blocked
+  running: "#e6c66a", // gold — active work in progress
+  healthy: "#58c97a", // green — shipping / passing / cruising
+  dormant: "#8a8a8a", // grey — quiet or no manifest
+};
 
 function messengerRoute(from: Point, to: Point) {
   const mid = {
@@ -102,8 +133,9 @@ function messengerRoute(from: Point, to: Point) {
 /**
  * Small glowing dots that fan out from the bell tower to every stop when the
  * bell is rung. While manifests are still in flight, each messenger orbits its
- * site and keeps thrumming until that specific site completes, then it turns
- * green and rides home.
+ * site and keeps thrumming until that specific site completes, then rides home
+ * carrying a status report: its color is the repo's health, its size is the
+ * repo's commit velocity, and its speed home is how recently the repo shipped.
  */
 export function BellMessengers({
   stops,
@@ -115,11 +147,7 @@ export function BellMessengers({
     () =>
       stops.map((stop, index) => {
         const route = messengerRoute(BELL, stop.position);
-        const hasManifest = !!(
-          stop.status.doing ||
-          stop.status.next ||
-          (stop.status.state && stop.status.state !== "unknown")
-        );
+        const hasManifest = stopHasManifest(stop);
         return {
           stopId: stop.id,
           outboundCurve: route.outbound,
@@ -132,8 +160,12 @@ export function BellMessengers({
           orbitRadiusY: 8 + (index % 4) * 1.5,
           orbitPhase: index * 0.72,
           target: stop.position,
-          statusUpdated: stop.status.updated,
-          hasManifest,
+          health: stopHealth(stop, hasManifest),
+          radiusScale: velocityRadiusScale(stop.commits7d),
+          returnSeconds: recencyReturnSeconds(stop.lastCommitAt),
+          blocked: hasManifest && !!stop.status.blocked,
+          prSparks: Math.min(MAX_PR_SPARKS, Math.max(0, stop.openPrCount ?? 0)),
+          importance: importanceTone(stop),
         };
       }),
     [stops],
@@ -163,7 +195,7 @@ export function BellMessengers({
         startedAt,
         outboundEnd,
       });
-      return Math.max(latest, returnStart + RETURN_SECONDS);
+      return Math.max(latest, returnStart + messenger.returnSeconds);
     }, 0);
 
     return startedAt + lastArrivalSeconds * 1000;
@@ -207,7 +239,7 @@ export function BellMessengers({
       return;
     }
 
-    messengers.forEach((messenger, index) => {
+    messengers.forEach((messenger) => {
       if (
         completedAtByStopId[messenger.stopId] === undefined ||
         session.completedStopIds.has(messenger.stopId)
@@ -216,7 +248,7 @@ export function BellMessengers({
       }
 
       session.completedStopIds.add(messenger.stopId);
-      const tone = index % 5;
+      const tone = messenger.importance;
       scheduleMessengerWhoosh(session.ctx, session.master, {
         time: session.ctx.currentTime + 0.02,
         duration: 2.2,
@@ -267,18 +299,16 @@ export function BellMessengers({
     }
 
     const elapsed = Math.max(0, (frameTime - startedAt) / 1000);
-    return messengers
-      .map((messenger, index) =>
-        particleForMessenger({
-          messenger,
-          index,
-          stagger,
-          elapsed,
-          startedAt,
-          completedAt: completedAtByStopId[messenger.stopId],
-        }),
-      )
-      .filter((particle): particle is ActiveParticle => particle !== null);
+    return messengers.flatMap((messenger, index) =>
+      particleForMessenger({
+        messenger,
+        index,
+        stagger,
+        elapsed,
+        startedAt,
+        completedAt: completedAtByStopId[messenger.stopId],
+      }),
+    );
   }, [completedAtByStopId, frameTime, messengers, phase, stagger, startedAt]);
 
   if (phase === "error" || activeParticles.length === 0) {
@@ -336,14 +366,14 @@ function particleForMessenger(options: {
   elapsed: number;
   startedAt: number;
   completedAt: number | undefined;
-}): ActiveParticle | null {
+}): ActiveParticle[] {
   const { messenger, index, stagger, elapsed, startedAt, completedAt } =
     options;
   const outboundStart = index * stagger;
   const outboundEnd = outboundStart + OUTBOUND_SECONDS;
 
   if (elapsed < outboundStart) {
-    return null;
+    return [];
   }
 
   if (elapsed < outboundEnd) {
@@ -355,52 +385,97 @@ function particleForMessenger(options: {
         : progress > 0.82
           ? Math.max(0.34, 1 - (progress - 0.82) / 0.18)
           : 1;
-    return {
-      key: messenger.stopId,
-      x: point.x,
-      y: point.y,
-      color: "#e6c66a",
-      radius: 3.5,
-      opacity,
-    };
+    return [
+      {
+        key: messenger.stopId,
+        x: point.x,
+        y: point.y,
+        color: "#e6c66a",
+        radius: 3.5 * messenger.radiusScale,
+        opacity,
+      },
+    ];
   }
 
-  const returnStart = returnStartSeconds({
-    completedAt,
-    startedAt,
-    outboundEnd,
-  });
+  const returnStart =
+    returnStartSeconds({ completedAt, startedAt, outboundEnd }) +
+    (messenger.blocked ? BLOCKED_ORBIT_BONUS : 0);
 
   if (elapsed < returnStart) {
-    const orbitElapsed = elapsed - outboundEnd;
-    const angle =
-      orbitElapsed * ORBIT_SPEED * Math.PI * 2 + messenger.orbitPhase;
-    const pulse =
-      0.76 + Math.sin(orbitElapsed * THRUM_PULSE_HZ * Math.PI * 2) * 0.18;
-    return {
-      key: messenger.stopId,
-      x: messenger.target.x + Math.cos(angle) * messenger.orbitRadiusX,
-      y: messenger.target.y + Math.sin(angle) * messenger.orbitRadiusY,
-      color: "#e6c66a",
-      radius: 2.8 + pulse * 0.9,
-      opacity: 0.72 + (pulse - 0.58) * 0.34,
-    };
+    return [orbitParticle(messenger, elapsed - outboundEnd)];
   }
 
-  if (elapsed < returnStart + RETURN_SECONDS) {
-    const progress = easeTravel((elapsed - returnStart) / RETURN_SECONDS);
-    const point = pointOnCurve(messenger.returnCurve, progress);
-    return {
+  if (elapsed < returnStart + messenger.returnSeconds) {
+    const progress = easeTravel(
+      (elapsed - returnStart) / messenger.returnSeconds,
+    );
+    return returnParticles(messenger, progress);
+  }
+
+  return [];
+}
+
+/**
+ * The orbiting "in flight" particle. Blocked repos can't settle: their orbit
+ * tightens, speeds up, jitters anxiously, and flushes red \u2014 you watch the
+ * blocker struggle before it finally limps home.
+ */
+function orbitParticle(
+  messenger: Messenger,
+  orbitElapsed: number,
+): ActiveParticle {
+  const speed = messenger.blocked ? ORBIT_SPEED * 1.7 : ORBIT_SPEED;
+  const angle = orbitElapsed * speed * Math.PI * 2 + messenger.orbitPhase;
+  const pulse =
+    0.76 + Math.sin(orbitElapsed * THRUM_PULSE_HZ * Math.PI * 2) * 0.18;
+  const radiusX = messenger.orbitRadiusX * (messenger.blocked ? 0.55 : 1);
+  const radiusY = messenger.orbitRadiusY * (messenger.blocked ? 0.55 : 1);
+  const jitterX = messenger.blocked ? Math.sin(orbitElapsed * 37) * 1.7 : 0;
+  const jitterY = messenger.blocked ? Math.cos(orbitElapsed * 41) * 1.7 : 0;
+  return {
+    key: messenger.stopId,
+    x: messenger.target.x + Math.cos(angle) * radiusX + jitterX,
+    y: messenger.target.y + Math.sin(angle) * radiusY + jitterY,
+    color: messenger.blocked ? HEALTH_COLOR.attention : "#e6c66a",
+    radius: (2.8 + pulse * 0.9) * messenger.radiusScale,
+    opacity: 0.72 + (pulse - 0.58) * 0.34,
+  };
+}
+
+/**
+ * The homebound messenger plus a comet tail of trailing sparks — one per open
+ * PR — so a repo dragging a backlog visibly hauls more work home.
+ */
+function returnParticles(
+  messenger: Messenger,
+  progress: number,
+): ActiveParticle[] {
+  const point = pointOnCurve(messenger.returnCurve, progress);
+  const baseRadius = 3 * messenger.radiusScale;
+  const baseOpacity = Math.max(0.35, 1 - progress * 0.5);
+  const particles: ActiveParticle[] = [
+    {
       key: messenger.stopId,
       x: point.x,
       y: point.y,
-      color: returnColor(messenger),
-      radius: 3,
-      opacity: Math.max(0.35, 1 - progress * 0.5),
-    };
+      color: HEALTH_COLOR[messenger.health],
+      radius: baseRadius,
+      opacity: baseOpacity,
+    },
+  ];
+  for (let spark = 1; spark <= messenger.prSparks; spark += 1) {
+    const trailT = Math.max(0, progress - spark * 0.05);
+    const tp = pointOnCurve(messenger.returnCurve, trailT);
+    particles.push({
+      key: `${messenger.stopId}-pr-${spark}`,
+      x: tp.x,
+      y: tp.y,
+      color: HEALTH_COLOR[messenger.health],
+      radius: Math.max(0.8, baseRadius * (1 - spark * 0.16)),
+      opacity: Math.max(0.1, baseOpacity * (1 - spark * 0.18)),
+    });
   }
-
-  return null;
+  return particles;
 }
 
 function returnStartSeconds(options: {
@@ -439,20 +514,100 @@ function pointOnCurve(curve: Curve, t: number): Point {
 }
 
 /**
- * Return particle color based on how fresh the stop's data is.
- * Red = brand new (< few hours), Orange = last day, Yellow = last week,
- * Blue = older than a week, Grey = empty/default manifest.
+ * Whether a stop has a real Willville manifest behind it (vs. a default/empty
+ * placeholder). No manifest means the messenger rides home grey/dormant.
  */
-function returnColor(messenger: Messenger): string {
-  if (!messenger.hasManifest) return "#888888"; // grey — empty/default
-  const updated = messenger.statusUpdated;
-  if (!updated) return "#888888"; // grey — no update timestamp
-  const age = Date.now() - Date.parse(updated);
-  if (Number.isNaN(age)) return "#888888";
-  if (age < 6 * 3_600_000) return "#ff4444"; // red — updated in last 6 hours
-  if (age < DAY_MS) return "#ff8844"; // orange — last day
-  if (age < WEEK_MS) return "#e6c66a"; // yellow — last week
-  return "#5588cc"; // blue — older than a week
+function stopHasManifest(stop: Stop): boolean {
+  return !!(
+    stop.status.doing ||
+    stop.status.next ||
+    (stop.status.state && stop.status.state !== "unknown")
+  );
+}
+
+/**
+ * Reduce a stop down to a single pre-attentive health verdict. CI is the
+ * freshest hard signal, so it wins; then explicit blockers; then the
+ * repo-authored lifecycle state.
+ */
+function stopHealth(stop: Stop, hasManifest = stopHasManifest(stop)): Health {
+  if (!hasManifest) return "dormant";
+  const latestRun = stop.workflowRuns?.[0]?.status;
+  if (latestRun === "failed" || stop.status.blocked) return "attention";
+  if (latestRun === "running") return "running";
+  switch (stop.status.state) {
+    case "shipping":
+    case "maintenance":
+      return "healthy";
+    case "wip":
+    case "idea":
+      return "running";
+    case "dormant":
+      return "dormant";
+    default:
+      return latestRun === "success" ? "healthy" : "dormant";
+  }
+}
+
+/**
+ * Tally the town's health for the bell's closing banner. Turns the swarm of
+ * messengers into a one-line verdict: how many repos are happy, busy, or need
+ * a human.
+ */
+export function summarizeTownHealth(stops: Stop[]): Record<Health, number> {
+  const tally: Record<Health, number> = {
+    attention: 0,
+    running: 0,
+    healthy: 0,
+    dormant: 0,
+  };
+  for (const stop of stops) {
+    tally[stopHealth(stop)] += 1;
+  }
+  return tally;
+}
+
+/**
+ * Commit velocity -> particle size multiplier. Busy repos (lots of commits in
+ * the last week) send fatter, brighter messengers; quiet ones send faint motes.
+ */
+function velocityRadiusScale(commits7d: number | undefined): number {
+  const velocity = commits7d ?? 0;
+  const intensity = Math.max(0, Math.min(1, velocity / 30));
+  return 0.85 + intensity * 0.9;
+}
+
+/**
+ * Recency of the last commit -> how fast the messenger rides home. Fresh repos
+ * zip back; stale ones drift home slow and tired. Recency becomes kinetic
+ * instead of a color you have to decode.
+ */
+function recencyReturnSeconds(lastCommitAt: string | undefined): number {
+  if (!lastCommitAt) return RETURN_SECONDS * 1.4;
+  const age = Date.now() - Date.parse(lastCommitAt);
+  if (Number.isNaN(age)) return RETURN_SECONDS * 1.4;
+  if (age < DAY_MS) return RETURN_SECONDS * 0.72;
+  if (age < WEEK_MS) return RETURN_SECONDS;
+  if (age < 4 * WEEK_MS) return RETURN_SECONDS * 1.25;
+  return RETURN_SECONDS * 1.5;
+}
+
+/**
+ * Repo importance -> chime pitch bucket (0–4). Stars set the floor; an active,
+ * high-priority queue bumps it up. Higher importance rings a brighter note, so
+ * the whole town's chord means something instead of being random.
+ */
+function importanceTone(stop: Stop): number {
+  const stars = stop.stars ?? 0;
+  let score = 0;
+  if (stars >= 20) score = 4;
+  else if (stars >= 8) score = 3;
+  else if (stars >= 3) score = 2;
+  else if (stars >= 1) score = 1;
+  if (stop.queue?.active && (stop.queue.priority ?? 99) <= 1) {
+    score = Math.min(4, score + 1);
+  }
+  return score;
 }
 
 function easeTravel(progress: number): number {
@@ -493,7 +648,7 @@ function createBellAudioSession(
         return;
       }
 
-      const tone = index % 5;
+      const tone = messenger.importance;
       scheduleMessengerWhoosh(ctx, master, {
         time: now + index * stagger,
         duration: 2.8,

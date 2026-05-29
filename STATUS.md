@@ -1,5 +1,40 @@
 # Status
 
+## Done (2026-05-29) — Canal Ships Now Encode the Full PR Lifecycle
+
+- Reworked the canal so a ship's **location**, **bow direction**, and **flags** each carry real PR signal instead of a single lock guess. Location follows the honest solo-workflow signals (CI color + whether unresolved review threads remain): drafts wait at Open Dock, CI-running PRs nose up against Inspection, red-CI-with-no-threads sits in the Holding Lock, anything with open threads pulls into the Edits Eddy (red CI sits visibly deeper than green), and a green-and-clean PR rides The Narrows. Merged PRs sail to Open Sea; closed-without-merge PRs get hauled off-channel to the new Scuttle.
+- **Bow direction encodes whose move it is.** Only a Narrows boat (green, clean, mergeable) turns its bow west into town and lights a pulsing red "MERGE ME" beacon — the Mayor's move. Every other boat faces east out to sea and is desaturated: not your problem yet.
+- **Jolly Roger flags encode buff rounds weathered.** Each boat flies one black pennant per `buff-rounds/N` label (read straight off the PR), capped at five with a `N+` overflow tag — a boat that's been through the wringer visibly bristles with flags.
+- Fixed the old lie where closed-unmerged PRs were dumped into Open Sea alongside real merges; they now correctly route to the Scuttle. Dropped the dead `reviewDecision`/`mergeable` lock logic in favor of the CI+threads combo. Canal data now re-polls every 60s so boats migrate between locks as CI, threads, and rounds change.
+- Companion change shipped simultaneously in slop-mop (`feat/buff-rounds-label`): `sm buff resolve` now stamps a `buff-rounds/N` label each time it clears the last open thread, which is the data source these flags read.
+- Validation: `sm swab` reports NO SLOP DETECTED (13 checks passed); `get_errors` clean on `lib/canal.ts`, `functions/api/canal.ts`, `components/CanalBoat.tsx`, `components/Canal.tsx`, and `components/TownStage.tsx`. The `/api/canal` backend aborts in local preview (no live GitHub token), so location/bow/flag rendering was verified by type-check and logic review rather than on-screen locally — visual tuning pending a live run.
+
+## Done (2026-05-29) — Bell Pageantry Pass 2: Blocked Drama, PR Tails, Importance Pitch
+
+- Added three more real-data channels on top of Pass 1 so the bell ringing carries even more signal. Blocked repos now visibly struggle to leave: their orbiting messenger tightens, speeds up, jitters anxiously, flushes red, and lingers longer before limping home. Each open PR adds a trailing spark to the homebound messenger's comet tail, so a repo dragging a backlog visibly hauls more work back. And the whoosh chime pitch now tracks repo importance (stars plus active high-priority queue) instead of a meaningless index cycle, so the town's chord actually means something.
+- Refactored `particleForMessenger` to emit an array of particles (main messenger plus PR-spark tail) and split out `orbitParticle` / `returnParticles` helpers; the `activeParticles` memo now flat-maps. Added an `importanceTone` helper feeding both audio schedulers.
+- Validation: `sm swab` reports NO SLOP DETECTED (13 checks passed); `get_errors` clean on `components/BellMessengers.tsx`; `./scripts/deploy_app.sh` rebuilt successfully on `http://127.0.0.1:3740/`; live bell-ring confirmed 58 messengers fan out gold with per-repo size variation and the tally banner reads "🔔 3 healthy · 3 need you · 30 quiet". The blocked-orbit jitter and PR-spark tails only animate during orbit/return phases (which need live `/api/manifests` completions that abort in local preview), so those channels were verified by logic/type-check rather than on-screen locally.
+
+## Done (2026-05-29) — Bell Ringing Now Reports Real Town Health (Pass 1)
+
+- Turned the bell-ringing pageantry into a glanceable status report instead of decoration. Each returning messenger now encodes real repository data on independent visual channels: core color = health verdict (green healthy / gold building / red needs-attention / grey dormant), particle size + glow = commit velocity over the last week, and ride-home speed = how recently the repo last committed.
+- Fixed the long-standing intent/impl mismatch where the code comment promised messengers "turn green and ride home" but the old `returnColor` only ever painted data-freshness colors (where red meant _fresh_, colliding with the app's red=error semantics). Health now owns the loudest color channel and freshness moved to the kinetic speed channel.
+- Rewrote the bell's closing banner from the static "✓ Manifests synced" into a live tally of what the messengers found (e.g. "🔔 14 healthy · 3 building · 2 need you"), so ringing the bell concludes with an actual verdict on the town.
+- Incidental cleanup: a prior auto-format had nudged `StopMarkerInner` two lines over the sprawl limit, so extracted a small `deriveStopAppearance` helper to bring it back under.
+- Validation: `sm swab` reports NO SLOP DETECTED (13 checks passed); `get_errors` clean on `components/BellMessengers.tsx`, `components/TownStage.tsx`, and `components/StopMarker.tsx`; `./scripts/deploy_app.sh` rebuilt successfully on `http://127.0.0.1:3740/`; live bell-ring confirmed messengers fan out gold with per-repo size variation (core radii 2.98–6.42). Return health colors and the tally banner require the live `/api/manifests` backend (aborts in local preview), so those were verified by logic/type-check rather than on-screen locally.
+
+## Done (2026-05-29) — Animated District Borders Render On Mobile Again
+
+- Restored the animated district wall layer on the mobile route by removing the mobile-only gate that was stripping `DynamicWalls` out of the stage entirely.
+- Kept the rest of the mobile safe-mode cuts in place, so this change only brings back the animated map borders rather than re-enabling the whole desktop ambient stack.
+- Validation: `get_errors` on `components/TownStage.tsx` reported no errors; `./scripts/deploy_app.sh` rebuilt successfully and served `http://127.0.0.1:3740/`; live browser checks on `/the-zeitgeist/?site_type=mobile` found `g.dynamic-walls` present again with `90` SVG `animate` nodes active.
+
+## Done (2026-05-29) — Mobile Board Borders Are Visible Again
+
+- Fixed the mobile chrome regression where the split-flap board and mobile detail cards were still rendering, but their border and shadow colors were being dropped by the browser so the panel edges looked gone.
+- Replaced the mobile-only alpha color expressions with concrete RGBA values so the Time Central board and the mobile detail cards now render their borders and inner chrome again on the live mobile route.
+- Validation: `./scripts/deploy_app.sh` rebuilt successfully and served `http://127.0.0.1:3740/`; live browser checks on `/the-zeitgeist/?site_type=mobile` confirmed the mobile Time Central board now computes `1px` header and board borders again, and the mobile detail cards also compute `1px` borders after opening a site; touched-file diagnostics for `components/MobileCentralBoard.tsx` and `components/MobileDetailBoard.tsx` reported no errors.
+
 ## Done (2026-05-28) — Repainted Sites Are Clickable Again
 
 - Fixed the replacement-render regression where accepted repaint sites lost their sprite-sized click target and only kept the tiny label hitbox.
