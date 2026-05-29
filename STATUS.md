@@ -1,5 +1,11 @@
 # Status
 
+## Done (2026-05-28) — Repainted Sites Are Clickable Again
+
+- Fixed the replacement-render regression where accepted repaint sites lost their sprite-sized click target and only kept the tiny label hitbox.
+- Repainted sites now use a transparent interaction box that covers the visible replacement art footprint, so clicking the painted landmark works again even after the foreground sprite is hidden.
+- Validation: `sm swab -g overconfidence:type-blindness.js --json --output-file .slopmop/last_swab.json` passed with `all_passed: true`; `./scripts/deploy_app.sh` rebuilt successfully and brought the updated preview up on `http://127.0.0.1:3742/` with the repaint runner on `http://127.0.0.1:3743`.
+
 ## Done (2026-05-28) — Department Of Tourism Moved Outside Town Near The Graveyard Coast
 
 - Moved the Department of Tourism landmark out of Town Square and onto the grass strip east of The Graveyard so it now sits outside the town edge near the marked coastal spot.
