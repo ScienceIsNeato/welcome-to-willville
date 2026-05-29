@@ -9,7 +9,10 @@ import {
   repoLabelForStop,
   spriteSizeForStop,
 } from "@/lib/stop-marker-hitbox";
-import { siteForegroundModeForStop } from "@/lib/siteAppearance";
+import {
+  siteForegroundModeForStop,
+  siteUnderlayForStop,
+} from "@/lib/siteAppearance";
 
 type Props = {
   stop: Stop;
@@ -17,6 +20,7 @@ type Props = {
   recentlyUpdated: boolean;
   onClick: (stop: Stop, e: MouseEvent<SVGGElement>) => void;
   onDoubleClick: (stop: Stop, e: MouseEvent<SVGGElement>) => void;
+  forceHideSprite?: boolean;
   draggable?: boolean;
   onDragStart?: (stop: Stop, e: PointerEvent<SVGGElement>) => void;
   onDragMove?: (stop: Stop, e: PointerEvent<SVGGElement>) => void;
@@ -208,12 +212,48 @@ function StopLabel({
   );
 }
 
+function SpriteArt({
+  src,
+  spriteWidth,
+  spriteHeight,
+}: {
+  src: string;
+  spriteWidth: number;
+  spriteHeight: number;
+}) {
+  return (
+    <image
+      href={`${src}?v=${SPRITE_CACHE_VERSION}`}
+      x={SITE_ART_CENTER.x - spriteWidth / 2}
+      y={SITE_ART_CENTER.y - spriteHeight / 2}
+      width={spriteWidth}
+      height={spriteHeight}
+      preserveAspectRatio="xMidYMid meet"
+      style={{ pointerEvents: "all" }}
+    />
+  );
+}
+
+function FallbackMarkerDot({ color }: { color: string }) {
+  return (
+    <circle
+      r={6}
+      cx={SITE_ART_CENTER.x}
+      cy={SITE_ART_CENTER.y}
+      fill={color}
+      stroke="#1a1233"
+      strokeWidth={2}
+    />
+  );
+}
+
 function StopMarkerInner({
   stop,
   isFocused,
   recentlyUpdated,
   onClick,
   onDoubleClick,
+  forceHideSprite = false,
   draggable,
   onDragStart,
   onDragMove,
@@ -222,7 +262,9 @@ function StopMarkerInner({
   const color = STATE_COLOR[stop.status.state];
   const sprite = SITE_SPRITES.get(stop.id);
   const foregroundMode = siteForegroundModeForStop(stop.id);
-  const showSprite = Boolean(sprite) && foregroundMode !== "background-only";
+  const underlay = siteUnderlayForStop(stop.id);
+  const hasReplacementAppearance = forceHideSprite || (foregroundMode === "background-only" && underlay.enabled);
+  const showSprite = Boolean(sprite) && foregroundMode !== "background-only" && !forceHideSprite;
   const { width: spriteWidth, height: spriteHeight } = spriteSizeForStop(stop);
   const label = repoLabelForStop(stop);
   const labelHitBox = labelHitBoxForStop(stop);
@@ -289,27 +331,16 @@ function StopMarkerInner({
       {recentlyUpdated && !isFocused && <RecentUpdatePulse color={color} />}
       {draggable && <RepositionPulse spriteWidth={spriteWidth} />}
       {showSprite && sprite && (
-        <image
-          href={`${sprite.src}?v=${SPRITE_CACHE_VERSION}`}
-          x={SITE_ART_CENTER.x - spriteWidth / 2}
-          y={SITE_ART_CENTER.y - spriteHeight / 2}
-          width={spriteWidth}
-          height={spriteHeight}
-          preserveAspectRatio="xMidYMid meet"
-          style={{ pointerEvents: "all" }}
+        <SpriteArt
+          src={sprite.src}
+          spriteWidth={spriteWidth}
+          spriteHeight={spriteHeight}
         />
       )}
       {isFocused ? (
         <FocusRings />
-      ) : !showSprite ? (
-        <circle
-          r={6}
-          cx={SITE_ART_CENTER.x}
-          cy={SITE_ART_CENTER.y}
-          fill={color}
-          stroke="#1a1233"
-          strokeWidth={2}
-        />
+      ) : !showSprite && !hasReplacementAppearance ? (
+        <FallbackMarkerDot color={color} />
       ) : null}
       <StopLabel label={label} spriteHeight={showSprite ? spriteHeight : 0} />
     </g>
