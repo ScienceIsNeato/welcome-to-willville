@@ -678,6 +678,7 @@ const shellStyle: CSSProperties = {
   position: "relative",
   zIndex: 2,
   width: "calc(100vw - 20px)",
+  maxWidth: 1280,
   margin: "10px auto 0",
   color: "var(--willville-paper)",
   fontFamily: "var(--font-geist-mono), monospace",

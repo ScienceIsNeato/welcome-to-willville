@@ -286,6 +286,7 @@ const shellStyle: CSSProperties = {
   zIndex: 2,
   pointerEvents: "auto",
   width: "calc(100vw - 20px)",
+  maxWidth: 1280,
   height: "clamp(260px, 31vh, 340px)",
   margin: "0 auto 10px",
   display: "grid",
