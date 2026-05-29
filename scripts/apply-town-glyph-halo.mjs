@@ -344,7 +344,7 @@ await runGanglia(
     "--mask",
     cropMask,
     "--description",
-    halo.description,
+    haloPrompt,
     "--output",
     cropOutput,
     "--model",

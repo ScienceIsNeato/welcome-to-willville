@@ -13,6 +13,7 @@ import {
   tooltipText,
   workflowRunStatusLabel,
 } from "./detailBoardUtils";
+import { alphaColor } from "./boardUtils";
 import type { CanalBoat } from "@/lib/canal";
 import type { GitHubWorkflowRun, Stop } from "@/lib/town";
 
@@ -429,19 +430,6 @@ const badgeStyle: CSSProperties = {
   textTransform: "uppercase",
   color: "rgba(51, 255, 87, 0.78)",
 };
-
-function alphaColor(
-  red: number,
-  green: number,
-  blue: number,
-  alpha: number,
-): string {
-  return `rgba(${red}, ${green}, ${blue}, ${clampAlpha(alpha)})`;
-}
-
-function clampAlpha(alpha: number): number {
-  return Math.max(0, Math.min(1, Number(alpha.toFixed(3))));
-}
 
 const emptyItemStyle: CSSProperties = {
   color: "rgba(51, 255, 87, 0.64)",

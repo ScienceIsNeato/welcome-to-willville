@@ -10,6 +10,7 @@ import {
 import { activeQueue, mostActiveStops, type Stop } from "@/lib/town";
 import { DISTRICTS } from "@/lib/willville";
 import {
+  alphaColor,
   isNumberedRow,
   normalizeBoardText as normalize,
   stopLabel,
@@ -462,17 +463,4 @@ function creaseStyle(panelOpacity: number): CSSProperties {
     background: alphaColor(0, 0, 0, panelOpacity * 0.45),
     boxShadow: `0 -1px 0 ${alphaColor(255, 255, 255, panelOpacity * 0.06)}`,
   };
-}
-
-function alphaColor(
-  red: number,
-  green: number,
-  blue: number,
-  alpha: number,
-): string {
-  return `rgba(${red}, ${green}, ${blue}, ${clampAlpha(alpha)})`;
-}
-
-function clampAlpha(alpha: number): number {
-  return Math.max(0, Math.min(1, Number(alpha.toFixed(3))));
 }

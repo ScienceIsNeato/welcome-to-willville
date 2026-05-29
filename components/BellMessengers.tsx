@@ -190,11 +190,12 @@ export function BellMessengers({
       const outboundStart = index * stagger;
       const outboundEnd = outboundStart + OUTBOUND_SECONDS;
       const completedAt = completedAtByStopId[messenger.stopId];
-      const returnStart = returnStartSeconds({
-        completedAt,
-        startedAt,
-        outboundEnd,
-      });
+      const returnStart =
+        returnStartSeconds({
+          completedAt,
+          startedAt,
+          outboundEnd,
+        }) + (messenger.blocked ? BLOCKED_ORBIT_BONUS : 0);
       return Math.max(latest, returnStart + messenger.returnSeconds);
     }, 0);
 
