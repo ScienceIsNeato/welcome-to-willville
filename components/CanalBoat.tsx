@@ -138,7 +138,7 @@ export function CanalBoat({ boat, position }: Props) {
             width={SHIP_W}
             height={SHIP_H}
             preserveAspectRatio="xMidYMid meet"
-            opacity={boat.draft ? 0.55 : 1}
+            opacity={1}
             style={{
               pointerEvents: "none",
               filter: hullFilter,

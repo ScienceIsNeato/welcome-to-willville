@@ -101,7 +101,7 @@ function shellStyle(expanded: boolean, panelOpacity: number): CSSProperties {
     borderRadius: "18px 18px 12px 12px",
     border: `1px solid rgba(230,198,106,${0.28 * panelOpacity})`,
     background:
-      "linear-gradient(180deg, rgba(11,8,7,0.94) 0%, rgba(8,7,12,0.98) 100%)",
+      "linear-gradient(180deg, rgba(11,8,7,0.30) 0%, rgba(8,7,12,0.30) 100%)",
     boxShadow:
       "0 18px 36px rgba(0,0,0,0.42), inset 0 0 0 1px rgba(230,198,106,0.08)",
     backdropFilter: "blur(12px)",
