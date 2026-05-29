@@ -354,7 +354,8 @@ function repoAge(createdAt: string | undefined): string {
   const months = totalMonths % 12;
   if (years > 0 && months > 0) return `${years}Y ${months}M`;
   if (years > 0) return `${years}Y`;
-  return `${months}M`;
+  if (months > 0) return `${months}M`;
+  return `${Math.max(0, Math.floor(ms / 86_400_000))}D`;
 }
 
 function formatSize(kb: number | undefined): string {
