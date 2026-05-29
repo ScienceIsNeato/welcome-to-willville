@@ -522,35 +522,25 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
       return;
     }
 
-    const compactViewport = window.matchMedia("(max-width: 1024px)");
     const touchLikeInput = window.matchMedia(
       "(pointer: coarse) and (hover: none)",
     );
 
     const apply = () => {
-      setResponsiveMobileSafeMode(
-        compactViewport.matches || touchLikeInput.matches,
-      );
+      setResponsiveMobileSafeMode(touchLikeInput.matches);
     };
 
     apply();
 
-    if (
-      typeof compactViewport.addEventListener === "function" &&
-      typeof touchLikeInput.addEventListener === "function"
-    ) {
-      compactViewport.addEventListener("change", apply);
+    if (typeof touchLikeInput.addEventListener === "function") {
       touchLikeInput.addEventListener("change", apply);
       return () => {
-        compactViewport.removeEventListener("change", apply);
         touchLikeInput.removeEventListener("change", apply);
       };
     }
 
-    compactViewport.addListener(apply);
     touchLikeInput.addListener(apply);
     return () => {
-      compactViewport.removeListener(apply);
       touchLikeInput.removeListener(apply);
     };
   }, [forcedMobileSafeMode, isClient]);
