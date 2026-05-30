@@ -205,82 +205,6 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       resetDragInteraction,
     });
 
-  const handleMarkerDragStart = useCallback(
-    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
-      if (!isRepositionMode || stop.id !== effectivePlannerStopId) {
-        return;
-      }
-      e.currentTarget.setPointerCapture(e.pointerId);
-      activeDragIdRef.current = stop.id;
-      activeDragPointerRef.current = {
-        element: e.currentTarget,
-        pointerId: e.pointerId,
-      };
-      setMovedStops((prev) => {
-        if (prev[stop.id]) return prev;
-        return {
-          ...prev,
-          [stop.id]: {
-            original: { ...stop.position, district: stop.district },
-            current: { ...stop.position, district: stop.district },
-          },
-        };
-      });
-    },
-    [effectivePlannerStopId, isRepositionMode],
-  );
-
-  const handleMarkerDragMove = useCallback(
-    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
-      if (activeDragIdRef.current !== stop.id) return;
-      const svg = svgRef.current;
-      if (!svg) return;
-      const snap = getCameraSnapshot();
-      const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
-
-      const newX = Math.round(wx - TOWN_OFFSET.x);
-      const newY = Math.round(wy - TOWN_OFFSET.y);
-
-      const clampedX = Math.max(0, Math.min(TOWN.width, newX));
-      const clampedY = Math.max(0, Math.min(TOWN.height, newY));
-
-      setLocalStops((prevStops) =>
-        prevStops.map((s) =>
-          s.id === stop.id
-            ? { ...s, position: { x: clampedX, y: clampedY } }
-            : s,
-        ),
-      );
-
-      setMovedStops((prev) => {
-        const existing = prev[stop.id];
-        if (!existing) return prev;
-        return {
-          ...prev,
-          [stop.id]: {
-            ...existing,
-            current: {
-              ...existing.current,
-              x: clampedX,
-              y: clampedY,
-            },
-          },
-        };
-      });
-    },
-    [getCameraSnapshot],
-  );
-
-  const handleMarkerDragEnd = useCallback(
-    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
-      if (activeDragIdRef.current !== stop.id) return;
-      if (!releaseHeldInteraction({ dispatchSyntheticEvents: false })) {
-        clearRepositionDrag(e.currentTarget, e.pointerId);
-      }
-    },
-    [clearRepositionDrag, releaseHeldInteraction],
-  );
-
   const handleResetStop = useCallback(
     (stopId: string) => {
       const item = movedStops[stopId];
@@ -436,6 +360,94 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     plannerStop,
     movedStops,
   });
+
+  const handleMarkerDragStart = useCallback(
+    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
+      if (
+        !isRepositionMode ||
+        stop.id !== effectivePlannerStopId ||
+        placementQueueState === "review" ||
+        placementQueueState === "running" ||
+        repaintQueueState === "review" ||
+        repaintQueueState === "running"
+      ) {
+        return;
+      }
+      e.currentTarget.setPointerCapture(e.pointerId);
+      activeDragIdRef.current = stop.id;
+      activeDragPointerRef.current = {
+        element: e.currentTarget,
+        pointerId: e.pointerId,
+      };
+      setMovedStops((prev) => {
+        if (prev[stop.id]) return prev;
+        return {
+          ...prev,
+          [stop.id]: {
+            original: { ...stop.position, district: stop.district },
+            current: { ...stop.position, district: stop.district },
+          },
+        };
+      });
+    },
+    [
+      effectivePlannerStopId,
+      isRepositionMode,
+      placementQueueState,
+      repaintQueueState,
+    ],
+  );
+
+  const handleMarkerDragMove = useCallback(
+    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
+      if (activeDragIdRef.current !== stop.id) return;
+      const svg = svgRef.current;
+      if (!svg) return;
+      const snap = getCameraSnapshot();
+      const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
+
+      const newX = Math.round(wx - TOWN_OFFSET.x);
+      const newY = Math.round(wy - TOWN_OFFSET.y);
+
+      const clampedX = Math.max(0, Math.min(TOWN.width, newX));
+      const clampedY = Math.max(0, Math.min(TOWN.height, newY));
+
+      setLocalStops((prevStops) =>
+        prevStops.map((s) =>
+          s.id === stop.id
+            ? { ...s, position: { x: clampedX, y: clampedY } }
+            : s,
+        ),
+      );
+
+      setMovedStops((prev) => {
+        const existing = prev[stop.id];
+        if (!existing) return prev;
+        return {
+          ...prev,
+          [stop.id]: {
+            ...existing,
+            current: {
+              ...existing.current,
+              x: clampedX,
+              y: clampedY,
+            },
+          },
+        };
+      });
+    },
+    [getCameraSnapshot],
+  );
+
+  const handleMarkerDragEnd = useCallback(
+    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
+      if (activeDragIdRef.current !== stop.id) return;
+      if (!releaseHeldInteraction({ dispatchSyntheticEvents: false })) {
+        clearRepositionDrag(e.currentTarget, e.pointerId);
+      }
+    },
+    [clearRepositionDrag, releaseHeldInteraction],
+  );
 
   const loadTown = useCallback(
     (options: { signal?: AbortSignal; fresh?: boolean } = {}) => {
@@ -871,7 +883,12 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           !Number.isNaN(updated) &&
           now - updated < DAY_MS;
         const markerDraggable =
-          isRepositionMode && stop.id === effectivePlannerStopId;
+          isRepositionMode &&
+          stop.id === effectivePlannerStopId &&
+          placementQueueState !== "review" &&
+          placementQueueState !== "running" &&
+          repaintQueueState !== "review" &&
+          repaintQueueState !== "running";
         return (
           <StopMarker
             key={`${stop.district}-${stop.id}`}
@@ -901,6 +918,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       isRepositionMode,
       now,
       replacementUnderlayStopIds,
+      placementQueueState,
+      repaintQueueState,
     ],
   );
 
