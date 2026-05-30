@@ -16,19 +16,13 @@ import {
   TOWN,
   TOWN_OFFSET,
   WORLD,
-  MANUAL_STOPS,
   type DistrictId,
 } from "@/lib/willville";
 import type { Stop } from "@/lib/town";
 import { isKnownDistrict } from "@/lib/slugs";
-import { HEURISTICS } from "@/lib/willville.heuristics";
 import type { CanalBoat } from "@/lib/canal";
 import { sitePositionForStop } from "@/lib/town-layout";
-import {
-  formatHeuristics,
-  formatManualStops,
-  type RepositionStopDelta,
-} from "./repositionPlannerUtils";
+import { type RepositionStopDelta } from "./repositionPlannerUtils";
 import { DistrictZone } from "./DistrictZone";
 import { WorldSubstrate } from "./WorldSubstrate";
 import { StopMarker } from "./StopMarker";
@@ -45,6 +39,7 @@ import { TownPerfPanel } from "./TownPerfPanel";
 import { PanelChromeControls } from "./PanelChromeControls";
 import { RepositionPlannerPanel, TownStageChrome } from "./TownStageChrome";
 import { useRepaintPipeline } from "./useRepaintPipeline";
+import { usePlacementPipeline } from "./usePlacementPipeline";
 import { screenToWorld, useTownCamera } from "@/hooks/useTownCamera";
 import {
   useEscapeReleaseInteraction,
@@ -375,30 +370,51 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     [localStops],
   );
 
-  const [copied, setCopied] = useState(false);
-  const handleCopy = useCallback(() => {
-    const text = `// WELCOME TO WILLVILLE - UPDATED SITE POSITIONS
-// Copy the blocks below to update the coordinates in the codebase.
-
-// --- IN lib/willville.heuristics.ts ---
-${formatHeuristics(HEURISTICS, localStops)}
-
-// --- IN lib/willville.ts ---
-${formatManualStops(MANUAL_STOPS, localStops)}
-`;
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    });
-  }, [localStops]);
-
   const changedStops = Object.entries(movedStops).filter(
     ([_, item]) =>
       item.original.x !== item.current.x ||
       item.original.y !== item.current.y ||
       item.original.district !== item.current.district,
   );
+
+  const handlePlacementAccepted = useCallback((stopId: string) => {
+    setMovedStops((prev) => {
+      const next = { ...prev };
+      delete next[stopId];
+      return next;
+    });
+  }, []);
+
+  const handlePlacementRejected = useCallback(
+    (stopId: string) => {
+      handleResetStop(stopId);
+    },
+    [handleResetStop],
+  );
+
   const {
+    placementControlsBusy,
+    placementQueueState,
+    placementQueueMessage,
+    canQueuePlacement,
+    queuePlacementLabel,
+    canAcceptPlacement,
+    canRejectPlacement,
+    handleQueuePlacement,
+    handleAcceptPlacement,
+    handleRejectPlacement,
+  } = usePlacementPipeline({
+    isClient,
+    isRepositionMode,
+    plannerStop,
+    movedStops,
+    onPlacementAccepted: handlePlacementAccepted,
+    onPlacementRejected: handlePlacementRejected,
+  });
+
+  const {
+    customPrompt,
+    setCustomPrompt,
     previewUnderlayHrefs,
     replacementUnderlayStopIds,
     repaintControlsBusy,
@@ -1143,14 +1159,18 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
               <WorldSubstrate />
 
               <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
-                <GeneratedTownBase />
+                <GeneratedTownBase mobileSafeMode={mobileSafeMode} />
                 <TownSiteAppearances
                   stops={currentStops}
                   previewUnderlayHrefs={previewUnderlayHrefs}
                 />
                 {!mobileSafeMode && <ChimneySmoke />}
-                <DynamicWalls />
-                <Canal boats={boats} layer="base" />
+                {!mobileSafeMode && <DynamicWalls />}
+                <Canal
+                  boats={boats}
+                  layer="base"
+                  mobileSafeMode={mobileSafeMode}
+                />
                 {DISTRICTS.map((d) => (
                   <DistrictZone
                     key={d.id}
@@ -1164,7 +1184,13 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                   onEngineClick={closeHud}
                   engineLabel="Return to the town overview"
                 />
-                {!mobileSafeMode && <Canal boats={boats} layer="traffic" />}
+                {!mobileSafeMode && (
+                  <Canal
+                    boats={boats}
+                    layer="traffic"
+                    mobileSafeMode={mobileSafeMode}
+                  />
+                )}
                 {!mobileSafeMode && <WorldWorkerLayer stops={currentStops} />}
                 {populating !== "idle" && (
                   <BellMessengers
@@ -1300,8 +1326,18 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
               changedStops={changedStops}
               localStops={localStops}
               onResetStop={handleResetStop}
-              onCopy={handleCopy}
-              copied={copied}
+              onQueuePlacement={handleQueuePlacement}
+              canQueuePlacement={canQueuePlacement}
+              queuePlacementLabel={queuePlacementLabel}
+              onAcceptPlacement={handleAcceptPlacement}
+              canAcceptPlacement={canAcceptPlacement}
+              acceptPlacementLabel="✅ Accept Site Change"
+              onRejectPlacement={handleRejectPlacement}
+              canRejectPlacement={canRejectPlacement}
+              rejectPlacementLabel="↩ Reject Site Change"
+              placementControlsBusy={placementControlsBusy}
+              placementQueueState={placementQueueState}
+              placementQueueMessage={placementQueueMessage}
               onQueueRepaint={handleQueueRepaint}
               canQueueRepaint={canQueueRepaint}
               queueRepaintLabel={queueRepaintLabel}
@@ -1320,6 +1356,8 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
               repaintCliOutput={repaintCliOutput}
               onResetAll={handleResetAll}
               onExitEditor={() => router.push("/")}
+              customPrompt={customPrompt}
+              setCustomPrompt={setCustomPrompt}
             />
           )}
         </div>

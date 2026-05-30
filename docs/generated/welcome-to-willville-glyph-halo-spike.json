@@ -1,0 +1,36 @@
+{
+  "stopId": "welcome-to-willville",
+  "districtId": "town-square",
+  "sourceImage": "/art/town/districts/town-square.png",
+  "spriteImage": "/art/stops/willville-town-hall-totem.png",
+  "regionMaskImage": "/art/town/masks/district-art/town-square.png",
+  "overlayOutput": "/art/town/glyph-halos/welcome-to-willville.png",
+  "alphaBox": {
+    "x": 463,
+    "y": 392,
+    "width": 140,
+    "height": 140
+  },
+  "radialScale": 1.14,
+  "haloRayPadding": 10,
+  "maskBox": {
+    "x": 453,
+    "y": 382,
+    "width": 160,
+    "height": 160
+  },
+  "cropBox": {
+    "x": 429,
+    "y": 358,
+    "width": 208,
+    "height": 208
+  },
+  "authoringCrop": {
+    "left": 1716,
+    "top": 1432,
+    "width": 832,
+    "height": 832
+  },
+  "debugMaskPath": "/docs/generated/welcome-to-willville-glyph-halo-mask.png",
+  "dryRun": true
+}

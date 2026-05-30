@@ -172,7 +172,7 @@ export const HEURISTICS: Heuristic[] = [
     displayName: "ganglia-studio",
     district: "gates-of-hell",
     lines: ["ai", "halloween"],
-    position: { x: 1181, y: 888 },
+    position: { x: 1140, y: 918 },
     blurb: "Multimedia generation suite. Spooky-capable.",
     glyph: {
       label: "studio easel",

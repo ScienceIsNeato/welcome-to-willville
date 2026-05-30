@@ -268,6 +268,7 @@ export function TownStageChrome({
 }
 
 type RepaintQueueState = "idle" | "running" | "review" | "error";
+type PlacementQueueState = "idle" | "running" | "review" | "error";
 
 type RepositionPlannerPanelProps = {
   effectivePlannerStopId: string;
@@ -278,9 +279,19 @@ type RepositionPlannerPanelProps = {
   changedStops: Array<[string, RepositionStopDelta]>;
   localStops: Stop[];
   onResetStop: (stopId: string) => void;
-  onCopy: () => void;
-  copied: boolean;
-  onQueueRepaint: () => void;
+  onQueuePlacement: () => void;
+  canQueuePlacement: boolean;
+  queuePlacementLabel: string;
+  onAcceptPlacement: () => void;
+  canAcceptPlacement: boolean;
+  acceptPlacementLabel: string;
+  onRejectPlacement: () => void;
+  canRejectPlacement: boolean;
+  rejectPlacementLabel: string;
+  placementControlsBusy: boolean;
+  placementQueueState: PlacementQueueState;
+  placementQueueMessage: string;
+  onQueueRepaint: (prompt?: string) => void;
   canQueueRepaint: boolean;
   queueRepaintLabel: string;
   onAcceptRepaint: () => void;
@@ -298,6 +309,8 @@ type RepositionPlannerPanelProps = {
   repaintCliOutput: string;
   onResetAll: () => void;
   onExitEditor: () => void;
+  customPrompt: string;
+  setCustomPrompt: (val: string) => void;
 };
 
 export function RepositionPlannerPanel({
@@ -309,8 +322,18 @@ export function RepositionPlannerPanel({
   changedStops,
   localStops,
   onResetStop,
-  onCopy,
-  copied,
+  onQueuePlacement,
+  canQueuePlacement,
+  queuePlacementLabel,
+  onAcceptPlacement,
+  canAcceptPlacement,
+  acceptPlacementLabel,
+  onRejectPlacement,
+  canRejectPlacement,
+  rejectPlacementLabel,
+  placementControlsBusy,
+  placementQueueState,
+  placementQueueMessage,
   onQueueRepaint,
   canQueueRepaint,
   queueRepaintLabel,
@@ -329,6 +352,8 @@ export function RepositionPlannerPanel({
   repaintCliOutput,
   onResetAll,
   onExitEditor,
+  customPrompt,
+  setCustomPrompt,
 }: RepositionPlannerPanelProps) {
   return (
     <div
@@ -626,19 +651,27 @@ export function RepositionPlannerPanel({
       >
         <button
           type="button"
-          onClick={onCopy}
+          onClick={onQueuePlacement}
+          disabled={!canQueuePlacement || placementControlsBusy}
           style={{
             width: "100%",
-            background: copied
-              ? "#7bd389"
-              : "linear-gradient(90deg, #b8862c 0%, #e6c66a 100%)",
+            background:
+              placementQueueState === "review"
+                ? "#7bd389"
+                : placementQueueState === "error"
+                  ? "#d45757"
+                  : "linear-gradient(90deg, #b8862c 0%, #e6c66a 100%)",
             border: 0,
             color: "#1a1233",
             borderRadius: 6,
             padding: "10px 14px",
             fontSize: 13,
             fontWeight: 700,
-            cursor: "pointer",
+            cursor:
+              !canQueuePlacement || placementControlsBusy
+                ? "not-allowed"
+                : "pointer",
+            opacity: !canQueuePlacement || placementControlsBusy ? 0.65 : 1,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -647,26 +680,123 @@ export function RepositionPlannerPanel({
             boxShadow: "0 4px 12px rgba(230,198,106,0.25)",
           }}
           onMouseEnter={(e) => {
-            if (!copied) {
+            if (canQueuePlacement && !placementControlsBusy) {
               e.currentTarget.style.transform = "translateY(-1px)";
               e.currentTarget.style.boxShadow =
                 "0 6px 16px rgba(230,198,106,0.4)";
             }
           }}
           onMouseLeave={(e) => {
-            if (!copied) {
+            if (canQueuePlacement && !placementControlsBusy) {
               e.currentTarget.style.transform = "translateY(0px)";
               e.currentTarget.style.boxShadow =
                 "0 4px 12px rgba(230,198,106,0.25)";
             }
           }}
         >
-          {copied ? "✓ Copied!" : "📋 Copy Heuristics Code"}
+          {queuePlacementLabel}
         </button>
+
+        {(canAcceptPlacement || canRejectPlacement) && (
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              type="button"
+              onClick={onAcceptPlacement}
+              disabled={!canAcceptPlacement || placementControlsBusy}
+              style={{
+                flex: 1,
+                background: "rgba(123, 211, 137, 0.14)",
+                border: "1px solid rgba(123, 211, 137, 0.45)",
+                color: "#d9f8dd",
+                borderRadius: 6,
+                padding: "9px 12px",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor:
+                  !canAcceptPlacement || placementControlsBusy
+                    ? "not-allowed"
+                    : "pointer",
+                opacity:
+                  !canAcceptPlacement || placementControlsBusy ? 0.65 : 1,
+                transition: "all 0.2s",
+              }}
+            >
+              {acceptPlacementLabel}
+            </button>
+
+            <button
+              type="button"
+              onClick={onRejectPlacement}
+              disabled={!canRejectPlacement || placementControlsBusy}
+              style={{
+                flex: 1,
+                background: "rgba(220,80,80,0.12)",
+                border: "1px solid rgba(220,80,80,0.4)",
+                color: "#f4a0a0",
+                borderRadius: 6,
+                padding: "9px 12px",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor:
+                  !canRejectPlacement || placementControlsBusy
+                    ? "not-allowed"
+                    : "pointer",
+                opacity:
+                  !canRejectPlacement || placementControlsBusy ? 0.65 : 1,
+                transition: "all 0.2s",
+              }}
+            >
+              {rejectPlacementLabel}
+            </button>
+          </div>
+        )}
+
+        {placementQueueMessage && (
+          <div
+            style={{
+              fontSize: 11,
+              lineHeight: 1.35,
+              opacity: 0.86,
+              color: placementQueueState === "error" ? "#f4a0a0" : "#e7e0c2",
+            }}
+          >
+            {placementQueueMessage}
+          </div>
+        )}
+
+        <label
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
+            fontSize: 12,
+            marginBottom: 4,
+          }}
+        >
+          <span style={{ opacity: 0.8, fontWeight: 600, color: "#e6c66a" }}>
+            Custom Paint Description (Optional)
+          </span>
+          <textarea
+            value={customPrompt}
+            onChange={(e) => setCustomPrompt(e.target.value)}
+            placeholder="Describe what the site should look like (optional). Leave empty to use default prompt."
+            style={{
+              background: "rgba(10, 8, 18, 0.88)",
+              color: "var(--willville-paper)",
+              border: "1px solid rgba(230,198,106,0.25)",
+              borderRadius: 6,
+              padding: "8px 10px",
+              fontSize: 12,
+              fontFamily: "var(--font-sans), sans-serif",
+              resize: "vertical",
+              minHeight: 55,
+            }}
+          />
+        </label>
 
         <button
           type="button"
-          onClick={onQueueRepaint}
+          onClick={() => onQueueRepaint(customPrompt)}
           disabled={!canQueueRepaint || repaintControlsBusy}
           style={{
             width: "100%",

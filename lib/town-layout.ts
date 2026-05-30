@@ -1,4 +1,4 @@
-import rawTownLayout from "@/data/town-layout.v1.json";
+import rawTownLayout from "../data/town-layout.v1.json" with { type: "json" };
 import {
   hashStr,
   resolveCanalSection,

@@ -36,6 +36,7 @@ const dryRun = args.get("dry-run") === "true";
 const model = args.get("model") ?? "gpt-image-1";
 const quality = args.get("quality") ?? "high";
 const feather = args.get("feather") ?? "15";
+const customPrompt = args.get("custom-prompt");
 const gangliaStudioDir =
   args.get("ganglia-studio-dir") ??
   process.env.GANGLIA_STUDIO_DIR ??
@@ -68,15 +69,17 @@ if (!dryRun && !gangliaStudioDir) {
   );
 }
 
-const [{ HEURISTICS }, spriteManifest, districtArt] = await Promise.all([
-  import("../lib/willville.heuristics.ts"),
-  readFile(resolve(root, "data/town-site-sprites.v1.json"), "utf8").then(
-    JSON.parse,
-  ),
-  readFile(resolve(root, "data/town-district-art.v1.json"), "utf8").then(
-    JSON.parse,
-  ),
-]);
+const [{ HEURISTICS }, { sitePositionForStop }, spriteManifest, districtArt] =
+  await Promise.all([
+    import("../lib/willville.heuristics.ts"),
+    import("../lib/town-layout.ts"),
+    readFile(resolve(root, "data/town-site-sprites.v1.json"), "utf8").then(
+      JSON.parse,
+    ),
+    readFile(resolve(root, "data/town-district-art.v1.json"), "utf8").then(
+      JSON.parse,
+    ),
+  ]);
 
 function projectPath(publicPath) {
   return resolve(root, "public", publicPath.replace(/^\//, ""));
@@ -98,19 +101,39 @@ async function buildMask(
   const width = cropBox.width * scale;
   const height = cropBox.height * scale;
   const buffer = Buffer.alloc(width * height * 4, 255);
-  const spriteWidth = Math.max(1, Math.round(sprite.width * scale));
-  const spriteHeight = Math.max(1, Math.round(sprite.height * scale));
-  const spriteCenterLocal = {
-    x: (spriteCenter.x - cropBox.x) * scale,
-    y: (spriteCenter.y - cropBox.y) * scale,
-  };
-  const { data: spritePixels } = await sharp(spritePath)
-    .ensureAlpha()
-    .resize(spriteWidth, spriteHeight, {
-      fit: "fill",
-    })
-    .raw()
-    .toBuffer({ resolveWithObject: true });
+
+  const hasSpriteFile = existsSync(spritePath);
+  let spritePixels = null;
+  let spriteWidth = 0;
+  let spriteHeight = 0;
+  let spriteCenterLocal = { x: 0, y: 0 };
+  let spriteTopLeft = { x: 0, y: 0 };
+
+  if (hasSpriteFile) {
+    spriteWidth = Math.max(1, Math.round(sprite.width * scale));
+    spriteHeight = Math.max(1, Math.round(sprite.height * scale));
+    spriteCenterLocal = {
+      x: (spriteCenter.x - cropBox.x) * scale,
+      y: (spriteCenter.y - cropBox.y) * scale,
+    };
+    const result = await sharp(spritePath)
+      .ensureAlpha()
+      .resize(spriteWidth, spriteHeight, {
+        fit: "fill",
+      })
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    spritePixels = result.data;
+    const spritePixelCenter = {
+      x: spriteWidth / 2,
+      y: spriteHeight / 2,
+    };
+    spriteTopLeft = {
+      x: spriteCenterLocal.x - spritePixelCenter.x,
+      y: spriteCenterLocal.y - spritePixelCenter.y,
+    };
+  }
+
   const { data: regionMaskPixels } = await sharp(regionMaskPath)
     .ensureAlpha()
     .extract({
@@ -126,17 +149,12 @@ async function buildMask(
     .raw()
     .toBuffer({ resolveWithObject: true });
 
-  const spritePixelCenter = {
-    x: spriteWidth / 2,
-    y: spriteHeight / 2,
-  };
-  const spriteTopLeft = {
-    x: spriteCenterLocal.x - spritePixelCenter.x,
-    y: spriteCenterLocal.y - spritePixelCenter.y,
-  };
   const safeScale = Math.max(1, radialScale);
 
   const hasGlyphAlphaAt = (sampleX, sampleY) => {
+    if (!hasSpriteFile || !spritePixels) {
+      return false;
+    }
     const spriteX = Math.floor(sampleX - spriteTopLeft.x);
     const spriteY = Math.floor(sampleY - spriteTopLeft.y);
     if (
@@ -234,29 +252,59 @@ async function runGanglia(commandArgs, cwd) {
   if (stderr) process.stderr.write(stderr);
 }
 
-const sprite = spriteManifest.sprites.find(
-  (item) => item.stopId === requestedId,
-);
-if (!sprite) {
-  throw new Error(`Unknown glyph sprite: ${requestedId}`);
-}
-
-const halo = glyphHaloConfigForSprite(sprite);
-if (!halo) {
-  throw new Error(
-    `Glyph ${requestedId} does not have an enabled inpaintHalo config.`,
-  );
-}
-const haloPrompt = glyphHaloPromptForSprite(sprite);
-if (!haloPrompt) {
-  throw new Error(`Glyph ${requestedId} does not have a repaint prompt.`);
-}
-
 const heuristic = HEURISTICS.find(
   (item) => slugForHeuristic(item) === requestedId,
 );
-if (!heuristic?.position) {
-  throw new Error(`No heuristic position found for ${requestedId}`);
+
+const districtOverride = args.get("district");
+const xOverride = args.get("x");
+const yOverride = args.get("y");
+
+let sprite = spriteManifest.sprites.find((item) => item.stopId === requestedId);
+if (!sprite) {
+  if (customPrompt) {
+    sprite = {
+      stopId: requestedId,
+      district: districtOverride || (heuristic?.district ?? "town-square"),
+      kind: "bespoke",
+      src: `/art/stops/${requestedId}.png`,
+      width: 100,
+      height: 100,
+      anchorX: 50,
+      anchorY: 78,
+    };
+  } else {
+    throw new Error(`Unknown glyph sprite: ${requestedId}`);
+  }
+} else if (districtOverride) {
+  sprite = { ...sprite, district: districtOverride };
+}
+
+const halo = glyphHaloConfigForSprite(sprite) ?? {
+  description: customPrompt || "",
+};
+const haloPrompt = customPrompt || glyphHaloPromptForSprite(sprite);
+if (!haloPrompt) {
+  throw new Error(`Glyph ${requestedId} does not have a paint prompt.`);
+}
+
+let position = null;
+if (xOverride && yOverride) {
+  position = {
+    x: Number(xOverride),
+    y: Number(yOverride),
+  };
+} else {
+  position =
+    heuristic?.position ??
+    sitePositionForStop(
+      sprite.district,
+      requestedId,
+      heuristic?.repo ?? `ScienceIsNeato/${requestedId}`,
+    );
+}
+if (!position) {
+  throw new Error(`No position found or calculated for ${requestedId}`);
 }
 
 const districtLayer = districtArt.layers.find(
@@ -271,15 +319,15 @@ const canvas = {
   height: districtLayer.pixelSize.height / (districtLayer.scale ?? 4),
 };
 const alphaBox = clampBoxToCanvas(
-  glyphHaloAlphaBoxForSprite(sprite, heuristic.position),
+  glyphHaloAlphaBoxForSprite(sprite, position),
   canvas,
 );
 const maskBox = clampBoxToCanvas(
-  glyphHaloMaskBoxForSprite(sprite, heuristic.position),
+  glyphHaloMaskBoxForSprite(sprite, position),
   canvas,
 );
 const cropBox = clampBoxToCanvas(
-  glyphHaloCropBoxForSprite(sprite, heuristic.position),
+  glyphHaloCropBoxForSprite(sprite, position),
   canvas,
 );
 
@@ -306,7 +354,7 @@ await sharp(sourceImage).extract(authoringCrop).toFile(cropInput);
 
 const mask = await buildMask(
   cropBox,
-  heuristic.position,
+  position,
   sprite,
   spriteImage,
   regionMaskImage,

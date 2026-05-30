@@ -51,6 +51,7 @@ if (!Number.isFinite(port) || port <= 0) {
 const defaultState = {
   version: 1,
   activeJob: null,
+  activePlacement: null,
   acceptedPreviews: [],
 };
 
@@ -87,6 +88,7 @@ async function readState() {
     ...structuredClone(defaultState),
     ...parsed,
     activeJob: parsed.activeJob ?? null,
+    activePlacement: parsed.activePlacement ?? null,
     acceptedPreviews: Array.isArray(parsed.acceptedPreviews)
       ? parsed.acceptedPreviews
       : [],
@@ -162,14 +164,17 @@ function buildPreview(stopId, cacheBust = String(Date.now())) {
   };
 }
 
-function liveRepaintSupportReason(stopId) {
+function liveRepaintSupportReason(stopId, hasCustomPrompt) {
   const sprite = siteSpriteByStop.get(stopId);
   if (!sprite) {
-    return "This site does not have a sprite config for the repaint pipeline yet.";
+    if (hasCustomPrompt) {
+      return "";
+    }
+    return "This site does not have a sprite config for the paint pipeline yet.";
   }
 
-  if (!glyphHaloConfigForSprite(sprite)) {
-    return "Live repaint is explicitly disabled for this site in sprite config.";
+  if (!glyphHaloConfigForSprite(sprite) && !hasCustomPrompt) {
+    return "Live paint is explicitly disabled for this site in sprite config.";
   }
 
   return "";
@@ -241,6 +246,7 @@ function presentState(state) {
   return {
     available: state.activeJob === null,
     activeJob: state.activeJob,
+    activePlacement: state.activePlacement,
     acceptedPreviews: state.acceptedPreviews,
   };
 }
@@ -269,6 +275,220 @@ function validateChange(change) {
   };
 
   return pointIsValid(value.from) && pointIsValid(value.to);
+}
+
+function validatePlacementPayload(body) {
+  if (typeof body !== "object" || body === null) {
+    return null;
+  }
+
+  const change = body.change;
+  if (!validateChange(change)) {
+    return null;
+  }
+
+  if (typeof body.repo !== "string" || body.repo.trim().length === 0) {
+    return null;
+  }
+
+  const displayName =
+    typeof body.displayName === "string" && body.displayName.trim().length > 0
+      ? body.displayName.trim()
+      : change.stopId;
+
+  return {
+    change,
+    repo: body.repo.trim(),
+    displayName,
+  };
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function findMatchingObjectEnd(source, openBraceIndex) {
+  let depth = 0;
+  let inQuote = null;
+  let escaped = false;
+
+  for (let i = openBraceIndex; i < source.length; i += 1) {
+    const ch = source[i];
+
+    if (inQuote) {
+      if (escaped) {
+        escaped = false;
+        continue;
+      }
+
+      if (ch === "\\") {
+        escaped = true;
+        continue;
+      }
+
+      if (ch === inQuote) {
+        inQuote = null;
+      }
+      continue;
+    }
+
+    if (ch === '"' || ch === "'" || ch === "`") {
+      inQuote = ch;
+      continue;
+    }
+
+    if (ch === "{") {
+      depth += 1;
+      continue;
+    }
+
+    if (ch === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        return i + 1;
+      }
+    }
+  }
+
+  return -1;
+}
+
+function rewriteHeuristicPlacement(source, { repo, to }) {
+  const repoMarker = new RegExp(
+    `repo:\\s*${escapeRegExp(JSON.stringify(repo))}`,
+  );
+  const repoMatch = repoMarker.exec(source);
+  if (!repoMatch) {
+    throw new Error(`Could not find heuristic entry for ${repo}.`);
+  }
+
+  const objectStart = source.lastIndexOf("\n  {", repoMatch.index);
+  if (objectStart === -1) {
+    throw new Error(`Could not locate object start for ${repo}.`);
+  }
+
+  const openBraceIndex = source.indexOf("{", objectStart);
+  const objectEnd = findMatchingObjectEnd(source, openBraceIndex);
+  if (objectEnd === -1) {
+    throw new Error(`Could not locate object end for ${repo}.`);
+  }
+
+  const objectText = source.slice(openBraceIndex, objectEnd);
+  const districtPattern = /(\n\s*district:\s*)["'][^"']+["']\s*,/;
+  if (!districtPattern.test(objectText)) {
+    throw new Error(`Heuristic entry for ${repo} is missing a district field.`);
+  }
+
+  let nextObjectText = objectText.replace(
+    districtPattern,
+    `$1${JSON.stringify(to.district)},`,
+  );
+
+  const positionPattern = /(\n\s*position:\s*)\{[^}]*\}\s*,/;
+  if (positionPattern.test(nextObjectText)) {
+    nextObjectText = nextObjectText.replace(
+      positionPattern,
+      `$1{ x: ${to.x}, y: ${to.y} },`,
+    );
+  } else {
+    nextObjectText = nextObjectText.replace(
+      /(\n\s*district:\s*["'][^"']+["']\s*,)/,
+      `$1\n    position: { x: ${to.x}, y: ${to.y} },`,
+    );
+  }
+
+  if (nextObjectText === objectText) {
+    return source;
+  }
+
+  return (
+    source.slice(0, openBraceIndex) + nextObjectText + source.slice(objectEnd)
+  );
+}
+
+async function acceptPlacementJob() {
+  const state = await readState();
+  const job = state.activePlacement;
+  if (!job || job.status !== "awaiting_review") {
+    throw new Error("No staged site change is waiting for review.");
+  }
+
+  const heuristicsPath = resolve(root, "lib/willville.heuristics.ts");
+  const before = await readFile(heuristicsPath, "utf8");
+  const after = rewriteHeuristicPlacement(before, {
+    repo: job.repo,
+    to: job.change.to,
+  });
+
+  if (after !== before) {
+    await writeFile(heuristicsPath, after);
+  }
+
+  const nextState = await withState((draft) => {
+    draft.activePlacement = null;
+    return draft;
+  });
+
+  return {
+    ...presentState(nextState),
+    acceptedPlacement: {
+      id: job.id,
+      stopId: job.stopId,
+      displayName: job.displayName,
+    },
+  };
+}
+
+async function rejectPlacementJob() {
+  const state = await readState();
+  const job = state.activePlacement;
+  if (!job || job.status !== "awaiting_review") {
+    throw new Error("No staged site change is available to reject.");
+  }
+
+  const nextState = await withState((draft) => {
+    draft.activePlacement = null;
+    return draft;
+  });
+
+  return {
+    ...presentState(nextState),
+    rejectedPlacement: {
+      id: job.id,
+      stopId: job.stopId,
+      displayName: job.displayName,
+    },
+  };
+}
+
+async function stagePlacementChange(change, repo, displayName) {
+  const state = await readState();
+  if (state.activePlacement) {
+    throw new Error(
+      `${state.activePlacement.displayName} is already staged. Accept or reject it before staging another site.`,
+    );
+  }
+
+  const nextState = await withState((draft) => {
+    draft.activePlacement = {
+      id: crypto.randomUUID(),
+      stopId: change.stopId,
+      repo,
+      displayName,
+      status: "awaiting_review",
+      createdAt: nowIso(),
+      change,
+    };
+    return draft;
+  });
+
+  return {
+    ...presentState(nextState),
+    queuedPlacement: {
+      stopId: change.stopId,
+      displayName,
+    },
+  };
 }
 
 async function runLoggedNodeProcess(jobId, args) {
@@ -330,11 +550,11 @@ async function runLoggedNodeProcess(jobId, args) {
   });
 }
 
-async function startPipeline(change, displayName) {
+async function startPipeline(change, displayName, customPrompt) {
   const currentState = await readState();
   if (currentState.activeJob) {
     throw new Error(
-      `A repaint pipeline is already active for ${currentState.activeJob.stopId}.`,
+      `A paint pipeline is already active for ${currentState.activeJob.stopId}.`,
     );
   }
 
@@ -356,11 +576,12 @@ async function startPipeline(change, displayName) {
       manifestBackup: null,
       preview: null,
       assetBackup,
+      customPrompt: customPrompt ?? null,
       logs: [
         {
           at: nowIso(),
           stream: "system",
-          text: `Queued live repaint pipeline for ${label}.`,
+          text: `Queued live paint pipeline for ${label}.`,
         },
       ],
       error: null,
@@ -390,10 +611,23 @@ async function runPipeline(jobId) {
       return draft;
     });
 
-    const result = await runLoggedNodeProcess(jobId, [
-      applyTownGlyphHaloScript,
-      `--id=${job.stopId}`,
-    ]);
+    const args = [applyTownGlyphHaloScript, `--id=${job.stopId}`];
+    if (job.customPrompt) {
+      args.push(`--custom-prompt=${job.customPrompt}`);
+    }
+    if (job.change?.to) {
+      if (job.change.to.district) {
+        args.push(`--district=${job.change.to.district}`);
+      }
+      if (typeof job.change.to.x === "number") {
+        args.push(`--x=${job.change.to.x}`);
+      }
+      if (typeof job.change.to.y === "number") {
+        args.push(`--y=${job.change.to.y}`);
+      }
+    }
+
+    const result = await runLoggedNodeProcess(jobId, args);
 
     if (result.code === 0) {
       await withState((draft) => {
@@ -778,13 +1012,20 @@ async function handleRequest(req, res) {
         return;
       }
 
-      const supportReason = liveRepaintSupportReason(change.stopId);
+      const supportReason = liveRepaintSupportReason(
+        change.stopId,
+        body.prompt,
+      );
       if (supportReason) {
         sendJson(req, res, 400, { error: supportReason });
         return;
       }
 
-      const nextState = await startPipeline(change, body.displayName);
+      const nextState = await startPipeline(
+        change,
+        body.displayName,
+        body.prompt,
+      );
       sendJson(req, res, 202, nextState);
       return;
     } catch (error) {
@@ -793,6 +1034,65 @@ async function handleRequest(req, res) {
           error instanceof Error
             ? error.message
             : "Unable to queue repaint pipeline.",
+      });
+      return;
+    }
+  }
+
+  if (req.method === "POST" && url.pathname === "/placement/queue") {
+    try {
+      const body = await parseJsonBody(req);
+      const payload = validatePlacementPayload(body);
+      if (!payload) {
+        sendJson(req, res, 400, {
+          error: "Invalid placement payload. Expected repo + change.",
+        });
+        return;
+      }
+
+      const nextState = await stagePlacementChange(
+        payload.change,
+        payload.repo,
+        payload.displayName,
+      );
+      sendJson(req, res, 202, nextState);
+      return;
+    } catch (error) {
+      sendJson(req, res, 409, {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to stage site change.",
+      });
+      return;
+    }
+  }
+
+  if (req.method === "POST" && url.pathname === "/placement/accept") {
+    try {
+      sendJson(req, res, 200, await acceptPlacementJob());
+      return;
+    } catch (error) {
+      sendJson(req, res, 409, {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to accept staged site change.",
+      });
+      return;
+    }
+  }
+
+  if (req.method === "POST" && url.pathname === "/placement/reject") {
+    try {
+      sendJson(req, res, 200, await rejectPlacementJob());
+      return;
+    } catch (error) {
+      sendJson(req, res, 409, {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unable to reject staged site change.",
       });
       return;
     }

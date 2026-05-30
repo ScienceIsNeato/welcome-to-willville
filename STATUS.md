@@ -1,5 +1,12 @@
 # Status
 
+## Done (2026-05-30) — Reposition Flow Now Uses Single-Site Stage/Accept/Reject Instead Of Copying Heuristics
+
+- Replaced the old `Copy Heuristics Code` handoff with a local single-site staging flow in the planner, so reposition and district edits can be reviewed and then accepted/rejected directly in the UI.
+- Accept now writes the selected repo site's district/position straight into `lib/willville.heuristics.ts` via the local repaint sidecar; Reject discards the staged site change and restores planner state for that site.
+- Enforced one staged placement change at a time, matching the repaint queue mental model.
+- Validation: `sm swab` passed, `sm scour` passed, `./scripts/deploy_app.sh` rebuilt and launched on `http://127.0.0.1:3742/`, and local sidecar smoke checks confirmed `/placement/queue`, `/placement/accept`, and `/placement/reject` behavior.
+
 ## Done (2026-05-30) — Stop Labels Moved Up Above Painted Landmark Areas
 
 - Raised stop-name labels so they sit above landmark art instead of overlapping the painted area, while keeping marker hitboxes aligned with the new label position.

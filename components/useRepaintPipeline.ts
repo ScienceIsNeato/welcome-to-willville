@@ -31,6 +31,14 @@ export function useRepaintPipeline({
   const [repaintQueueState, setRepaintQueueState] =
     useState<RepaintQueueState>("idle");
   const [repaintQueueMessage, setRepaintQueueMessage] = useState("");
+  const [customPrompt, setCustomPrompt] = useState("");
+
+  const [prevStopId, setPrevStopId] = useState(plannerStop?.id);
+
+  if (plannerStop?.id !== prevStopId) {
+    setPrevStopId(plannerStop?.id);
+    setCustomPrompt("");
+  }
   const [activeRepaintJob, setActiveRepaintJob] =
     useState<RepaintQueueJobRecord | null>(null);
   const [acceptedRepaintPreviews, setAcceptedRepaintPreviews] = useState<
@@ -128,7 +136,7 @@ export function useRepaintPipeline({
         if (!silenceErrors && isRepositionMode) {
           setRepaintQueueState("error");
           setRepaintQueueMessage(
-            "Live repaint runner is offline. Restart with scripts/deploy_app.sh to run the real repaint pipeline.",
+            "Live paint runner is offline. Restart with scripts/deploy_app.sh to run the real paint pipeline.",
           );
         }
         return;
@@ -195,32 +203,36 @@ export function useRepaintPipeline({
   }, [isRepositionMode, repaintRunnerBaseUrl, syncRepaintQueue]);
 
   const queueRepaintLabel = !repaintRunnerAvailable
-    ? "🚫 Repaint Runner Offline"
+    ? "🚫 Paint Runner Offline"
     : activeRepaintJob
       ? activeRepaintJob.stopId === plannerStop?.id
         ? activeRepaintJob.status === "awaiting_review"
           ? "🧪 Candidate Ready"
           : activeRepaintJob.status === "failed"
             ? "⚠️ Pipeline Failed"
-            : "⏳ Repainting..."
-        : "⛔ Queue Full"
-      : plannerStop && !siteCanRunLiveRepaint(plannerStop.id)
-        ? "🚫 Repaint Unsupported"
+            : "⏳ Painting..."
+        : "⛔ Another Paint in Progress"
+      : plannerStop &&
+          !siteCanRunLiveRepaint(plannerStop.id) &&
+          !customPrompt.trim()
+        ? "🚫 Paint Unsupported"
         : plannerStop
-          ? `🎨 Repaint ${plannerStop.displayName}`
-          : "🎨 Repaint Selected Site";
+          ? `🎨 Paint ${plannerStop.displayName}`
+          : "🎨 Paint Selected Site";
 
   const queueRepaintMessage = !repaintRunnerAvailable
-    ? "Live repaint runner is offline. Restart with scripts/deploy_app.sh to run the real repaint pipeline."
+    ? "Live paint runner is offline. Restart with scripts/deploy_app.sh to run the real paint pipeline."
     : activeRepaintJob
       ? activeRepaintJob.stopId === plannerStop?.id
         ? activeRepaintJob.status === "awaiting_review"
-          ? `${activeRepaintJob.displayName} has a live candidate on the map. Accept keeps the baked repaint, switches the site to background-only, and hides the separate glyph. Reject restores the previous manifest and art.`
+          ? `${activeRepaintJob.displayName} has a live candidate on the map. Accept keeps the baked paint, switches the site to background-only, and hides the separate glyph. Reject restores the previous manifest and art.`
           : activeRepaintJob.status === "failed"
-            ? `${activeRepaintJob.displayName} failed during repaint. Review the CLI output below, then reject to restore the previous files.`
-            : `Running the live repaint pipeline for ${activeRepaintJob.displayName}. CLI output is streaming below.`
-        : `${activeRepaintJob.displayName} is using the only repaint slot. Wait for that run to finish before queueing ${plannerStop?.displayName ?? "another site"}.`
-      : plannerStop && !siteCanRunLiveRepaint(plannerStop.id)
+            ? `${activeRepaintJob.displayName} failed during painting. Review the CLI output below, then reject to restore the previous files.`
+            : `Running the live paint pipeline for ${activeRepaintJob.displayName}. CLI output is streaming below.`
+        : `${activeRepaintJob.displayName} is being painted. Wait for it to finish before painting ${plannerStop?.displayName ?? "another site"}.`
+      : plannerStop &&
+          !siteCanRunLiveRepaint(plannerStop.id) &&
+          !customPrompt.trim()
         ? siteLiveRepaintSupportReason(plannerStop.id)
         : repaintQueueMessage;
 
@@ -228,7 +240,8 @@ export function useRepaintPipeline({
     Boolean(plannerStop) &&
     repaintRunnerAvailable &&
     !activeRepaintJob &&
-    siteCanRunLiveRepaint(plannerStop?.id ?? "");
+    (siteCanRunLiveRepaint(plannerStop?.id ?? "") ||
+      Boolean(customPrompt.trim()));
   const canAcceptRepaint = Boolean(
     activeRepaintJob && activeRepaintJob.status === "awaiting_review",
   );
@@ -240,84 +253,90 @@ export function useRepaintPipeline({
     activeRepaintJob && ["queued", "running"].includes(activeRepaintJob.status),
   );
 
-  const handleQueueRepaint = useCallback(() => {
-    if (!plannerStop || !repaintRunnerBaseUrl || activeRepaintJob) {
-      return;
-    }
+  const handleQueueRepaint = useCallback(
+    (promptOverride?: string) => {
+      if (!plannerStop || !repaintRunnerBaseUrl || activeRepaintJob) {
+        return;
+      }
 
-    const plannerStopChange = movedStops[plannerStop.id];
-    const change = plannerStopChange
-      ? {
-          stopId: plannerStop.id,
-          from: {
-            x: plannerStopChange.original.x,
-            y: plannerStopChange.original.y,
-            district: plannerStopChange.original.district,
-          },
-          to: {
-            x: plannerStopChange.current.x,
-            y: plannerStopChange.current.y,
-            district: plannerStopChange.current.district,
-          },
-        }
-      : {
-          stopId: plannerStop.id,
-          from: {
-            x: plannerStop.position.x,
-            y: plannerStop.position.y,
-            district: plannerStop.district,
-          },
-          to: {
-            x: plannerStop.position.x,
-            y: plannerStop.position.y,
-            district: plannerStop.district,
-          },
-        };
+      const finalPrompt =
+        promptOverride !== undefined ? promptOverride : customPrompt;
+      const plannerStopChange = movedStops[plannerStop.id];
+      const change = plannerStopChange
+        ? {
+            stopId: plannerStop.id,
+            from: {
+              x: plannerStopChange.original.x,
+              y: plannerStopChange.original.y,
+              district: plannerStopChange.original.district,
+            },
+            to: {
+              x: plannerStopChange.current.x,
+              y: plannerStopChange.current.y,
+              district: plannerStopChange.current.district,
+            },
+          }
+        : {
+            stopId: plannerStop.id,
+            from: {
+              x: plannerStop.position.x,
+              y: plannerStop.position.y,
+              district: plannerStop.district,
+            },
+            to: {
+              x: plannerStop.position.x,
+              y: plannerStop.position.y,
+              district: plannerStop.district,
+            },
+          };
 
-    setRepaintQueueState("running");
-    setRepaintControlsBusy(true);
-    setRepaintQueueMessage(
-      `Starting the live repaint pipeline for ${plannerStop.displayName}...`,
-    );
+      setRepaintQueueState("running");
+      setRepaintControlsBusy(true);
+      setRepaintQueueMessage(
+        `Starting the live paint pipeline for ${plannerStop.displayName}...`,
+      );
 
-    fetch(`${repaintRunnerBaseUrl}/queue`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        change,
-        displayName: plannerStop.displayName,
-      }),
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(await getBellErrorDetail(response));
-        }
-
-        return response.json() as Promise<RepaintQueueApiResponse>;
+      fetch(`${repaintRunnerBaseUrl}/queue`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          change,
+          displayName: plannerStop.displayName,
+          prompt: finalPrompt || undefined,
+        }),
       })
-      .then((result) => {
-        setRepaintRunnerAvailable(true);
-        setActiveRepaintJob(result.activeJob ?? null);
-        setAcceptedRepaintPreviews(result.acceptedPreviews ?? []);
-        setRepaintQueueState(result.activeJob ? "running" : "idle");
-        setRepaintQueueMessage(
-          `Started the live repaint pipeline for ${plannerStop.displayName}.`,
-        );
-      })
-      .catch((error: unknown) => {
-        const detail =
-          error instanceof Error && error.message
-            ? error.message
-            : "Unknown error";
-        setRepaintQueueState("error");
-        setRepaintQueueMessage(`Queue request failed: ${detail}`);
-      })
-      .finally(() => {
-        setRepaintControlsBusy(false);
-      });
-  }, [activeRepaintJob, movedStops, plannerStop, repaintRunnerBaseUrl]);
+        .then(async (response) => {
+          if (!response.ok) {
+            throw new Error(await getBellErrorDetail(response));
+          }
+
+          return response.json() as Promise<RepaintQueueApiResponse>;
+        })
+        .then((result) => {
+          setRepaintRunnerAvailable(true);
+          setActiveRepaintJob(result.activeJob ?? null);
+          setAcceptedRepaintPreviews(result.acceptedPreviews ?? []);
+          setRepaintQueueState(result.activeJob ? "running" : "idle");
+          setRepaintQueueMessage(
+            `Started the live paint pipeline for ${plannerStop.displayName}.`,
+          );
+        })
+        .catch((error: unknown) => {
+          const detail =
+            error instanceof Error && error.message
+              ? error.message
+              : "Unknown error";
+          setRepaintQueueState("error");
+          setRepaintQueueMessage(`Queue request failed: ${detail}`);
+        })
+        .finally(() => {
+          setRepaintControlsBusy(false);
+        });
+    },
+    [activeRepaintJob, movedStops, plannerStop, repaintRunnerBaseUrl],
+  );
 
   const handleAcceptRepaint = useCallback(() => {
     if (!activeRepaintJob || !repaintRunnerBaseUrl) {
@@ -343,7 +362,7 @@ export function useRepaintPipeline({
         setAcceptedRepaintPreviews(result.acceptedPreviews ?? []);
         setRepaintQueueState("idle");
         setRepaintQueueMessage(
-          `${result.acceptedJob?.displayName ?? activeRepaintJob.displayName} accepted. The baked repaint now carries the site art, the separate glyph is hidden, and the preview stays overlaid locally until the next deploy bakes it in.`,
+          `${result.acceptedJob?.displayName ?? activeRepaintJob.displayName} accepted. The baked paint now carries the site art, the separate glyph is hidden, and the preview stays overlaid locally until the next deploy bakes it in.`,
         );
       })
       .catch((error: unknown) => {
@@ -409,7 +428,7 @@ export function useRepaintPipeline({
     setRepaintQueueState("running");
     setRepaintControlsBusy(true);
     setRepaintQueueMessage(
-      `Canceling the live repaint preview for ${activeRepaintJob.displayName}...`,
+      `Canceling the live paint preview for ${activeRepaintJob.displayName}...`,
     );
 
     fetch(`${repaintRunnerBaseUrl}/cancel`, {
@@ -448,6 +467,8 @@ export function useRepaintPipeline({
   }, [activeRepaintJob, repaintRunnerBaseUrl]);
 
   return {
+    customPrompt,
+    setCustomPrompt,
     previewUnderlayHrefs,
     replacementUnderlayStopIds,
     repaintControlsBusy,

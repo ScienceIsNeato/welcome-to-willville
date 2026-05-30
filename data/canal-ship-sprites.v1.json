@@ -77,6 +77,10 @@
     {
       "stopId": "thewallow",
       "src": "/art/stops/the-wallow-ship.png"
+    },
+    {
+      "stopId": "slop-mop-website",
+      "src": "/art/stops/slop-mop-website-ship.png"
     }
   ]
 }

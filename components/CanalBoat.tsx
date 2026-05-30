@@ -72,7 +72,8 @@ export function CanalBoat({ boat, position }: Props) {
   // boat faces east, out to sea — "not your problem yet."
   const mayorMove = isMayorMove(boat.lock);
   const bowTransform = mayorMove ? "scale(-1, 1)" : undefined;
-  const hullFilter = mayorMove ? undefined : "saturate(0.3) brightness(0.92)";
+  const hullFilter =
+    boat.lock === "scuttle" ? "saturate(0.25) brightness(0.8)" : undefined;
 
   const stopStageClick = (e: MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
