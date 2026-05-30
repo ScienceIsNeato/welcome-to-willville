@@ -57,6 +57,18 @@ export function Canal({ boats, layer = "all", mobileSafeMode = false }: Props) {
     const positions = new Map<number, { x: number; y: number }>();
     const openSeaBoats = boats.filter((b) => b.lock === "open-sea");
 
+    if (openSeaBoats.length === 0) return positions;
+
+    // Use latest update time as a stable fallback for referenceTime before now mounts to prevent post-mount layout shift
+    const stableReference = Math.max(
+      ...openSeaBoats.map((b) =>
+        b.updatedAt
+          ? new Date(b.updatedAt).getTime()
+          : new Date(b.createdAt).getTime(),
+      ),
+    );
+    const referenceTime = now ?? stableReference;
+
     const cx = 1260;
     const cy = 810;
 
@@ -67,7 +79,6 @@ export function Canal({ boats, layer = "all", mobileSafeMode = false }: Props) {
         ? new Date(boat.updatedAt).getTime()
         : new Date(boat.createdAt).getTime();
 
-      const referenceTime = now ?? updatedAtTime;
       const ageHours = (referenceTime - updatedAtTime) / (1000 * 60 * 60);
 
       if (ageHours < 6) {

@@ -73,7 +73,11 @@ export function CanalBoat({ boat, position }: Props) {
   const mayorMove = isMayorMove(boat.lock);
   const bowTransform = mayorMove ? "scale(-1, 1)" : undefined;
   const hullFilter =
-    boat.lock === "scuttle" ? "saturate(0.25) brightness(0.8)" : undefined;
+    boat.lock === "scuttle"
+      ? "saturate(0.25) brightness(0.8)"
+      : ["final", "open-sea"].includes(boat.lock)
+        ? undefined
+        : "saturate(0.3) brightness(0.92)";
 
   const stopStageClick = (e: MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
