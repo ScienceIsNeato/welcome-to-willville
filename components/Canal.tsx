@@ -54,7 +54,7 @@ export function Canal({ boats, layer = "all", mobileSafeMode = false }: Props) {
 
   // Pre-calculate fanned-out positions for "open-sea" boats based on age
   const openSeaPositions = useMemo(() => {
-    const positions = new Map<number, { x: number; y: number }>();
+    const positions = new Map<string, { x: number; y: number }>();
     const openSeaBoats = boats.filter((b) => b.lock === "open-sea");
 
     if (openSeaBoats.length === 0) return positions;
@@ -128,7 +128,7 @@ export function Canal({ boats, layer = "all", mobileSafeMode = false }: Props) {
         const x = cx + radius * Math.cos(theta);
         const y = cy + radius * Math.sin(theta);
 
-        positions.set(boat.prNumber, { x, y });
+        positions.set(`${boat.repo}-${boat.prNumber}`, { x, y });
       }
     }
     return positions;
@@ -417,7 +417,7 @@ export function Canal({ boats, layer = "all", mobileSafeMode = false }: Props) {
               let pos;
               if (lock.id === "open-sea") {
                 pos =
-                  openSeaPositions.get(boat.prNumber) ??
+                  openSeaPositions.get(`${boat.repo}-${boat.prNumber}`) ??
                   boatPosition(lock.id, idx);
               } else {
                 const depth =
