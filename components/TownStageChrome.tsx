@@ -67,6 +67,9 @@ export function TownStageChrome({
             gridRow: "1 / 2",
             position: "relative",
             zIndex: 2,
+            width: "calc(100vw - 20px)",
+            maxWidth: 1280,
+            margin: "0 auto",
             pointerEvents: "none",
           }}
         >
@@ -171,6 +174,9 @@ export function TownStageChrome({
             gridRow: "3 / 4",
             position: "relative",
             zIndex: 2,
+            width: "calc(100vw - 20px)",
+            maxWidth: 1280,
+            margin: "0 auto",
             pointerEvents: "none",
           }}
         >
