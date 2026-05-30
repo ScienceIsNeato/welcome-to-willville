@@ -287,6 +287,9 @@ function StopMarkerInner({
     hasReplacementAppearance,
   });
   const handleDragEnd = (e: PointerEvent<SVGGElement>) => {
+    const isDragActive =
+      draggable || e.currentTarget.hasPointerCapture(e.pointerId);
+    if (!isDragActive) return;
     e.stopPropagation();
     onDragEnd?.(stop, e);
   };

@@ -1178,18 +1178,14 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               <WorldSubstrate />
 
               <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
-                <GeneratedTownBase mobileSafeMode={mobileSafeMode} />
+                <GeneratedTownBase />
                 <TownSiteAppearances
                   stops={currentStops}
                   previewUnderlayHrefs={previewUnderlayHrefs}
                 />
-                {!mobileSafeMode && <ChimneySmoke />}
-                {!mobileSafeMode && <DynamicWalls />}
-                <Canal
-                  boats={boats}
-                  layer="base"
-                  mobileSafeMode={mobileSafeMode}
-                />
+                <ChimneySmoke />
+                <DynamicWalls />
+                <Canal boats={boats} layer="base" />
                 {DISTRICTS.map((d) => (
                   <DistrictZone
                     key={d.id}
@@ -1203,14 +1199,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                   onEngineClick={closeHud}
                   engineLabel="Return to the town overview"
                 />
-                {!mobileSafeMode && (
-                  <Canal
-                    boats={boats}
-                    layer="traffic"
-                    mobileSafeMode={mobileSafeMode}
-                  />
-                )}
-                {!mobileSafeMode && <WorldWorkerLayer stops={currentStops} />}
+                <Canal boats={boats} layer="traffic" />
+                <WorldWorkerLayer stops={currentStops} />
                 {populating !== "idle" && (
                   <BellMessengers
                     stops={currentStops}

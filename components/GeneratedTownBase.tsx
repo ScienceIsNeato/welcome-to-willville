@@ -40,13 +40,8 @@ function districtRenderBox(layer: DistrictLayer) {
   return { x: left, y: top, width: right - left, height: bottom - top };
 }
 
-type Props = {
-  mobileSafeMode?: boolean;
-};
-
-export function GeneratedTownBase({ mobileSafeMode = false }: Props) {
+export function GeneratedTownBase() {
   const districtLayers = districtArt.layers;
-  const showComposite = mobileSafeMode || districtLayers.length === 0;
 
   return (
     <g id="generated-town-base" aria-hidden="true">
@@ -55,7 +50,7 @@ export function GeneratedTownBase({ mobileSafeMode = false }: Props) {
           <path d={GENERATED_TOWN_LAYOUT.townFootprintPath} />
         </clipPath>
       </defs>
-      {showComposite ? (
+      {districtLayers.length === 0 && (
         <image
           href={`${FALLBACK_TOWN_ART}?v=${districtArt.version}`}
           x={0}
@@ -65,19 +60,18 @@ export function GeneratedTownBase({ mobileSafeMode = false }: Props) {
           preserveAspectRatio="none"
           clipPath="url(#generated-town-footprint-clip)"
         />
-      ) : (
-        districtLayers.map((layer) => (
-          <image
-            key={layer.id}
-            href={`/art/town/districts-render/${layer.id}.webp?v=${
-              layer.contentHash ?? districtArt.version
-            }`}
-            {...districtRenderBox(layer)}
-            preserveAspectRatio="none"
-            clipPath="url(#generated-town-footprint-clip)"
-          />
-        ))
       )}
+      {districtLayers.map((layer) => (
+        <image
+          key={layer.id}
+          href={`/art/town/districts-render/${layer.id}.webp?v=${
+            layer.contentHash ?? districtArt.version
+          }`}
+          {...districtRenderBox(layer)}
+          preserveAspectRatio="none"
+          clipPath="url(#generated-town-footprint-clip)"
+        />
+      ))}
     </g>
   );
 }

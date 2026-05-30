@@ -31,14 +31,23 @@ export function useRepaintPipeline({
   const [repaintQueueState, setRepaintQueueState] =
     useState<RepaintQueueState>("idle");
   const [repaintQueueMessage, setRepaintQueueMessage] = useState("");
-  const [customPrompt, setCustomPrompt] = useState("");
+  const [promptsByStopId, setPromptsByStopId] = useState<
+    Record<string, string>
+  >({});
+  const customPrompt = plannerStop
+    ? (promptsByStopId[plannerStop.id] ?? "")
+    : "";
 
-  const [prevStopId, setPrevStopId] = useState(plannerStop?.id);
-
-  if (plannerStop?.id !== prevStopId) {
-    setPrevStopId(plannerStop?.id);
-    setCustomPrompt("");
-  }
+  const setCustomPrompt = useCallback(
+    (prompt: string) => {
+      if (!plannerStop) return;
+      setPromptsByStopId((prev) => ({
+        ...prev,
+        [plannerStop.id]: prompt,
+      }));
+    },
+    [plannerStop],
+  );
   const [activeRepaintJob, setActiveRepaintJob] =
     useState<RepaintQueueJobRecord | null>(null);
   const [acceptedRepaintPreviews, setAcceptedRepaintPreviews] = useState<
@@ -335,7 +344,13 @@ export function useRepaintPipeline({
           setRepaintControlsBusy(false);
         });
     },
-    [activeRepaintJob, movedStops, plannerStop, repaintRunnerBaseUrl],
+    [
+      activeRepaintJob,
+      customPrompt,
+      movedStops,
+      plannerStop,
+      repaintRunnerBaseUrl,
+    ],
   );
 
   const handleAcceptRepaint = useCallback(() => {

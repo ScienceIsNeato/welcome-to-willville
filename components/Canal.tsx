@@ -20,7 +20,6 @@ import { CanalBoat as Boat } from "./CanalBoat";
 type Props = {
   boats: CanalBoat[];
   layer?: "base" | "traffic" | "all";
-  mobileSafeMode?: boolean;
 };
 
 const CANAL_WALL_PATH_LENGTH = 3600;
@@ -29,7 +28,7 @@ const CANAL_BANKS = [
   { id: "south", path: CANAL_SECTION.southBankPath, duration: 124 },
 ];
 
-export function Canal({ boats, layer = "all", mobileSafeMode = false }: Props) {
+export function Canal({ boats, layer = "all" }: Props) {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     const t = window.setTimeout(() => {
@@ -190,97 +189,110 @@ export function Canal({ boats, layer = "all", mobileSafeMode = false }: Props) {
             aria-hidden
           />
 
-          {!mobileSafeMode && (
-            <g className="dynamic-walls canal-bank-walls" aria-hidden="true">
-              {CANAL_BANKS.map((bank, index) => (
-                <g
-                  key={bank.id}
-                  className="dynamic-wall-loop"
-                  clipPath="url(#willville-canal-land-clip)"
-                >
+          <g className="dynamic-walls canal-bank-walls" aria-hidden="true">
+            {CANAL_BANKS.map((bank, index) => (
+              <g
+                key={bank.id}
+                className="dynamic-wall-loop"
+                clipPath="url(#willville-canal-land-clip)"
+              >
+                <path
+                  d={bank.path}
+                  className="dynamic-wall-loop-bed canal-bank-wall-bed"
+                  fill="none"
+                  pathLength={CANAL_WALL_PATH_LENGTH}
+                />
+                <path
+                  d={bank.path}
+                  className="dynamic-wall-loop-stones dynamic-wall-loop-stones-a canal-bank-wall-stones"
+                  fill="none"
+                  pathLength={CANAL_WALL_PATH_LENGTH}
+                  style={
+                    {
+                      animationName: "dynamic-wall-dash-left",
+                      animationDuration: `${bank.duration}s`,
+                      animationTimingFunction: "linear",
+                      animationIterationCount: "infinite",
+                      willChange: "stroke-dashoffset",
+                      "--dash-start": "0",
+                      "--dash-len": `${CANAL_WALL_PATH_LENGTH}`,
+                    } as React.CSSProperties
+                  }
+                />
+                <path
+                  d={bank.path}
+                  className="dynamic-wall-loop-stones dynamic-wall-loop-stones-b canal-bank-wall-stones"
+                  fill="none"
+                  pathLength={CANAL_WALL_PATH_LENGTH}
+                  style={
+                    {
+                      animationName: "dynamic-wall-dash-left",
+                      animationDuration: `${bank.duration * 1.06}s`,
+                      animationTimingFunction: "linear",
+                      animationIterationCount: "infinite",
+                      willChange: "stroke-dashoffset",
+                      "--dash-start": `${80 + index * 40}`,
+                      "--dash-len": `${CANAL_WALL_PATH_LENGTH}`,
+                    } as React.CSSProperties
+                  }
+                />
+                {RAINBOW_BRICK_LAYERS.map((brickLayer) => (
                   <path
+                    key={`${bank.id}-${brickLayer.className}`}
                     d={bank.path}
-                    className="dynamic-wall-loop-bed canal-bank-wall-bed"
+                    className={`dynamic-wall-loop-stones dynamic-wall-loop-rainbow-bricks canal-bank-wall-rainbow-bricks ${brickLayer.className}`}
                     fill="none"
                     pathLength={CANAL_WALL_PATH_LENGTH}
+                    style={
+                      {
+                        animationName: "dynamic-wall-dash-left",
+                        animationDuration: `${bank.duration * brickLayer.speed}s`,
+                        animationTimingFunction: "linear",
+                        animationIterationCount: "infinite",
+                        willChange: "stroke-dashoffset",
+                        "--dash-start": `${brickLayer.offset + index * 23}`,
+                        "--dash-len": `${CANAL_WALL_PATH_LENGTH}`,
+                      } as React.CSSProperties
+                    }
                   />
-                  <path
-                    d={bank.path}
-                    className="dynamic-wall-loop-stones dynamic-wall-loop-stones-a canal-bank-wall-stones"
-                    fill="none"
-                    pathLength={CANAL_WALL_PATH_LENGTH}
-                  >
-                    <animate
-                      attributeName="stroke-dashoffset"
-                      from="0"
-                      to={`-${CANAL_WALL_PATH_LENGTH}`}
-                      dur={`${bank.duration}s`}
-                      repeatCount="indefinite"
-                    />
-                  </path>
-                  <path
-                    d={bank.path}
-                    className="dynamic-wall-loop-stones dynamic-wall-loop-stones-b canal-bank-wall-stones"
-                    fill="none"
-                    pathLength={CANAL_WALL_PATH_LENGTH}
-                  >
-                    <animate
-                      attributeName="stroke-dashoffset"
-                      from={`${80 + index * 40}`}
-                      to={`${80 + index * 40 - CANAL_WALL_PATH_LENGTH}`}
-                      dur={`${bank.duration * 1.06}s`}
-                      repeatCount="indefinite"
-                    />
-                  </path>
-                  {RAINBOW_BRICK_LAYERS.map((brickLayer) => (
-                    <path
-                      key={`${bank.id}-${brickLayer.className}`}
-                      d={bank.path}
-                      className={`dynamic-wall-loop-stones dynamic-wall-loop-rainbow-bricks canal-bank-wall-rainbow-bricks ${brickLayer.className}`}
-                      fill="none"
-                      pathLength={CANAL_WALL_PATH_LENGTH}
-                    >
-                      <animate
-                        attributeName="stroke-dashoffset"
-                        from={`${brickLayer.offset + index * 23}`}
-                        to={`${brickLayer.offset + index * 23 - CANAL_WALL_PATH_LENGTH}`}
-                        dur={`${bank.duration * brickLayer.speed}s`}
-                        repeatCount="indefinite"
-                      />
-                    </path>
-                  ))}
-                  <path
-                    d={bank.path}
-                    className="dynamic-wall-loop-mortar canal-bank-wall-mortar"
-                    fill="none"
-                    pathLength={CANAL_WALL_PATH_LENGTH}
-                  >
-                    <animate
-                      attributeName="stroke-dashoffset"
-                      from="0"
-                      to={`-${CANAL_WALL_PATH_LENGTH}`}
-                      dur={`${bank.duration}s`}
-                      repeatCount="indefinite"
-                    />
-                  </path>
-                  <path
-                    d={bank.path}
-                    className="dynamic-wall-loop-glints canal-bank-wall-glints"
-                    fill="none"
-                    pathLength={CANAL_WALL_PATH_LENGTH}
-                  >
-                    <animate
-                      attributeName="stroke-dashoffset"
-                      from={`${120 - index * 40}`}
-                      to={`${120 - index * 40 + CANAL_WALL_PATH_LENGTH}`}
-                      dur={`${bank.duration * 0.9}s`}
-                      repeatCount="indefinite"
-                    />
-                  </path>
-                </g>
-              ))}
-            </g>
-          )}
+                ))}
+                <path
+                  d={bank.path}
+                  className="dynamic-wall-loop-mortar canal-bank-wall-mortar"
+                  fill="none"
+                  pathLength={CANAL_WALL_PATH_LENGTH}
+                  style={
+                    {
+                      animationName: "dynamic-wall-dash-left",
+                      animationDuration: `${bank.duration}s`,
+                      animationTimingFunction: "linear",
+                      animationIterationCount: "infinite",
+                      willChange: "stroke-dashoffset",
+                      "--dash-start": "0",
+                      "--dash-len": `${CANAL_WALL_PATH_LENGTH}`,
+                    } as React.CSSProperties
+                  }
+                />
+                <path
+                  d={bank.path}
+                  className="dynamic-wall-loop-glints canal-bank-wall-glints"
+                  fill="none"
+                  pathLength={CANAL_WALL_PATH_LENGTH}
+                  style={
+                    {
+                      animationName: "dynamic-wall-dash-right",
+                      animationDuration: `${bank.duration * 0.9}s`,
+                      animationTimingFunction: "linear",
+                      animationIterationCount: "infinite",
+                      willChange: "stroke-dashoffset",
+                      "--dash-start": `${120 - index * 40}`,
+                      "--dash-len": `${CANAL_WALL_PATH_LENGTH}`,
+                    } as React.CSSProperties
+                  }
+                />
+              </g>
+            ))}
+          </g>
 
           {/* Open Sea Age Markings */}
           <g className="open-sea-markings" aria-hidden="true">
