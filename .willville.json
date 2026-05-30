@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Fixing the repaint interaction regression so baked replacement sites are clickable again",
-    "direction": "Next is checking the rest of the replacement-art flow for any other hidden sprite assumptions",
-    "last_update": "2026-05-29T00:08:00Z"
+    "status": "Moved stop labels up so names stay clear of the painted landmark areas",
+    "direction": "Next is tightening any remaining visual overlap polish on the new pane-layout branch",
+    "last_update": "2026-05-30T07:33:28Z"
   }
 }

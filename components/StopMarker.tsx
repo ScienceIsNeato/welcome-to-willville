@@ -42,6 +42,8 @@ const SITE_SPRITES = new Map(
 type SiteSprite = (typeof siteSpriteManifest.sprites)[number];
 const SPRITE_CACHE_VERSION = "repo-labels-20260522";
 const SITE_ART_CENTER = { x: 0, y: 0 };
+const LABEL_VERTICAL_GAP = 22;
+const LABEL_FALLBACK_Y = -30;
 
 type HitBox = {
   x: number;
@@ -197,7 +199,11 @@ function StopLabel({
 }) {
   return (
     <text
-      y={spriteHeight > 0 ? -spriteHeight / 2 - 8 : -18}
+      y={
+        spriteHeight > 0
+          ? -spriteHeight / 2 - LABEL_VERTICAL_GAP
+          : LABEL_FALLBACK_Y
+      }
       textAnchor="middle"
       fontSize={14}
       fontWeight={700}
@@ -280,6 +286,11 @@ function StopMarkerInner({
     showSprite,
     hasReplacementAppearance,
   });
+  const handleDragEnd = (e: PointerEvent<SVGGElement>) => {
+    if (!draggable) return;
+    e.stopPropagation();
+    onDragEnd?.(stop, e);
+  };
   return (
     <g
       data-stop-marker
@@ -306,21 +317,9 @@ function StopMarkerInner({
         e.stopPropagation();
         onDragMove?.(stop, e);
       }}
-      onPointerUp={(e) => {
-        if (!draggable) return;
-        e.stopPropagation();
-        onDragEnd?.(stop, e);
-      }}
-      onPointerCancel={(e) => {
-        if (!draggable) return;
-        e.stopPropagation();
-        onDragEnd?.(stop, e);
-      }}
-      onLostPointerCapture={(e) => {
-        if (!draggable) return;
-        e.stopPropagation();
-        onDragEnd?.(stop, e);
-      }}
+      onPointerUp={handleDragEnd}
+      onPointerCancel={handleDragEnd}
+      onLostPointerCapture={handleDragEnd}
       aria-label={label}
     >
       <rect

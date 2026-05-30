@@ -1,5 +1,10 @@
 # Status
 
+## Done (2026-05-30) — Stop Labels Moved Up Above Painted Landmark Areas
+
+- Raised stop-name labels so they sit above landmark art instead of overlapping the painted area, while keeping marker hitboxes aligned with the new label position.
+- Validation: `sm scour` passed with all checks green; `./scripts/deploy_app.sh` rebuilt successfully and relaunched the branch preview on `http://127.0.0.1:3742/`.
+
 ## Done (2026-05-28) — Repainted Sites Are Clickable Again
 
 - Fixed the replacement-render regression where accepted repaint sites lost their sprite-sized click target and only kept the tiny label hitbox.
