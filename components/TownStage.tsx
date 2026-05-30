@@ -44,6 +44,7 @@ import { BellMessengers, summarizeTownHealth } from "./BellMessengers";
 import { TownPerfPanel } from "./TownPerfPanel";
 import { PanelChromeControls } from "./PanelChromeControls";
 import { RepositionPlannerPanel, TownStageChrome } from "./TownStageChrome";
+import { useRepaintPipeline } from "./useRepaintPipeline";
 import { screenToWorld, useTownCamera } from "@/hooks/useTownCamera";
 import {
   useEscapeReleaseInteraction,
@@ -118,9 +119,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     markSkipDrag,
     resetDragInteraction,
     setCameraImmediate,
-    zoomAtWorldPoint,
     stageHandlers,
     wasDragging,
+    zoomAtWorldPoint,
   } = useTownCamera(svgRef, stageRef, perfEnabled ? perfProbe : undefined);
 
   const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
@@ -375,11 +376,6 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   );
 
   const [copied, setCopied] = useState(false);
-  const [repaintQueueState, setRepaintQueueState] = useState<
-    "idle" | "running" | "queued" | "error"
-  >("idle");
-  const [repaintQueueMessage, setRepaintQueueMessage] = useState("");
-
   const handleCopy = useCallback(() => {
     const text = `// WELCOME TO WILLVILLE - UPDATED SITE POSITIONS
 // Copy the blocks below to update the coordinates in the codebase.
@@ -402,91 +398,28 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
       item.original.y !== item.current.y ||
       item.original.district !== item.current.district,
   );
-
-  const handleQueueRepaint = useCallback(() => {
-    if (!plannerStop || repaintQueueState === "running") {
-      return;
-    }
-
-    const changes =
-      changedStops.length > 0
-        ? changedStops.map(([stopId, item]) => ({
-            stopId,
-            from: {
-              x: item.original.x,
-              y: item.original.y,
-              district: item.original.district,
-            },
-            to: {
-              x: item.current.x,
-              y: item.current.y,
-              district: item.current.district,
-            },
-          }))
-        : [
-            {
-              stopId: plannerStop.id,
-              from: {
-                x: plannerStop.position.x,
-                y: plannerStop.position.y,
-                district: plannerStop.district,
-              },
-              to: {
-                x: plannerStop.position.x,
-                y: plannerStop.position.y,
-                district: plannerStop.district,
-              },
-            },
-          ];
-
-    const reason =
-      changedStops.length > 0
-        ? "Reposition planner submitted changed site coordinates"
-        : `Reposition planner queued ${plannerStop.displayName} for repaint`;
-
-    setRepaintQueueState("running");
-    setRepaintQueueMessage(
-      changedStops.length > 0
-        ? "Queueing repaint jobs..."
-        : `Queueing ${plannerStop.displayName} for repaint...`,
-    );
-
-    fetch("/api/reposition", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        action: "update_appearance",
-        reason,
-        changes,
-      }),
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(await getBellErrorDetail(response));
-        }
-
-        return response.json() as Promise<{
-          queued: number;
-          deduped: number;
-        }>;
-      })
-      .then((result) => {
-        setRepaintQueueState("queued");
-        setRepaintQueueMessage(
-          `Queued ${result.queued} repaint job(s), deduped ${result.deduped}.`,
-        );
-      })
-      .catch((error: unknown) => {
-        const detail =
-          error instanceof Error && error.message
-            ? error.message
-            : "Unknown error";
-        setRepaintQueueState("error");
-        setRepaintQueueMessage(`Queue request failed: ${detail}`);
-      });
-  }, [changedStops, plannerStop, repaintQueueState]);
+  const {
+    previewUnderlayHrefs,
+    replacementUnderlayStopIds,
+    repaintControlsBusy,
+    repaintQueueState,
+    repaintQueueMessage: queueRepaintMessage,
+    repaintCliOutput,
+    canQueueRepaint,
+    queueRepaintLabel,
+    canAcceptRepaint,
+    canRejectRepaint,
+    canCancelRepaint,
+    handleQueueRepaint,
+    handleAcceptRepaint,
+    handleRejectRepaint,
+    handleCancelRepaint,
+  } = useRepaintPipeline({
+    isClient,
+    isRepositionMode,
+    plannerStop,
+    movedStops,
+  });
 
   const loadTown = useCallback(
     (options: { signal?: AbortSignal; fresh?: boolean } = {}) => {
@@ -931,6 +864,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
             recentlyUpdated={recently}
             onClick={handleStopClick}
             onDoubleClick={handleStopDoubleClick}
+            forceHideSprite={replacementUnderlayStopIds.has(stop.id)}
             draggable={markerDraggable}
             onDragStart={handleMarkerDragStart}
             onDragMove={handleMarkerDragMove}
@@ -950,6 +884,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
       effectivePlannerStopId,
       isRepositionMode,
       now,
+      replacementUnderlayStopIds,
     ],
   );
 
@@ -1209,7 +1144,10 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
 
               <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
                 <GeneratedTownBase />
-                <TownSiteAppearances stops={currentStops} />
+                <TownSiteAppearances
+                  stops={currentStops}
+                  previewUnderlayHrefs={previewUnderlayHrefs}
+                />
                 {!mobileSafeMode && <ChimneySmoke />}
                 <DynamicWalls />
                 <Canal boats={boats} layer="base" />
@@ -1365,16 +1303,21 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
               onCopy={handleCopy}
               copied={copied}
               onQueueRepaint={handleQueueRepaint}
-              canQueueRepaint={Boolean(plannerStop)}
-              queueRepaintLabel={
-                changedStops.length > 0
-                  ? "🎨 Queue Repaint Jobs"
-                  : plannerStop
-                    ? `🎨 Queue ${plannerStop.displayName}`
-                    : "🎨 Queue Repaint Jobs"
-              }
+              canQueueRepaint={canQueueRepaint}
+              queueRepaintLabel={queueRepaintLabel}
+              onAcceptRepaint={handleAcceptRepaint}
+              canAcceptRepaint={canAcceptRepaint}
+              acceptRepaintLabel="✅ Accept"
+              onRejectRepaint={handleRejectRepaint}
+              canRejectRepaint={canRejectRepaint}
+              rejectRepaintLabel="↩ Reject"
+              onCancelRepaint={handleCancelRepaint}
+              canCancelRepaint={canCancelRepaint}
+              cancelRepaintLabel="✕ Cancel Run"
+              repaintControlsBusy={repaintControlsBusy}
               repaintQueueState={repaintQueueState}
-              repaintQueueMessage={repaintQueueMessage}
+              repaintQueueMessage={queueRepaintMessage}
+              repaintCliOutput={repaintCliOutput}
               onResetAll={handleResetAll}
               onExitEditor={() => router.push("/")}
             />

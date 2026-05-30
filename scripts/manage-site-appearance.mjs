@@ -470,7 +470,10 @@ async function cmdProcessQueue(flags) {
       try {
         await regenerateUnderlayArt(stopId);
       } catch (error) {
-        console.error(`  art regen failed for ${stopId}: ${error.message}`);
+        const message =
+          error instanceof Error ? error.message : "Unknown art regen error";
+        console.error(`  art regen failed for ${stopId}: ${message}`);
+        throw new Error(`Art regeneration failed for ${stopId}: ${message}`);
       }
     }
   }

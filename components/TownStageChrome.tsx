@@ -267,7 +267,7 @@ export function TownStageChrome({
   );
 }
 
-type RepaintQueueState = "idle" | "running" | "queued" | "error";
+type RepaintQueueState = "idle" | "running" | "review" | "error";
 
 type RepositionPlannerPanelProps = {
   effectivePlannerStopId: string;
@@ -283,8 +283,19 @@ type RepositionPlannerPanelProps = {
   onQueueRepaint: () => void;
   canQueueRepaint: boolean;
   queueRepaintLabel: string;
+  onAcceptRepaint: () => void;
+  canAcceptRepaint: boolean;
+  acceptRepaintLabel: string;
+  onRejectRepaint: () => void;
+  canRejectRepaint: boolean;
+  rejectRepaintLabel: string;
+  onCancelRepaint: () => void;
+  canCancelRepaint: boolean;
+  cancelRepaintLabel: string;
+  repaintControlsBusy: boolean;
   repaintQueueState: RepaintQueueState;
   repaintQueueMessage: string;
+  repaintCliOutput: string;
   onResetAll: () => void;
   onExitEditor: () => void;
 };
@@ -303,8 +314,19 @@ export function RepositionPlannerPanel({
   onQueueRepaint,
   canQueueRepaint,
   queueRepaintLabel,
+  onAcceptRepaint,
+  canAcceptRepaint,
+  acceptRepaintLabel,
+  onRejectRepaint,
+  canRejectRepaint,
+  rejectRepaintLabel,
+  onCancelRepaint,
+  canCancelRepaint,
+  cancelRepaintLabel,
+  repaintControlsBusy,
   repaintQueueState,
   repaintQueueMessage,
+  repaintCliOutput,
   onResetAll,
   onExitEditor,
 }: RepositionPlannerPanelProps) {
@@ -645,11 +667,11 @@ export function RepositionPlannerPanel({
         <button
           type="button"
           onClick={onQueueRepaint}
-          disabled={!canQueueRepaint || repaintQueueState === "running"}
+          disabled={!canQueueRepaint || repaintControlsBusy}
           style={{
             width: "100%",
             background:
-              repaintQueueState === "queued"
+              repaintQueueState === "review"
                 ? "#7bd389"
                 : repaintQueueState === "error"
                   ? "#d45757"
@@ -661,21 +683,96 @@ export function RepositionPlannerPanel({
             fontSize: 13,
             fontWeight: 700,
             cursor:
-              !canQueueRepaint || repaintQueueState === "running"
+              !canQueueRepaint || repaintControlsBusy
                 ? "not-allowed"
                 : "pointer",
-            opacity:
-              !canQueueRepaint || repaintQueueState === "running" ? 0.65 : 1,
+            opacity: !canQueueRepaint || repaintControlsBusy ? 0.65 : 1,
             transition: "all 0.2s",
             boxShadow: "0 4px 12px rgba(20,132,196,0.28)",
           }}
         >
-          {repaintQueueState === "running"
-            ? "⏳ Queueing Repaint Jobs"
-            : queueRepaintLabel}
+          {queueRepaintLabel}
         </button>
 
-        {repaintQueueState !== "idle" && repaintQueueMessage && (
+        {(canAcceptRepaint || canRejectRepaint) && (
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              type="button"
+              onClick={onAcceptRepaint}
+              disabled={!canAcceptRepaint || repaintControlsBusy}
+              style={{
+                flex: 1,
+                background: "rgba(123, 211, 137, 0.14)",
+                border: "1px solid rgba(123, 211, 137, 0.45)",
+                color: "#d9f8dd",
+                borderRadius: 6,
+                padding: "9px 12px",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor:
+                  !canAcceptRepaint || repaintControlsBusy
+                    ? "not-allowed"
+                    : "pointer",
+                opacity: !canAcceptRepaint || repaintControlsBusy ? 0.65 : 1,
+                transition: "all 0.2s",
+              }}
+            >
+              {acceptRepaintLabel}
+            </button>
+
+            <button
+              type="button"
+              onClick={onRejectRepaint}
+              disabled={!canRejectRepaint || repaintControlsBusy}
+              style={{
+                flex: 1,
+                background: "rgba(220,80,80,0.12)",
+                border: "1px solid rgba(220,80,80,0.4)",
+                color: "#f4a0a0",
+                borderRadius: 6,
+                padding: "9px 12px",
+                fontSize: 12,
+                fontWeight: 700,
+                cursor:
+                  !canRejectRepaint || repaintControlsBusy
+                    ? "not-allowed"
+                    : "pointer",
+                opacity: !canRejectRepaint || repaintControlsBusy ? 0.65 : 1,
+                transition: "all 0.2s",
+              }}
+            >
+              {rejectRepaintLabel}
+            </button>
+          </div>
+        )}
+
+        {canCancelRepaint && (
+          <button
+            type="button"
+            onClick={onCancelRepaint}
+            disabled={!canCancelRepaint || repaintControlsBusy}
+            style={{
+              width: "100%",
+              background: "rgba(220,80,80,0.12)",
+              border: "1px solid rgba(220,80,80,0.4)",
+              color: "#f4a0a0",
+              borderRadius: 6,
+              padding: "9px 14px",
+              fontSize: 12,
+              fontWeight: 700,
+              cursor:
+                !canCancelRepaint || repaintControlsBusy
+                  ? "not-allowed"
+                  : "pointer",
+              opacity: !canCancelRepaint || repaintControlsBusy ? 0.65 : 1,
+              transition: "all 0.2s",
+            }}
+          >
+            {cancelRepaintLabel}
+          </button>
+        )}
+
+        {repaintQueueMessage && (
           <div
             style={{
               fontSize: 11,
@@ -685,6 +782,47 @@ export function RepositionPlannerPanel({
             }}
           >
             {repaintQueueMessage}
+          </div>
+        )}
+
+        {repaintCliOutput && (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 6,
+              padding: "10px 12px",
+              borderRadius: 8,
+              background: "rgba(6, 10, 16, 0.72)",
+              border: "1px solid rgba(123, 178, 255, 0.2)",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 11,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: 1,
+                color: "#90c7ff",
+              }}
+            >
+              Pipeline Output
+            </div>
+            <pre
+              style={{
+                margin: 0,
+                maxHeight: 180,
+                overflowY: "auto",
+                whiteSpace: "pre-wrap",
+                wordBreak: "break-word",
+                fontSize: 11,
+                lineHeight: 1.45,
+                color: "#d6e8ff",
+                fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
+              }}
+            >
+              {repaintCliOutput}
+            </pre>
           </div>
         )}
 

@@ -1,7 +1,9 @@
 import type { PagesFunction } from "../types";
 import { isKnownDistrict } from "../../lib/slugs";
 import {
+  clearActiveRepaintJob,
   enqueueRepositionRepaintJobs,
+  readActiveRepaintJob,
   readAppearanceAudit,
   readRepaintQueue,
   type RepaintQueueAction,
@@ -111,9 +113,13 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   const limit = parseLimit(new URL(request.url));
+  const activeJob = readActiveRepaintJob();
 
   return new Response(
     JSON.stringify({
+      capacity: 1,
+      available: !activeJob,
+      activeJob,
       queue: readRepaintQueue(limit),
       audit: readAppearanceAudit(limit),
     }),
@@ -170,17 +176,82 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     );
   }
 
+  if (changes.length > 1) {
+    return new Response(
+      JSON.stringify({
+        error:
+          "Repaint queue only supports one site at a time. Submit a single change.",
+      }),
+      {
+        status: 400,
+        headers: withCorsHeaders(request, {
+          "Content-Type": "application/json",
+        }),
+      },
+    );
+  }
+
   const result = enqueueRepositionRepaintJobs(action, reason, changes);
+
+  if (result.blockedBy && result.queued.length === 0) {
+    return new Response(
+      JSON.stringify({
+        error: `A repaint job is already queued for ${result.blockedBy.payload.stopId}. Clear it before queueing another site.`,
+        capacity: 1,
+        available: false,
+        activeJob: result.blockedBy,
+        queued: 0,
+        deduped: result.deduped.length,
+      }),
+      {
+        status: 409,
+        headers: withCorsHeaders(request, {
+          "Content-Type": "application/json",
+        }),
+      },
+    );
+  }
 
   return new Response(
     JSON.stringify({
       action,
       reason,
+      capacity: 1,
+      available: !result.activeJob,
+      activeJob: result.activeJob,
       requested: changes.length,
       queued: result.queued.length,
       deduped: result.deduped.length,
       jobs: result.queued,
       audit: result.audit,
+    }),
+    {
+      headers: withCorsHeaders(request, {
+        "Content-Type": "application/json",
+      }),
+    },
+  );
+};
+
+export const onRequestDelete: PagesFunction<Env> = async ({ request, env }) => {
+  if (!requestIsAuthoring(request, env)) {
+    return new Response(JSON.stringify({ error: "Authoring-only endpoint" }), {
+      status: 403,
+      headers: withCorsHeaders(request, {
+        "Content-Type": "application/json",
+      }),
+    });
+  }
+
+  const clearedJob = clearActiveRepaintJob("done");
+
+  return new Response(
+    JSON.stringify({
+      capacity: 1,
+      available: true,
+      activeJob: readActiveRepaintJob(),
+      cleared: Boolean(clearedJob),
+      clearedJob,
     }),
     {
       headers: withCorsHeaders(request, {
