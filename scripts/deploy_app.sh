@@ -251,7 +251,7 @@ cleanup_orphans() {
       [[ -f "$lockfile" ]] || continue
       local data
       data=$(cat "$lockfile")
-      if [[ "$(jq_field "$data" "screenSession")" == "$sess_name" ]]; then
+      if [[ "$(jq_field "$data" "screenSession")" == "$sess_name" || "$(jq_field "$data" "repaintScreenSession")" == "$sess_name" ]]; then
         found=true
         break
       fi

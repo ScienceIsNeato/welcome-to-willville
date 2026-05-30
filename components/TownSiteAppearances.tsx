@@ -32,10 +32,11 @@ export function TownSiteAppearances({
           return null;
         }
 
-        const sprite = SITE_SPRITES.get(stop.id);
-        if (!sprite) {
-          return null;
-        }
+        const sprite = SITE_SPRITES.get(stop.id) ?? {
+          stopId: stop.id,
+          width: 100,
+          height: 100,
+        };
 
         const crop = glyphHaloCropBoxForSprite(sprite, stop.position);
         return (
