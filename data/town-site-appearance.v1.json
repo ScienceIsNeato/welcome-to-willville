@@ -150,6 +150,33 @@
         "src": "/art/town/glyph-halos/seo_optimization.png",
         "cacheKey": "auto-v1-1780214300523"
       }
+    },
+    {
+      "stopId": "rizldizl-website",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/rizldizl-website.png",
+        "cacheKey": "auto-v1-1780222382007"
+      }
+    },
+    {
+      "stopId": "rizldizlscarybitz",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/rizldizlscarybitz.png",
+        "cacheKey": "auto-v1-1780222609923"
+      }
+    },
+    {
+      "stopId": "rizldizl",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/rizldizl.png",
+        "cacheKey": "auto-v1-1780223655694"
+      }
     }
   ]
 }

@@ -444,7 +444,7 @@ export function RepositionPlannerPanel({
             letterSpacing: 0.5,
           }}
         >
-          Willville Planner
+          City Planner
         </h2>
       </div>
 

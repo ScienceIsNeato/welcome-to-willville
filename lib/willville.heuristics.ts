@@ -543,6 +543,30 @@ export const HEURISTICS: Heuristic[] = [
     position: { x: 730, y: 696 },
     blurb: "Best-guess placement - override via .willville.json.",
   },
+  {
+    repo: "ScienceIsNeato/rizldizl-website",
+    displayName: "rizldizl-website",
+    district: "town-square",
+    lines: [],
+    position: { x: 742, y: 490 },
+    blurb: "Best-guess placement - override via .willville.json.",
+  },
+  {
+    repo: "ScienceIsNeato/RizlDizlScaryBitz",
+    displayName: "RizlDizlScaryBitz",
+    district: "the-zeitgeist",
+    lines: [],
+    position: { x: 823, y: 204 },
+    blurb: "Best-guess placement - override via .willville.json.",
+  },
+  {
+    repo: "ScienceIsNeato/RizlDizl",
+    displayName: "RizlDizl",
+    district: "the-zeitgeist",
+    lines: [],
+    position: { x: 928, y: 233 },
+    blurb: "Best-guess placement - override via .willville.json.",
+  },
 ];
 
 export function heuristicForRepo(repo: string): Heuristic | undefined {

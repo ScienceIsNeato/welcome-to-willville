@@ -1,5 +1,19 @@
 # Status
 
+## Done (2026-05-31) - Willville Planner Renamed To City Planner
+
+- Renamed the reposition UI heading from Willville Planner to City Planner.
+- Kept the planner behavior the same; this is a wording change only.
+- Validation pending after the rename.
+
+## Done (2026-05-31) - Commit Hook Freshness Guard For STATUS vs .willville
+
+- Added a dedicated script gate at `scripts/check-willville-freshness.sh` that compares filesystem modified times for `STATUS.md` and `.willville.json`.
+- Rule enforced: if `.willville.json` is older than `STATUS.md` by more than 60 minutes, the check exits non-zero and blocks the commit.
+- Updated `.githooks/pre-commit` to run this script before the existing staged-file pairing check, using the same simple non-zero block pattern used by slop-mop hook rails.
+- Failure messaging now explicitly tells the agent to use the willville skill before committing.
+- Validation: direct script run passed and `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
 ## Done (2026-05-31) - Loop-007 Logic Batch: Forum Close + Placement Cache Refresh
 
 - Fixed Town Forum "Main Street" behavior so clicking that internal flyer always closes the forum pane even when already on `/`.

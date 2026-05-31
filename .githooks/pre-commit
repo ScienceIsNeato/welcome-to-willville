@@ -10,6 +10,10 @@
 [[ -d .git/rebase-merge ]] || [[ -d .git/rebase-apply ]] && exit 0
 [[ -f .git/MERGE_HEAD ]] && exit 0
 
+# Mirror slop-mop's pattern: run a focused guard script and block on non-zero.
+HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+bash "$HOOK_DIR/../scripts/check-willville-freshness.sh" || exit 1
+
 # Is STATUS.md being committed?
 if git diff --cached --name-only | grep -qx "STATUS.md"; then
   # Is .willville.json also being committed?
