@@ -1,5 +1,13 @@
 # Status
 
+## Done (2026-05-31) - Accepted Repaint Art Persists Across Normal Refresh
+
+- Fixed refresh-time repaint disappearance by hydrating accepted repaint previews from the runner even when not in reposition mode.
+- `useRepaintPipeline` now does a mount-time status sync whenever the repaint runner is reachable, so normal page refresh restores accepted underlay previews instead of dropping back to stale in-memory-only UI state.
+- Kept polling behavior scoped to reposition mode only, so non-reposition routes avoid background status polling churn.
+- Runtime verification: rebuilt with `./scripts/deploy_app.sh`; runner status includes accepted `seo_optimization` preview and rendered SVG image href resolves to `http://127.0.0.1:3741/preview/glyph-halos/seo_optimization.png?...` after fresh load.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
 ## Done (2026-05-31) - Loop-005 Fully Closed
 
 - Implemented final manifest freshness fixes and pushed commit `cd2b99e`.
