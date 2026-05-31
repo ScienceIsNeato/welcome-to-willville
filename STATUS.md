@@ -1,5 +1,12 @@
 # Status
 
+## Done (2026-05-31) - Tower Eye Tab Icon + Deploy Failure Triage
+
+- Synced latest `main`, opened branch `codex/tab-icon-eye-tower-deploy-fix`, and added a dedicated tower-eye site icon for browser tabs.
+- Wired metadata icons in the app layout to serve the new SVG tab icon route consistently.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed and `activate && sm scour --json --output-file .slopmop/last_scour.json` passed.
+- Deploy triage: the failing deploy job is returning Cloudflare auth errors (`code: 10000` and `code: 9109` invalid access token) at deploy-time, which points to token/account credentials rather than app build regressions.
+
 ## Done (2026-05-31) - Willville Planner Renamed To City Planner
 
 - Renamed the reposition UI heading from Willville Planner to City Planner.

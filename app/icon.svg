@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Willville tower eye icon">
+  <defs>
+    <linearGradient id="towerFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2f2437" />
+      <stop offset="1" stop-color="#150d1c" />
+    </linearGradient>
+    <radialGradient id="eyeGlow" cx="50%" cy="50%" r="60%">
+      <stop offset="0" stop-color="#ffd980" />
+      <stop offset="0.6" stop-color="#ff9d2f" />
+      <stop offset="1" stop-color="#7a2b12" />
+    </radialGradient>
+  </defs>
+
+  <rect width="64" height="64" rx="12" fill="#0d0813" />
+
+  <path
+    d="M32 5L43 13L45 24L47 41L39 52L32 56L25 52L17 41L19 24L21 13Z"
+    fill="url(#towerFill)"
+    stroke="#4f3b61"
+    stroke-width="1.2"
+  />
+
+  <path
+    d="M23 21H41L40 27H24Z"
+    fill="#261831"
+    stroke="#6f557e"
+    stroke-width="0.8"
+  />
+
+  <ellipse cx="32" cy="27.8" rx="9.2" ry="5.3" fill="url(#eyeGlow)" />
+  <ellipse cx="32" cy="27.8" rx="3.1" ry="5" fill="#2a0f0b" />
+  <circle cx="33.2" cy="25.9" r="1.1" fill="#ffe9b3" opacity="0.8" />
+
+  <path d="M26 37H38" stroke="#8d6b44" stroke-width="1.5" stroke-linecap="round" />
+  <path d="M24 42H40" stroke="#8d6b44" stroke-width="1.5" stroke-linecap="round" />
+</svg>
