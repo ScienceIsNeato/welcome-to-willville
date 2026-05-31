@@ -25,6 +25,7 @@ import { withCorsHeaders } from "./cors";
 import {
   type ManifestCacheStore,
   hydrateManifestCacheFromStore,
+  readPersistedManifestCacheCachedAt,
   readCachedRepoManifest,
   WillvilleManifestClient,
 } from "./town-manifests";
@@ -43,6 +44,7 @@ const TOWN_SNAPSHOT_TTL_SECONDS = 60 * 15;
 type TownSnapshot = {
   schemaVersion: 1;
   generatedAt: string;
+  manifestCachedAt?: string;
   stops: Stop[];
 };
 
@@ -66,11 +68,39 @@ function parseTownSnapshot(raw: unknown): TownSnapshot | undefined {
     return undefined;
   }
 
+  const manifestCachedAt =
+    typeof candidate.manifestCachedAt === "string"
+      ? candidate.manifestCachedAt
+      : undefined;
+
   return {
     schemaVersion: 1,
     generatedAt: candidate.generatedAt,
+    manifestCachedAt,
     stops: candidate.stops as Stop[],
   };
+}
+
+function snapshotBaselineCachedAt(snapshot: TownSnapshot): number {
+  const basis = snapshot.manifestCachedAt ?? snapshot.generatedAt;
+  const parsed = Date.parse(basis);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function isTownSnapshotStale(
+  snapshot: TownSnapshot,
+  manifestCachedAt: string | null,
+): boolean {
+  if (!manifestCachedAt) {
+    return false;
+  }
+
+  const manifestParsed = Date.parse(manifestCachedAt);
+  if (!Number.isFinite(manifestParsed)) {
+    return false;
+  }
+
+  return manifestParsed > snapshotBaselineCachedAt(snapshot);
 }
 
 async function readTownSnapshot(
@@ -95,6 +125,7 @@ async function readTownSnapshot(
 async function persistTownSnapshot(
   store: ManifestCacheStore | undefined,
   generatedAt: string,
+  manifestCachedAt: string,
   stops: Stop[],
 ): Promise<void> {
   if (!store || stops.length === 0) {
@@ -107,6 +138,7 @@ async function persistTownSnapshot(
       JSON.stringify({
         schemaVersion: 1,
         generatedAt,
+        manifestCachedAt,
         stops,
       } satisfies TownSnapshot),
       {
@@ -591,29 +623,37 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   // Always use PAT when available to avoid unauthenticated rate limits (60/hr).
   const token = env.GITHUB_PAT;
   await hydrateManifestCacheFromStore(env.WILLVILLE_MANIFEST_CACHE);
+  const persistedManifestCachedAt = await readPersistedManifestCacheCachedAt(
+    env.WILLVILLE_MANIFEST_CACHE,
+  );
 
   const requestUrl = new URL(request.url);
   const forceRefresh = requestUrl.searchParams.has("refresh");
 
   if (!forceRefresh) {
     if (townSnapshotMemory && townSnapshotMemory.stops.length > 0) {
-      return new Response(
-        JSON.stringify({
-          mayor: true,
-          generatedAt: townSnapshotMemory.generatedAt,
-          stops: townSnapshotMemory.stops,
-        }),
-        {
-          headers: withCorsHeaders(request, {
-            "Content-Type": "application/json; charset=utf-8",
-            "Cache-Control": "public, s-maxage=45, stale-while-revalidate=180",
+      if (!isTownSnapshotStale(townSnapshotMemory, persistedManifestCachedAt)) {
+        return new Response(
+          JSON.stringify({
+            mayor: true,
+            generatedAt: townSnapshotMemory.generatedAt,
+            stops: townSnapshotMemory.stops,
           }),
-        },
-      );
+          {
+            headers: withCorsHeaders(request, {
+              "Content-Type": "application/json; charset=utf-8",
+              "Cache-Control":
+                "public, s-maxage=45, stale-while-revalidate=180",
+            }),
+          },
+        );
+      }
+
+      townSnapshotMemory = null;
     }
 
     const snapshot = await readTownSnapshot(env.WILLVILLE_MANIFEST_CACHE);
-    if (snapshot) {
+    if (snapshot && !isTownSnapshotStale(snapshot, persistedManifestCachedAt)) {
       townSnapshotMemory = snapshot;
       return new Response(
         JSON.stringify({
@@ -697,12 +737,19 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
 
   const stops = buildTown(repoMetas);
   const generatedAt = new Date().toISOString();
+  const snapshotManifestCachedAt = persistedManifestCachedAt ?? generatedAt;
   townSnapshotMemory = {
     schemaVersion: 1,
     generatedAt,
+    manifestCachedAt: snapshotManifestCachedAt,
     stops,
   };
-  await persistTownSnapshot(env.WILLVILLE_MANIFEST_CACHE, generatedAt, stops);
+  await persistTownSnapshot(
+    env.WILLVILLE_MANIFEST_CACHE,
+    generatedAt,
+    snapshotManifestCachedAt,
+    stops,
+  );
 
   const cacheControl = "public, s-maxage=45, stale-while-revalidate=180";
 

@@ -32,6 +32,7 @@ interface Env {
 
 const OWNER = "ScienceIsNeato";
 const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
+const TOWN_SNAPSHOT_KEY = "willville:town:snapshot:v1";
 
 async function mapLimit<T, R>(
   items: T[],
@@ -325,6 +326,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         nextCache,
         env.WILLVILLE_MANIFEST_CACHE,
       );
+      try {
+        await env.WILLVILLE_MANIFEST_CACHE?.delete?.(TOWN_SNAPSHOT_KEY);
+      } catch {
+        // Keep bell response healthy even if snapshot invalidation fails.
+      }
 
       push({
         type: "complete",

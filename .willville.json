@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Fixed new-site paint placement and bumped cache keys so refreshed art now shows up in-app right away",
-    "direction": "Next is wrapping these repaint fixes into the branch cleanup and handoff",
-    "last_update": "2026-05-31T13:42:00Z"
+    "status": "Fixed bell-refresh snapshot invalidation so town data refreshes right away after manifest updates",
+    "direction": "Next is closing the remaining PR review thread and finishing the buff loop",
+    "last_update": "2026-05-31T14:05:00Z"
   }
 }

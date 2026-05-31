@@ -1,5 +1,13 @@
 # Status
 
+## Done (2026-05-31) - Bell Refresh Now Invalidates Town Snapshot Cache
+
+- Fixed stale `/api/town` snapshot behavior after bell refresh by wiring manifest-cache freshness checks into town snapshot reads.
+- Added snapshot staleness detection in `functions/api/town.ts` so in-memory and persisted town snapshots are bypassed when manifest cache is newer.
+- Added persisted manifest-cache timestamp accessors in `functions/api/town-manifests.ts` for freshness comparison.
+- Updated `POST /api/manifests` to delete the persisted town snapshot key after manifest refresh, forcing fresh town rebuilds on subsequent requests.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
 ## Done (2026-05-31) - New-Site Paint Pipeline No Longer Fails With Empty Mask
 
 - Fixed repaint mask generation for sprite-less sites (custom-prompt path) so the mask always contains a valid transparent insertion region.

@@ -22,6 +22,7 @@ export type ManifestCacheStore = {
     value: string,
     options?: { expirationTtl?: number },
   ): Promise<void>;
+  delete?(key: string): Promise<void>;
 };
 
 type PersistedManifestSnapshot = {
@@ -30,10 +31,11 @@ type PersistedManifestSnapshot = {
   manifests: Record<string, WillvilleManifest>;
 };
 
-const MANIFEST_CACHE_KEY = "willville:manifests:cache:v1";
+export const MANIFEST_CACHE_KEY = "willville:manifests:cache:v1";
 const MANIFEST_CACHE_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 let manifestCache = new Map<string, WillvilleManifest>();
+let manifestCacheCachedAt: string | null = null;
 let hydrateManifestCachePromise: Promise<void> | null = null;
 let hydratedManifestCache = false;
 
@@ -47,17 +49,37 @@ function snapshotFromCache(
   };
 }
 
-function cacheFromSnapshot(raw: unknown): Map<string, WillvilleManifest> {
+function parsePersistedSnapshot(
+  raw: unknown,
+): PersistedManifestSnapshot | undefined {
   if (!raw || typeof raw !== "object") {
-    return new Map<string, WillvilleManifest>();
+    return undefined;
   }
 
   const snapshot = raw as Partial<PersistedManifestSnapshot>;
   if (snapshot.schemaVersion !== 1) {
-    return new Map<string, WillvilleManifest>();
+    return undefined;
+  }
+
+  if (typeof snapshot.cachedAt !== "string") {
+    return undefined;
   }
 
   if (!snapshot.manifests || typeof snapshot.manifests !== "object") {
+    return undefined;
+  }
+
+  return {
+    schemaVersion: 1,
+    cachedAt: snapshot.cachedAt,
+    manifests: snapshot.manifests as Record<string, WillvilleManifest>,
+  };
+}
+
+function cacheFromSnapshot(
+  snapshot: PersistedManifestSnapshot | undefined,
+): Map<string, WillvilleManifest> {
+  if (!snapshot) {
     return new Map<string, WillvilleManifest>();
   }
 
@@ -88,6 +110,27 @@ export function replaceManifestCache(
   nextCache: Map<string, WillvilleManifest>,
 ): void {
   manifestCache = nextCache;
+  manifestCacheCachedAt = new Date().toISOString();
+}
+
+export function getManifestCacheCachedAt(): string | null {
+  return manifestCacheCachedAt;
+}
+
+export async function readPersistedManifestCacheCachedAt(
+  store?: ManifestCacheStore,
+): Promise<string | null> {
+  if (!store) {
+    return null;
+  }
+
+  try {
+    const raw = await store.get(MANIFEST_CACHE_KEY, { type: "json" });
+    const snapshot = parsePersistedSnapshot(raw);
+    return snapshot?.cachedAt ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export async function hydrateManifestCacheFromStore(
@@ -105,10 +148,12 @@ export async function hydrateManifestCacheFromStore(
   hydrateManifestCachePromise = (async () => {
     try {
       const raw = await store.get(MANIFEST_CACHE_KEY, { type: "json" });
-      const persisted = cacheFromSnapshot(raw);
+      const snapshot = parsePersistedSnapshot(raw);
+      const persisted = cacheFromSnapshot(snapshot);
       if (persisted.size > 0) {
         manifestCache = persisted;
       }
+      manifestCacheCachedAt = snapshot?.cachedAt ?? manifestCacheCachedAt;
       hydratedManifestCache = true;
     } catch {
       // Keep in-memory behavior if durable cache read fails.
@@ -129,13 +174,11 @@ export async function persistManifestCacheToStore(
   }
 
   try {
-    await store.put(
-      MANIFEST_CACHE_KEY,
-      JSON.stringify(snapshotFromCache(source)),
-      {
-        expirationTtl: MANIFEST_CACHE_TTL_SECONDS,
-      },
-    );
+    const snapshot = snapshotFromCache(source);
+    await store.put(MANIFEST_CACHE_KEY, JSON.stringify(snapshot), {
+      expirationTtl: MANIFEST_CACHE_TTL_SECONDS,
+    });
+    manifestCacheCachedAt = snapshot.cachedAt;
     hydratedManifestCache = true;
   } catch {
     // No-op: bell should still succeed with in-memory cache even if KV write fails.
