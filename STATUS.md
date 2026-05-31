@@ -1,5 +1,11 @@
 # Status
 
+## Done (2026-05-31) — Mobile Detail Drawer Now Supports Real Pull Dragging
+
+- Replaced tap-only drawer behavior with pointer drag handling on the grab handle, including live movement while dragging and threshold-based expand/collapse on release.
+- Prevented accidental tap toggles immediately after a drag so the drawer no longer flashes in/out when users try to pull it.
+- Validation: `sm swab` passed and `./scripts/deploy_app.sh` rebuilt successfully with the updated interaction behavior.
+
 ## Done (2026-05-30) — Reposition Flow Now Uses Single-Site Stage/Accept/Reject Instead Of Copying Heuristics
 
 - Replaced the old `Copy Heuristics Code` handoff with a local single-site staging flow in the planner, so reposition and district edits can be reviewed and then accepted/rejected directly in the UI.

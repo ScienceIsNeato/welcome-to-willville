@@ -1,10 +1,19 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import {
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  useRef,
+  useState,
+} from "react";
 import type { CanalBoat } from "@/lib/canal";
 import type { Stop } from "@/lib/town";
 import { PanelChromeControls } from "./PanelChromeControls";
 import { MobileDetailBoard } from "./MobileDetailBoard";
+
+const DRAG_THRESHOLD_PX = 46;
+const MAX_DRAG_PREVIEW_PX = 160;
 
 type Props = {
   stop: Stop;
@@ -25,6 +34,96 @@ export function MobileDetailDrawer({
   onToggleVisibility,
   onOpacityChange,
 }: Props) {
+  const [dragOffsetY, setDragOffsetY] = useState(0);
+  const [handleDragging, setHandleDragging] = useState(false);
+  const activePointerIdRef = useRef<number | null>(null);
+  const dragStartYRef = useRef(0);
+  const dragLastYRef = useRef(0);
+  const dragMovedRef = useRef(false);
+  const suppressNextClickRef = useRef(false);
+
+  const clearDrag = () => {
+    activePointerIdRef.current = null;
+    dragStartYRef.current = 0;
+    dragLastYRef.current = 0;
+    dragMovedRef.current = false;
+    setHandleDragging(false);
+    setDragOffsetY(0);
+  };
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    activePointerIdRef.current = event.pointerId;
+    dragStartYRef.current = event.clientY;
+    dragLastYRef.current = event.clientY;
+    dragMovedRef.current = false;
+    setHandleDragging(true);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (activePointerIdRef.current !== event.pointerId) {
+      return;
+    }
+
+    const deltaY = event.clientY - dragStartYRef.current;
+    dragLastYRef.current = event.clientY;
+
+    if (Math.abs(deltaY) > 4) {
+      dragMovedRef.current = true;
+    }
+
+    const rawOffset = expanded
+      ? Math.max(0, deltaY)
+      : Math.min(0, Math.max(-MAX_DRAG_PREVIEW_PX, deltaY));
+    setDragOffsetY(Math.min(MAX_DRAG_PREVIEW_PX, rawOffset));
+
+    event.preventDefault();
+  };
+
+  const finishDrag = () => {
+    const deltaY = dragLastYRef.current - dragStartYRef.current;
+    const crossedCollapseThreshold = expanded && deltaY >= DRAG_THRESHOLD_PX;
+    const crossedExpandThreshold = !expanded && deltaY <= -DRAG_THRESHOLD_PX;
+
+    if (
+      dragMovedRef.current &&
+      (crossedCollapseThreshold || crossedExpandThreshold)
+    ) {
+      onToggleExpanded();
+    }
+
+    if (dragMovedRef.current) {
+      suppressNextClickRef.current = true;
+    }
+
+    clearDrag();
+  };
+
+  const handlePointerUp = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (activePointerIdRef.current !== event.pointerId) {
+      return;
+    }
+    finishDrag();
+  };
+
+  const handlePointerCancel = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (activePointerIdRef.current !== event.pointerId) {
+      return;
+    }
+    clearDrag();
+  };
+
+  const handleClick = (event: ReactMouseEvent<HTMLButtonElement>) => {
+    if (suppressNextClickRef.current) {
+      suppressNextClickRef.current = false;
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
+    onToggleExpanded();
+  };
+
   const title = stop.repo?.split("/").at(-1) ?? stop.id;
   const preview =
     stop.status.doing || stop.status.summary || "Pull up for details";
@@ -33,11 +132,16 @@ export function MobileDetailDrawer({
     <aside
       data-town-control
       aria-label="Willville site detail drawer"
-      style={shellStyle(expanded, panelOpacity)}
+      style={shellStyle(expanded, panelOpacity, dragOffsetY, handleDragging)}
     >
       <button
         type="button"
-        onClick={onToggleExpanded}
+        onClick={handleClick}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onLostPointerCapture={handlePointerCancel}
         aria-expanded={expanded}
         aria-label={
           expanded
@@ -87,7 +191,12 @@ export function MobileDetailDrawer({
   );
 }
 
-function shellStyle(expanded: boolean, panelOpacity: number): CSSProperties {
+function shellStyle(
+  expanded: boolean,
+  panelOpacity: number,
+  dragOffsetY: number,
+  dragging: boolean,
+): CSSProperties {
   return {
     position: "absolute",
     left: 10,
@@ -107,6 +216,11 @@ function shellStyle(expanded: boolean, panelOpacity: number): CSSProperties {
     backdropFilter: "blur(12px)",
     overflow: "hidden",
     pointerEvents: "auto",
+    transform: `translateY(${dragOffsetY}px)`,
+    transition: dragging
+      ? "none"
+      : "height 220ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 180ms ease-out",
+    willChange: "height, transform",
   };
 }
 
@@ -121,6 +235,9 @@ const handleButtonStyle: CSSProperties = {
   color: "var(--willville-paper)",
   cursor: "pointer",
   textAlign: "center",
+  touchAction: "none",
+  userSelect: "none",
+  WebkitUserSelect: "none",
 };
 
 const grabberStyle: CSSProperties = {
