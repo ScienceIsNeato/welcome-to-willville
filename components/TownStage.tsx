@@ -115,17 +115,27 @@ function readBrowserTownSnapshot(): BrowserTownSnapshot | null {
   }
 }
 
-function writeBrowserTownSnapshot(stops: Stop[]): void {
+function writeBrowserTownSnapshot(
+  stops: Stop[],
+  options: { cachedAt?: string } = {},
+): void {
   if (typeof window === "undefined" || stops.length === 0) {
     return;
   }
+
+  const incomingCachedAt = options.cachedAt;
+  const cachedAt =
+    typeof incomingCachedAt === "string" &&
+    Number.isFinite(parseTimestamp(incomingCachedAt))
+      ? incomingCachedAt
+      : new Date().toISOString();
 
   try {
     window.localStorage.setItem(
       BROWSER_TOWN_CACHE_KEY,
       JSON.stringify({
         schemaVersion: 1,
-        cachedAt: new Date().toISOString(),
+        cachedAt,
         stops,
       } satisfies BrowserTownSnapshot),
     );
@@ -603,7 +613,12 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               }
               return [...previousStops, ...appendedStops];
             });
-            writeBrowserTownSnapshot(incomingStops);
+            writeBrowserTownSnapshot(incomingStops, {
+              cachedAt:
+                typeof data.generatedAt === "string"
+                  ? data.generatedAt
+                  : undefined,
+            });
           }
           return data;
         });
