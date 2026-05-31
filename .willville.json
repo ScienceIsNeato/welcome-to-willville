@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Restored both signs on mobile and converted the forum pane contents into pinned corkboard notes",
-    "direction": "Next is tuning mobile readability now that the split-flap board shows 6 rows and both signs are visible",
-    "last_update": "2026-05-31T11:05:00Z"
+    "status": "Fixed new-site paint placement and bumped cache keys so refreshed art now shows up in-app right away",
+    "direction": "Next is wrapping these repaint fixes into the branch cleanup and handoff",
+    "last_update": "2026-05-31T13:42:00Z"
   }
 }

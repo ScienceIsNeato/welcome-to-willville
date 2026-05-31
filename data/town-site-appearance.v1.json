@@ -141,6 +141,15 @@
         "src": "/art/town/glyph-halos/slop-mop-website.png",
         "cacheKey": "auto-v1-1780126996024"
       }
+    },
+    {
+      "stopId": "seo_optimization",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/seo_optimization.png",
+        "cacheKey": "auto-v1-1780214300523"
+      }
     }
   ]
 }

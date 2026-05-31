@@ -309,10 +309,18 @@ function validatePlacementPayload(body) {
       ? body.displayName.trim()
       : change.stopId;
 
+  const lines = Array.isArray(body.lines)
+    ? body.lines
+        .filter((line) => typeof line === "string")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+    : [];
+
   return {
     change,
     repo: body.repo.trim(),
     displayName,
+    lines,
   };
 }
 
@@ -366,13 +374,64 @@ function findMatchingObjectEnd(source, openBraceIndex) {
   return -1;
 }
 
-function rewriteHeuristicPlacement(source, { repo, to }) {
+function buildNewHeuristicEntry({ repo, displayName, lines, to }) {
+  const fallbackName = repo.split("/").at(-1) ?? repo;
+  const safeDisplayName =
+    typeof displayName === "string" && displayName.trim().length > 0
+      ? displayName.trim()
+      : fallbackName;
+
+  const normalizedLines = Array.isArray(lines)
+    ? lines
+        .filter((line) => typeof line === "string")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0)
+    : [];
+
+  const lineSet = new Set();
+  const dedupedLines = normalizedLines.filter((line) => {
+    if (lineSet.has(line)) {
+      return false;
+    }
+    lineSet.add(line);
+    return true;
+  });
+
+  const linesLiteral = dedupedLines
+    .map((line) => JSON.stringify(line))
+    .join(", ");
+
+  return [
+    "",
+    "  {",
+    `    repo: ${JSON.stringify(repo)},`,
+    `    displayName: ${JSON.stringify(safeDisplayName)},`,
+    `    district: ${JSON.stringify(to.district)},`,
+    `    lines: [${linesLiteral}],`,
+    `    position: { x: ${to.x}, y: ${to.y} },`,
+    '    blurb: "Best-guess placement - override via .willville.json.",',
+    "  },",
+  ].join("\n");
+}
+
+function rewriteHeuristicPlacement(source, { repo, displayName, lines, to }) {
   const repoMarker = new RegExp(
     `repo:\\s*${escapeRegExp(JSON.stringify(repo))}`,
   );
   const repoMatch = repoMarker.exec(source);
   if (!repoMatch) {
-    throw new Error(`Could not find heuristic entry for ${repo}.`);
+    const arrayEnd = source.lastIndexOf("\n];");
+    if (arrayEnd === -1) {
+      throw new Error("Could not locate HEURISTICS array terminator.");
+    }
+
+    const newEntry = buildNewHeuristicEntry({
+      repo,
+      displayName,
+      lines,
+      to,
+    });
+    return source.slice(0, arrayEnd) + newEntry + source.slice(arrayEnd);
   }
 
   const objectStart = source.lastIndexOf("\n  {", repoMatch.index);
@@ -430,6 +489,8 @@ async function acceptPlacementJob() {
   const before = await readFile(heuristicsPath, "utf8");
   const after = rewriteHeuristicPlacement(before, {
     repo: job.repo,
+    displayName: job.displayName,
+    lines: job.lines,
     to: job.change.to,
   });
 
@@ -474,7 +535,7 @@ async function rejectPlacementJob() {
   };
 }
 
-async function stagePlacementChange(change, repo, displayName) {
+async function stagePlacementChange(change, repo, displayName, lines = []) {
   const state = await readState();
   if (state.activePlacement) {
     throw new Error(
@@ -488,6 +549,7 @@ async function stagePlacementChange(change, repo, displayName) {
       stopId: change.stopId,
       repo,
       displayName,
+      lines,
       status: "awaiting_review",
       createdAt: nowIso(),
       change,
@@ -1067,6 +1129,7 @@ async function handleRequest(req, res) {
         payload.change,
         payload.repo,
         payload.displayName,
+        payload.lines,
       );
       sendJson(req, res, 202, nextState);
       return;

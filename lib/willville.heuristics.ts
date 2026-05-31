@@ -535,6 +535,14 @@ export const HEURISTICS: Heuristic[] = [
       state: "placeholder",
     },
   },
+  {
+    repo: "ScienceIsNeato/SEO_optimization",
+    displayName: "SEO_optimization",
+    district: "town-square",
+    lines: ["web"],
+    position: { x: 730, y: 696 },
+    blurb: "Best-guess placement - override via .willville.json.",
+  },
 ];
 
 export function heuristicForRepo(repo: string): Heuristic | undefined {

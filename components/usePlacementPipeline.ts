@@ -237,6 +237,7 @@ export function usePlacementPipeline({
       body: JSON.stringify({
         repo: plannerStop.repo,
         displayName: plannerStop.displayName,
+        lines: plannerStop.lines,
         change: {
           stopId: plannerStop.id,
           from: {

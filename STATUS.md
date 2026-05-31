@@ -1,5 +1,24 @@
 # Status
 
+## Done (2026-05-31) - New-Site Paint Pipeline No Longer Fails With Empty Mask
+
+- Fixed repaint mask generation for sprite-less sites (custom-prompt path) so the mask always contains a valid transparent insertion region.
+- Added a fallback ellipse carve in `apply-town-glyph-halo` when no sprite-alpha region is available, preventing `insert-glyph` from failing with "Mask has no transparent pixels".
+- Fixed sprite-less mask centering so the fallback carve uses the real site center instead of defaulting to top-left of the crop. This stops successful paints from appearing visually displaced/missing around new sites.
+- Runtime verification: queued `seo_optimization` repaint with the same custom prompt and confirmed sidecar status moved to `running` with no mask error.
+- Artifact verification: regenerated `public/art/town/glyph-halos/seo_optimization.png` and confirmed the painted content bounds are centered in the crop (`bbox: x=74..575, y=73..577` in a 648x648 output).
+- Visibility hardening: bumped `seo_optimization` underlay cache key in `data/town-site-appearance.v1.json` so browsers fetch the refreshed centered overlay immediately.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
+## Done (2026-05-31) - Placement Accept Now Handles New Repos Not Yet In Heuristics
+
+- Fixed staged placement accept so new repos that are not already in heuristics no longer fail with a 409. Accept now creates a new heuristic entry with repo, display name, district, lines, and position.
+- Preserved line assignments for new entries by sending the selected stop lines through placement queue payloads.
+- Runtime verification: restarted local runtime with `./scripts/deploy_app.sh --stop` then `./scripts/deploy_app.sh`, confirmed `/placement/queue` returns 202 and `/placement/accept` returns 200 for `ScienceIsNeato/SEO_optimization`.
+- Corrected the inserted heuristics coordinates to the staged move observed in sidecar state (`town-square`, `x:648`, `y:701`).
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green after the runtime repro.
+- Workflow check: `activate && sm sail` now runs and reports the next action as committing uncommitted work.
+
 ## Done (2026-05-31) — Mobile Signs Restored And WTF Content Shifted To Corkboard Notes
 
 - Fixed mobile landmark visibility so both hill signs render in mobile-safe mode instead of disappearing.
