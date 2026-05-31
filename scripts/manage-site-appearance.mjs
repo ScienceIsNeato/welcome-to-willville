@@ -40,7 +40,14 @@
 
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
+import {
+  copyFile,
+  mkdir,
+  readdir,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { resolve } from "node:path";
 import { promisify } from "node:util";
 
@@ -50,6 +57,7 @@ const root = resolve(new URL("..", import.meta.url).pathname);
 const MANIFEST_PATH = resolve(root, "data/town-site-appearance.v1.json");
 const BACKUP_DIR = resolve(root, "data/backups/town-site-appearance");
 const AUDIT_PATH = resolve(root, "data/town-site-appearance-audit.v1.json");
+const UNDERLAY_DIR = resolve(root, "public/art/town/glyph-halos");
 const AUDIT_VERSION = "town-site-appearance-audit-v1";
 
 const VALID_FOREGROUND_MODES = new Set(["sprite", "background-only"]);
@@ -383,6 +391,48 @@ async function regenerateUnderlayArt(stopId) {
   }
 }
 
+function underlayAssetPath(stopId) {
+  return resolve(UNDERLAY_DIR, `${stopId}.png`);
+}
+
+async function snapshotUnderlayAsset(stopId) {
+  await mkdir(BACKUP_DIR, { recursive: true });
+  const targetPath = underlayAssetPath(stopId);
+  const existed = existsSync(targetPath);
+
+  if (!existed) {
+    return {
+      stopId,
+      existed,
+      targetPath,
+      backupPath: null,
+    };
+  }
+
+  const fileName = `underlay.${stopId}.${backupStamp()}.png`;
+  const backupPath = resolve(BACKUP_DIR, fileName);
+  await copyFile(targetPath, backupPath);
+  return {
+    stopId,
+    existed,
+    targetPath,
+    backupPath,
+  };
+}
+
+async function restoreUnderlayAssetSnapshot(snapshot) {
+  if (
+    snapshot.existed &&
+    snapshot.backupPath &&
+    existsSync(snapshot.backupPath)
+  ) {
+    await copyFile(snapshot.backupPath, snapshot.targetPath);
+    return;
+  }
+
+  await rm(snapshot.targetPath, { force: true });
+}
+
 async function cmdProcessQueue(flags) {
   const queueFile = requireFlag(flags, "queue-file");
   const dryRun = flags.get("dry-run") === "true";
@@ -458,21 +508,59 @@ async function cmdProcessQueue(flags) {
     return;
   }
 
-  const snapshot = await snapshotManifest("process-queue");
-  await writeManifest(manifest);
-  await appendAuditEvents(
-    auditEvents.map((event) => ({ ...event, backup: snapshot.fileName })),
-  );
-  console.log(`  snapshot: ${snapshot.fileName}`);
+  const processedStopIds = [...processedStops];
+  const underlaySnapshots = [];
 
-  if (regenArt) {
-    for (const stopId of processedStops) {
-      try {
-        await regenerateUnderlayArt(stopId);
-      } catch (error) {
-        console.error(`  art regen failed for ${stopId}: ${error.message}`);
+  try {
+    if (regenArt) {
+      for (const stopId of processedStopIds) {
+        const underlaySnapshot = await snapshotUnderlayAsset(stopId);
+        underlaySnapshots.push(underlaySnapshot);
+
+        try {
+          await regenerateUnderlayArt(stopId);
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : "Unknown art regen error";
+          console.error(`  art regen failed for ${stopId}: ${message}`);
+          throw new Error(`Art regeneration failed for ${stopId}: ${message}`);
+        }
       }
     }
+
+    const snapshot = await snapshotManifest("process-queue");
+    await writeManifest(manifest);
+    await appendAuditEvents(
+      auditEvents.map((event) => ({ ...event, backup: snapshot.fileName })),
+    );
+    console.log(`  snapshot: ${snapshot.fileName}`);
+  } catch (error) {
+    if (regenArt && underlaySnapshots.length > 0) {
+      const rollbackErrors = [];
+      for (const underlaySnapshot of [...underlaySnapshots].reverse()) {
+        try {
+          await restoreUnderlayAssetSnapshot(underlaySnapshot);
+        } catch (rollbackError) {
+          const rollbackMessage =
+            rollbackError instanceof Error
+              ? rollbackError.message
+              : "Unknown rollback error";
+          rollbackErrors.push(`${underlaySnapshot.stopId}: ${rollbackMessage}`);
+        }
+      }
+
+      if (rollbackErrors.length > 0) {
+        const originalMessage =
+          error instanceof Error
+            ? error.message
+            : "Unknown process-queue error";
+        throw new Error(
+          `${originalMessage}. Failed to roll back underlay assets for: ${rollbackErrors.join(", ")}`,
+        );
+      }
+    }
+
+    throw error;
   }
 }
 

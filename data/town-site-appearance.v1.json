@@ -12,24 +12,27 @@
       "underlay": {
         "enabled": true,
         "src": "/art/town/glyph-halos/ganglia-studio.png",
-        "cacheKey": "ganglia-studio-halo-v5"
-      }
+        "cacheKey": "ganglia-studio-halo-v6"
+      },
+      "foregroundMode": "background-only"
     },
     {
       "stopId": "ganglia-common",
       "underlay": {
         "enabled": true,
         "src": "/art/town/glyph-halos/ganglia-common.png",
-        "cacheKey": "ganglia-common-halo-v3"
-      }
+        "cacheKey": "ganglia-common-halo-v4"
+      },
+      "foregroundMode": "background-only"
     },
     {
       "stopId": "halloweentracker",
       "underlay": {
         "enabled": true,
         "src": "/art/town/glyph-halos/halloweentracker.png",
-        "cacheKey": "halloweentracker-halo-v10"
-      }
+        "cacheKey": "halloweentracker-halo-v11"
+      },
+      "foregroundMode": "background-only"
     },
     {
       "stopId": "chronicchronicler",
@@ -108,7 +111,7 @@
       "underlay": {
         "enabled": true,
         "src": "/art/town/glyph-halos/slop-mop.png",
-        "cacheKey": "auto-v1-1780011201843"
+        "cacheKey": "auto-v1-1780011201844"
       }
     },
     {
@@ -127,6 +130,15 @@
         "enabled": true,
         "src": "/art/town/glyph-halos/slop-mop-action.png",
         "cacheKey": "auto-v1-1780025850860"
+      }
+    },
+    {
+      "stopId": "slop-mop-website",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/slop-mop-website.png",
+        "cacheKey": "auto-v1-1780126996024"
       }
     }
   ]

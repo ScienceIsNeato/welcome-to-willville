@@ -125,13 +125,8 @@ const PLUMES: Plume[] = [
 export function ChimneySmoke() {
   return (
     <g className="chimney-smoke" aria-hidden>
-      <defs>
-        <filter id="smoke-soften" x="-80%" y="-120%" width="260%" height="340%">
-          <feGaussianBlur stdDeviation="3.8" />
-        </filter>
-      </defs>
       {PLUMES.map((plume) => (
-        <g key={plume.id} filter="url(#smoke-soften)">
+        <g key={plume.id} style={{ filter: "blur(3.8px)" }}>
           {plume.puffs.map((puff, index) => (
             <ellipse
               key={`${plume.id}-${index}`}
@@ -140,26 +135,17 @@ export function ChimneySmoke() {
               rx={puff.rx}
               ry={puff.ry}
               fill="#c8c2bb"
-              opacity={0}
-            >
-              <animate
-                attributeName="opacity"
-                values="0;0.28;0.2;0"
-                keyTimes="0;0.2;0.68;1"
-                dur={puff.duration}
-                begin={puff.delay}
-                repeatCount="indefinite"
-              />
-              <animateTransform
-                attributeName="transform"
-                type="translate"
-                values={`0 0; ${puff.driftX * 0.45} ${-puff.rise * 0.45}; ${puff.driftX} ${-puff.rise}`}
-                keyTimes="0;0.55;1"
-                dur={puff.duration}
-                begin={puff.delay}
-                repeatCount="indefinite"
-              />
-            </ellipse>
+              className="smoke-puff-anim"
+              style={
+                {
+                  animationDuration: puff.duration,
+                  animationDelay: puff.delay,
+                  transformOrigin: `${puff.x}px ${puff.y}px`,
+                  "--drift-x": `${puff.driftX}px`,
+                  "--rise-y": `${-puff.rise}px`,
+                } as React.CSSProperties
+              }
+            />
           ))}
         </g>
       ))}

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Fixed the commit-count display that was stuck at 100 for the week and three-week numbers - it was only ever looking at the first 100 commits, so busy repos looked frozen. Now it pages through the whole window so the real counts show. Spent the rest of the time getting the project's CI checks green again after a tooling version bump shook loose a couple of unrelated snags.",
-    "direction": "Commit-count fix is in and the CI hiccups are sorted one by one - waiting on the latest run to come back clean before calling it done. After that, a reviewer note about cold-start repos showing grey is still open.",
-    "last_update": "2026-05-29T20:15:00Z"
+    "status": "Wrapped a PR feedback pass to harden sidecar workflows and clear stale pipeline state",
+    "direction": "Next is finishing thread resolution in buff and landing the branch cleanly",
+    "last_update": "2026-05-31T04:06:47Z"
   }
 }

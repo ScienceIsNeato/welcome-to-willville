@@ -1,0 +1,36 @@
+{
+  "stopId": "new-test-site",
+  "districtId": "town-square",
+  "sourceImage": "/art/town/districts/town-square.png",
+  "spriteImage": "/art/stops/new-test-site.png",
+  "regionMaskImage": "/art/town/masks/district-art/town-square.png",
+  "overlayOutput": "/art/town/glyph-halos/new-test-site.png",
+  "alphaBox": {
+    "x": 771,
+    "y": 602,
+    "width": 100,
+    "height": 100
+  },
+  "radialScale": 1.14,
+  "haloRayPadding": 7,
+  "maskBox": {
+    "x": 764,
+    "y": 595,
+    "width": 114,
+    "height": 114
+  },
+  "cropBox": {
+    "x": 740,
+    "y": 571,
+    "width": 162,
+    "height": 162
+  },
+  "authoringCrop": {
+    "left": 2960,
+    "top": 2284,
+    "width": 648,
+    "height": 648
+  },
+  "debugMaskPath": "/docs/generated/new-test-site-glyph-halo-mask.png",
+  "dryRun": true
+}

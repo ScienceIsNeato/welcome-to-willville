@@ -1,0 +1,14 @@
+{
+  "style": "Dense board-game diorama miniature, elevated three-quarter top-down view, hand-painted texture, crisp tiny details, warm saturated colors, soft drop shadow beneath, transparent background (PNG alpha). The object should be a self-contained sprite about 100x120 pixels conceptually, centered in frame with empty space around it.",
+  "backend": "dalle",
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "quality": "high",
+  "output_dir": "./output/bespoke-sprites",
+  "images": [
+    {
+      "id": "slop-mop-website",
+      "prompt": "A miniature diorama of a dark gravitational singularity artifact — a small obsidian monolith or obelisk that visibly warps the space around it. The stone surface is jet black with faint teal-cyan mathematical equations and grid lines glowing on its faces. The surrounding air/space is distorted — concentric ripple rings bending inward toward the object like a gravitational lens. Tiny golden light trails spiral around it like optimization paths being pulled toward a minimum. Small glowing teal beacon lights at the base. The overall feeling is a tiny black hole monument that bends reality around itself. Dark, mysterious, scientific, but rendered as a whimsical board-game piece."
+    }
+  ]
+}

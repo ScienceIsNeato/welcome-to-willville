@@ -103,29 +103,35 @@ export function DynamicWalls() {
               className="dynamic-wall-loop-stones dynamic-wall-loop-stones-a"
               fill="none"
               pathLength={WALL_PATH_LENGTH}
-            >
-              <animate
-                attributeName="stroke-dashoffset"
-                from="0"
-                to={`-${WALL_PATH_LENGTH}`}
-                dur={`${loop.duration}s`}
-                repeatCount="indefinite"
-              />
-            </path>
+              style={
+                {
+                  animationName: "dynamic-wall-dash-left",
+                  animationDuration: `${loop.duration}s`,
+                  animationTimingFunction: "linear",
+                  animationIterationCount: "infinite",
+                  willChange: "stroke-dashoffset",
+                  "--dash-start": "0",
+                  "--dash-len": `${WALL_PATH_LENGTH}`,
+                } as React.CSSProperties
+              }
+            />
             <path
               d={loop.path}
               className="dynamic-wall-loop-stones dynamic-wall-loop-stones-b"
               fill="none"
               pathLength={WALL_PATH_LENGTH}
-            >
-              <animate
-                attributeName="stroke-dashoffset"
-                from={`${90 + loopIndex * 9}`}
-                to={`${90 + loopIndex * 9 - WALL_PATH_LENGTH}`}
-                dur={`${loop.duration * 1.08}s`}
-                repeatCount="indefinite"
-              />
-            </path>
+              style={
+                {
+                  animationName: "dynamic-wall-dash-left",
+                  animationDuration: `${loop.duration * 1.08}s`,
+                  animationTimingFunction: "linear",
+                  animationIterationCount: "infinite",
+                  willChange: "stroke-dashoffset",
+                  "--dash-start": `${90 + loopIndex * 9}`,
+                  "--dash-len": `${WALL_PATH_LENGTH}`,
+                } as React.CSSProperties
+              }
+            />
             {RAINBOW_BRICK_LAYERS.map((brickLayer) => (
               <path
                 key={`${loop.id}-${brickLayer.className}`}
@@ -133,44 +139,53 @@ export function DynamicWalls() {
                 className={`dynamic-wall-loop-stones dynamic-wall-loop-rainbow-bricks ${brickLayer.className}`}
                 fill="none"
                 pathLength={WALL_PATH_LENGTH}
-              >
-                <animate
-                  attributeName="stroke-dashoffset"
-                  from={`${brickLayer.offset + loopIndex * 13}`}
-                  to={`${brickLayer.offset + loopIndex * 13 - WALL_PATH_LENGTH}`}
-                  dur={`${loop.duration * brickLayer.speed}s`}
-                  repeatCount="indefinite"
-                />
-              </path>
+                style={
+                  {
+                    animationName: "dynamic-wall-dash-left",
+                    animationDuration: `${loop.duration * brickLayer.speed}s`,
+                    animationTimingFunction: "linear",
+                    animationIterationCount: "infinite",
+                    willChange: "stroke-dashoffset",
+                    "--dash-start": `${brickLayer.offset + loopIndex * 13}`,
+                    "--dash-len": `${WALL_PATH_LENGTH}`,
+                  } as React.CSSProperties
+                }
+              />
             ))}
             <path
               d={loop.path}
               className="dynamic-wall-loop-mortar"
               fill="none"
               pathLength={WALL_PATH_LENGTH}
-            >
-              <animate
-                attributeName="stroke-dashoffset"
-                from="0"
-                to={`-${WALL_PATH_LENGTH}`}
-                dur={`${loop.duration}s`}
-                repeatCount="indefinite"
-              />
-            </path>
+              style={
+                {
+                  animationName: "dynamic-wall-dash-left",
+                  animationDuration: `${loop.duration}s`,
+                  animationTimingFunction: "linear",
+                  animationIterationCount: "infinite",
+                  willChange: "stroke-dashoffset",
+                  "--dash-start": "0",
+                  "--dash-len": `${WALL_PATH_LENGTH}`,
+                } as React.CSSProperties
+              }
+            />
             <path
               d={loop.path}
               className="dynamic-wall-loop-glints"
               fill="none"
               pathLength={WALL_PATH_LENGTH}
-            >
-              <animate
-                attributeName="stroke-dashoffset"
-                from={`${180 - loopIndex * 11}`}
-                to={`${180 - loopIndex * 11 + WALL_PATH_LENGTH}`}
-                dur={`${loop.duration * 0.72}s`}
-                repeatCount="indefinite"
-              />
-            </path>
+              style={
+                {
+                  animationName: "dynamic-wall-dash-right",
+                  animationDuration: `${loop.duration * 0.72}s`,
+                  animationTimingFunction: "linear",
+                  animationIterationCount: "infinite",
+                  willChange: "stroke-dashoffset",
+                  "--dash-start": `${180 - loopIndex * 11}`,
+                  "--dash-len": `${WALL_PATH_LENGTH}`,
+                } as React.CSSProperties
+              }
+            />
           </g>
         ))}
       </g>

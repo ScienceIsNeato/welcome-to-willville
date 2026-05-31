@@ -10,33 +10,41 @@ import type { Stop } from "@/lib/town";
 
 type Props = {
   stops: Stop[];
+  previewUnderlayHrefs?: Record<string, string>;
 };
 
 const SITE_SPRITES = new Map(
   siteSpriteManifest.sprites.map((sprite) => [sprite.stopId, sprite]),
 );
 
-export function TownSiteAppearances({ stops }: Props) {
+export function TownSiteAppearances({
+  stops,
+  previewUnderlayHrefs = {},
+}: Props) {
   const version = siteAppearanceManifestVersion();
 
   return (
     <g aria-hidden="true" pointerEvents="none">
       {stops.map((stop) => {
+        const previewHref = previewUnderlayHrefs[stop.id];
         const underlay = siteUnderlayForStop(stop.id);
-        if (!underlay.enabled || !underlay.src) {
+        if (!previewHref && (!underlay.enabled || !underlay.src)) {
           return null;
         }
 
-        const sprite = SITE_SPRITES.get(stop.id);
-        if (!sprite) {
-          return null;
-        }
+        const sprite = SITE_SPRITES.get(stop.id) ?? {
+          stopId: stop.id,
+          width: 100,
+          height: 100,
+        };
 
         const crop = glyphHaloCropBoxForSprite(sprite, stop.position);
         return (
           <image
             key={`site-appearance-${stop.id}`}
-            href={`${underlay.src}?v=${underlay.cacheKey ?? version}`}
+            href={
+              previewHref ?? `${underlay.src}?v=${underlay.cacheKey ?? version}`
+            }
             x={crop.x}
             y={crop.y}
             width={crop.width}

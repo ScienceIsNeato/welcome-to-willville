@@ -9,6 +9,7 @@ set -euo pipefail
 #
 # Usage:
 #   scripts/deploy_app.sh          # build + start wrangler
+#   scripts/deploy_app.sh --lan    # build + start, accessible on local network
 #   scripts/deploy_app.sh --mobile # build + start + open headed mobile preview
 #   scripts/deploy_app.sh --stop   # tear down this worktree's deployment
 #   scripts/deploy_app.sh --status # show all running deployments
@@ -25,11 +26,13 @@ usage() {
   cat <<'EOF'
 Usage:
   scripts/deploy_app.sh
+  scripts/deploy_app.sh --lan
   scripts/deploy_app.sh --mobile [mobile preview args]
   scripts/deploy_app.sh --stop
   scripts/deploy_app.sh --status
 
 Examples:
+  scripts/deploy_app.sh --lan
   scripts/deploy_app.sh --mobile
   scripts/deploy_app.sh --mobile --device iphone-14 --path /town-square/willville-town-hall/
 EOF
@@ -54,8 +57,16 @@ logfile_for() {
   echo "$DEPLOY_DIR/$(dir_hash "$1").log"
 }
 
+repaint_logfile_for() {
+  echo "$DEPLOY_DIR/$(dir_hash "$1").repaint.log"
+}
+
 screen_session_for() {
   echo "willville-$(dir_hash "$1")"
+}
+
+repaint_screen_session_for() {
+  echo "willville-rp-$(dir_hash "$1")"
 }
 
 is_pid_alive() {
@@ -94,6 +105,26 @@ has_arg() {
   return 1
 }
 
+find_lan_ip() {
+  local ip
+
+  for iface in en0 en1; do
+    ip=$(ipconfig getifaddr "$iface" 2>/dev/null || true)
+    if [[ -n "$ip" ]]; then
+      echo "$ip"
+      return 0
+    fi
+  done
+
+  ip=$(ifconfig 2>/dev/null | awk '/inet / { print $2 }' | grep -E '^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)' | head -1 || true)
+  if [[ -n "$ip" ]]; then
+    echo "$ip"
+    return 0
+  fi
+
+  return 1
+}
+
 # ── stale cleanup ────────────────────────────────────────────────────────────
 
 cleanup_stale() {
@@ -110,11 +141,28 @@ cleanup_stale() {
     dir=$(jq_field "$data" "dir")
     local session
     session=$(jq_field "$data" "screenSession")
+    local repaint_pid
+    repaint_pid=$(jq_field "$data" "repaintPid")
+    local repaint_session
+    repaint_session=$(jq_field "$data" "repaintScreenSession")
 
     # Remove if PID is dead and no live screen session owns the deployment.
+    local wrangler_alive=false
+    local repaint_alive=false
     if [[ -n "$session" ]] && is_screen_alive "$session"; then
+      wrangler_alive=true
+    elif [[ -n "$pid" ]] && is_pid_alive "$pid"; then
+      wrangler_alive=true
+    fi
+    if [[ -n "$repaint_session" ]] && is_screen_alive "$repaint_session"; then
+      repaint_alive=true
+    elif [[ -n "$repaint_pid" ]] && is_pid_alive "$repaint_pid"; then
+      repaint_alive=true
+    fi
+
+    if $wrangler_alive || $repaint_alive; then
       :
-    elif [[ -z "$pid" ]] || ! is_pid_alive "$pid"; then
+    else
       echo "  Removing dead deployment: $dir (pid ${pid:-none})"
       rm -f "$lockfile"
       continue
@@ -130,6 +178,12 @@ cleanup_stale() {
         elif is_pid_alive "$pid"; then
           kill "$pid" 2>/dev/null || true
           pkill -P "$pid" 2>/dev/null || true
+        fi
+        if [[ -n "$repaint_session" ]] && is_screen_alive "$repaint_session"; then
+          screen -S "$repaint_session" -X quit 2>/dev/null || true
+        elif [[ -n "$repaint_pid" ]] && is_pid_alive "$repaint_pid"; then
+          kill "$repaint_pid" 2>/dev/null || true
+          pkill -P "$repaint_pid" 2>/dev/null || true
         fi
         rm -f "$lockfile"
       fi
@@ -159,6 +213,10 @@ is_willville_deploy_pid() {
       return 0
     fi
 
+    if [[ "$signature" == *"scripts/repaint-pipeline-server.mjs"* ]]; then
+      return 0
+    fi
+
     if [[ "$signature" == *"SCREEN"* && "$signature" == *"willville-"* ]]; then
       return 0
     fi
@@ -177,12 +235,12 @@ cleanup_orphans() {
     [[ -f "$lockfile" ]] || continue
     local data
     data=$(cat "$lockfile")
-    claimed_ports="$claimed_ports $(jq_field "$data" "wranglerPort")"
+    claimed_ports="$claimed_ports $(jq_field "$data" "wranglerPort") $(jq_field "$data" "repaintPort")"
   done
 
   # Find node/workerd listeners in our port range that aren't claimed
   local orphan_pids=""
-  for port in $(seq "$PORT_RANGE_START" 2 "$PORT_RANGE_END"); do
+  for port in $(seq "$PORT_RANGE_START" "$PORT_RANGE_END"); do
     if echo "$claimed_ports" | grep -qw "$port"; then
       continue
     fi
@@ -208,7 +266,7 @@ cleanup_orphans() {
 
   # Also clean up any dead willville screen sessions
   local stale_screens
-  stale_screens=$(screen -ls 2>/dev/null | grep -o '[0-9]*\.willville-[a-f0-9]*' || true)
+  stale_screens=$(screen -ls 2>/dev/null | grep -o '[0-9]*\.willville-\(rp-\)\?[a-f0-9]*' || true)
   for sess in $stale_screens; do
     local sess_name="${sess#*.}"
     local found=false
@@ -216,7 +274,7 @@ cleanup_orphans() {
       [[ -f "$lockfile" ]] || continue
       local data
       data=$(cat "$lockfile")
-      if [[ "$(jq_field "$data" "screenSession")" == "$sess_name" ]]; then
+      if [[ "$(jq_field "$data" "screenSession")" == "$sess_name" || "$(jq_field "$data" "repaintScreenSession")" == "$sess_name" ]]; then
         found=true
         break
       fi
@@ -236,10 +294,17 @@ stop_deployment() {
   lockfile=$(lockfile_for "$root")
   local fallback_session
   fallback_session=$(screen_session_for "$root")
+  local fallback_repaint_session
+  fallback_repaint_session=$(repaint_screen_session_for "$root")
   if [[ ! -f "$lockfile" ]]; then
     if is_screen_alive "$fallback_session"; then
       echo "Stopping deployment screen $fallback_session"
       screen -S "$fallback_session" -X quit 2>/dev/null || true
+      sleep 1
+    fi
+    if is_screen_alive "$fallback_repaint_session"; then
+      echo "Stopping repaint sidecar screen $fallback_repaint_session"
+      screen -S "$fallback_repaint_session" -X quit 2>/dev/null || true
       sleep 1
     fi
     echo "No active deployment for $root"
@@ -253,6 +318,12 @@ stop_deployment() {
   session=$(jq_field "$data" "screenSession")
   local port
   port=$(jq_field "$data" "wranglerPort")
+  local repaint_pid
+  repaint_pid=$(jq_field "$data" "repaintPid")
+  local repaint_session
+  repaint_session=$(jq_field "$data" "repaintScreenSession")
+  local repaint_port
+  repaint_port=$(jq_field "$data" "repaintPort")
   if [[ -n "$session" ]] && is_screen_alive "$session"; then
     echo "Stopping deployment on :$port (screen $session)"
     screen -S "$session" -X quit 2>/dev/null || true
@@ -263,6 +334,16 @@ stop_deployment() {
     pkill -P "$pid" 2>/dev/null || true
     # Belt and suspenders: kill anything on the port
     lsof -ti :"$port" 2>/dev/null | xargs kill 2>/dev/null || true
+  fi
+  if [[ -n "$repaint_session" ]] && is_screen_alive "$repaint_session"; then
+    echo "Stopping repaint sidecar on :$repaint_port (screen $repaint_session)"
+    screen -S "$repaint_session" -X quit 2>/dev/null || true
+  fi
+  if [[ -n "$repaint_pid" ]] && is_pid_alive "$repaint_pid"; then
+    echo "Stopping repaint sidecar on :$repaint_port (pid $repaint_pid)"
+    kill "$repaint_pid" 2>/dev/null || true
+    pkill -P "$repaint_pid" 2>/dev/null || true
+    lsof -ti :"$repaint_port" 2>/dev/null | xargs kill 2>/dev/null || true
   fi
   rm -f "$lockfile"
   echo "Stopped."
@@ -278,17 +359,22 @@ find_free_port() {
     [[ -f "$lockfile" ]] || continue
     local data
     data=$(cat "$lockfile")
-    used_ports="$used_ports $(jq_field "$data" "wranglerPort")"
+    used_ports="$used_ports $(jq_field "$data" "wranglerPort") $(jq_field "$data" "repaintPort")"
   done
 
   while (( port < PORT_RANGE_END )); do
+    local companion_port=$(( port + 1 ))
     # Skip if claimed by a lockfile
-    if echo "$used_ports" | grep -qw "$port"; then
+    if echo "$used_ports" | grep -qw "$port" || echo "$used_ports" | grep -qw "$companion_port"; then
       port=$(( port + 2 ))
       continue
     fi
     # Skip if something is listening
     if lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
+      port=$(( port + 2 ))
+      continue
+    fi
+    if lsof -nP -iTCP:"$companion_port" -sTCP:LISTEN >/dev/null 2>&1; then
       port=$(( port + 2 ))
       continue
     fi
@@ -335,6 +421,7 @@ show_status() {
 
 ACTION="deploy"
 MOBILE_MODE=false
+LAN_MODE=false
 MOBILE_ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -353,6 +440,10 @@ while [[ $# -gt 0 ]]; do
       MOBILE_ARGS=("$@")
       break
       ;;
+    --lan)
+      LAN_MODE=true
+      shift
+      ;;
     --help|-h)
       usage
       exit 0
@@ -367,6 +458,12 @@ done
 
 if $MOBILE_MODE && [[ "$ACTION" != "deploy" ]]; then
   echo "ERROR: --mobile cannot be combined with --$ACTION" >&2
+  usage >&2
+  exit 1
+fi
+
+if $LAN_MODE && [[ "$ACTION" != "deploy" ]]; then
+  echo "ERROR: --lan cannot be combined with --$ACTION" >&2
   usage >&2
   exit 1
 fi
@@ -419,26 +516,64 @@ NODE_ENV=production node_modules/.bin/next build
 
 # 5. Allocate port
 WRANGLER_PORT=$(find_free_port)
+REPAINT_PORT=$(( WRANGLER_PORT + 1 ))
+
+WRANGLER_BIND_IP="127.0.0.1"
+REPAINT_BIND_IP="127.0.0.1"
+PUBLIC_IP="127.0.0.1"
+if $LAN_MODE; then
+  WRANGLER_BIND_IP="0.0.0.0"
+  REPAINT_BIND_IP="0.0.0.0"
+  PUBLIC_IP=$(find_lan_ip || true)
+  if [[ -z "$PUBLIC_IP" ]]; then
+    echo "ERROR: Could not determine a LAN IP. Connect to Wi-Fi/Ethernet and retry." >&2
+    exit 1
+  fi
+fi
+
+LOCAL_ORIGIN="http://127.0.0.1:$WRANGLER_PORT"
+PUBLIC_ORIGIN="http://$PUBLIC_IP:$WRANGLER_PORT"
+
 echo ""
 echo "Allocated port: $WRANGLER_PORT"
+if $LAN_MODE; then
+  echo "LAN IP: $PUBLIC_IP"
+fi
 
 # 6. Start wrangler (serves static build + API functions, no next dev needed)
 WRANGLER_LOG=$(logfile_for "$ROOT")
 SCREEN_SESSION=$(screen_session_for "$ROOT")
+REPAINT_LOG=$(repaint_logfile_for "$ROOT")
+REPAINT_SCREEN_SESSION=$(repaint_screen_session_for "$ROOT")
 rm -f "$WRANGLER_LOG"
+rm -f "$REPAINT_LOG"
 screen -S "$SCREEN_SESSION" -X quit 2>/dev/null || true
+screen -S "$REPAINT_SCREEN_SESSION" -X quit 2>/dev/null || true
 screen -dmS "$SCREEN_SESSION" bash -lc '
   exec > "$2" 2>&1
   cd "$1"
   exec wrangler pages dev ./out \
-    --ip 127.0.0.1 \
+    --ip "$4" \
     --port "$3" \
     --compatibility-date 2026-05-01 \
     --show-interactive-dev-session=false
-' _ "$ROOT" "$WRANGLER_LOG" "$WRANGLER_PORT"
+' _ "$ROOT" "$WRANGLER_LOG" "$WRANGLER_PORT" "$WRANGLER_BIND_IP"
 WRANGLER_PID=$(pgrep -f "SCREEN.*${SCREEN_SESSION}" | head -1 || true)
 if [[ -z "$WRANGLER_PID" ]]; then
   WRANGLER_PID=0
+fi
+
+screen -dmS "$REPAINT_SCREEN_SESSION" bash -lc '
+  exec > "$2" 2>&1
+  cd "$1"
+  exec node scripts/repaint-pipeline-server.mjs \
+    --port="$3" \
+    --host="$4" \
+    --origin="$5"
+' _ "$ROOT" "$REPAINT_LOG" "$REPAINT_PORT" "$REPAINT_BIND_IP" "$LOCAL_ORIGIN,$PUBLIC_ORIGIN"
+REPAINT_PID=$(pgrep -f "SCREEN.*${REPAINT_SCREEN_SESSION}" | head -1 || true)
+if [[ -z "$REPAINT_PID" ]]; then
+  REPAINT_PID=0
 fi
 
 # Wait for wrangler to be ready
@@ -457,18 +592,37 @@ if [[ "$READY" != "1" ]]; then
   exit 1
 fi
 
+echo "Starting repaint sidecar (screen $REPAINT_SCREEN_SESSION, pid $REPAINT_PID)..."
+REPAINT_READY=0
+for i in $(seq 1 30); do
+  if curl -s -o /dev/null -w '' "http://127.0.0.1:$REPAINT_PORT/health" 2>/dev/null; then
+    REPAINT_READY=1
+    break
+  fi
+  sleep 1
+done
+if [[ "$REPAINT_READY" != "1" ]]; then
+  echo "ERROR: repaint sidecar did not become ready. Log:"
+  sed -n '1,160p' "$REPAINT_LOG" 2>/dev/null || true
+  exit 1
+fi
+
 # 7. Write lockfile
 NOW=$(date +%s)
-ROOT="$ROOT" BRANCH="$BRANCH" PORT="$WRANGLER_PORT" PID="$WRANGLER_PID" NOW="$NOW" LOG="$WRANGLER_LOG" SCREEN_SESSION="$SCREEN_SESSION" \
+ROOT="$ROOT" BRANCH="$BRANCH" PORT="$WRANGLER_PORT" PID="$WRANGLER_PID" NOW="$NOW" LOG="$WRANGLER_LOG" SCREEN_SESSION="$SCREEN_SESSION" REPAINT_PORT="$REPAINT_PORT" REPAINT_PID="$REPAINT_PID" REPAINT_LOG="$REPAINT_LOG" REPAINT_SCREEN_SESSION="$REPAINT_SCREEN_SESSION" \
   node -e "
     const o = {
       dir: process.env.ROOT,
       branch: process.env.BRANCH,
       wranglerPort: Number(process.env.PORT),
       pid: Number(process.env.PID),
+      repaintPort: Number(process.env.REPAINT_PORT),
+      repaintPid: Number(process.env.REPAINT_PID),
       startedAt: Number(process.env.NOW),
       log: process.env.LOG,
       screenSession: process.env.SCREEN_SESSION,
+      repaintLog: process.env.REPAINT_LOG,
+      repaintScreenSession: process.env.REPAINT_SCREEN_SESSION,
     };
     process.stdout.write(JSON.stringify(o) + '\\n');
   " > "$(lockfile_for "$ROOT")"
@@ -477,10 +631,15 @@ echo ""
 echo "════════════════════════════════════════"
 echo "  Willville is live on:"
 echo "  http://127.0.0.1:$WRANGLER_PORT/"
+if $LAN_MODE; then
+  echo "  http://$PUBLIC_IP:$WRANGLER_PORT/"
+fi
 echo ""
 echo "  Branch: $BRANCH"
 echo "  PID:    $WRANGLER_PID"
 echo "  Log:    $WRANGLER_LOG"
+echo "  Repaint Runner: http://127.0.0.1:$REPAINT_PORT"
+echo "  Repaint Log:    $REPAINT_LOG"
 echo "  Stop:   scripts/deploy_app.sh --stop"
 echo "  Status: scripts/deploy_app.sh --status"
 echo "════════════════════════════════════════"

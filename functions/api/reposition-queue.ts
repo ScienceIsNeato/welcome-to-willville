@@ -43,10 +43,12 @@ export type AppearanceAuditEvent = {
 type RepaintEnqueueResult = {
   queued: RepaintQueueJob[];
   deduped: RepaintQueueJob[];
+  blockedBy: RepaintQueueJob | null;
   audit: AppearanceAuditEvent[];
+  activeJob: RepaintQueueJob | null;
 };
 
-let queue: RepaintQueueJob[] = [];
+let activeJob: RepaintQueueJob | null = null;
 let auditLog: AppearanceAuditEvent[] = [];
 
 function nowIso() {
@@ -104,37 +106,71 @@ export function enqueueRepositionRepaintJobs(
   const queued: RepaintQueueJob[] = [];
   const deduped: RepaintQueueJob[] = [];
   const audit: AppearanceAuditEvent[] = [];
+  let blockedBy: RepaintQueueJob | null = null;
 
   for (const change of changes) {
     const dedupeKey = dedupeKeyForChange(action, change);
-    const existing = queue.find(
-      (job) =>
-        job.dedupeKey === dedupeKey &&
-        (job.status === "pending" || job.status === "running"),
-    );
+    const existing =
+      activeJob &&
+      activeJob.dedupeKey === dedupeKey &&
+      (activeJob.status === "pending" || activeJob.status === "running")
+        ? activeJob
+        : null;
 
     if (existing) {
       deduped.push(existing);
       continue;
     }
 
+    if (
+      activeJob &&
+      (activeJob.status === "pending" || activeJob.status === "running")
+    ) {
+      blockedBy = activeJob;
+      continue;
+    }
+
     const job = createRepaintJob(action, reason, change);
     const event = createAuditEvent(action, reason, change);
 
-    queue = [...queue, job];
+    activeJob = job;
     auditLog = [...auditLog, event];
 
     queued.push(job);
     audit.push(event);
   }
 
-  return { queued, deduped, audit };
+  return { queued, deduped, blockedBy, audit, activeJob };
 }
 
 export function readRepaintQueue(limit = 100): RepaintQueueJob[] {
-  return queue.slice(-Math.max(1, limit));
+  if (!activeJob) {
+    return [];
+  }
+
+  return [activeJob].slice(-Math.max(1, limit));
 }
 
 export function readAppearanceAudit(limit = 200): AppearanceAuditEvent[] {
   return auditLog.slice(-Math.max(1, limit));
+}
+
+export function readActiveRepaintJob(): RepaintQueueJob | null {
+  return activeJob;
+}
+
+export function clearActiveRepaintJob(
+  nextStatus: Extract<RepaintQueueStatus, "done" | "failed"> = "done",
+): RepaintQueueJob | null {
+  if (!activeJob) {
+    return null;
+  }
+
+  const clearedJob = {
+    ...activeJob,
+    status: nextStatus,
+  };
+
+  activeJob = null;
+  return clearedJob;
 }

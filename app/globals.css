@@ -307,4 +307,48 @@ body {
 .chimney-smoke {
   mix-blend-mode: screen;
   pointer-events: none;
+  filter: blur(3.8px);
+  will-change: transform;
+}
+
+@keyframes dynamic-wall-dash-left {
+  from {
+    stroke-dashoffset: var(--dash-start, 0);
+  }
+  to {
+    stroke-dashoffset: calc(var(--dash-start, 0) - var(--dash-len, 3600));
+  }
+}
+
+@keyframes dynamic-wall-dash-right {
+  from {
+    stroke-dashoffset: var(--dash-start, 0);
+  }
+  to {
+    stroke-dashoffset: calc(var(--dash-start, 0) + var(--dash-len, 3600));
+  }
+}
+
+@keyframes smoke-puff-rise {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.28;
+  }
+  68% {
+    opacity: 0.2;
+  }
+  100% {
+    transform: translate(var(--drift-x, 0px), var(--rise-y, 0px)) scale(1.4);
+    opacity: 0;
+  }
+}
+
+.smoke-puff-anim {
+  animation-name: smoke-puff-rise;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform, opacity;
 }

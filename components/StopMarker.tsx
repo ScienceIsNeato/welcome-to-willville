@@ -42,6 +42,8 @@ const SITE_SPRITES = new Map(
 type SiteSprite = (typeof siteSpriteManifest.sprites)[number];
 const SPRITE_CACHE_VERSION = "repo-labels-20260522";
 const SITE_ART_CENTER = { x: 0, y: 0 };
+const LABEL_VERTICAL_GAP = 22;
+const LABEL_FALLBACK_Y = -30;
 
 type HitBox = {
   x: number;
@@ -197,7 +199,11 @@ function StopLabel({
 }) {
   return (
     <text
-      y={spriteHeight > 0 ? -spriteHeight / 2 - 8 : -18}
+      y={
+        spriteHeight > 0
+          ? -spriteHeight / 2 - LABEL_VERTICAL_GAP
+          : LABEL_FALLBACK_Y
+      }
       textAnchor="middle"
       fontSize={14}
       fontWeight={700}
@@ -247,24 +253,6 @@ function FallbackMarkerDot({ color }: { color: string }) {
   );
 }
 
-function deriveStopAppearance(
-  stop: Stop,
-  sprite: SiteSprite | undefined,
-  forceHideSprite: boolean,
-): { hasReplacementAppearance: boolean; showSprite: boolean } {
-  const foregroundMode = siteForegroundModeForStop(stop.id);
-  const underlay = siteUnderlayForStop(stop.id);
-  return {
-    hasReplacementAppearance:
-      forceHideSprite ||
-      (foregroundMode === "background-only" && underlay.enabled),
-    showSprite:
-      Boolean(sprite) &&
-      foregroundMode !== "background-only" &&
-      !forceHideSprite,
-  };
-}
-
 function StopMarkerInner({
   stop,
   isFocused,
@@ -279,12 +267,14 @@ function StopMarkerInner({
 }: Props) {
   const color = STATE_COLOR[stop.status.state];
   const sprite = SITE_SPRITES.get(stop.id);
+  const foregroundMode = siteForegroundModeForStop(stop.id);
+  const underlay = siteUnderlayForStop(stop.id);
+  const hasReplacementAppearance =
+    forceHideSprite ||
+    (foregroundMode === "background-only" && underlay.enabled);
+  const showSprite =
+    Boolean(sprite) && foregroundMode !== "background-only" && !forceHideSprite;
   const { width: spriteWidth, height: spriteHeight } = spriteSizeForStop(stop);
-  const { hasReplacementAppearance, showSprite } = deriveStopAppearance(
-    stop,
-    sprite,
-    forceHideSprite,
-  );
   const label = repoLabelForStop(stop);
   const labelHitBox = labelHitBoxForStop(stop);
   const interactionHitBox = interactionHitBoxForStop({
@@ -296,6 +286,13 @@ function StopMarkerInner({
     showSprite,
     hasReplacementAppearance,
   });
+  const handleDragEnd = (e: PointerEvent<SVGGElement>) => {
+    const isDragActive =
+      draggable || e.currentTarget.hasPointerCapture(e.pointerId);
+    if (!isDragActive) return;
+    e.stopPropagation();
+    onDragEnd?.(stop, e);
+  };
   return (
     <g
       data-stop-marker
@@ -322,21 +319,9 @@ function StopMarkerInner({
         e.stopPropagation();
         onDragMove?.(stop, e);
       }}
-      onPointerUp={(e) => {
-        if (!draggable) return;
-        e.stopPropagation();
-        onDragEnd?.(stop, e);
-      }}
-      onPointerCancel={(e) => {
-        if (!draggable) return;
-        e.stopPropagation();
-        onDragEnd?.(stop, e);
-      }}
-      onLostPointerCapture={(e) => {
-        if (!draggable) return;
-        e.stopPropagation();
-        onDragEnd?.(stop, e);
-      }}
+      onPointerUp={handleDragEnd}
+      onPointerCancel={handleDragEnd}
+      onLostPointerCapture={handleDragEnd}
       aria-label={label}
     >
       <rect

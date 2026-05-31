@@ -88,13 +88,16 @@ if [[ ! -d "$PERF_TOOLDIR/node_modules/playwright" ]]; then
 fi
 
 export NODE_PATH="$PERF_TOOLDIR/node_modules"
+export PERF_TOOLDIR
 
 # ── run Playwright test ──────────────────────────────────────────────────────
 
 rm -f "$REPORT_FILE"
 
 SERVER_URL="$SERVER_URL" REPORT_FILE="$REPORT_FILE" node --input-type=module <<'PLAYWRIGHT_SCRIPT'
-import { chromium } from "playwright";
+import { createRequire } from "node:module";
+const require = createRequire(`${process.env.PERF_TOOLDIR}/package.json`);
+const { chromium } = require("playwright");
 
 const serverUrl = process.env.SERVER_URL;
 const reportFile = process.env.REPORT_FILE;

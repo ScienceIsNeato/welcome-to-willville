@@ -1,0 +1,36 @@
+{
+  "stopId": "imaginary-site",
+  "districtId": "town-square",
+  "sourceImage": "/art/town/districts/town-square.png",
+  "spriteImage": "/art/stops/imaginary-site.png",
+  "regionMaskImage": "/art/town/masks/district-art/town-square.png",
+  "overlayOutput": "/art/town/glyph-halos/imaginary-site.png",
+  "alphaBox": {
+    "x": 469,
+    "y": 504,
+    "width": 100,
+    "height": 100
+  },
+  "radialScale": 1.14,
+  "haloRayPadding": 7,
+  "maskBox": {
+    "x": 462,
+    "y": 497,
+    "width": 114,
+    "height": 114
+  },
+  "cropBox": {
+    "x": 438,
+    "y": 473,
+    "width": 162,
+    "height": 162
+  },
+  "authoringCrop": {
+    "left": 1752,
+    "top": 1892,
+    "width": 648,
+    "height": 648
+  },
+  "debugMaskPath": "/docs/generated/imaginary-site-glyph-halo-mask.png",
+  "dryRun": true
+}

@@ -16,19 +16,13 @@ import {
   TOWN,
   TOWN_OFFSET,
   WORLD,
-  MANUAL_STOPS,
   type DistrictId,
 } from "@/lib/willville";
 import type { Stop } from "@/lib/town";
 import { isKnownDistrict } from "@/lib/slugs";
-import { HEURISTICS } from "@/lib/willville.heuristics";
 import type { CanalBoat } from "@/lib/canal";
 import { sitePositionForStop } from "@/lib/town-layout";
-import {
-  formatHeuristics,
-  formatManualStops,
-  type RepositionStopDelta,
-} from "./repositionPlannerUtils";
+import { type RepositionStopDelta } from "./repositionPlannerUtils";
 import { DistrictZone } from "./DistrictZone";
 import { WorldSubstrate } from "./WorldSubstrate";
 import { StopMarker } from "./StopMarker";
@@ -44,6 +38,8 @@ import { BellMessengers, summarizeTownHealth } from "./BellMessengers";
 import { TownPerfPanel } from "./TownPerfPanel";
 import { PanelChromeControls } from "./PanelChromeControls";
 import { RepositionPlannerPanel, TownStageChrome } from "./TownStageChrome";
+import { useRepaintPipeline } from "./useRepaintPipeline";
+import { usePlacementPipeline } from "./usePlacementPipeline";
 import { screenToWorld, useTownCamera } from "@/hooks/useTownCamera";
 import {
   useEscapeReleaseInteraction,
@@ -118,9 +114,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     markSkipDrag,
     resetDragInteraction,
     setCameraImmediate,
-    zoomAtWorldPoint,
     stageHandlers,
     wasDragging,
+    zoomAtWorldPoint,
   } = useTownCamera(svgRef, stageRef, perfEnabled ? perfProbe : undefined);
 
   const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
@@ -208,82 +204,6 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       activeDragPointerRef,
       resetDragInteraction,
     });
-
-  const handleMarkerDragStart = useCallback(
-    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
-      if (!isRepositionMode || stop.id !== effectivePlannerStopId) {
-        return;
-      }
-      e.currentTarget.setPointerCapture(e.pointerId);
-      activeDragIdRef.current = stop.id;
-      activeDragPointerRef.current = {
-        element: e.currentTarget,
-        pointerId: e.pointerId,
-      };
-      setMovedStops((prev) => {
-        if (prev[stop.id]) return prev;
-        return {
-          ...prev,
-          [stop.id]: {
-            original: { ...stop.position, district: stop.district },
-            current: { ...stop.position, district: stop.district },
-          },
-        };
-      });
-    },
-    [effectivePlannerStopId, isRepositionMode],
-  );
-
-  const handleMarkerDragMove = useCallback(
-    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
-      if (activeDragIdRef.current !== stop.id) return;
-      const svg = svgRef.current;
-      if (!svg) return;
-      const snap = getCameraSnapshot();
-      const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
-
-      const newX = Math.round(wx - TOWN_OFFSET.x);
-      const newY = Math.round(wy - TOWN_OFFSET.y);
-
-      const clampedX = Math.max(0, Math.min(TOWN.width, newX));
-      const clampedY = Math.max(0, Math.min(TOWN.height, newY));
-
-      setLocalStops((prevStops) =>
-        prevStops.map((s) =>
-          s.id === stop.id
-            ? { ...s, position: { x: clampedX, y: clampedY } }
-            : s,
-        ),
-      );
-
-      setMovedStops((prev) => {
-        const existing = prev[stop.id];
-        if (!existing) return prev;
-        return {
-          ...prev,
-          [stop.id]: {
-            ...existing,
-            current: {
-              ...existing.current,
-              x: clampedX,
-              y: clampedY,
-            },
-          },
-        };
-      });
-    },
-    [getCameraSnapshot],
-  );
-
-  const handleMarkerDragEnd = useCallback(
-    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
-      if (activeDragIdRef.current !== stop.id) return;
-      if (!releaseHeldInteraction({ dispatchSyntheticEvents: false })) {
-        clearRepositionDrag(e.currentTarget, e.pointerId);
-      }
-    },
-    [clearRepositionDrag, releaseHeldInteraction],
-  );
 
   const handleResetStop = useCallback(
     (stopId: string) => {
@@ -374,28 +294,6 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     [localStops],
   );
 
-  const [copied, setCopied] = useState(false);
-  const [repaintQueueState, setRepaintQueueState] = useState<
-    "idle" | "running" | "queued" | "error"
-  >("idle");
-  const [repaintQueueMessage, setRepaintQueueMessage] = useState("");
-
-  const handleCopy = useCallback(() => {
-    const text = `// WELCOME TO WILLVILLE - UPDATED SITE POSITIONS
-// Copy the blocks below to update the coordinates in the codebase.
-
-// --- IN lib/willville.heuristics.ts ---
-${formatHeuristics(HEURISTICS, localStops)}
-
-// --- IN lib/willville.ts ---
-${formatManualStops(MANUAL_STOPS, localStops)}
-`;
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    });
-  }, [localStops]);
-
   const changedStops = Object.entries(movedStops).filter(
     ([_, item]) =>
       item.original.x !== item.current.x ||
@@ -403,90 +301,153 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
       item.original.district !== item.current.district,
   );
 
-  const handleQueueRepaint = useCallback(() => {
-    if (!plannerStop || repaintQueueState === "running") {
-      return;
-    }
+  const handlePlacementAccepted = useCallback((stopId: string) => {
+    setMovedStops((prev) => {
+      const next = { ...prev };
+      delete next[stopId];
+      return next;
+    });
+  }, []);
 
-    const changes =
-      changedStops.length > 0
-        ? changedStops.map(([stopId, item]) => ({
-            stopId,
-            from: {
-              x: item.original.x,
-              y: item.original.y,
-              district: item.original.district,
-            },
-            to: {
-              x: item.current.x,
-              y: item.current.y,
-              district: item.current.district,
-            },
-          }))
-        : [
-            {
-              stopId: plannerStop.id,
-              from: {
-                x: plannerStop.position.x,
-                y: plannerStop.position.y,
-                district: plannerStop.district,
-              },
-              to: {
-                x: plannerStop.position.x,
-                y: plannerStop.position.y,
-                district: plannerStop.district,
-              },
-            },
-          ];
+  const handlePlacementRejected = useCallback(
+    (stopId: string) => {
+      handleResetStop(stopId);
+    },
+    [handleResetStop],
+  );
 
-    const reason =
-      changedStops.length > 0
-        ? "Reposition planner submitted changed site coordinates"
-        : `Reposition planner queued ${plannerStop.displayName} for repaint`;
+  const {
+    placementControlsBusy,
+    placementQueueState,
+    placementQueueMessage,
+    canQueuePlacement,
+    queuePlacementLabel,
+    canAcceptPlacement,
+    canRejectPlacement,
+    handleQueuePlacement,
+    handleAcceptPlacement,
+    handleRejectPlacement,
+  } = usePlacementPipeline({
+    isClient,
+    isRepositionMode,
+    plannerStop,
+    movedStops,
+    onPlacementAccepted: handlePlacementAccepted,
+    onPlacementRejected: handlePlacementRejected,
+  });
 
-    setRepaintQueueState("running");
-    setRepaintQueueMessage(
-      changedStops.length > 0
-        ? "Queueing repaint jobs..."
-        : `Queueing ${plannerStop.displayName} for repaint...`,
-    );
+  const {
+    customPrompt,
+    setCustomPrompt,
+    previewUnderlayHrefs,
+    replacementUnderlayStopIds,
+    repaintControlsBusy,
+    repaintQueueState,
+    repaintQueueMessage: queueRepaintMessage,
+    repaintCliOutput,
+    canQueueRepaint,
+    queueRepaintLabel,
+    canAcceptRepaint,
+    canRejectRepaint,
+    canCancelRepaint,
+    handleQueueRepaint,
+    handleAcceptRepaint,
+    handleRejectRepaint,
+    handleCancelRepaint,
+  } = useRepaintPipeline({
+    isClient,
+    isRepositionMode,
+    plannerStop,
+    movedStops,
+  });
 
-    fetch("/api/reposition", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        action: "update_appearance",
-        reason,
-        changes,
-      }),
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error(await getBellErrorDetail(response));
-        }
-
-        return response.json() as Promise<{
-          queued: number;
-          deduped: number;
-        }>;
-      })
-      .then((result) => {
-        setRepaintQueueState("queued");
-        setRepaintQueueMessage(
-          `Queued ${result.queued} repaint job(s), deduped ${result.deduped}.`,
-        );
-      })
-      .catch((error: unknown) => {
-        const detail =
-          error instanceof Error && error.message
-            ? error.message
-            : "Unknown error";
-        setRepaintQueueState("error");
-        setRepaintQueueMessage(`Queue request failed: ${detail}`);
+  const handleMarkerDragStart = useCallback(
+    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
+      if (
+        !isRepositionMode ||
+        stop.id !== effectivePlannerStopId ||
+        placementQueueState === "review" ||
+        placementQueueState === "running" ||
+        repaintQueueState === "review" ||
+        repaintQueueState === "running"
+      ) {
+        return;
+      }
+      e.currentTarget.setPointerCapture(e.pointerId);
+      activeDragIdRef.current = stop.id;
+      activeDragPointerRef.current = {
+        element: e.currentTarget,
+        pointerId: e.pointerId,
+      };
+      setMovedStops((prev) => {
+        if (prev[stop.id]) return prev;
+        return {
+          ...prev,
+          [stop.id]: {
+            original: { ...stop.position, district: stop.district },
+            current: { ...stop.position, district: stop.district },
+          },
+        };
       });
-  }, [changedStops, plannerStop, repaintQueueState]);
+    },
+    [
+      effectivePlannerStopId,
+      isRepositionMode,
+      placementQueueState,
+      repaintQueueState,
+    ],
+  );
+
+  const handleMarkerDragMove = useCallback(
+    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
+      if (activeDragIdRef.current !== stop.id) return;
+      const svg = svgRef.current;
+      if (!svg) return;
+      const snap = getCameraSnapshot();
+      const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
+
+      const newX = Math.round(wx - TOWN_OFFSET.x);
+      const newY = Math.round(wy - TOWN_OFFSET.y);
+
+      const clampedX = Math.max(0, Math.min(TOWN.width, newX));
+      const clampedY = Math.max(0, Math.min(TOWN.height, newY));
+
+      setLocalStops((prevStops) =>
+        prevStops.map((s) =>
+          s.id === stop.id
+            ? { ...s, position: { x: clampedX, y: clampedY } }
+            : s,
+        ),
+      );
+
+      setMovedStops((prev) => {
+        const existing = prev[stop.id];
+        if (!existing) return prev;
+        return {
+          ...prev,
+          [stop.id]: {
+            ...existing,
+            current: {
+              ...existing.current,
+              x: clampedX,
+              y: clampedY,
+            },
+          },
+        };
+      });
+    },
+    [getCameraSnapshot],
+  );
+
+  const handleMarkerDragEnd = useCallback(
+    (stop: Stop, e: React.PointerEvent<SVGGElement>) => {
+      if (activeDragIdRef.current !== stop.id) return;
+      if (!releaseHeldInteraction({ dispatchSyntheticEvents: false })) {
+        clearRepositionDrag(e.currentTarget, e.pointerId);
+      }
+    },
+    [clearRepositionDrag, releaseHeldInteraction],
+  );
 
   const loadTown = useCallback(
     (options: { signal?: AbortSignal; fresh?: boolean } = {}) => {
@@ -922,7 +883,12 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
           !Number.isNaN(updated) &&
           now - updated < DAY_MS;
         const markerDraggable =
-          isRepositionMode && stop.id === effectivePlannerStopId;
+          isRepositionMode &&
+          stop.id === effectivePlannerStopId &&
+          placementQueueState !== "review" &&
+          placementQueueState !== "running" &&
+          repaintQueueState !== "review" &&
+          repaintQueueState !== "running";
         return (
           <StopMarker
             key={`${stop.district}-${stop.id}`}
@@ -931,6 +897,7 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
             recentlyUpdated={recently}
             onClick={handleStopClick}
             onDoubleClick={handleStopDoubleClick}
+            forceHideSprite={replacementUnderlayStopIds.has(stop.id)}
             draggable={markerDraggable}
             onDragStart={handleMarkerDragStart}
             onDragMove={handleMarkerDragMove}
@@ -950,6 +917,9 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
       effectivePlannerStopId,
       isRepositionMode,
       now,
+      replacementUnderlayStopIds,
+      placementQueueState,
+      repaintQueueState,
     ],
   );
 
@@ -1209,8 +1179,11 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
 
               <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
                 <GeneratedTownBase />
-                <TownSiteAppearances stops={currentStops} />
-                {!mobileSafeMode && <ChimneySmoke />}
+                <TownSiteAppearances
+                  stops={currentStops}
+                  previewUnderlayHrefs={previewUnderlayHrefs}
+                />
+                <ChimneySmoke />
                 <DynamicWalls />
                 <Canal boats={boats} layer="base" />
                 {DISTRICTS.map((d) => (
@@ -1226,8 +1199,8 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
                   onEngineClick={closeHud}
                   engineLabel="Return to the town overview"
                 />
-                {!mobileSafeMode && <Canal boats={boats} layer="traffic" />}
-                {!mobileSafeMode && <WorldWorkerLayer stops={currentStops} />}
+                <Canal boats={boats} layer="traffic" />
+                <WorldWorkerLayer stops={currentStops} />
                 {populating !== "idle" && (
                   <BellMessengers
                     stops={currentStops}
@@ -1362,21 +1335,38 @@ ${formatManualStops(MANUAL_STOPS, localStops)}
               changedStops={changedStops}
               localStops={localStops}
               onResetStop={handleResetStop}
-              onCopy={handleCopy}
-              copied={copied}
+              onQueuePlacement={handleQueuePlacement}
+              canQueuePlacement={canQueuePlacement}
+              queuePlacementLabel={queuePlacementLabel}
+              onAcceptPlacement={handleAcceptPlacement}
+              canAcceptPlacement={canAcceptPlacement}
+              acceptPlacementLabel="✅ Accept Site Change"
+              onRejectPlacement={handleRejectPlacement}
+              canRejectPlacement={canRejectPlacement}
+              rejectPlacementLabel="↩ Reject Site Change"
+              placementControlsBusy={placementControlsBusy}
+              placementQueueState={placementQueueState}
+              placementQueueMessage={placementQueueMessage}
               onQueueRepaint={handleQueueRepaint}
-              canQueueRepaint={Boolean(plannerStop)}
-              queueRepaintLabel={
-                changedStops.length > 0
-                  ? "🎨 Queue Repaint Jobs"
-                  : plannerStop
-                    ? `🎨 Queue ${plannerStop.displayName}`
-                    : "🎨 Queue Repaint Jobs"
-              }
+              canQueueRepaint={canQueueRepaint}
+              queueRepaintLabel={queueRepaintLabel}
+              onAcceptRepaint={handleAcceptRepaint}
+              canAcceptRepaint={canAcceptRepaint}
+              acceptRepaintLabel="✅ Accept"
+              onRejectRepaint={handleRejectRepaint}
+              canRejectRepaint={canRejectRepaint}
+              rejectRepaintLabel="↩ Reject"
+              onCancelRepaint={handleCancelRepaint}
+              canCancelRepaint={canCancelRepaint}
+              cancelRepaintLabel="✕ Cancel Run"
+              repaintControlsBusy={repaintControlsBusy}
               repaintQueueState={repaintQueueState}
-              repaintQueueMessage={repaintQueueMessage}
+              repaintQueueMessage={queueRepaintMessage}
+              repaintCliOutput={repaintCliOutput}
               onResetAll={handleResetAll}
               onExitEditor={() => router.push("/")}
+              customPrompt={customPrompt}
+              setCustomPrompt={setCustomPrompt}
             />
           )}
         </div>
