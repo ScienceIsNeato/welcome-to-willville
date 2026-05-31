@@ -1,5 +1,12 @@
 # Status
 
+## Done (2026-05-31) - Loop-007 Logic Batch: Forum Close + Placement Cache Refresh
+
+- Fixed Town Forum "Main Street" behavior so clicking that internal flyer always closes the forum pane even when already on `/`.
+- Added placement-accept cache refresh in the local repaint sidecar: after writing updated heuristics, it now requests `/api/town?refresh=...` to rebuild and replace warm snapshots immediately.
+- This prevents stale pre-placement coordinates from lingering behind warm town snapshots after accept.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
 ## Done (2026-05-31) - Accepted Repaint Art Persists Across Normal Refresh
 
 - Fixed refresh-time repaint disappearance by hydrating accepted repaint previews from the runner even when not in reposition mode.

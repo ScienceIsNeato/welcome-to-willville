@@ -269,6 +269,11 @@ export function WillvilleAboutPane({ panelOpacity = 1, onClose }: Props) {
           <a
             key={link.title}
             href={link.href}
+            onClick={() => {
+              if (!link.external) {
+                onClose();
+              }
+            }}
             target={link.external ? "_blank" : undefined}
             rel={link.external ? "noreferrer" : undefined}
             style={{

@@ -177,6 +177,35 @@ function buildPreview(stopId, cacheBust = String(Date.now())) {
   };
 }
 
+async function refreshTownSnapshotCache() {
+  const appOrigin = allowedOrigins[0];
+  if (!appOrigin) {
+    return;
+  }
+
+  try {
+    const refreshUrl = new URL("/api/town", appOrigin);
+    refreshUrl.searchParams.set("refresh", String(Date.now()));
+    const response = await fetch(refreshUrl, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      console.warn(
+        `[repaint-pipeline] town snapshot refresh failed: ${response.status} ${response.statusText}`,
+      );
+    }
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    console.warn(
+      `[repaint-pipeline] town snapshot refresh request errored: ${detail}`,
+    );
+  }
+}
+
 function liveRepaintSupportReason(stopId, hasCustomPrompt) {
   const sprite = siteSpriteByStop.get(stopId);
   if (!sprite) {
@@ -497,6 +526,8 @@ async function acceptPlacementJob() {
   if (after !== before) {
     await writeFile(heuristicsPath, after);
   }
+
+  await refreshTownSnapshotCache();
 
   const nextState = await withState((draft) => {
     draft.activePlacement = null;
