@@ -76,7 +76,16 @@ type BrowserTownSnapshot = {
   stops: Stop[];
 };
 
-function readBrowserTownSnapshot(): Stop[] | null {
+function parseTimestamp(value: string | undefined): number {
+  if (!value) {
+    return Number.NaN;
+  }
+
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
+function readBrowserTownSnapshot(): BrowserTownSnapshot | null {
   if (typeof window === "undefined") {
     return null;
   }
@@ -88,11 +97,19 @@ function readBrowserTownSnapshot(): Stop[] | null {
     }
 
     const parsed = JSON.parse(raw) as Partial<BrowserTownSnapshot>;
-    if (parsed.schemaVersion !== 1 || !Array.isArray(parsed.stops)) {
+    if (
+      parsed.schemaVersion !== 1 ||
+      typeof parsed.cachedAt !== "string" ||
+      !Array.isArray(parsed.stops)
+    ) {
       return null;
     }
 
-    return parsed.stops as Stop[];
+    return {
+      schemaVersion: 1,
+      cachedAt: parsed.cachedAt,
+      stops: parsed.stops as Stop[],
+    };
   } catch {
     return null;
   }
@@ -210,7 +227,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     }
 
     const snapshot = readBrowserTownSnapshot();
-    if (!snapshot || snapshot.length === 0) {
+    if (!snapshot || snapshot.stops.length === 0) {
       return;
     }
 
@@ -219,10 +236,12 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         return;
       }
 
-      setLiveStops(snapshot);
+      setLiveStops(snapshot.stops);
       setLocalStops((previousStops) => {
         const knownIds = new Set(previousStops.map((stop) => stop.id));
-        const appendedStops = snapshot.filter((stop) => !knownIds.has(stop.id));
+        const appendedStops = snapshot.stops.filter(
+          (stop) => !knownIds.has(stop.id),
+        );
         if (appendedStops.length === 0) {
           return previousStops;
         }
@@ -556,6 +575,22 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         .then((data) => {
           if (data && Array.isArray(data.stops)) {
             const incomingStops = data.stops as Stop[];
+            const browserSnapshot = readBrowserTownSnapshot();
+            const apiGeneratedAt = parseTimestamp(
+              typeof data.generatedAt === "string"
+                ? data.generatedAt
+                : undefined,
+            );
+            const browserCachedAt = parseTimestamp(browserSnapshot?.cachedAt);
+
+            if (
+              Number.isFinite(apiGeneratedAt) &&
+              Number.isFinite(browserCachedAt) &&
+              apiGeneratedAt < browserCachedAt
+            ) {
+              return data;
+            }
+
             hasAppliedApiStopsRef.current = true;
             setLiveStops(incomingStops);
             setLocalStops((previousStops) => {
@@ -1053,7 +1088,11 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   );
 
   const showWelcomeHint =
-    !mobileSafeMode && !boardStop && pathDistrict === null && !showDigitalBoard;
+    !mobileSafeMode &&
+    !boardStop &&
+    pathDistrict === null &&
+    !showDigitalBoard &&
+    !showAboutPane;
   const stageControlTop = mobileSafeMode
     ? showCentralBoard
       ? 132

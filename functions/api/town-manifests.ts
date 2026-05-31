@@ -166,7 +166,9 @@ export async function hydrateManifestCacheFromStore(
 
   if (hydrateManifestCachePromise) {
     await hydrateManifestCachePromise;
-    return;
+    if (!options.force) {
+      return;
+    }
   }
 
   hydrateManifestCachePromise = (async () => {

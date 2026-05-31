@@ -664,8 +664,36 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const forceRefresh = requestUrl.searchParams.has("refresh");
 
   if (!forceRefresh) {
+    let persistedSnapshot: TownSnapshot | undefined;
+
     if (townSnapshotMemory && townSnapshotMemory.stops.length > 0) {
       if (!isTownSnapshotStale(townSnapshotMemory, manifestCacheCachedAt)) {
+        persistedSnapshot = await readTownSnapshot(
+          env.WILLVILLE_MANIFEST_CACHE,
+        );
+        if (
+          persistedSnapshot &&
+          !isTownSnapshotStale(persistedSnapshot, manifestCacheCachedAt) &&
+          snapshotBaselineCachedAt(persistedSnapshot) >
+            snapshotBaselineCachedAt(townSnapshotMemory)
+        ) {
+          townSnapshotMemory = persistedSnapshot;
+          return new Response(
+            JSON.stringify({
+              mayor: true,
+              generatedAt: persistedSnapshot.generatedAt,
+              stops: persistedSnapshot.stops,
+            }),
+            {
+              headers: withCorsHeaders(request, {
+                "Content-Type": "application/json; charset=utf-8",
+                "Cache-Control":
+                  "public, s-maxage=45, stale-while-revalidate=180",
+              }),
+            },
+          );
+        }
+
         return new Response(
           JSON.stringify({
             mayor: true,
@@ -685,7 +713,9 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       townSnapshotMemory = null;
     }
 
-    const snapshot = await readTownSnapshot(env.WILLVILLE_MANIFEST_CACHE);
+    const snapshot =
+      persistedSnapshot ??
+      (await readTownSnapshot(env.WILLVILLE_MANIFEST_CACHE));
     if (snapshot && !isTownSnapshotStale(snapshot, manifestCacheCachedAt)) {
       townSnapshotMemory = snapshot;
       return new Response(
