@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Finished the mobile pinch zoom fix and cleaned up touch gesture behavior",
-    "direction": "Next is quick phone verification and then polishing any remaining mobile feel issues",
-    "last_update": "2026-05-31T03:53:24Z"
+    "status": "Wrapped a PR feedback pass to harden sidecar workflows and clear stale pipeline state",
+    "direction": "Next is finishing thread resolution in buff and landing the branch cleanly",
+    "last_update": "2026-05-31T04:06:47Z"
   }
 }

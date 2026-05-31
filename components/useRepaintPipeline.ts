@@ -6,7 +6,10 @@ import {
   siteCanRunLiveRepaint,
   siteLiveRepaintSupportReason,
 } from "@/lib/siteAppearance";
-import { getBellErrorDetail } from "./townStageUtils";
+import {
+  getBellErrorDetail,
+  resolveRepaintRunnerBaseUrl,
+} from "./townStageUtils";
 import type { RepositionStopDelta } from "./repositionPlannerUtils";
 import type {
   RepaintQueueApiResponse,
@@ -56,27 +59,10 @@ export function useRepaintPipeline({
   const [repaintRunnerAvailable, setRepaintRunnerAvailable] = useState(false);
   const [repaintControlsBusy, setRepaintControlsBusy] = useState(false);
 
-  const repaintRunnerBaseUrl = useMemo(() => {
-    if (!isClient) {
-      return null;
-    }
-
-    const { protocol, hostname, port } = window.location;
-    if (
-      hostname !== "127.0.0.1" &&
-      hostname !== "localhost" &&
-      hostname !== "::1"
-    ) {
-      return null;
-    }
-
-    const numericPort = Number.parseInt(port, 10);
-    if (!Number.isFinite(numericPort)) {
-      return null;
-    }
-
-    return `${protocol}//${hostname}:${numericPort + 1}`;
-  }, [isClient]);
+  const repaintRunnerBaseUrl = useMemo(
+    () => (isClient ? resolveRepaintRunnerBaseUrl() : null),
+    [isClient],
+  );
 
   const buildRepaintRunnerHref = useCallback(
     (path: string, cacheBust: string) => {
@@ -142,7 +128,10 @@ export function useRepaintPipeline({
         setRepaintRunnerAvailable(false);
         setActiveRepaintJob(null);
         setAcceptedRepaintPreviews([]);
-        if (!silenceErrors && isRepositionMode) {
+        setRepaintQueueState("idle");
+        if (silenceErrors || !isRepositionMode) {
+          setRepaintQueueMessage("");
+        } else {
           setRepaintQueueState("error");
           setRepaintQueueMessage(
             "Live paint runner is offline. Restart with scripts/deploy_app.sh to run the real paint pipeline.",
@@ -176,9 +165,14 @@ export function useRepaintPipeline({
 
           return "running";
         });
+        setRepaintQueueMessage("");
       } catch (error: unknown) {
         setRepaintRunnerAvailable(false);
+        setActiveRepaintJob(null);
+        setAcceptedRepaintPreviews([]);
+        setRepaintQueueState("idle");
         if (silenceErrors) {
+          setRepaintQueueMessage("");
           return;
         }
 
@@ -243,7 +237,8 @@ export function useRepaintPipeline({
           !siteCanRunLiveRepaint(plannerStop.id) &&
           !customPrompt.trim()
         ? siteLiveRepaintSupportReason(plannerStop.id)
-        : repaintQueueMessage;
+        : repaintQueueMessage ||
+          "Queue is open. Start a repaint run to stream live pipeline output.";
 
   const canQueueRepaint =
     Boolean(plannerStop) &&
@@ -252,14 +247,19 @@ export function useRepaintPipeline({
     (siteCanRunLiveRepaint(plannerStop?.id ?? "") ||
       Boolean(customPrompt.trim()));
   const canAcceptRepaint = Boolean(
-    activeRepaintJob && activeRepaintJob.status === "awaiting_review",
+    repaintRunnerAvailable &&
+    activeRepaintJob &&
+    activeRepaintJob.status === "awaiting_review",
   );
   const canRejectRepaint = Boolean(
+    repaintRunnerAvailable &&
     activeRepaintJob &&
     ["awaiting_review", "failed"].includes(activeRepaintJob.status),
   );
   const canCancelRepaint = Boolean(
-    activeRepaintJob && ["queued", "running"].includes(activeRepaintJob.status),
+    repaintRunnerAvailable &&
+    activeRepaintJob &&
+    ["queued", "running"].includes(activeRepaintJob.status),
   );
 
   const handleQueueRepaint = useCallback(
@@ -354,7 +354,7 @@ export function useRepaintPipeline({
   );
 
   const handleAcceptRepaint = useCallback(() => {
-    if (!activeRepaintJob || !repaintRunnerBaseUrl) {
+    if (!activeRepaintJob || !repaintRunnerBaseUrl || !repaintRunnerAvailable) {
       return;
     }
 
@@ -391,10 +391,10 @@ export function useRepaintPipeline({
       .finally(() => {
         setRepaintControlsBusy(false);
       });
-  }, [activeRepaintJob, repaintRunnerBaseUrl]);
+  }, [activeRepaintJob, repaintRunnerAvailable, repaintRunnerBaseUrl]);
 
   const handleRejectRepaint = useCallback(() => {
-    if (!activeRepaintJob || !repaintRunnerBaseUrl) {
+    if (!activeRepaintJob || !repaintRunnerBaseUrl || !repaintRunnerAvailable) {
       return;
     }
 
@@ -433,10 +433,10 @@ export function useRepaintPipeline({
       .finally(() => {
         setRepaintControlsBusy(false);
       });
-  }, [activeRepaintJob, repaintRunnerBaseUrl]);
+  }, [activeRepaintJob, repaintRunnerAvailable, repaintRunnerBaseUrl]);
 
   const handleCancelRepaint = useCallback(() => {
-    if (!activeRepaintJob || !repaintRunnerBaseUrl) {
+    if (!activeRepaintJob || !repaintRunnerBaseUrl || !repaintRunnerAvailable) {
       return;
     }
 
@@ -479,7 +479,7 @@ export function useRepaintPipeline({
       .finally(() => {
         setRepaintControlsBusy(false);
       });
-  }, [activeRepaintJob, repaintRunnerBaseUrl]);
+  }, [activeRepaintJob, repaintRunnerAvailable, repaintRunnerBaseUrl]);
 
   return {
     customPrompt,

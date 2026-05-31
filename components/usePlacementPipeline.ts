@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Stop } from "@/lib/town";
-import { getBellErrorDetail } from "./townStageUtils";
+import {
+  getBellErrorDetail,
+  resolveRepaintRunnerBaseUrl,
+} from "./townStageUtils";
 import type { RepositionStopDelta } from "./repositionPlannerUtils";
 import type { DistrictId } from "@/lib/willville";
 
@@ -85,27 +88,10 @@ export function usePlacementPipeline({
     useState<PlacementQueueState>("idle");
   const [placementQueueMessage, setPlacementQueueMessage] = useState("");
 
-  const repaintRunnerBaseUrl = useMemo(() => {
-    if (!isClient) {
-      return null;
-    }
-
-    const { protocol, hostname, port } = window.location;
-    if (
-      hostname !== "127.0.0.1" &&
-      hostname !== "localhost" &&
-      hostname !== "::1"
-    ) {
-      return null;
-    }
-
-    const numericPort = Number.parseInt(port, 10);
-    if (!Number.isFinite(numericPort)) {
-      return null;
-    }
-
-    return `${protocol}//${hostname}:${numericPort + 1}`;
-  }, [isClient]);
+  const repaintRunnerBaseUrl = useMemo(
+    () => (isClient ? resolveRepaintRunnerBaseUrl() : null),
+    [isClient],
+  );
 
   const selectedDelta = plannerStop ? movedStops[plannerStop.id] : undefined;
   const hasSelectedDelta = hasDelta(selectedDelta);
@@ -125,7 +111,10 @@ export function usePlacementPipeline({
       if (!isRepositionMode || !repaintRunnerBaseUrl) {
         setPlacementRunnerAvailable(false);
         setActivePlacement(null);
-        if (!silenceErrors && isRepositionMode) {
+        setPlacementQueueState("idle");
+        if (silenceErrors || !isRepositionMode) {
+          setPlacementQueueMessage("");
+        } else {
           setPlacementQueueState("error");
           setPlacementQueueMessage(
             "Placement runner is offline. Restart with scripts/deploy_app.sh.",
@@ -144,9 +133,13 @@ export function usePlacementPipeline({
         setPlacementRunnerAvailable(true);
         setActivePlacement(result.activePlacement ?? null);
         setPlacementQueueState(result.activePlacement ? "review" : "idle");
+        setPlacementQueueMessage("");
       } catch (error: unknown) {
         setPlacementRunnerAvailable(false);
+        setActivePlacement(null);
+        setPlacementQueueState("idle");
         if (silenceErrors) {
+          setPlacementQueueMessage("");
           return;
         }
 
@@ -212,8 +205,12 @@ export function usePlacementPipeline({
     hasSelectedDelta &&
     !hasOtherDeltas;
 
-  const canAcceptPlacement = Boolean(activePlacement);
-  const canRejectPlacement = Boolean(activePlacement);
+  const canAcceptPlacement = Boolean(
+    placementRunnerAvailable && activePlacement,
+  );
+  const canRejectPlacement = Boolean(
+    placementRunnerAvailable && activePlacement,
+  );
 
   const handleQueuePlacement = useCallback(() => {
     if (
@@ -284,7 +281,11 @@ export function usePlacementPipeline({
   }, [plannerStop, repaintRunnerBaseUrl, selectedDelta]);
 
   const handleAcceptPlacement = useCallback(() => {
-    if (!activePlacement || !repaintRunnerBaseUrl) {
+    if (
+      !activePlacement ||
+      !repaintRunnerBaseUrl ||
+      !placementRunnerAvailable
+    ) {
       return;
     }
 
@@ -324,10 +325,19 @@ export function usePlacementPipeline({
       .finally(() => {
         setPlacementControlsBusy(false);
       });
-  }, [activePlacement, onPlacementAccepted, repaintRunnerBaseUrl]);
+  }, [
+    activePlacement,
+    onPlacementAccepted,
+    placementRunnerAvailable,
+    repaintRunnerBaseUrl,
+  ]);
 
   const handleRejectPlacement = useCallback(() => {
-    if (!activePlacement || !repaintRunnerBaseUrl) {
+    if (
+      !activePlacement ||
+      !repaintRunnerBaseUrl ||
+      !placementRunnerAvailable
+    ) {
       return;
     }
 
@@ -367,7 +377,12 @@ export function usePlacementPipeline({
       .finally(() => {
         setPlacementControlsBusy(false);
       });
-  }, [activePlacement, onPlacementRejected, repaintRunnerBaseUrl]);
+  }, [
+    activePlacement,
+    onPlacementRejected,
+    placementRunnerAvailable,
+    repaintRunnerBaseUrl,
+  ]);
 
   return {
     placementControlsBusy,

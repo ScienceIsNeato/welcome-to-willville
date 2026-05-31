@@ -1,5 +1,14 @@
 # Status
 
+## Done (2026-05-31) — PR Feedback Loop: Pipeline Resilience And Queue Safety Fixes
+
+- Fixed runner URL resolution so local sidecar features now work from LAN-hosted app sessions too, not just loopback hosts.
+- Cleared stale queue error text after successful status refreshes and reset stale review/running state when background status polling fails silently, so controls no longer stay enabled against a dead runner.
+- Disabled placement/repaint accept/reject/cancel controls when the runner is unavailable to prevent dead-end actions.
+- Removed duplicated sidecar URL resolution logic by centralizing it in shared stage utilities.
+- Hardened `process-queue` to avoid partial state drift: underlay assets are now snapshotted and rolled back on regeneration or write failures.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active checks green.
+
 ## Done (2026-05-31) — Mobile Pinch Zoom Now Works On Touch Devices
 
 - Added explicit pinch gesture handling in the town camera hook so two-finger pinch updates camera scale directly instead of relying on wheel-only zoom behavior.

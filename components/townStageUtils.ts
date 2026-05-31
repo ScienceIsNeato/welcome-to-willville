@@ -81,6 +81,24 @@ export async function fetchApiRoute(
   }
 }
 
+export function resolveRepaintRunnerBaseUrl(): string | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const { protocol, hostname, port } = window.location;
+  if (protocol !== "http:" && protocol !== "https:") {
+    return null;
+  }
+
+  const numericPort = Number.parseInt(port, 10);
+  if (!Number.isFinite(numericPort)) {
+    return null;
+  }
+
+  return `${protocol}//${hostname}:${numericPort + 1}`;
+}
+
 export function waitForNextFrame(): Promise<void> {
   return new Promise((resolve) => {
     window.requestAnimationFrame(() => resolve());
