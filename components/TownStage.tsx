@@ -68,6 +68,55 @@ import {
   readManifestProgress,
 } from "./townStageManifestProgress";
 
+const BROWSER_TOWN_CACHE_KEY = "willville:town:last:v1";
+
+type BrowserTownSnapshot = {
+  schemaVersion: 1;
+  cachedAt: string;
+  stops: Stop[];
+};
+
+function readBrowserTownSnapshot(): Stop[] | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(BROWSER_TOWN_CACHE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as Partial<BrowserTownSnapshot>;
+    if (parsed.schemaVersion !== 1 || !Array.isArray(parsed.stops)) {
+      return null;
+    }
+
+    return parsed.stops as Stop[];
+  } catch {
+    return null;
+  }
+}
+
+function writeBrowserTownSnapshot(stops: Stop[]): void {
+  if (typeof window === "undefined" || stops.length === 0) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      BROWSER_TOWN_CACHE_KEY,
+      JSON.stringify({
+        schemaVersion: 1,
+        cachedAt: new Date().toISOString(),
+        stops,
+      } satisfies BrowserTownSnapshot),
+    );
+  } catch {
+    // Ignore storage errors (private mode/quota) and keep town rendering.
+  }
+}
+
 /**
  * Persistent SVG stage with viewport camera (pan/zoom) and center HUD for stops.
  */
@@ -154,7 +203,46 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     useState<BoardAnnouncement | null>(null);
   const mobileDefaultCameraAppliedRef = useRef(false);
 
+  useEffect(() => {
+    if (!isClient) {
+      return;
+    }
+
+    const snapshot = readBrowserTownSnapshot();
+    if (!snapshot || snapshot.length === 0) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      setLiveStops(snapshot);
+      setLocalStops((previousStops) => {
+        const knownIds = new Set(previousStops.map((stop) => stop.id));
+        const appendedStops = snapshot.filter((stop) => !knownIds.has(stop.id));
+        if (appendedStops.length === 0) {
+          return previousStops;
+        }
+        return [...previousStops, ...appendedStops];
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [isClient]);
+
   const isRepositionMode = pathname.startsWith("/reposition");
+  const mayorEditingLocked = useMemo(() => {
+    if (!isClient) {
+      return false;
+    }
+
+    const hostname = window.location.hostname.toLowerCase();
+    return (
+      hostname === "willville.ai" ||
+      hostname === "www.willville.ai" ||
+      hostname.endsWith(".pages.dev")
+    );
+  }, [isClient]);
 
   const currentStops = useMemo(() => {
     if (isRepositionMode) {
@@ -462,7 +550,19 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
           if (data && Array.isArray(data.stops)) {
-            setLiveStops(data.stops as Stop[]);
+            const incomingStops = data.stops as Stop[];
+            setLiveStops(incomingStops);
+            setLocalStops((previousStops) => {
+              const knownIds = new Set(previousStops.map((stop) => stop.id));
+              const appendedStops = incomingStops.filter(
+                (stop) => !knownIds.has(stop.id),
+              );
+              if (appendedStops.length === 0) {
+                return previousStops;
+              }
+              return [...previousStops, ...appendedStops];
+            });
+            writeBrowserTownSnapshot(incomingStops);
           }
           return data;
         });
@@ -905,6 +1005,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           now - updated < DAY_MS;
         const markerDraggable =
           isRepositionMode &&
+          !mayorEditingLocked &&
           stop.id === effectivePlannerStopId &&
           placementQueueState !== "review" &&
           placementQueueState !== "running" &&
@@ -941,6 +1042,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       replacementUnderlayStopIds,
       placementQueueState,
       repaintQueueState,
+      mayorEditingLocked,
     ],
   );
 
@@ -1402,6 +1504,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               onExitEditor={() => router.push("/")}
               customPrompt={customPrompt}
               setCustomPrompt={setCustomPrompt}
+              editingLocked={mayorEditingLocked}
+              editingLockedMessage="Only the mayor can edit Willville. Production mode is read-only."
             />
           )}
         </div>

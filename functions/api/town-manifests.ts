@@ -12,7 +12,65 @@ type FetchedContent = {
   blobSha?: string;
 };
 
+export type ManifestCacheStore = {
+  get(
+    key: string,
+    options?: { type?: "text" | "json" },
+  ): Promise<unknown | null>;
+  put(
+    key: string,
+    value: string,
+    options?: { expirationTtl?: number },
+  ): Promise<void>;
+};
+
+type PersistedManifestSnapshot = {
+  schemaVersion: 1;
+  cachedAt: string;
+  manifests: Record<string, WillvilleManifest>;
+};
+
+const MANIFEST_CACHE_KEY = "willville:manifests:cache:v1";
+const MANIFEST_CACHE_TTL_SECONDS = 60 * 60 * 24 * 7;
+
 let manifestCache = new Map<string, WillvilleManifest>();
+let hydrateManifestCachePromise: Promise<void> | null = null;
+let hydratedManifestCache = false;
+
+function snapshotFromCache(
+  source: Map<string, WillvilleManifest>,
+): PersistedManifestSnapshot {
+  return {
+    schemaVersion: 1,
+    cachedAt: new Date().toISOString(),
+    manifests: Object.fromEntries(source),
+  };
+}
+
+function cacheFromSnapshot(raw: unknown): Map<string, WillvilleManifest> {
+  if (!raw || typeof raw !== "object") {
+    return new Map<string, WillvilleManifest>();
+  }
+
+  const snapshot = raw as Partial<PersistedManifestSnapshot>;
+  if (snapshot.schemaVersion !== 1) {
+    return new Map<string, WillvilleManifest>();
+  }
+
+  if (!snapshot.manifests || typeof snapshot.manifests !== "object") {
+    return new Map<string, WillvilleManifest>();
+  }
+
+  const parsed = new Map<string, WillvilleManifest>();
+  for (const [repo, manifest] of Object.entries(snapshot.manifests)) {
+    if (!manifest || typeof manifest !== "object") {
+      continue;
+    }
+    parsed.set(repo, manifest as WillvilleManifest);
+  }
+
+  return parsed;
+}
 
 function decodeBase64Utf8(input: string): string {
   const binary = atob(input.replace(/\s/g, ""));
@@ -30,6 +88,58 @@ export function replaceManifestCache(
   nextCache: Map<string, WillvilleManifest>,
 ): void {
   manifestCache = nextCache;
+}
+
+export async function hydrateManifestCacheFromStore(
+  store?: ManifestCacheStore,
+): Promise<void> {
+  if (!store || hydratedManifestCache) {
+    return;
+  }
+
+  if (hydrateManifestCachePromise) {
+    await hydrateManifestCachePromise;
+    return;
+  }
+
+  hydrateManifestCachePromise = (async () => {
+    try {
+      const raw = await store.get(MANIFEST_CACHE_KEY, { type: "json" });
+      const persisted = cacheFromSnapshot(raw);
+      if (persisted.size > 0) {
+        manifestCache = persisted;
+      }
+      hydratedManifestCache = true;
+    } catch {
+      // Keep in-memory behavior if durable cache read fails.
+    } finally {
+      hydrateManifestCachePromise = null;
+    }
+  })();
+
+  await hydrateManifestCachePromise;
+}
+
+export async function persistManifestCacheToStore(
+  source: Map<string, WillvilleManifest>,
+  store?: ManifestCacheStore,
+): Promise<void> {
+  if (!store) {
+    return;
+  }
+
+  try {
+    await store.put(
+      MANIFEST_CACHE_KEY,
+      JSON.stringify(snapshotFromCache(source)),
+      {
+        expirationTtl: MANIFEST_CACHE_TTL_SECONDS,
+      },
+    );
+    hydratedManifestCache = true;
+  } catch {
+    // No-op: bell should still succeed with in-memory cache even if KV write fails.
+  }
 }
 
 export class WillvilleManifestClient {

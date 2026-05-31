@@ -39,8 +39,9 @@
       "underlay": {
         "enabled": true,
         "src": "/art/town/glyph-halos/chronicchronicler.png",
-        "cacheKey": "chronicchronicler-halo-v1"
-      }
+        "cacheKey": "chronicchronicler-halo-v2"
+      },
+      "foregroundMode": "background-only"
     },
     {
       "stopId": "fogofdog-frontend",

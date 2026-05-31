@@ -95,7 +95,7 @@ export const HEURISTICS: Heuristic[] = [
     displayName: "epsilon",
     district: "the-graveyard",
     lines: ["workshop"],
-    position: { x: 1033, y: 321 },
+    position: { x: 1192, y: 501 },
     blurb: "LLVM dabbling.",
     glyph: {
       label: "compiler forge",
@@ -409,7 +409,7 @@ export const HEURISTICS: Heuristic[] = [
     displayName: "ChronicChronicler",
     district: "the-zeitgeist",
     lines: ["web", "writing"],
-    position: { x: 731, y: 149 },
+    position: { x: 744, y: 220 },
     blurb: "Long-form chronicling app.",
     glyph: {
       label: "chronicle tower",

@@ -330,6 +330,8 @@ type RepositionPlannerPanelProps = {
   onExitEditor: () => void;
   customPrompt: string;
   setCustomPrompt: (val: string) => void;
+  editingLocked?: boolean;
+  editingLockedMessage?: string;
 };
 
 export function RepositionPlannerPanel({
@@ -373,7 +375,30 @@ export function RepositionPlannerPanel({
   onExitEditor,
   customPrompt,
   setCustomPrompt,
+  editingLocked = false,
+  editingLockedMessage,
 }: RepositionPlannerPanelProps) {
+  const mayorOnlyMessage =
+    editingLockedMessage ??
+    "Only the mayor can edit Willville. Production mode is read-only.";
+  const controlLockTitle = editingLocked ? mayorOnlyMessage : undefined;
+
+  const queuePlacementDisabled =
+    !canQueuePlacement || placementControlsBusy || editingLocked;
+  const acceptPlacementDisabled =
+    !canAcceptPlacement || placementControlsBusy || editingLocked;
+  const rejectPlacementDisabled =
+    !canRejectPlacement || placementControlsBusy || editingLocked;
+  const queueRepaintDisabled =
+    !canQueueRepaint || repaintControlsBusy || editingLocked;
+  const acceptRepaintDisabled =
+    !canAcceptRepaint || repaintControlsBusy || editingLocked;
+  const rejectRepaintDisabled =
+    !canRejectRepaint || repaintControlsBusy || editingLocked;
+  const cancelRepaintDisabled =
+    !canCancelRepaint || repaintControlsBusy || editingLocked;
+  const resetAllDisabled = changedStops.length === 0 || editingLocked;
+
   return (
     <div
       style={{
@@ -398,6 +423,7 @@ export function RepositionPlannerPanel({
         overflow: "hidden",
         pointerEvents: "auto",
       }}
+      title={controlLockTitle}
       onClick={(e) => e.stopPropagation()}
     >
       <div
@@ -436,6 +462,24 @@ export function RepositionPlannerPanel({
         default slot in the new region so you can fine-tune from there.
       </p>
 
+      {editingLocked && (
+        <div
+          style={{
+            margin: "0 0 12px",
+            fontSize: 12,
+            lineHeight: 1.45,
+            color: "#d6d6d6",
+            border: "1px solid rgba(188,188,188,0.35)",
+            background: "rgba(120,120,120,0.16)",
+            borderRadius: 8,
+            padding: "8px 10px",
+          }}
+          title={mayorOnlyMessage}
+        >
+          🔒 Mayor-only editing. This production view is read-only.
+        </div>
+      )}
+
       <div
         style={{
           marginBottom: 16,
@@ -471,6 +515,8 @@ export function RepositionPlannerPanel({
           <select
             value={effectivePlannerStopId}
             onChange={(event) => onPlannerStopChange(event.target.value)}
+            disabled={editingLocked}
+            title={controlLockTitle}
             style={{
               background: "rgba(10, 8, 18, 0.88)",
               color: "var(--willville-paper)",
@@ -478,6 +524,7 @@ export function RepositionPlannerPanel({
               borderRadius: 6,
               padding: "8px 10px",
               fontSize: 12,
+              opacity: editingLocked ? 0.58 : 1,
             }}
           >
             {repositionableStops.map((stop) => (
@@ -504,7 +551,8 @@ export function RepositionPlannerPanel({
               }
               onDistrictChange(plannerStop.id, event.target.value);
             }}
-            disabled={!plannerStop}
+            disabled={!plannerStop || editingLocked}
+            title={controlLockTitle}
             style={{
               background: "rgba(10, 8, 18, 0.88)",
               color: "var(--willville-paper)",
@@ -512,7 +560,7 @@ export function RepositionPlannerPanel({
               borderRadius: 6,
               padding: "8px 10px",
               fontSize: 12,
-              opacity: plannerStop ? 1 : 0.6,
+              opacity: plannerStop && !editingLocked ? 1 : 0.6,
             }}
           >
             {DISTRICTS.map((district) => (
@@ -632,17 +680,21 @@ export function RepositionPlannerPanel({
                   <button
                     type="button"
                     onClick={() => onResetStop(id)}
+                    disabled={editingLocked}
+                    title={controlLockTitle}
                     style={{
                       background: "transparent",
                       border: 0,
-                      color: "#f4a0a0",
-                      cursor: "pointer",
+                      color: editingLocked ? "#b8b8b8" : "#f4a0a0",
+                      cursor: editingLocked ? "not-allowed" : "pointer",
                       fontSize: 11,
                       padding: "2px 6px",
                       borderRadius: 4,
+                      opacity: editingLocked ? 0.7 : 1,
                       transition: "background 0.2s",
                     }}
                     onMouseEnter={(e) =>
+                      !editingLocked &&
                       (e.currentTarget.style.background =
                         "rgba(244,160,160,0.15)")
                     }
@@ -671,42 +723,43 @@ export function RepositionPlannerPanel({
         <button
           type="button"
           onClick={onQueuePlacement}
-          disabled={!canQueuePlacement || placementControlsBusy}
+          disabled={queuePlacementDisabled}
+          title={controlLockTitle}
           style={{
             width: "100%",
-            background:
-              placementQueueState === "review"
+            background: editingLocked
+              ? "rgba(125,125,125,0.56)"
+              : placementQueueState === "review"
                 ? "#7bd389"
                 : placementQueueState === "error"
                   ? "#d45757"
                   : "linear-gradient(90deg, #b8862c 0%, #e6c66a 100%)",
             border: 0,
-            color: "#1a1233",
+            color: editingLocked ? "#e7e7e7" : "#1a1233",
             borderRadius: 6,
             padding: "10px 14px",
             fontSize: 13,
             fontWeight: 700,
-            cursor:
-              !canQueuePlacement || placementControlsBusy
-                ? "not-allowed"
-                : "pointer",
-            opacity: !canQueuePlacement || placementControlsBusy ? 0.65 : 1,
+            cursor: queuePlacementDisabled ? "not-allowed" : "pointer",
+            opacity: queuePlacementDisabled ? 0.65 : 1,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             gap: 8,
             transition: "all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)",
-            boxShadow: "0 4px 12px rgba(230,198,106,0.25)",
+            boxShadow: editingLocked
+              ? "none"
+              : "0 4px 12px rgba(230,198,106,0.25)",
           }}
           onMouseEnter={(e) => {
-            if (canQueuePlacement && !placementControlsBusy) {
+            if (!queuePlacementDisabled) {
               e.currentTarget.style.transform = "translateY(-1px)";
               e.currentTarget.style.boxShadow =
                 "0 6px 16px rgba(230,198,106,0.4)";
             }
           }}
           onMouseLeave={(e) => {
-            if (canQueuePlacement && !placementControlsBusy) {
+            if (!queuePlacementDisabled) {
               e.currentTarget.style.transform = "translateY(0px)";
               e.currentTarget.style.boxShadow =
                 "0 4px 12px rgba(230,198,106,0.25)";
@@ -721,22 +774,23 @@ export function RepositionPlannerPanel({
             <button
               type="button"
               onClick={onAcceptPlacement}
-              disabled={!canAcceptPlacement || placementControlsBusy}
+              disabled={acceptPlacementDisabled}
+              title={controlLockTitle}
               style={{
                 flex: 1,
-                background: "rgba(123, 211, 137, 0.14)",
-                border: "1px solid rgba(123, 211, 137, 0.45)",
-                color: "#d9f8dd",
+                background: editingLocked
+                  ? "rgba(125,125,125,0.28)"
+                  : "rgba(123, 211, 137, 0.14)",
+                border: editingLocked
+                  ? "1px solid rgba(188,188,188,0.38)"
+                  : "1px solid rgba(123, 211, 137, 0.45)",
+                color: editingLocked ? "#d8d8d8" : "#d9f8dd",
                 borderRadius: 6,
                 padding: "9px 12px",
                 fontSize: 12,
                 fontWeight: 700,
-                cursor:
-                  !canAcceptPlacement || placementControlsBusy
-                    ? "not-allowed"
-                    : "pointer",
-                opacity:
-                  !canAcceptPlacement || placementControlsBusy ? 0.65 : 1,
+                cursor: acceptPlacementDisabled ? "not-allowed" : "pointer",
+                opacity: acceptPlacementDisabled ? 0.65 : 1,
                 transition: "all 0.2s",
               }}
             >
@@ -746,22 +800,23 @@ export function RepositionPlannerPanel({
             <button
               type="button"
               onClick={onRejectPlacement}
-              disabled={!canRejectPlacement || placementControlsBusy}
+              disabled={rejectPlacementDisabled}
+              title={controlLockTitle}
               style={{
                 flex: 1,
-                background: "rgba(220,80,80,0.12)",
-                border: "1px solid rgba(220,80,80,0.4)",
-                color: "#f4a0a0",
+                background: editingLocked
+                  ? "rgba(125,125,125,0.28)"
+                  : "rgba(220,80,80,0.12)",
+                border: editingLocked
+                  ? "1px solid rgba(188,188,188,0.38)"
+                  : "1px solid rgba(220,80,80,0.4)",
+                color: editingLocked ? "#d8d8d8" : "#f4a0a0",
                 borderRadius: 6,
                 padding: "9px 12px",
                 fontSize: 12,
                 fontWeight: 700,
-                cursor:
-                  !canRejectPlacement || placementControlsBusy
-                    ? "not-allowed"
-                    : "pointer",
-                opacity:
-                  !canRejectPlacement || placementControlsBusy ? 0.65 : 1,
+                cursor: rejectPlacementDisabled ? "not-allowed" : "pointer",
+                opacity: rejectPlacementDisabled ? 0.65 : 1,
                 transition: "all 0.2s",
               }}
             >
@@ -798,6 +853,8 @@ export function RepositionPlannerPanel({
           <textarea
             value={customPrompt}
             onChange={(e) => setCustomPrompt(e.target.value)}
+            disabled={editingLocked}
+            title={controlLockTitle}
             placeholder="Describe what the site should look like (optional). Leave empty to use default prompt."
             style={{
               background: "rgba(10, 8, 18, 0.88)",
@@ -809,6 +866,7 @@ export function RepositionPlannerPanel({
               fontFamily: "var(--font-sans), sans-serif",
               resize: "vertical",
               minHeight: 55,
+              opacity: editingLocked ? 0.58 : 1,
             }}
           />
         </label>
@@ -816,28 +874,29 @@ export function RepositionPlannerPanel({
         <button
           type="button"
           onClick={() => onQueueRepaint(customPrompt)}
-          disabled={!canQueueRepaint || repaintControlsBusy}
+          disabled={queueRepaintDisabled}
+          title={controlLockTitle}
           style={{
             width: "100%",
-            background:
-              repaintQueueState === "review"
+            background: editingLocked
+              ? "rgba(125,125,125,0.56)"
+              : repaintQueueState === "review"
                 ? "#7bd389"
                 : repaintQueueState === "error"
                   ? "#d45757"
                   : "rgba(20, 132, 196, 0.9)",
             border: 0,
-            color: "#f6f0da",
+            color: editingLocked ? "#e7e7e7" : "#f6f0da",
             borderRadius: 6,
             padding: "10px 14px",
             fontSize: 13,
             fontWeight: 700,
-            cursor:
-              !canQueueRepaint || repaintControlsBusy
-                ? "not-allowed"
-                : "pointer",
-            opacity: !canQueueRepaint || repaintControlsBusy ? 0.65 : 1,
+            cursor: queueRepaintDisabled ? "not-allowed" : "pointer",
+            opacity: queueRepaintDisabled ? 0.65 : 1,
             transition: "all 0.2s",
-            boxShadow: "0 4px 12px rgba(20,132,196,0.28)",
+            boxShadow: editingLocked
+              ? "none"
+              : "0 4px 12px rgba(20,132,196,0.28)",
           }}
         >
           {queueRepaintLabel}
@@ -848,21 +907,23 @@ export function RepositionPlannerPanel({
             <button
               type="button"
               onClick={onAcceptRepaint}
-              disabled={!canAcceptRepaint || repaintControlsBusy}
+              disabled={acceptRepaintDisabled}
+              title={controlLockTitle}
               style={{
                 flex: 1,
-                background: "rgba(123, 211, 137, 0.14)",
-                border: "1px solid rgba(123, 211, 137, 0.45)",
-                color: "#d9f8dd",
+                background: editingLocked
+                  ? "rgba(125,125,125,0.28)"
+                  : "rgba(123, 211, 137, 0.14)",
+                border: editingLocked
+                  ? "1px solid rgba(188,188,188,0.38)"
+                  : "1px solid rgba(123, 211, 137, 0.45)",
+                color: editingLocked ? "#d8d8d8" : "#d9f8dd",
                 borderRadius: 6,
                 padding: "9px 12px",
                 fontSize: 12,
                 fontWeight: 700,
-                cursor:
-                  !canAcceptRepaint || repaintControlsBusy
-                    ? "not-allowed"
-                    : "pointer",
-                opacity: !canAcceptRepaint || repaintControlsBusy ? 0.65 : 1,
+                cursor: acceptRepaintDisabled ? "not-allowed" : "pointer",
+                opacity: acceptRepaintDisabled ? 0.65 : 1,
                 transition: "all 0.2s",
               }}
             >
@@ -872,21 +933,23 @@ export function RepositionPlannerPanel({
             <button
               type="button"
               onClick={onRejectRepaint}
-              disabled={!canRejectRepaint || repaintControlsBusy}
+              disabled={rejectRepaintDisabled}
+              title={controlLockTitle}
               style={{
                 flex: 1,
-                background: "rgba(220,80,80,0.12)",
-                border: "1px solid rgba(220,80,80,0.4)",
-                color: "#f4a0a0",
+                background: editingLocked
+                  ? "rgba(125,125,125,0.28)"
+                  : "rgba(220,80,80,0.12)",
+                border: editingLocked
+                  ? "1px solid rgba(188,188,188,0.38)"
+                  : "1px solid rgba(220,80,80,0.4)",
+                color: editingLocked ? "#d8d8d8" : "#f4a0a0",
                 borderRadius: 6,
                 padding: "9px 12px",
                 fontSize: 12,
                 fontWeight: 700,
-                cursor:
-                  !canRejectRepaint || repaintControlsBusy
-                    ? "not-allowed"
-                    : "pointer",
-                opacity: !canRejectRepaint || repaintControlsBusy ? 0.65 : 1,
+                cursor: rejectRepaintDisabled ? "not-allowed" : "pointer",
+                opacity: rejectRepaintDisabled ? 0.65 : 1,
                 transition: "all 0.2s",
               }}
             >
@@ -899,21 +962,23 @@ export function RepositionPlannerPanel({
           <button
             type="button"
             onClick={onCancelRepaint}
-            disabled={!canCancelRepaint || repaintControlsBusy}
+            disabled={cancelRepaintDisabled}
+            title={controlLockTitle}
             style={{
               width: "100%",
-              background: "rgba(220,80,80,0.12)",
-              border: "1px solid rgba(220,80,80,0.4)",
-              color: "#f4a0a0",
+              background: editingLocked
+                ? "rgba(125,125,125,0.28)"
+                : "rgba(220,80,80,0.12)",
+              border: editingLocked
+                ? "1px solid rgba(188,188,188,0.38)"
+                : "1px solid rgba(220,80,80,0.4)",
+              color: editingLocked ? "#d8d8d8" : "#f4a0a0",
               borderRadius: 6,
               padding: "9px 14px",
               fontSize: 12,
               fontWeight: 700,
-              cursor:
-                !canCancelRepaint || repaintControlsBusy
-                  ? "not-allowed"
-                  : "pointer",
-              opacity: !canCancelRepaint || repaintControlsBusy ? 0.65 : 1,
+              cursor: cancelRepaintDisabled ? "not-allowed" : "pointer",
+              opacity: cancelRepaintDisabled ? 0.65 : 1,
               transition: "all 0.2s",
             }}
           >
@@ -979,22 +1044,27 @@ export function RepositionPlannerPanel({
           <button
             type="button"
             onClick={onResetAll}
-            disabled={changedStops.length === 0}
+            disabled={resetAllDisabled}
+            title={controlLockTitle}
             style={{
               flex: 1,
-              background: "transparent",
-              border: "1px solid rgba(255,255,255,0.2)",
-              color: "var(--willville-paper)",
+              background: editingLocked
+                ? "rgba(125,125,125,0.2)"
+                : "transparent",
+              border: editingLocked
+                ? "1px solid rgba(188,188,188,0.38)"
+                : "1px solid rgba(255,255,255,0.2)",
+              color: editingLocked ? "#d8d8d8" : "var(--willville-paper)",
               borderRadius: 6,
               padding: "8px 10px",
               fontSize: 12,
               fontWeight: 600,
-              cursor: changedStops.length === 0 ? "not-allowed" : "pointer",
-              opacity: changedStops.length === 0 ? 0.5 : 1,
+              cursor: resetAllDisabled ? "not-allowed" : "pointer",
+              opacity: resetAllDisabled ? 0.5 : 1,
               transition: "all 0.2s",
             }}
             onMouseEnter={(e) => {
-              if (changedStops.length > 0)
+              if (!resetAllDisabled)
                 e.currentTarget.style.background = "rgba(255,255,255,0.06)";
             }}
             onMouseLeave={(e) => {

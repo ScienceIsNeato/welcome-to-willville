@@ -311,6 +311,52 @@ body {
   will-change: transform;
 }
 
+.district-zone-border {
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.district-zone-border-glow {
+  stroke: var(--district-border-color, var(--willville-paper));
+  stroke-width: 8;
+  opacity: 0.2;
+  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.35));
+}
+
+.district-zone-border-dash {
+  stroke: var(--district-border-color, var(--willville-paper));
+  stroke-width: 3;
+  stroke-dasharray: 13 11;
+  opacity: 0.64;
+  animation-name: district-zone-border-dash, district-zone-border-pulse;
+  animation-duration: 8.2s, 2.8s;
+  animation-timing-function: linear, ease-in-out;
+  animation-iteration-count: infinite, infinite;
+  animation-delay:
+    var(--district-border-delay, 0s), var(--district-border-delay, 0s);
+  will-change: stroke-dashoffset, opacity;
+}
+
+@keyframes district-zone-border-dash {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -192;
+  }
+}
+
+@keyframes district-zone-border-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
 @keyframes dynamic-wall-dash-left {
   from {
     stroke-dashoffset: var(--dash-start, 0);

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Finished the WTF sign and About pane refinement pass with the town-style visual polish",
-    "direction": "Next is smoke-checking the live preview and then shipping this branch update",
-    "last_update": "2026-05-31T06:05:00Z"
+    "status": "Restored both signs on mobile and converted the forum pane contents into pinned corkboard notes",
+    "direction": "Next is tuning mobile readability now that the split-flap board shows 6 rows and both signs are visible",
+    "last_update": "2026-05-31T11:05:00Z"
   }
 }

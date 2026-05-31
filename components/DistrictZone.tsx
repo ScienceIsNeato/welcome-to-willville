@@ -1,7 +1,6 @@
 "use client";
 
-import type { MouseEvent } from "react";
-import type { KeyboardEvent } from "react";
+import type { CSSProperties, KeyboardEvent, MouseEvent } from "react";
 import type { District } from "@/lib/willville";
 
 type Props = {
@@ -15,6 +14,15 @@ export function DistrictZone({
   onEnterDistrict,
   layer = "all",
 }: Props) {
+  const borderPhaseSeed = Array.from(district.id).reduce(
+    (sum, char) => sum + char.charCodeAt(0),
+    0,
+  );
+  const borderStyle = {
+    "--district-border-color": `var(${district.colorVar})`,
+    "--district-border-delay": `-${(borderPhaseSeed % 8) * 0.7}s`,
+  } as CSSProperties;
+
   const enterDistrict = (event: MouseEvent<SVGElement>) => {
     event.stopPropagation();
     onEnterDistrict(district);
@@ -33,20 +41,38 @@ export function DistrictZone({
       aria-label={district.displayName}
     >
       {(layer === "hit" || layer === "all") && (
-        <polygon
-          points={district.polygon}
-          fill="transparent"
-          stroke="transparent"
-          strokeWidth={0}
-          pointerEvents="all"
-          role="link"
-          tabIndex={0}
-          aria-label={`Open ${district.displayName}`}
-          onClick={enterDistrict}
-          onKeyDown={enterDistrictFromKeyboard}
-        >
-          <title>{district.displayName}</title>
-        </polygon>
+        <>
+          <polygon
+            points={district.polygon}
+            className="district-zone-border district-zone-border-glow"
+            style={borderStyle}
+            fill="none"
+            pointerEvents="none"
+            aria-hidden="true"
+          />
+          <polygon
+            points={district.polygon}
+            className="district-zone-border district-zone-border-dash"
+            style={borderStyle}
+            fill="none"
+            pointerEvents="none"
+            aria-hidden="true"
+          />
+          <polygon
+            points={district.polygon}
+            fill="transparent"
+            stroke="transparent"
+            strokeWidth={0}
+            pointerEvents="all"
+            role="link"
+            tabIndex={0}
+            aria-label={`Open ${district.displayName}`}
+            onClick={enterDistrict}
+            onKeyDown={enterDistrictFromKeyboard}
+          >
+            <title>{district.displayName}</title>
+          </polygon>
+        </>
       )}
       {(layer === "label" || layer === "all") && (
         <text

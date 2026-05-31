@@ -19,12 +19,15 @@ import type { RepoMeta, WillvilleManifest } from "../../lib/town";
 import { heuristicForRepo } from "../../lib/willville.heuristics";
 import { withCorsHeaders } from "./cors";
 import {
+  type ManifestCacheStore,
+  persistManifestCacheToStore,
   replaceManifestCache,
   WillvilleManifestClient,
 } from "./town-manifests";
 
 interface Env {
   GITHUB_PAT?: string;
+  WILLVILLE_MANIFEST_CACHE?: ManifestCacheStore;
 }
 
 const OWNER = "ScienceIsNeato";
@@ -318,6 +321,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       });
 
       replaceManifestCache(nextCache);
+      await persistManifestCacheToStore(
+        nextCache,
+        env.WILLVILLE_MANIFEST_CACHE,
+      );
 
       push({
         type: "complete",
