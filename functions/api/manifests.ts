@@ -19,16 +19,20 @@ import type { RepoMeta, WillvilleManifest } from "../../lib/town";
 import { heuristicForRepo } from "../../lib/willville.heuristics";
 import { withCorsHeaders } from "./cors";
 import {
+  type ManifestCacheStore,
+  persistManifestCacheToStore,
   replaceManifestCache,
   WillvilleManifestClient,
 } from "./town-manifests";
 
 interface Env {
   GITHUB_PAT?: string;
+  WILLVILLE_MANIFEST_CACHE?: ManifestCacheStore;
 }
 
 const OWNER = "ScienceIsNeato";
 const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
+const TOWN_SNAPSHOT_KEY = "willville:town:snapshot:v1";
 
 async function mapLimit<T, R>(
   items: T[],
@@ -318,6 +322,15 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       });
 
       replaceManifestCache(nextCache);
+      await persistManifestCacheToStore(
+        nextCache,
+        env.WILLVILLE_MANIFEST_CACHE,
+      );
+      try {
+        await env.WILLVILLE_MANIFEST_CACHE?.delete?.(TOWN_SNAPSHOT_KEY);
+      } catch {
+        // Keep bell response healthy even if snapshot invalidation fails.
+      }
 
       push({
         type: "complete",

@@ -16,10 +16,13 @@ Write like a coworker giving a standup update over coffee — plain, casual, no 
 
 - **Talk like a human.** "Working on perf testing and art regen" not "Implementing automated Playwright-based regression infrastructure with FPS/baseline/waterfall tracking."
 - **Say what you're doing, not how the code works.** The reader already knows the repo. They want to know what's in flight and where it's headed.
-- **Status** = what's on your plate right now, in one sentence. List the workstreams if there are a few. Mention the PR number if one is open.
-- **Direction** = why this matters or where it's going next. One sentence, forward-looking.
+- **Use a wide lens.** Summarize the active problem area and intended outcome, not tiny implementation chores.
+- **Status** = what outcome you are actively driving right now, in one sentence. If there are multiple workstreams, group them by theme.
+- **Direction** = the next concrete repo-specific outcome, not a process step.
+- **Be repo-aware.** Use the domain language of the current repo (town map, rails, rendering, data freshness, etc.) so the update reads grounded.
 - Do not enumerate file paths, function names, flag names, or technical implementation details.
 - Do not restate the repo purpose, architecture, or README material.
+- Do not use process-only filler like "trying to close PR", "working through comments", "fixing CI", or "doing cleanup" without naming the real repo outcome.
 - Omit empty fields instead of filling them with `"None"`.
 
 ### Good examples
@@ -30,18 +33,28 @@ Write like a coworker giving a standup update over coffee — plain, casual, no 
 ```
 
 ```json
-"status": "Fixing deploy pipeline and canal data fallbacks"
-"direction": "Get prod serving live data again after the API route 404s"
+"status": "Stabilizing town data freshness so board status survives runtime resets"
+"direction": "Have bell updates persist across cold starts so the map stays accurate between sessions"
+```
+
+```json
+"status": "Tuning district border motion and open-sea spacing so map readability improves on mobile"
+"direction": "Ship a cleaner coastline view where boats and labels stop overlapping land art"
 ```
 
 ### Bad examples (do not write like this)
 
 ```json
-"status": "PR #11 open: deep perf profiler with FPS/baseline/waterfall/DOM/memory tracking and automated Playwright regression gate"
-"direction": "Land the perf drilldown tooling so every future change can be validated against a saved baseline via scripts/perf_test.sh"
+"status": "Trying to close PR"
+"direction": "Address comments and get CI green"
 ```
 
-Too long, too technical, reads like a changelog.
+```json
+"status": "Refactoring parser helper and wiring cache interface for store writes"
+"direction": "Continue implementation and then run tests"
+```
+
+Too process-focused or too implementation-level. Reads like workflow notes, not an outcome update.
 
 ## Shape
 

@@ -95,7 +95,7 @@ export const HEURISTICS: Heuristic[] = [
     displayName: "epsilon",
     district: "the-graveyard",
     lines: ["workshop"],
-    position: { x: 1033, y: 321 },
+    position: { x: 1192, y: 501 },
     blurb: "LLVM dabbling.",
     glyph: {
       label: "compiler forge",
@@ -409,7 +409,7 @@ export const HEURISTICS: Heuristic[] = [
     displayName: "ChronicChronicler",
     district: "the-zeitgeist",
     lines: ["web", "writing"],
-    position: { x: 731, y: 149 },
+    position: { x: 744, y: 220 },
     blurb: "Long-form chronicling app.",
     glyph: {
       label: "chronicle tower",
@@ -534,6 +534,38 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "dark bubbling pool with carved stones and small lanterns",
       state: "placeholder",
     },
+  },
+  {
+    repo: "ScienceIsNeato/SEO_optimization",
+    displayName: "SEO_optimization",
+    district: "town-square",
+    lines: ["web"],
+    position: { x: 730, y: 696 },
+    blurb: "Best-guess placement - override via .willville.json.",
+  },
+  {
+    repo: "ScienceIsNeato/rizldizl-website",
+    displayName: "rizldizl-website",
+    district: "town-square",
+    lines: [],
+    position: { x: 742, y: 490 },
+    blurb: "Best-guess placement - override via .willville.json.",
+  },
+  {
+    repo: "ScienceIsNeato/RizlDizlScaryBitz",
+    displayName: "RizlDizlScaryBitz",
+    district: "the-zeitgeist",
+    lines: [],
+    position: { x: 823, y: 204 },
+    blurb: "Best-guess placement - override via .willville.json.",
+  },
+  {
+    repo: "ScienceIsNeato/RizlDizl",
+    displayName: "RizlDizl",
+    district: "the-zeitgeist",
+    lines: [],
+    position: { x: 928, y: 233 },
+    blurb: "Best-guess placement - override via .willville.json.",
   },
 ];
 

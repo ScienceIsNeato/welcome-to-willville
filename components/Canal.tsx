@@ -27,6 +27,19 @@ const CANAL_BANKS = [
   { id: "north", path: CANAL_SECTION.northBankPath, duration: 116 },
   { id: "south", path: CANAL_SECTION.southBankPath, duration: 124 },
 ];
+const OPEN_SEA_CENTER_BASE = { x: 1260, y: 810 } as const;
+const OPEN_SEA_ARC_START_ANGLE = -Math.PI / 4.5;
+const OPEN_SEA_ARC_END_ANGLE = Math.PI / 2.3;
+const OPEN_SEA_LABEL_ANGLE = -0.15;
+const OPEN_SEA_MARKER_RADII = [110, 210, 330, 470] as const;
+const OPEN_SEA_OUTER_BOAT_RADIUS = 540;
+const OPEN_SEA_WEST_EDGE_SHIFT =
+  OPEN_SEA_MARKER_RADII[1] * Math.cos(OPEN_SEA_LABEL_ANGLE) -
+  OPEN_SEA_OUTER_BOAT_RADIUS * Math.cos(OPEN_SEA_ARC_END_ANGLE);
+const OPEN_SEA_CENTER = {
+  x: OPEN_SEA_CENTER_BASE.x + OPEN_SEA_WEST_EDGE_SHIFT,
+  y: OPEN_SEA_CENTER_BASE.y,
+} as const;
 
 export function Canal({ boats, layer = "all" }: Props) {
   const [now, setNow] = useState<number | null>(null);
@@ -68,8 +81,8 @@ export function Canal({ boats, layer = "all" }: Props) {
     );
     const referenceTime = now ?? stableReference;
 
-    const cx = 1260;
-    const cy = 810;
+    const cx = OPEN_SEA_CENTER.x;
+    const cy = OPEN_SEA_CENTER.y;
 
     // Group by age zones: <6h, <24h, <72h, <1w, >=1w
     const zones: CanalBoat[][] = [[], [], [], [], []];
@@ -297,15 +310,15 @@ export function Canal({ boats, layer = "all" }: Props) {
           {/* Open Sea Age Markings */}
           <g className="open-sea-markings" aria-hidden="true">
             {[
-              { r: 110, label: "6h" },
-              { r: 210, label: "24h" },
-              { r: 330, label: "72h" },
-              { r: 470, label: "1w" },
+              { r: OPEN_SEA_MARKER_RADII[0], label: "6h" },
+              { r: OPEN_SEA_MARKER_RADII[1], label: "24h" },
+              { r: OPEN_SEA_MARKER_RADII[2], label: "72h" },
+              { r: OPEN_SEA_MARKER_RADII[3], label: "1w" },
             ].map(({ r, label }) => {
-              const cx = 1260;
-              const cy = 810;
-              const startAngle = -Math.PI / 4.5;
-              const endAngle = Math.PI / 2.3;
+              const cx = OPEN_SEA_CENTER.x;
+              const cy = OPEN_SEA_CENTER.y;
+              const startAngle = OPEN_SEA_ARC_START_ANGLE;
+              const endAngle = OPEN_SEA_ARC_END_ANGLE;
 
               const x1 = cx + r * Math.cos(startAngle);
               const y1 = cy + r * Math.sin(startAngle);
@@ -314,7 +327,7 @@ export function Canal({ boats, layer = "all" }: Props) {
               const d = `M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}`;
 
               // Place label along the arc at angle -0.15 radians
-              const labelAngle = -0.15;
+              const labelAngle = OPEN_SEA_LABEL_ANGLE;
               const lx = cx + r * Math.cos(labelAngle);
               const ly = cy + r * Math.sin(labelAngle);
 

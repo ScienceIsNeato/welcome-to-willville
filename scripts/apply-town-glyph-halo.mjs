@@ -106,16 +106,15 @@ async function buildMask(
   let spritePixels = null;
   let spriteWidth = 0;
   let spriteHeight = 0;
-  let spriteCenterLocal = { x: 0, y: 0 };
+  let spriteCenterLocal = {
+    x: (spriteCenter.x - cropBox.x) * scale,
+    y: (spriteCenter.y - cropBox.y) * scale,
+  };
   let spriteTopLeft = { x: 0, y: 0 };
 
   if (hasSpriteFile) {
     spriteWidth = Math.max(1, Math.round(sprite.width * scale));
     spriteHeight = Math.max(1, Math.round(sprite.height * scale));
-    spriteCenterLocal = {
-      x: (spriteCenter.x - cropBox.x) * scale,
-      y: (spriteCenter.y - cropBox.y) * scale,
-    };
     const result = await sharp(spritePath)
       .ensureAlpha()
       .resize(spriteWidth, spriteHeight, {
@@ -150,6 +149,7 @@ async function buildMask(
     .toBuffer({ resolveWithObject: true });
 
   const safeScale = Math.max(1, radialScale);
+  let transparentPixelCount = 0;
 
   const hasGlyphAlphaAt = (sampleX, sampleY) => {
     if (!hasSpriteFile || !spritePixels) {
@@ -167,6 +167,41 @@ async function buildMask(
     }
     const alpha = spritePixels[(spriteY * spriteWidth + spriteX) * 4 + 3];
     return alpha > 8;
+  };
+
+  const carveFallbackEllipse = () => {
+    const radiusX = Math.max(6, (sprite.width * scale * safeScale) / 2);
+    const radiusY = Math.max(6, (sprite.height * scale * safeScale) / 2);
+    let carved = 0;
+
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const regionMaskIndex = (y * width + x) * 4;
+        const regionMaskAlpha = regionMaskPixels[regionMaskIndex + 3];
+        const regionMaskValue = Math.max(
+          regionMaskPixels[regionMaskIndex],
+          regionMaskPixels[regionMaskIndex + 1],
+          regionMaskPixels[regionMaskIndex + 2],
+        );
+        if (regionMaskAlpha <= 8 || regionMaskValue <= 8) {
+          continue;
+        }
+
+        const nx = (x + 0.5 - spriteCenterLocal.x) / radiusX;
+        const ny = (y + 0.5 - spriteCenterLocal.y) / radiusY;
+        if (nx * nx + ny * ny > 1) {
+          continue;
+        }
+
+        const alphaIndex = regionMaskIndex + 3;
+        if (buffer[alphaIndex] !== 0) {
+          buffer[alphaIndex] = 0;
+          carved += 1;
+        }
+      }
+    }
+
+    return carved;
   };
 
   for (let y = 0; y < height; y += 1) {
@@ -188,9 +223,25 @@ async function buildMask(
       const scaledSampleY = spriteCenterLocal.y + dy / safeScale;
       const inScaledGlyph = hasGlyphAlphaAt(scaledSampleX, scaledSampleY);
       if (inScaledGlyph) {
-        buffer[(y * width + x) * 4 + 3] = 0;
+        const alphaIndex = (y * width + x) * 4 + 3;
+        if (buffer[alphaIndex] !== 0) {
+          buffer[alphaIndex] = 0;
+          transparentPixelCount += 1;
+        }
       }
     }
+  }
+
+  // New repos can be painted via custom prompt before they have a sprite file.
+  // In that case, carve a synthetic region so insert-glyph has editable pixels.
+  if (transparentPixelCount === 0) {
+    transparentPixelCount += carveFallbackEllipse();
+  }
+
+  if (transparentPixelCount === 0) {
+    throw new Error(
+      "Generated mask has no editable pixels after fallback region carving.",
+    );
   }
 
   return { buffer, width, height };

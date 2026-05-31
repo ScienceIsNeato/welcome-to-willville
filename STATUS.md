@@ -1,5 +1,185 @@
 # Status
 
+## Done (2026-05-31) - Willville Planner Renamed To City Planner
+
+- Renamed the reposition UI heading from Willville Planner to City Planner.
+- Kept the planner behavior the same; this is a wording change only.
+- Validation pending after the rename.
+
+## Done (2026-05-31) - Commit Hook Freshness Guard For STATUS vs .willville
+
+- Added a dedicated script gate at `scripts/check-willville-freshness.sh` that compares filesystem modified times for `STATUS.md` and `.willville.json`.
+- Rule enforced: if `.willville.json` is older than `STATUS.md` by more than 60 minutes, the check exits non-zero and blocks the commit.
+- Updated `.githooks/pre-commit` to run this script before the existing staged-file pairing check, using the same simple non-zero block pattern used by slop-mop hook rails.
+- Failure messaging now explicitly tells the agent to use the willville skill before committing.
+- Validation: direct script run passed and `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
+## Done (2026-05-31) - Loop-007 Logic Batch: Forum Close + Placement Cache Refresh
+
+- Fixed Town Forum "Main Street" behavior so clicking that internal flyer always closes the forum pane even when already on `/`.
+- Added placement-accept cache refresh in the local repaint sidecar: after writing updated heuristics, it now requests `/api/town?refresh=...` to rebuild and replace warm snapshots immediately.
+- This prevents stale pre-placement coordinates from lingering behind warm town snapshots after accept.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
+## Done (2026-05-31) - Accepted Repaint Art Persists Across Normal Refresh
+
+- Fixed refresh-time repaint disappearance by hydrating accepted repaint previews from the runner even when not in reposition mode.
+- `useRepaintPipeline` now does a mount-time status sync whenever the repaint runner is reachable, so normal page refresh restores accepted underlay previews instead of dropping back to stale in-memory-only UI state.
+- Kept polling behavior scoped to reposition mode only, so non-reposition routes avoid background status polling churn.
+- Runtime verification: rebuilt with `./scripts/deploy_app.sh`; runner status includes accepted `seo_optimization` preview and rendered SVG image href resolves to `http://127.0.0.1:3741/preview/glyph-halos/seo_optimization.png?...` after fresh load.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
+## Done (2026-05-31) - Loop-005 Fully Closed
+
+- Implemented final manifest freshness fixes and pushed commit `cd2b99e`.
+- Resolved both outstanding logic threads for PR #24:
+  - `PRRT_kwDOSiYx-M6F7UU3`
+  - `PRRT_kwDOSiYx-M6F7UU7`
+- `sm buff verify 24` is clean (no unresolved review threads).
+- `sm sail` is clean (no slop detected; active checks green).
+
+## Done (2026-05-31) - Follow-Up: Manifest Freshness Works Without KV And Rehydrates Across Workers
+
+- Closed remaining PR feedback on stale town data by adding in-memory manifest freshness fallback when durable cache is absent.
+- `/api/town` now compares snapshot freshness against the newest known manifest cache timestamp (in-memory or persisted), so warm responses do not stay stale after bell refreshes in no-KV environments.
+- Added forced manifest cache rehydrate when persisted manifest cache timestamp is newer than the in-process cache, so long-lived workers pick up bell updates written by other workers.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
+## Done (2026-05-31) - Bell Refresh Now Invalidates Town Snapshot Cache
+
+- Fixed stale `/api/town` snapshot behavior after bell refresh by wiring manifest-cache freshness checks into town snapshot reads.
+- Added snapshot staleness detection in `functions/api/town.ts` so in-memory and persisted town snapshots are bypassed when manifest cache is newer.
+- Added persisted manifest-cache timestamp accessors in `functions/api/town-manifests.ts` for freshness comparison.
+- Updated `POST /api/manifests` to delete the persisted town snapshot key after manifest refresh, forcing fresh town rebuilds on subsequent requests.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
+## Done (2026-05-31) - Browser Snapshot Hydration No Longer Overwrites Fresh API Stops
+
+- Fixed mount-time race in `TownStage` where deferred localStorage snapshot hydration could overwrite fresher `/api/town` data that landed first.
+- Added an API-hydration guard ref so snapshot hydration is skipped once API stops have been applied in the current session.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
+## Done (2026-05-31) - New-Site Paint Pipeline No Longer Fails With Empty Mask
+
+- Fixed repaint mask generation for sprite-less sites (custom-prompt path) so the mask always contains a valid transparent insertion region.
+- Added a fallback ellipse carve in `apply-town-glyph-halo` when no sprite-alpha region is available, preventing `insert-glyph` from failing with "Mask has no transparent pixels".
+- Fixed sprite-less mask centering so the fallback carve uses the real site center instead of defaulting to top-left of the crop. This stops successful paints from appearing visually displaced/missing around new sites.
+- Runtime verification: queued `seo_optimization` repaint with the same custom prompt and confirmed sidecar status moved to `running` with no mask error.
+- Artifact verification: regenerated `public/art/town/glyph-halos/seo_optimization.png` and confirmed the painted content bounds are centered in the crop (`bbox: x=74..575, y=73..577` in a 648x648 output).
+- Visibility hardening: bumped `seo_optimization` underlay cache key in `data/town-site-appearance.v1.json` so browsers fetch the refreshed centered overlay immediately.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
+## Done (2026-05-31) - Placement Accept Now Handles New Repos Not Yet In Heuristics
+
+- Fixed staged placement accept so new repos that are not already in heuristics no longer fail with a 409. Accept now creates a new heuristic entry with repo, display name, district, lines, and position.
+- Preserved line assignments for new entries by sending the selected stop lines through placement queue payloads.
+- Runtime verification: restarted local runtime with `./scripts/deploy_app.sh --stop` then `./scripts/deploy_app.sh`, confirmed `/placement/queue` returns 202 and `/placement/accept` returns 200 for `ScienceIsNeato/SEO_optimization`.
+- Corrected the inserted heuristics coordinates to the staged move observed in sidecar state (`town-square`, `x:648`, `y:701`).
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green after the runtime repro.
+- Workflow check: `activate && sm sail` now runs and reports the next action as committing uncommitted work.
+
+## Done (2026-05-31) — Mobile Signs Restored And WTF Content Shifted To Corkboard Notes
+
+- Fixed mobile landmark visibility so both hill signs render in mobile-safe mode instead of disappearing.
+- Increased the mobile split-flap board capacity from 4 rows to 6 rows.
+- Restyled the Willville Town Forum pane contents (mechanism cards + pull-tab links) as pinned paper notes on corkboard material while keeping the existing board behavior and links.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+- Runtime verification: `./scripts/deploy_app.sh` built and launched successfully on local preview.
+
+## Done (2026-05-31) — WTF Hill Sign Rebuilt As A Literal Corkboard
+
+- Reworked the hill-side WTF landmark into a more literal corkboard with wood frame depth, textured cork grain, pushpins, and pinned paper letter cards so it reads less like flat icon art.
+- Kept the same click behavior and hover affordance for opening the Willville Town Forum.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+- Runtime verification: `./scripts/deploy_app.sh` built and launched successfully on local preview.
+
+## Done (2026-05-31) — Sign Twinkle Softened And Startup Lag Path Reduced
+
+- Tuned the welcome-sign bulb effect from obvious blink/jump behavior to a softer twinkle with lower glow intensity and subtler opacity/scale drift.
+- Added full-town snapshot caching in `/api/town` with a durable-store path plus in-process fallback, so repeat loads can return cached town state immediately instead of refanning out to GitHub on every request.
+- Added browser snapshot hydration for town stops so previous session state can render quickly while live data refreshes in the background.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+- Runtime verification: `./scripts/deploy_app.sh` built and launched successfully. Local `/api/town` timing now shows cold `~3.99s`, warm `~0.002s`, forced refresh `~3.71s`.
+
+## Done (2026-05-31) — Planner New-Site Visibility Fixed And Welcome Sign Rolled Back To Light-Only Glitz
+
+- Fixed the reposition planner data sync so newly discovered sites from town refreshes are appended into planner-local state instead of being silently omitted.
+- Restored the welcome sign to its original board shape, palette, and `WELCOME TO WILLVILLE` copy, then added glitzy marquee bulb animation only (no `TO FABULOUS`/`NEVADA` wording, no structural redesign).
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+- Runtime verification: `./scripts/deploy_app.sh` built and launched successfully on local preview.
+
+## Done (2026-05-31) — Welcome Sign Reworked Into A Vegas-Style Landmark
+
+- Rebuilt the `WELCOME TO WILLVILLE` hill sign with a classic Vegas-inspired silhouette: starburst topper, border bulbs, and stacked typographic treatment.
+- Reframed sign text hierarchy to read like a strip-era roadside icon (`WELCOME`, `TO FABULOUS`, `WILLVILLE`, `NEVADA`) while preserving in-map placement and non-interactive behavior.
+- Added subtle neon/bulb/starlight animation timing so the sign reads lit without overpowering surrounding landmarks.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+- Runtime verification: `./scripts/deploy_app.sh` built and launched successfully on local preview.
+
+## Done (2026-05-31) — Willville Skill Guidance Shifted To Outcome-First Updates
+
+- Updated the `willville` skill guidance to favor wider, outcome-level status snapshots instead of granular process chatter.
+- Added explicit rules that `status`/`direction` should be repo-aware and specific to domain outcomes, not workflow steps like closing PRs or fixing CI.
+- Replaced examples with concrete repo-facing direction examples and added process-only anti-examples.
+
+## Done (2026-05-31) — Bell Manifest Data Can Persist Across Runtime Sessions
+
+- Added a durable cache abstraction for bell-hydrated manifests with read/write helpers and snapshot serialization.
+- Bell refresh (`POST /api/manifests`) now persists the newly built manifest cache to a durable store when `WILLVILLE_MANIFEST_CACHE` binding is configured.
+- Town reads (`GET /api/town`) now hydrate the in-memory manifest cache from that durable store on cold start before repo merge/build.
+- Behavior remains backward compatible: if no durable binding is configured, the system falls back to existing in-memory cache behavior.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
+## Done (2026-05-31) — Border Motion Tune And Open Sea East Shift
+
+- Tuned district border dash styling to be slightly thicker and slightly faster for clearer section movement.
+- Shifted the Open Sea fan/marker coordinate system east by aligning the old western edge with the prior 24h marker position, moving boats + age arcs east together.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+- Runtime verification: rebuilt via `./scripts/deploy_app.sh`; browser probe shows `24h` marker now at `x≈1565.4` and district border dash style at `strokeWidth: 3px`, `animationDuration: 8.2s`.
+
+## Done (2026-05-31) — Animated Town Section Borders Restored
+
+- Restored explicit animated district border overlays so town section outlines visibly move again instead of reading static.
+- Added per-district border glow + dashed animated stroke on each district polygon, with staggered phase offsets to avoid synchronized marching.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+- Runtime verification: rebuilt via `./scripts/deploy_app.sh`; browser check confirms 8 `.district-zone-border-dash` elements with running animation (`district-zone-border-dash, district-zone-border-pulse`).
+
+## Done (2026-05-31) — Forum Links Updated For Public Routing
+
+- Removed the private Willville source-code flyer from the Town Forum board.
+- Updated the Slop-Mop Rails flyer to open `https://slop-mop.com` instead of the GitHub repository.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
+## Done (2026-05-31) — WTF Reframed As Willville Town Forum Bulletin Board
+
+- Rebranded the north hill sign and About pane header so `WTF` now explicitly means `Willville Town Forum` and removed the question mark.
+- Restyled the forum panel as a real in-town corkboard with pinned paper notices and warm bulletin-board materials.
+- Converted the bottom link row into flyer cards with tear-strip pull tabs, each tab copy indicating where the link goes.
+- Updated the hover copy on the hill sign to invite opening the Willville Town Forum directly.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
+## Done (2026-05-31) — Production Reposition Controls Are Mayor-Locked
+
+- Added a production-host lock for `/reposition` so editing controls are read-only on public hosts (`willville.ai`, `www.willville.ai`, and `*.pages.dev`).
+- Disabled marker dragging in that lock mode so production visitors cannot reposition stops.
+- Greyed planner edit controls in read-only mode and added a clear mayor-only notice with hover tooltip messaging: "Only the mayor can edit Willville. Production mode is read-only."
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
+## Done (2026-05-31) — About Pane Refinement Pass Landed
+
+- Moved the new `WTF?` sign farther north (above the main town landmarks) and tightened its board width so it reads as a smaller hill sign.
+- Updated the original `WELCOME TO WILLVILLE` sign to a lit marquee feel with pulsing frame/text glow.
+- Refined the About pane to better match Willville aesthetics (darker brass/ledger styling), shifted copy to "my sites" language, and added explicit dual-purpose framing: personal force multiplier plus portfolio frontage.
+- Added a dedicated Mayor's Express explainer card describing how Time Central promotes active work into express stops and how the numbered controls jump there.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
+## Done (2026-05-31) — WTF Sign + About Pane In Town
+
+- Added a second Hollywood-style sign that says `WTF?` on the sign hill and made it interactive with a hover hint: "Click here to see how the town works".
+- Clicking the sign now opens a new central About pane in Willville voice with a playful system explainer and quick links to key places.
+- Hooked the pane into normal town flow so selecting stops/districts or opening tourism content returns the board to normal behavior.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed, and `./scripts/deploy_app.sh` built and launched successfully.
+
 ## Done (2026-05-31) — PR Feedback Loop: Pipeline Resilience And Queue Safety Fixes
 
 - Fixed runner URL resolution so local sidecar features now work from LAN-hosted app sessions too, not just loopback hosts.

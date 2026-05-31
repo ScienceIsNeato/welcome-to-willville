@@ -68,6 +68,82 @@ import {
   readManifestProgress,
 } from "./townStageManifestProgress";
 
+const BROWSER_TOWN_CACHE_KEY = "willville:town:last:v1";
+
+type BrowserTownSnapshot = {
+  schemaVersion: 1;
+  cachedAt: string;
+  stops: Stop[];
+};
+
+function parseTimestamp(value: string | undefined): number {
+  if (!value) {
+    return Number.NaN;
+  }
+
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
+function readBrowserTownSnapshot(): BrowserTownSnapshot | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(BROWSER_TOWN_CACHE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as Partial<BrowserTownSnapshot>;
+    if (
+      parsed.schemaVersion !== 1 ||
+      typeof parsed.cachedAt !== "string" ||
+      !Array.isArray(parsed.stops)
+    ) {
+      return null;
+    }
+
+    return {
+      schemaVersion: 1,
+      cachedAt: parsed.cachedAt,
+      stops: parsed.stops as Stop[],
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeBrowserTownSnapshot(
+  stops: Stop[],
+  options: { cachedAt?: string } = {},
+): void {
+  if (typeof window === "undefined" || stops.length === 0) {
+    return;
+  }
+
+  const incomingCachedAt = options.cachedAt;
+  const cachedAt =
+    typeof incomingCachedAt === "string" &&
+    Number.isFinite(parseTimestamp(incomingCachedAt))
+      ? incomingCachedAt
+      : new Date().toISOString();
+
+  try {
+    window.localStorage.setItem(
+      BROWSER_TOWN_CACHE_KEY,
+      JSON.stringify({
+        schemaVersion: 1,
+        cachedAt,
+        stops,
+      } satisfies BrowserTownSnapshot),
+    );
+  } catch {
+    // Ignore storage errors (private mode/quota) and keep town rendering.
+  }
+}
+
 /**
  * Persistent SVG stage with viewport camera (pan/zoom) and center HUD for stops.
  */
@@ -133,6 +209,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const [liveStops, setLiveStops] = useState<Stop[] | null>(null);
   const [showCentralBoard, setShowCentralBoard] = useState(true);
   const [showDigitalBoard, setShowDigitalBoard] = useState(false);
+  const [showAboutPane, setShowAboutPane] = useState(false);
   const [centralBoardOpacity, setCentralBoardOpacity] = useState(0.35);
   const [digitalBoardOpacity, setDigitalBoardOpacity] = useState(0.75);
   const [showPerfPanel, setShowPerfPanel] = useState(true);
@@ -152,8 +229,54 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const [boardAnnouncement, setBoardAnnouncement] =
     useState<BoardAnnouncement | null>(null);
   const mobileDefaultCameraAppliedRef = useRef(false);
+  const hasAppliedApiStopsRef = useRef(false);
+
+  useEffect(() => {
+    if (!isClient) {
+      return;
+    }
+
+    const snapshot = readBrowserTownSnapshot();
+    if (!snapshot || snapshot.stops.length === 0) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      if (hasAppliedApiStopsRef.current) {
+        return;
+      }
+
+      setLiveStops(snapshot.stops);
+      setLocalStops((previousStops) => {
+        const knownIds = new Set(previousStops.map((stop) => stop.id));
+        const appendedStops = snapshot.stops.filter(
+          (stop) => !knownIds.has(stop.id),
+        );
+        if (appendedStops.length === 0) {
+          return previousStops;
+        }
+        return [...previousStops, ...appendedStops];
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+    };
+  }, [isClient]);
 
   const isRepositionMode = pathname.startsWith("/reposition");
+  const mayorEditingLocked = useMemo(() => {
+    if (!isClient) {
+      return false;
+    }
+
+    const hostname = window.location.hostname.toLowerCase();
+    return (
+      hostname === "willville.ai" ||
+      hostname === "www.willville.ai" ||
+      hostname.endsWith(".pages.dev")
+    );
+  }, [isClient]);
 
   const currentStops = useMemo(() => {
     if (isRepositionMode) {
@@ -461,7 +584,41 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
           if (data && Array.isArray(data.stops)) {
-            setLiveStops(data.stops as Stop[]);
+            const incomingStops = data.stops as Stop[];
+            const browserSnapshot = readBrowserTownSnapshot();
+            const apiGeneratedAt = parseTimestamp(
+              typeof data.generatedAt === "string"
+                ? data.generatedAt
+                : undefined,
+            );
+            const browserCachedAt = parseTimestamp(browserSnapshot?.cachedAt);
+
+            if (
+              Number.isFinite(apiGeneratedAt) &&
+              Number.isFinite(browserCachedAt) &&
+              apiGeneratedAt < browserCachedAt
+            ) {
+              return data;
+            }
+
+            hasAppliedApiStopsRef.current = true;
+            setLiveStops(incomingStops);
+            setLocalStops((previousStops) => {
+              const knownIds = new Set(previousStops.map((stop) => stop.id));
+              const appendedStops = incomingStops.filter(
+                (stop) => !knownIds.has(stop.id),
+              );
+              if (appendedStops.length === 0) {
+                return previousStops;
+              }
+              return [...previousStops, ...appendedStops];
+            });
+            writeBrowserTownSnapshot(incomingStops, {
+              cachedAt:
+                typeof data.generatedAt === "string"
+                  ? data.generatedAt
+                  : undefined,
+            });
           }
           return data;
         });
@@ -612,6 +769,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     }
     transitioningToStopIdRef.current = dismissedStopIdRef.current = null;
     setSelectedStop(null);
+    setShowAboutPane(false);
     setShowDigitalBoard(true);
     setMobileDrawerExpanded(false);
     setShowCentralBoard(true);
@@ -620,6 +778,21 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       setBoardAnnouncement(null);
       boardAnnouncementTimerRef.current = null;
     }, BELL_BOARD_FLASH_MS);
+    router.replace(routeWithCurrentSearch("/"), { scroll: false });
+  }, [routeWithCurrentSearch, router]);
+
+  const handleAboutPaneOpen = useCallback(() => {
+    if (boardAnnouncementTimerRef.current !== null) {
+      window.clearTimeout(boardAnnouncementTimerRef.current);
+      boardAnnouncementTimerRef.current = null;
+    }
+    transitioningToStopIdRef.current = dismissedStopIdRef.current = null;
+    setSelectedStop(null);
+    setShowDigitalBoard(false);
+    setMobileDrawerExpanded(false);
+    setShowCentralBoard(true);
+    setShowAboutPane(true);
+    setBoardAnnouncement(null);
     router.replace(routeWithCurrentSearch("/"), { scroll: false });
   }, [routeWithCurrentSearch, router]);
 
@@ -724,6 +897,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       return;
     }
     dismissedStopIdRef.current = null;
+    setShowAboutPane(false);
     const stop = currentStops.find(
       (s) => s.district === pathDistrict && s.id === pathStopId,
     );
@@ -758,6 +932,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       if (mobileSafeMode) {
         setMobileDrawerExpanded(true);
       }
+      setShowAboutPane(false);
       transitioningToStopIdRef.current = stop.id;
       dismissedStopIdRef.current = null;
       setSelectedStop(stop);
@@ -778,6 +953,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     transitioningToStopIdRef.current = null;
     dismissedStopIdRef.current = pathStopId;
     setSelectedStop(null);
+    setShowAboutPane(false);
     setShowDigitalBoard(false);
     setMobileDrawerExpanded(false);
     router.replace(routeWithCurrentSearch("/"), { scroll: false });
@@ -789,6 +965,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       transitioningToStopIdRef.current = null;
       dismissedStopIdRef.current = pathStopId;
       setSelectedStop(null);
+      setShowAboutPane(false);
       setShowDigitalBoard(false);
       setMobileDrawerExpanded(false);
       router.push(routeWithCurrentSearch(`/${district.id}/`), {
@@ -884,6 +1061,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           now - updated < DAY_MS;
         const markerDraggable =
           isRepositionMode &&
+          !mayorEditingLocked &&
           stop.id === effectivePlannerStopId &&
           placementQueueState !== "review" &&
           placementQueueState !== "running" &&
@@ -920,11 +1098,16 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       replacementUnderlayStopIds,
       placementQueueState,
       repaintQueueState,
+      mayorEditingLocked,
     ],
   );
 
   const showWelcomeHint =
-    !mobileSafeMode && !boardStop && pathDistrict === null && !showDigitalBoard;
+    !mobileSafeMode &&
+    !boardStop &&
+    pathDistrict === null &&
+    !showDigitalBoard &&
+    !showAboutPane;
   const stageControlTop = mobileSafeMode
     ? showCentralBoard
       ? 132
@@ -978,12 +1161,19 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         showCentralBoard={!isRepositionMode && showCentralBoard}
         showDigitalBoard={!isRepositionMode && showDigitalBoard}
         detailBoardVisible={!isRepositionMode && detailBoardVisible}
+        showAboutPane={!isRepositionMode && showAboutPane}
         mobileDrawerExpanded={mobileDrawerExpanded}
         centralBoardOpacity={centralBoardOpacity}
         digitalBoardOpacity={digitalBoardOpacity}
         onSelectStop={openStopHud}
         onToggleCentralBoard={() => {
-          setShowCentralBoard((current) => !current);
+          setShowCentralBoard((current) => {
+            const nextVisible = !current;
+            if (!nextVisible) {
+              setShowAboutPane(false);
+            }
+            return nextVisible;
+          });
         }}
         onCentralOpacityChange={setCentralBoardOpacity}
         onShowDigitalBoard={() => {
@@ -1000,6 +1190,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         onDigitalOpacityChange={setDigitalBoardOpacity}
         onToggleMobileDrawerExpanded={() => {
           setMobileDrawerExpanded((current) => !current);
+        }}
+        onCloseAboutPane={() => {
+          setShowAboutPane(false);
         }}
       >
         <div
@@ -1233,6 +1426,10 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                     markSkipDrag();
                     handleTourism();
                   }}
+                  onAbout={() => {
+                    markSkipDrag();
+                    handleAboutPaneOpen();
+                  }}
                 />
               </g>
             </g>
@@ -1367,6 +1564,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               onExitEditor={() => router.push("/")}
               customPrompt={customPrompt}
               setCustomPrompt={setCustomPrompt}
+              editingLocked={mayorEditingLocked}
+              editingLockedMessage="Only the mayor can edit Willville. Production mode is read-only."
             />
           )}
         </div>

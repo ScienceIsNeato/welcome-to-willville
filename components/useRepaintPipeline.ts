@@ -124,7 +124,7 @@ export function useRepaintPipeline({
 
   const syncRepaintQueue = useCallback(
     async ({ silenceErrors = false }: { silenceErrors?: boolean } = {}) => {
-      if (!isRepositionMode || !repaintRunnerBaseUrl) {
+      if (!repaintRunnerBaseUrl) {
         setRepaintRunnerAvailable(false);
         setActiveRepaintJob(null);
         setAcceptedRepaintPreviews([]);
@@ -188,20 +188,24 @@ export function useRepaintPipeline({
   );
 
   useEffect(() => {
-    if (!isRepositionMode || !repaintRunnerBaseUrl) {
+    if (!repaintRunnerBaseUrl) {
       return;
     }
 
     const initialRefreshId = window.setTimeout(() => {
       void syncRepaintQueue({ silenceErrors: true });
     }, 0);
-    const intervalId = window.setInterval(() => {
-      void syncRepaintQueue({ silenceErrors: true });
-    }, 3000);
+    const intervalId = isRepositionMode
+      ? window.setInterval(() => {
+          void syncRepaintQueue({ silenceErrors: true });
+        }, 3000)
+      : null;
 
     return () => {
       window.clearTimeout(initialRefreshId);
-      window.clearInterval(intervalId);
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+      }
     };
   }, [isRepositionMode, repaintRunnerBaseUrl, syncRepaintQueue]);
 

@@ -4,10 +4,9 @@
  * Discovers the town's live state by:
  *   1. Listing repos under ScienceIsNeato (non-fork, non-archived, <2y stale)
  *   2. For each, fetching open GitHub milestones (queue + ETA data)
- *   3. Reading bell-hydrated .willville.json manifests from the in-memory cache
+ *   3. Reading bell-hydrated .willville.json manifests from in-memory cache,
+ *      with durable-store hydration fallback when configured
  *   4. Merging with baked-in heuristics for layout (position, district, lines)
- *
- * Bell hydration is ephemeral. If the runtime resets, ring the bell again.
  *
  * Tourists see public repos only. Mayors (with the willville_mayor cookie)
  * also see private repos and stops marked visibility: mayor.
@@ -20,9 +19,15 @@ import {
   buildTown,
   type GitHubWorkflowRun,
   type RepoMeta,
+  type Stop,
 } from "../../lib/town";
 import { withCorsHeaders } from "./cors";
 import {
+  getManifestCacheCachedAt,
+  type ManifestCacheStore,
+  hydrateManifestCacheFromStore,
+  isManifestCacheOlderThan,
+  readPersistedManifestCacheCachedAt,
   readCachedRepoManifest,
   WillvilleManifestClient,
 } from "./town-manifests";
@@ -30,10 +35,144 @@ import {
 interface Env {
   GITHUB_PAT?: string;
   WILLVILLE_MAYOR_KEY?: string;
+  WILLVILLE_MANIFEST_CACHE?: ManifestCacheStore;
 }
 
 const OWNER = "ScienceIsNeato";
 const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
+const TOWN_SNAPSHOT_KEY = "willville:town:snapshot:v1";
+const TOWN_SNAPSHOT_TTL_SECONDS = 60 * 15;
+
+type TownSnapshot = {
+  schemaVersion: 1;
+  generatedAt: string;
+  manifestCachedAt?: string;
+  stops: Stop[];
+};
+
+let townSnapshotMemory: TownSnapshot | null = null;
+
+function parseTownSnapshot(raw: unknown): TownSnapshot | undefined {
+  if (!raw || typeof raw !== "object") {
+    return undefined;
+  }
+
+  const candidate = raw as Partial<TownSnapshot>;
+  if (candidate.schemaVersion !== 1) {
+    return undefined;
+  }
+
+  if (typeof candidate.generatedAt !== "string") {
+    return undefined;
+  }
+
+  if (!Array.isArray(candidate.stops)) {
+    return undefined;
+  }
+
+  const manifestCachedAt =
+    typeof candidate.manifestCachedAt === "string"
+      ? candidate.manifestCachedAt
+      : undefined;
+
+  return {
+    schemaVersion: 1,
+    generatedAt: candidate.generatedAt,
+    manifestCachedAt,
+    stops: candidate.stops as Stop[],
+  };
+}
+
+function snapshotBaselineCachedAt(snapshot: TownSnapshot): number {
+  const basis = snapshot.manifestCachedAt ?? snapshot.generatedAt;
+  const parsed = Date.parse(basis);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function isTownSnapshotStale(
+  snapshot: TownSnapshot,
+  manifestCachedAt: string | null,
+): boolean {
+  if (!manifestCachedAt) {
+    return false;
+  }
+
+  const manifestParsed = Date.parse(manifestCachedAt);
+  if (!Number.isFinite(manifestParsed)) {
+    return false;
+  }
+
+  return manifestParsed > snapshotBaselineCachedAt(snapshot);
+}
+
+function newerTimestamp(
+  first: string | null,
+  second: string | null,
+): string | null {
+  const firstParsed = first ? Date.parse(first) : Number.NaN;
+  const secondParsed = second ? Date.parse(second) : Number.NaN;
+
+  if (Number.isFinite(firstParsed) && Number.isFinite(secondParsed)) {
+    return firstParsed >= secondParsed ? first : second;
+  }
+
+  if (Number.isFinite(firstParsed)) {
+    return first;
+  }
+
+  if (Number.isFinite(secondParsed)) {
+    return second;
+  }
+
+  return first ?? second;
+}
+
+async function readTownSnapshot(
+  store?: ManifestCacheStore,
+): Promise<TownSnapshot | undefined> {
+  if (!store) {
+    return undefined;
+  }
+
+  try {
+    const raw = await store.get(TOWN_SNAPSHOT_KEY, { type: "json" });
+    const snapshot = parseTownSnapshot(raw);
+    if (!snapshot || snapshot.stops.length === 0) {
+      return undefined;
+    }
+    return snapshot;
+  } catch {
+    return undefined;
+  }
+}
+
+async function persistTownSnapshot(
+  store: ManifestCacheStore | undefined,
+  generatedAt: string,
+  manifestCachedAt: string,
+  stops: Stop[],
+): Promise<void> {
+  if (!store || stops.length === 0) {
+    return;
+  }
+
+  try {
+    await store.put(
+      TOWN_SNAPSHOT_KEY,
+      JSON.stringify({
+        schemaVersion: 1,
+        generatedAt,
+        manifestCachedAt,
+        stops,
+      } satisfies TownSnapshot),
+      {
+        expirationTtl: TOWN_SNAPSHOT_TTL_SECONDS,
+      },
+    );
+  } catch {
+    // Keep API available even if durable cache writes fail.
+  }
+}
 
 async function mapLimit<T, R>(
   items: T[],
@@ -507,6 +646,94 @@ async function fetchRecentBranches(
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   // Always use PAT when available to avoid unauthenticated rate limits (60/hr).
   const token = env.GITHUB_PAT;
+  await hydrateManifestCacheFromStore(env.WILLVILLE_MANIFEST_CACHE);
+  const persistedManifestCachedAt = await readPersistedManifestCacheCachedAt(
+    env.WILLVILLE_MANIFEST_CACHE,
+  );
+  if (isManifestCacheOlderThan(persistedManifestCachedAt)) {
+    await hydrateManifestCacheFromStore(env.WILLVILLE_MANIFEST_CACHE, {
+      force: true,
+    });
+  }
+  const manifestCacheCachedAt = newerTimestamp(
+    getManifestCacheCachedAt(),
+    persistedManifestCachedAt,
+  );
+
+  const requestUrl = new URL(request.url);
+  const forceRefresh = requestUrl.searchParams.has("refresh");
+
+  if (!forceRefresh) {
+    let persistedSnapshot: TownSnapshot | undefined;
+
+    if (townSnapshotMemory && townSnapshotMemory.stops.length > 0) {
+      if (!isTownSnapshotStale(townSnapshotMemory, manifestCacheCachedAt)) {
+        persistedSnapshot = await readTownSnapshot(
+          env.WILLVILLE_MANIFEST_CACHE,
+        );
+        if (
+          persistedSnapshot &&
+          !isTownSnapshotStale(persistedSnapshot, manifestCacheCachedAt) &&
+          snapshotBaselineCachedAt(persistedSnapshot) >
+            snapshotBaselineCachedAt(townSnapshotMemory)
+        ) {
+          townSnapshotMemory = persistedSnapshot;
+          return new Response(
+            JSON.stringify({
+              mayor: true,
+              generatedAt: persistedSnapshot.generatedAt,
+              stops: persistedSnapshot.stops,
+            }),
+            {
+              headers: withCorsHeaders(request, {
+                "Content-Type": "application/json; charset=utf-8",
+                "Cache-Control":
+                  "public, s-maxage=45, stale-while-revalidate=180",
+              }),
+            },
+          );
+        }
+
+        return new Response(
+          JSON.stringify({
+            mayor: true,
+            generatedAt: townSnapshotMemory.generatedAt,
+            stops: townSnapshotMemory.stops,
+          }),
+          {
+            headers: withCorsHeaders(request, {
+              "Content-Type": "application/json; charset=utf-8",
+              "Cache-Control":
+                "public, s-maxage=45, stale-while-revalidate=180",
+            }),
+          },
+        );
+      }
+
+      townSnapshotMemory = null;
+    }
+
+    const snapshot =
+      persistedSnapshot ??
+      (await readTownSnapshot(env.WILLVILLE_MANIFEST_CACHE));
+    if (snapshot && !isTownSnapshotStale(snapshot, manifestCacheCachedAt)) {
+      townSnapshotMemory = snapshot;
+      return new Response(
+        JSON.stringify({
+          mayor: true,
+          generatedAt: snapshot.generatedAt,
+          stops: snapshot.stops,
+        }),
+        {
+          headers: withCorsHeaders(request, {
+            "Content-Type": "application/json; charset=utf-8",
+            "Cache-Control": "public, s-maxage=45, stale-while-revalidate=180",
+          }),
+        },
+      );
+    }
+  }
+
   const repos = await listOwnerRepos(token);
   const cutoff = Date.now() - TWO_YEARS_MS;
   const manifestClient = new WillvilleManifestClient(token);
@@ -572,13 +799,27 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   });
 
   const stops = buildTown(repoMetas);
+  const generatedAt = new Date().toISOString();
+  const snapshotManifestCachedAt = manifestCacheCachedAt ?? generatedAt;
+  townSnapshotMemory = {
+    schemaVersion: 1,
+    generatedAt,
+    manifestCachedAt: snapshotManifestCachedAt,
+    stops,
+  };
+  await persistTownSnapshot(
+    env.WILLVILLE_MANIFEST_CACHE,
+    generatedAt,
+    snapshotManifestCachedAt,
+    stops,
+  );
 
   const cacheControl = "public, s-maxage=45, stale-while-revalidate=180";
 
   return new Response(
     JSON.stringify({
       mayor: true,
-      generatedAt: new Date().toISOString(),
+      generatedAt,
       stops,
     }),
     {
