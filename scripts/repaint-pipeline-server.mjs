@@ -39,13 +39,22 @@ function parseArgs(argv) {
 
 const args = parseArgs(process.argv.slice(2));
 const port = Number.parseInt(args.get("port") ?? "3741", 10);
-const allowedOrigin = (args.get("origin") ?? "http://127.0.0.1:3740").replace(
-  /\/$/,
-  "",
-);
+const host = args.get("host") ?? "127.0.0.1";
+const allowedOrigins = (args.get("origin") ?? "http://127.0.0.1:3740")
+  .split(",")
+  .map((origin) => origin.trim().replace(/\/$/, ""))
+  .filter(Boolean);
 
 if (!Number.isFinite(port) || port <= 0) {
   throw new Error("Invalid --port for repaint pipeline server.");
+}
+
+if (!["127.0.0.1", "0.0.0.0", "localhost"].includes(host)) {
+  throw new Error("Invalid --host for repaint pipeline server.");
+}
+
+if (allowedOrigins.length === 0) {
+  throw new Error("At least one --origin must be provided.");
 }
 
 const defaultState = {
@@ -63,7 +72,11 @@ function nowIso() {
 }
 
 function corsHeaders(origin) {
-  const responseOrigin = origin === allowedOrigin ? origin : allowedOrigin;
+  const normalizedOrigin =
+    typeof origin === "string" ? origin.replace(/\/$/, "") : "";
+  const responseOrigin = allowedOrigins.includes(normalizedOrigin)
+    ? normalizedOrigin
+    : allowedOrigins[0];
   return {
     "Access-Control-Allow-Origin": responseOrigin,
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
@@ -1192,6 +1205,9 @@ const shutdown = () => {
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);
 
-server.listen(port, "127.0.0.1", () => {
-  console.log(`Repaint pipeline server listening on http://127.0.0.1:${port}`);
+server.listen(port, host, () => {
+  const displayHost = host === "0.0.0.0" ? "localhost" : host;
+  console.log(
+    `Repaint pipeline server listening on http://${displayHost}:${port}`,
+  );
 });

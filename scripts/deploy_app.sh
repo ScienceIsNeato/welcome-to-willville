@@ -9,6 +9,7 @@ set -euo pipefail
 #
 # Usage:
 #   scripts/deploy_app.sh          # build + start wrangler
+#   scripts/deploy_app.sh --lan    # build + start, accessible on local network
 #   scripts/deploy_app.sh --mobile # build + start + open headed mobile preview
 #   scripts/deploy_app.sh --stop   # tear down this worktree's deployment
 #   scripts/deploy_app.sh --status # show all running deployments
@@ -25,11 +26,13 @@ usage() {
   cat <<'EOF'
 Usage:
   scripts/deploy_app.sh
+  scripts/deploy_app.sh --lan
   scripts/deploy_app.sh --mobile [mobile preview args]
   scripts/deploy_app.sh --stop
   scripts/deploy_app.sh --status
 
 Examples:
+  scripts/deploy_app.sh --lan
   scripts/deploy_app.sh --mobile
   scripts/deploy_app.sh --mobile --device iphone-14 --path /town-square/willville-town-hall/
 EOF
@@ -99,6 +102,26 @@ has_arg() {
       return 0
     fi
   done
+  return 1
+}
+
+find_lan_ip() {
+  local ip
+
+  for iface in en0 en1; do
+    ip=$(ipconfig getifaddr "$iface" 2>/dev/null || true)
+    if [[ -n "$ip" ]]; then
+      echo "$ip"
+      return 0
+    fi
+  done
+
+  ip=$(ifconfig 2>/dev/null | awk '/inet / { print $2 }' | grep -E '^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)' | head -1 || true)
+  if [[ -n "$ip" ]]; then
+    echo "$ip"
+    return 0
+  fi
+
   return 1
 }
 
@@ -398,6 +421,7 @@ show_status() {
 
 ACTION="deploy"
 MOBILE_MODE=false
+LAN_MODE=false
 MOBILE_ARGS=()
 
 while [[ $# -gt 0 ]]; do
@@ -416,6 +440,10 @@ while [[ $# -gt 0 ]]; do
       MOBILE_ARGS=("$@")
       break
       ;;
+    --lan)
+      LAN_MODE=true
+      shift
+      ;;
     --help|-h)
       usage
       exit 0
@@ -430,6 +458,12 @@ done
 
 if $MOBILE_MODE && [[ "$ACTION" != "deploy" ]]; then
   echo "ERROR: --mobile cannot be combined with --$ACTION" >&2
+  usage >&2
+  exit 1
+fi
+
+if $LAN_MODE && [[ "$ACTION" != "deploy" ]]; then
+  echo "ERROR: --lan cannot be combined with --$ACTION" >&2
   usage >&2
   exit 1
 fi
@@ -483,8 +517,28 @@ NODE_ENV=production node_modules/.bin/next build
 # 5. Allocate port
 WRANGLER_PORT=$(find_free_port)
 REPAINT_PORT=$(( WRANGLER_PORT + 1 ))
+
+WRANGLER_BIND_IP="127.0.0.1"
+REPAINT_BIND_IP="127.0.0.1"
+PUBLIC_IP="127.0.0.1"
+if $LAN_MODE; then
+  WRANGLER_BIND_IP="0.0.0.0"
+  REPAINT_BIND_IP="0.0.0.0"
+  PUBLIC_IP=$(find_lan_ip || true)
+  if [[ -z "$PUBLIC_IP" ]]; then
+    echo "ERROR: Could not determine a LAN IP. Connect to Wi-Fi/Ethernet and retry." >&2
+    exit 1
+  fi
+fi
+
+LOCAL_ORIGIN="http://127.0.0.1:$WRANGLER_PORT"
+PUBLIC_ORIGIN="http://$PUBLIC_IP:$WRANGLER_PORT"
+
 echo ""
 echo "Allocated port: $WRANGLER_PORT"
+if $LAN_MODE; then
+  echo "LAN IP: $PUBLIC_IP"
+fi
 
 # 6. Start wrangler (serves static build + API functions, no next dev needed)
 WRANGLER_LOG=$(logfile_for "$ROOT")
@@ -499,11 +553,11 @@ screen -dmS "$SCREEN_SESSION" bash -lc '
   exec > "$2" 2>&1
   cd "$1"
   exec wrangler pages dev ./out \
-    --ip 127.0.0.1 \
+    --ip "$4" \
     --port "$3" \
     --compatibility-date 2026-05-01 \
     --show-interactive-dev-session=false
-' _ "$ROOT" "$WRANGLER_LOG" "$WRANGLER_PORT"
+' _ "$ROOT" "$WRANGLER_LOG" "$WRANGLER_PORT" "$WRANGLER_BIND_IP"
 WRANGLER_PID=$(pgrep -f "SCREEN.*${SCREEN_SESSION}" | head -1 || true)
 if [[ -z "$WRANGLER_PID" ]]; then
   WRANGLER_PID=0
@@ -514,8 +568,9 @@ screen -dmS "$REPAINT_SCREEN_SESSION" bash -lc '
   cd "$1"
   exec node scripts/repaint-pipeline-server.mjs \
     --port="$3" \
-    --origin="http://127.0.0.1:$4"
-' _ "$ROOT" "$REPAINT_LOG" "$REPAINT_PORT" "$WRANGLER_PORT"
+    --host="$4" \
+    --origin="$5"
+' _ "$ROOT" "$REPAINT_LOG" "$REPAINT_PORT" "$REPAINT_BIND_IP" "$LOCAL_ORIGIN,$PUBLIC_ORIGIN"
 REPAINT_PID=$(pgrep -f "SCREEN.*${REPAINT_SCREEN_SESSION}" | head -1 || true)
 if [[ -z "$REPAINT_PID" ]]; then
   REPAINT_PID=0
@@ -576,6 +631,9 @@ echo ""
 echo "════════════════════════════════════════"
 echo "  Willville is live on:"
 echo "  http://127.0.0.1:$WRANGLER_PORT/"
+if $LAN_MODE; then
+  echo "  http://$PUBLIC_IP:$WRANGLER_PORT/"
+fi
 echo ""
 echo "  Branch: $BRANCH"
 echo "  PID:    $WRANGLER_PID"
