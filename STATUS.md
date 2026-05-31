@@ -1,5 +1,14 @@
 # Status
 
+## Done (2026-05-31) - Loop-005 Fully Closed
+
+- Implemented final manifest freshness fixes and pushed commit `cd2b99e`.
+- Resolved both outstanding logic threads for PR #24:
+  - `PRRT_kwDOSiYx-M6F7UU3`
+  - `PRRT_kwDOSiYx-M6F7UU7`
+- `sm buff verify 24` is clean (no unresolved review threads).
+- `sm sail` is clean (no slop detected; active checks green).
+
 ## Done (2026-05-31) - Follow-Up: Manifest Freshness Works Without KV And Rehydrates Across Workers
 
 - Closed remaining PR feedback on stale town data by adding in-memory manifest freshness fallback when durable cache is absent.
