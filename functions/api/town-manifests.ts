@@ -117,6 +117,29 @@ export function getManifestCacheCachedAt(): string | null {
   return manifestCacheCachedAt;
 }
 
+function parseIsoTimestamp(value: string | null): number {
+  if (!value) {
+    return Number.NaN;
+  }
+
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
+export function isManifestCacheOlderThan(cachedAt: string | null): boolean {
+  const incoming = parseIsoTimestamp(cachedAt);
+  if (!Number.isFinite(incoming)) {
+    return false;
+  }
+
+  const current = parseIsoTimestamp(manifestCacheCachedAt);
+  if (!Number.isFinite(current)) {
+    return true;
+  }
+
+  return incoming > current;
+}
+
 export async function readPersistedManifestCacheCachedAt(
   store?: ManifestCacheStore,
 ): Promise<string | null> {
@@ -135,8 +158,9 @@ export async function readPersistedManifestCacheCachedAt(
 
 export async function hydrateManifestCacheFromStore(
   store?: ManifestCacheStore,
+  options: { force?: boolean } = {},
 ): Promise<void> {
-  if (!store || hydratedManifestCache) {
+  if (!store || (hydratedManifestCache && !options.force)) {
     return;
   }
 

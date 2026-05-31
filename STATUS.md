@@ -1,5 +1,12 @@
 # Status
 
+## Done (2026-05-31) - Follow-Up: Manifest Freshness Works Without KV And Rehydrates Across Workers
+
+- Closed remaining PR feedback on stale town data by adding in-memory manifest freshness fallback when durable cache is absent.
+- `/api/town` now compares snapshot freshness against the newest known manifest cache timestamp (in-memory or persisted), so warm responses do not stay stale after bell refreshes in no-KV environments.
+- Added forced manifest cache rehydrate when persisted manifest cache timestamp is newer than the in-process cache, so long-lived workers pick up bell updates written by other workers.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
 ## Done (2026-05-31) - Bell Refresh Now Invalidates Town Snapshot Cache
 
 - Fixed stale `/api/town` snapshot behavior after bell refresh by wiring manifest-cache freshness checks into town snapshot reads.

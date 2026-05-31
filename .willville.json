@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Fixed both stale-town paths: bell refresh cache invalidation and browser snapshot overwrite race",
-    "direction": "Next is resolving the remaining PR feedback threads and finishing buff clean",
-    "last_update": "2026-05-31T14:18:00Z"
+    "status": "Wrapped up the stale data fixes so refreshes pick up the latest town changes reliably",
+    "direction": "Committing and pushing this pass, then closing the two remaining feedback threads",
+    "last_update": "2026-05-31T14:46:00Z"
   }
 }
