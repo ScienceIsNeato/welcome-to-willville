@@ -1,5 +1,12 @@
 # Status
 
+## Done (2026-05-31) — Mobile Pinch Zoom Now Works On Touch Devices
+
+- Added explicit pinch gesture handling in the town camera hook so two-finger pinch updates camera scale directly instead of relying on wheel-only zoom behavior.
+- Kept zoom anchored to the pinch center, so the map now zooms toward the exact spot between your fingers rather than drifting away.
+- Prevented drag/pinch contention on touch by clearing active drag state when pinch starts and avoiding mouse-only pointer-event suppression for touch drags.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all gates green.
+
 ## Done (2026-05-31) — Mobile Detail Drawer Now Supports Real Pull Dragging
 
 - Replaced tap-only drawer behavior with pointer drag handling on the grab handle, including live movement while dragging and threshold-based expand/collapse on release.

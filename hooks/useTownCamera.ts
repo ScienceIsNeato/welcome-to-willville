@@ -202,8 +202,8 @@ export function useTownCamera(
     [mvCx, mvCy, mvScale, perf, svgRef],
   );
 
-  const wheelZoomAtViewportPoint = useCallback(
-    (clientX: number, clientY: number, dy: number) => {
+  const zoomToScaleAtViewportPoint = useCallback(
+    (clientX: number, clientY: number, targetScale: number) => {
       stopAnims();
 
       const snapshot = getCameraSnapshot();
@@ -216,10 +216,9 @@ export function useTownCamera(
           : screenToWorld(svg, clientX, clientY, snapshot)
         : null;
 
-      const factor = Math.min(1.2, Math.max(0.8, Math.exp(-dy * 0.001)));
       const scale = perf
-        ? perf.measure("cameraMath", () => clampScale(snapshot.scale * factor))
-        : clampScale(snapshot.scale * factor);
+        ? perf.measure("cameraMath", () => clampScale(targetScale))
+        : clampScale(targetScale);
 
       let cx = snapshot.cx;
       let cy = snapshot.cy;
@@ -267,6 +266,14 @@ export function useTownCamera(
     [getCameraSnapshot, mvCx, mvCy, mvScale, perf, stopAnims, svgRef],
   );
 
+  const wheelZoomAtViewportPoint = useCallback(
+    (clientX: number, clientY: number, dy: number) => {
+      const factor = Math.min(1.2, Math.max(0.8, Math.exp(-dy * 0.001)));
+      zoomToScaleAtViewportPoint(clientX, clientY, mvScale.get() * factor);
+    },
+    [mvScale, zoomToScaleAtViewportPoint],
+  );
+
   useGesture(
     {
       onDragStart: ({ event }) => {
@@ -283,12 +290,16 @@ export function useTownCamera(
           wasDraggingRef.current = false;
         }
       },
-      onDrag: ({ delta: [dx, dy] }) => {
-        if (hudDragRef.current) return;
+      onDrag: ({ delta: [dx, dy], pinching, event }) => {
+        if (hudDragRef.current || pinching) return;
         if (!didTriggerDragRef.current) {
           didTriggerDragRef.current = true;
           setIsDragging(true);
-          if (svgRef.current) {
+          const pointerType =
+            event && "pointerType" in event
+              ? (event as PointerEvent).pointerType
+              : undefined;
+          if (svgRef.current && pointerType !== "touch") {
             svgRef.current.style.pointerEvents = "none";
           }
         }
@@ -317,6 +328,21 @@ export function useTownCamera(
             : 0;
         wheelZoomAtViewportPoint(clientX, clientY, dy);
       },
+      onPinchStart: ({ event }) => {
+        if (isTownControlTarget(event)) return;
+        if (event && event.cancelable) {
+          event.preventDefault();
+        }
+        // Avoid drag/pinch contention when a second finger lands.
+        resetDragInteraction();
+      },
+      onPinch: ({ event, origin: [ox, oy], offset: [scale] }) => {
+        if (isTownControlTarget(event)) return;
+        if (event && event.cancelable) {
+          event.preventDefault();
+        }
+        zoomToScaleAtViewportPoint(ox, oy, scale);
+      },
     },
     {
       target: svgRef,
@@ -324,6 +350,12 @@ export function useTownCamera(
         filterTaps: true,
         threshold: 4,
         pointer: { capture: false },
+      },
+      pinch: {
+        eventOptions: { passive: false },
+        pointer: { touch: true },
+        scaleBounds: { min: MIN_SCALE, max: MAX_SCALE },
+        from: () => [mvScale.get(), 0],
       },
       wheel: { eventOptions: { passive: false } },
     },
