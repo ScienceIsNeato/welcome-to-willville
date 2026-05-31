@@ -37,14 +37,14 @@ export function SpecialTownLandmarks({
 
       {!mobileSafeMode && (
         <g
-          transform="translate(965, 150) rotate(9)"
+          transform="translate(1008, -60) rotate(7)"
           aria-label="WTF sign"
           style={{ cursor: "pointer" }}
           onMouseEnter={() => setAboutHovered(true)}
           onMouseLeave={() => setAboutHovered(false)}
           onClick={(event) => activate(event, onAbout)}
         >
-          {[-112, -58, 0, 58, 112].map((x) => (
+          {[-86, -44, 0, 44, 86].map((x) => (
             <line
               key={`wtf-sign-post-${x}`}
               x1={x}
@@ -58,9 +58,9 @@ export function SpecialTownLandmarks({
           ))}
 
           <rect
-            x={-142}
+            x={-112}
             y={-14}
-            width={284}
+            width={224}
             height={50}
             rx={3}
             fill="rgba(245,230,200,0.96)"
@@ -87,9 +87,9 @@ export function SpecialTownLandmarks({
           </text>
 
           <rect
-            x={-152}
+            x={-122}
             y={-24}
-            width={304}
+            width={244}
             height={116}
             fill="transparent"
             pointerEvents="all"
@@ -99,7 +99,7 @@ export function SpecialTownLandmarks({
             <g style={{ pointerEvents: "none" }}>
               <rect
                 x={-164}
-                y={-62}
+                y={-66}
                 width={328}
                 height={24}
                 rx={5}

@@ -1,5 +1,13 @@
 # Status
 
+## Done (2026-05-31) — About Pane Refinement Pass Landed
+
+- Moved the new `WTF?` sign farther north (above the main town landmarks) and tightened its board width so it reads as a smaller hill sign.
+- Updated the original `WELCOME TO WILLVILLE` sign to a lit marquee feel with pulsing frame/text glow.
+- Refined the About pane to better match Willville aesthetics (darker brass/ledger styling), shifted copy to "my sites" language, and added explicit dual-purpose framing: personal force multiplier plus portfolio frontage.
+- Added a dedicated Mayor's Express explainer card describing how Time Central promotes active work into express stops and how the numbered controls jump there.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
 ## Done (2026-05-31) — WTF Sign + About Pane In Town
 
 - Added a second Hollywood-style sign that says `WTF?` on the sign hill and made it interactive with a hover hint: "Click here to see how the town works".
