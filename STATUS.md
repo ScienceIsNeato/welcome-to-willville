@@ -8,6 +8,12 @@
 - Updated `POST /api/manifests` to delete the persisted town snapshot key after manifest refresh, forcing fresh town rebuilds on subsequent requests.
 - Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
 
+## Done (2026-05-31) - Browser Snapshot Hydration No Longer Overwrites Fresh API Stops
+
+- Fixed mount-time race in `TownStage` where deferred localStorage snapshot hydration could overwrite fresher `/api/town` data that landed first.
+- Added an API-hydration guard ref so snapshot hydration is skipped once API stops have been applied in the current session.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed with all active gates green.
+
 ## Done (2026-05-31) - New-Site Paint Pipeline No Longer Fails With Empty Mask
 
 - Fixed repaint mask generation for sprite-less sites (custom-prompt path) so the mask always contains a valid transparent insertion region.

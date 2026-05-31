@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Fixed bell-refresh snapshot invalidation so town data refreshes right away after manifest updates",
-    "direction": "Next is closing the remaining PR review thread and finishing the buff loop",
-    "last_update": "2026-05-31T14:05:00Z"
+    "status": "Fixed both stale-town paths: bell refresh cache invalidation and browser snapshot overwrite race",
+    "direction": "Next is resolving the remaining PR feedback threads and finishing buff clean",
+    "last_update": "2026-05-31T14:18:00Z"
   }
 }

@@ -202,6 +202,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const [boardAnnouncement, setBoardAnnouncement] =
     useState<BoardAnnouncement | null>(null);
   const mobileDefaultCameraAppliedRef = useRef(false);
+  const hasAppliedApiStopsRef = useRef(false);
 
   useEffect(() => {
     if (!isClient) {
@@ -214,6 +215,10 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     }
 
     const frame = window.requestAnimationFrame(() => {
+      if (hasAppliedApiStopsRef.current) {
+        return;
+      }
+
       setLiveStops(snapshot);
       setLocalStops((previousStops) => {
         const knownIds = new Set(previousStops.map((stop) => stop.id));
@@ -551,6 +556,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         .then((data) => {
           if (data && Array.isArray(data.stops)) {
             const incomingStops = data.stops as Stop[];
+            hasAppliedApiStopsRef.current = true;
             setLiveStops(incomingStops);
             setLocalStops((previousStops) => {
               const knownIds = new Set(previousStops.map((stop) => stop.id));
