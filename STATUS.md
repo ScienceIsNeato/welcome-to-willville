@@ -1,5 +1,12 @@
 # Status
 
+## Done (2026-05-31) — WTF Sign + About Pane In Town
+
+- Added a second Hollywood-style sign that says `WTF?` on the sign hill and made it interactive with a hover hint: "Click here to see how the town works".
+- Clicking the sign now opens a new central About pane in Willville voice with a playful system explainer and quick links to key places.
+- Hooked the pane into normal town flow so selecting stops/districts or opening tourism content returns the board to normal behavior.
+- Validation: `activate && sm swab --json --output-file .slopmop/last_swab.json` passed, and `./scripts/deploy_app.sh` built and launched successfully.
+
 ## Done (2026-05-31) — PR Feedback Loop: Pipeline Resilience And Queue Safety Fixes
 
 - Fixed runner URL resolution so local sidecar features now work from LAN-hosted app sessions too, not just loopback hosts.

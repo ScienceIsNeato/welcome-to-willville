@@ -8,6 +8,7 @@ import { DigitalDetailBoard } from "./DigitalDetailBoard";
 import { MobileCentralBoard } from "./MobileCentralBoard";
 import { MobileDetailDrawer } from "./MobileDetailDrawer";
 import { PanelChromeControls } from "./PanelChromeControls";
+import { WillvilleAboutPane } from "./WillvilleAboutPane";
 import type { RepositionStopDelta } from "./repositionPlannerUtils";
 
 type Props = {
@@ -22,6 +23,7 @@ type Props = {
   showCentralBoard: boolean;
   showDigitalBoard: boolean;
   detailBoardVisible: boolean;
+  showAboutPane: boolean;
   mobileDrawerExpanded: boolean;
   centralBoardOpacity: number;
   digitalBoardOpacity: number;
@@ -33,6 +35,7 @@ type Props = {
   onToggleDigitalBoard: () => void;
   onDigitalOpacityChange: (opacity: number) => void;
   onToggleMobileDrawerExpanded: () => void;
+  onCloseAboutPane: () => void;
 };
 
 export function TownStageChrome({
@@ -47,6 +50,7 @@ export function TownStageChrome({
   showCentralBoard,
   showDigitalBoard,
   detailBoardVisible,
+  showAboutPane,
   mobileDrawerExpanded,
   centralBoardOpacity,
   digitalBoardOpacity,
@@ -58,6 +62,7 @@ export function TownStageChrome({
   onToggleDigitalBoard,
   onDigitalOpacityChange,
   onToggleMobileDrawerExpanded,
+  onCloseAboutPane,
 }: Props) {
   return (
     <>
@@ -73,15 +78,22 @@ export function TownStageChrome({
             pointerEvents: "none",
           }}
         >
-          <CentralBoard
-            stops={currentStops}
-            selectedStop={boardStop}
-            activeDistrict={pathDistrict}
-            onSelectStop={onSelectStop}
-            announcementRows={announcementRows}
-            announcementLabel={announcementLabel}
-            panelOpacity={centralBoardOpacity}
-          />
+          {showAboutPane ? (
+            <WillvilleAboutPane
+              panelOpacity={centralBoardOpacity}
+              onClose={onCloseAboutPane}
+            />
+          ) : (
+            <CentralBoard
+              stops={currentStops}
+              selectedStop={boardStop}
+              activeDistrict={pathDistrict}
+              onSelectStop={onSelectStop}
+              announcementRows={announcementRows}
+              announcementLabel={announcementLabel}
+              panelOpacity={centralBoardOpacity}
+            />
+          )}
 
           <div
             style={{
@@ -117,14 +129,21 @@ export function TownStageChrome({
           }}
         >
           <div style={{ position: "relative" }}>
-            <MobileCentralBoard
-              stops={currentStops}
-              selectedStop={boardStop}
-              activeDistrict={pathDistrict}
-              announcementRows={announcementRows}
-              announcementLabel={announcementLabel}
-              panelOpacity={centralBoardOpacity}
-            />
+            {showAboutPane ? (
+              <WillvilleAboutPane
+                panelOpacity={centralBoardOpacity}
+                onClose={onCloseAboutPane}
+              />
+            ) : (
+              <MobileCentralBoard
+                stops={currentStops}
+                selectedStop={boardStop}
+                activeDistrict={pathDistrict}
+                announcementRows={announcementRows}
+                announcementLabel={announcementLabel}
+                panelOpacity={centralBoardOpacity}
+              />
+            )}
 
             <div
               style={{

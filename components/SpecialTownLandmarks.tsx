@@ -11,6 +11,7 @@ type Props = {
   onBell: () => void;
   onEgg: () => void;
   onTourism: () => void;
+  onAbout: () => void;
 };
 
 export function SpecialTownLandmarks({
@@ -19,9 +20,11 @@ export function SpecialTownLandmarks({
   onBell,
   onEgg,
   onTourism,
+  onAbout,
 }: Props) {
   const [bellHovered, setBellHovered] = useState(false);
   const [eggHovered, setEggHovered] = useState(false);
+  const [aboutHovered, setAboutHovered] = useState(false);
 
   const activate = (event: MouseEvent<SVGGElement>, callback: () => void) => {
     event.stopPropagation();
@@ -31,6 +34,94 @@ export function SpecialTownLandmarks({
   return (
     <>
       {!mobileSafeMode && <HollywoodSign />}
+
+      {!mobileSafeMode && (
+        <g
+          transform="translate(965, 150) rotate(9)"
+          aria-label="WTF sign"
+          style={{ cursor: "pointer" }}
+          onMouseEnter={() => setAboutHovered(true)}
+          onMouseLeave={() => setAboutHovered(false)}
+          onClick={(event) => activate(event, onAbout)}
+        >
+          {[-112, -58, 0, 58, 112].map((x) => (
+            <line
+              key={`wtf-sign-post-${x}`}
+              x1={x}
+              y1={34}
+              x2={x - 8}
+              y2={84}
+              stroke="#5b3a22"
+              strokeWidth={4}
+              strokeLinecap="round"
+            />
+          ))}
+
+          <rect
+            x={-142}
+            y={-14}
+            width={284}
+            height={50}
+            rx={3}
+            fill="rgba(245,230,200,0.96)"
+            stroke="#4c3320"
+            strokeWidth={6}
+          />
+
+          <text
+            x={0}
+            y={12}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            fontSize={40}
+            fontWeight={900}
+            fill="#4c3320"
+            letterSpacing={1.4}
+            style={{
+              paintOrder: "stroke",
+              stroke: "rgba(245,230,200,0.72)",
+              strokeWidth: 4,
+            }}
+          >
+            WTF?
+          </text>
+
+          <rect
+            x={-152}
+            y={-24}
+            width={304}
+            height={116}
+            fill="transparent"
+            pointerEvents="all"
+          />
+
+          {aboutHovered && (
+            <g style={{ pointerEvents: "none" }}>
+              <rect
+                x={-164}
+                y={-62}
+                width={328}
+                height={24}
+                rx={5}
+                fill="rgba(12,7,22,0.9)"
+                stroke="rgba(230,198,106,0.35)"
+                strokeWidth={1}
+              />
+              <text
+                x={0}
+                y={-45}
+                textAnchor="middle"
+                fontSize={13}
+                fill="#e6c66a"
+                fontFamily="var(--font-sans, sans-serif)"
+              >
+                Click here to see how the town works
+              </text>
+            </g>
+          )}
+        </g>
+      )}
+
       <DepartmentOfTourism onActivate={onTourism} />
 
       <g

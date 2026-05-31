@@ -133,6 +133,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const [liveStops, setLiveStops] = useState<Stop[] | null>(null);
   const [showCentralBoard, setShowCentralBoard] = useState(true);
   const [showDigitalBoard, setShowDigitalBoard] = useState(false);
+  const [showAboutPane, setShowAboutPane] = useState(false);
   const [centralBoardOpacity, setCentralBoardOpacity] = useState(0.35);
   const [digitalBoardOpacity, setDigitalBoardOpacity] = useState(0.75);
   const [showPerfPanel, setShowPerfPanel] = useState(true);
@@ -612,6 +613,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     }
     transitioningToStopIdRef.current = dismissedStopIdRef.current = null;
     setSelectedStop(null);
+    setShowAboutPane(false);
     setShowDigitalBoard(true);
     setMobileDrawerExpanded(false);
     setShowCentralBoard(true);
@@ -620,6 +622,21 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       setBoardAnnouncement(null);
       boardAnnouncementTimerRef.current = null;
     }, BELL_BOARD_FLASH_MS);
+    router.replace(routeWithCurrentSearch("/"), { scroll: false });
+  }, [routeWithCurrentSearch, router]);
+
+  const handleAboutPaneOpen = useCallback(() => {
+    if (boardAnnouncementTimerRef.current !== null) {
+      window.clearTimeout(boardAnnouncementTimerRef.current);
+      boardAnnouncementTimerRef.current = null;
+    }
+    transitioningToStopIdRef.current = dismissedStopIdRef.current = null;
+    setSelectedStop(null);
+    setShowDigitalBoard(false);
+    setMobileDrawerExpanded(false);
+    setShowCentralBoard(true);
+    setShowAboutPane(true);
+    setBoardAnnouncement(null);
     router.replace(routeWithCurrentSearch("/"), { scroll: false });
   }, [routeWithCurrentSearch, router]);
 
@@ -724,6 +741,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       return;
     }
     dismissedStopIdRef.current = null;
+    setShowAboutPane(false);
     const stop = currentStops.find(
       (s) => s.district === pathDistrict && s.id === pathStopId,
     );
@@ -758,6 +776,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       if (mobileSafeMode) {
         setMobileDrawerExpanded(true);
       }
+      setShowAboutPane(false);
       transitioningToStopIdRef.current = stop.id;
       dismissedStopIdRef.current = null;
       setSelectedStop(stop);
@@ -778,6 +797,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     transitioningToStopIdRef.current = null;
     dismissedStopIdRef.current = pathStopId;
     setSelectedStop(null);
+    setShowAboutPane(false);
     setShowDigitalBoard(false);
     setMobileDrawerExpanded(false);
     router.replace(routeWithCurrentSearch("/"), { scroll: false });
@@ -789,6 +809,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       transitioningToStopIdRef.current = null;
       dismissedStopIdRef.current = pathStopId;
       setSelectedStop(null);
+      setShowAboutPane(false);
       setShowDigitalBoard(false);
       setMobileDrawerExpanded(false);
       router.push(routeWithCurrentSearch(`/${district.id}/`), {
@@ -978,12 +999,19 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         showCentralBoard={!isRepositionMode && showCentralBoard}
         showDigitalBoard={!isRepositionMode && showDigitalBoard}
         detailBoardVisible={!isRepositionMode && detailBoardVisible}
+        showAboutPane={!isRepositionMode && showAboutPane}
         mobileDrawerExpanded={mobileDrawerExpanded}
         centralBoardOpacity={centralBoardOpacity}
         digitalBoardOpacity={digitalBoardOpacity}
         onSelectStop={openStopHud}
         onToggleCentralBoard={() => {
-          setShowCentralBoard((current) => !current);
+          setShowCentralBoard((current) => {
+            const nextVisible = !current;
+            if (!nextVisible) {
+              setShowAboutPane(false);
+            }
+            return nextVisible;
+          });
         }}
         onCentralOpacityChange={setCentralBoardOpacity}
         onShowDigitalBoard={() => {
@@ -1000,6 +1028,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         onDigitalOpacityChange={setDigitalBoardOpacity}
         onToggleMobileDrawerExpanded={() => {
           setMobileDrawerExpanded((current) => !current);
+        }}
+        onCloseAboutPane={() => {
+          setShowAboutPane(false);
         }}
       >
         <div
@@ -1232,6 +1263,10 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                   onTourism={() => {
                     markSkipDrag();
                     handleTourism();
+                  }}
+                  onAbout={() => {
+                    markSkipDrag();
+                    handleAboutPaneOpen();
                   }}
                 />
               </g>
