@@ -203,13 +203,16 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
 
   let boats = nodes.map(mapPr);
 
-  // Recent open-sea boats keep their visibility short — only show items merged
-  // within the last 24h so the lock doesn't fill up forever.
-  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  // The Open Sea (the bay) shows merged PRs fanning out by age across rings that
+  // run to a full week, so keep open-sea boats around for 7 days. Scuttled
+  // wrecks still only linger for a day so they don't pile up forever.
+  const DAY = 24 * 60 * 60 * 1000;
+  const openSeaCutoff = Date.now() - 7 * DAY;
+  const scuttleCutoff = Date.now() - DAY;
   boats = boats.filter((b) => {
-    // Terminal locks (merged / scuttled) only linger for a day.
-    if (b.lock !== "open-sea" && b.lock !== "scuttle") return true;
-    return Date.parse(b.updatedAt) > cutoff;
+    if (b.lock === "open-sea") return Date.parse(b.updatedAt) > openSeaCutoff;
+    if (b.lock === "scuttle") return Date.parse(b.updatedAt) > scuttleCutoff;
+    return true;
   });
 
   const cacheControl = "public, s-maxage=45, stale-while-revalidate=180";

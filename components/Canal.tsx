@@ -27,29 +27,34 @@ const CANAL_BANKS = [
   { id: "north", path: CANAL_SECTION.northBankPath, duration: 116 },
   { id: "south", path: CANAL_SECTION.southBankPath, duration: 124 },
 ];
-const OPEN_SEA_CENTER_BASE = { x: 1260, y: 810 } as const;
 const OPEN_SEA_ARC_START_ANGLE = -Math.PI / 4.5;
 const OPEN_SEA_ARC_END_ANGLE = Math.PI / 2.3;
 const OPEN_SEA_LABEL_ANGLE = -0.15;
-const OPEN_SEA_MARKER_RADII = [110, 210, 330, 470] as const;
-const OPEN_SEA_OUTER_BOAT_RADIUS = 540;
-const OPEN_SEA_WEST_EDGE_SHIFT =
-  OPEN_SEA_MARKER_RADII[1] * Math.cos(OPEN_SEA_LABEL_ANGLE) -
-  OPEN_SEA_OUTER_BOAT_RADIUS * Math.cos(OPEN_SEA_ARC_END_ANGLE);
-const OPEN_SEA_CENTER = {
-  x: OPEN_SEA_CENTER_BASE.x + OPEN_SEA_WEST_EDGE_SHIFT,
-  y: OPEN_SEA_CENTER_BASE.y,
-} as const;
+// Focal point of the age rings, placed so the bay's mouth lines up with the
+// canal exit (nudged down and left from the old center).
+const OPEN_SEA_CENTER = { x: 1210, y: 930 } as const;
+
+// Boats spread into open sea purely by age. Each zone is exactly 24h wide and
+// sits one concentric ring further out; every ring uses the same arc width, so
+// age alone fans the boats — older boats land on bigger rings that naturally
+// have more circumference (room) to spread. Boats from the same repo cluster
+// together on their ring and overlap.
+const OPEN_SEA_BOAT_ARC_CENTER = (-Math.PI / 4.8 + Math.PI / 2.3) / 2;
+const OPEN_SEA_INNER_RADIUS = 150;
+const OPEN_SEA_RING_SPACING = 108;
+const OPEN_SEA_HALF_SPAN = 0.85;
+const OPEN_SEA_ZONE_HOURS = 24;
+const OPEN_SEA_MAX_ZONE = 7;
+// Per-boat offset within a same-repo cluster, so they overlap in a tight stack.
+const OPEN_SEA_GROUP_OFFSET_X = 16;
+const OPEN_SEA_GROUP_OFFSET_Y = 11;
 
 export function Canal({ boats, layer = "all" }: Props) {
+  // Age zones are wall-clock based, so re-tick occasionally.
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
-    const t = window.setTimeout(() => {
-      setNow(Date.now());
-    }, 0);
-    const interval = window.setInterval(() => {
-      setNow(Date.now());
-    }, 60_000);
+    const t = window.setTimeout(() => setNow(Date.now()), 0);
+    const interval = window.setInterval(() => setNow(Date.now()), 60_000);
     return () => {
       window.clearTimeout(t);
       window.clearInterval(interval);
@@ -71,77 +76,62 @@ export function Canal({ boats, layer = "all" }: Props) {
 
     if (openSeaBoats.length === 0) return positions;
 
-    // Use latest update time as a stable fallback for referenceTime before now mounts to prevent post-mount layout shift
-    const stableReference = Math.max(
-      ...openSeaBoats.map((b) =>
-        b.updatedAt
-          ? new Date(b.updatedAt).getTime()
-          : new Date(b.createdAt).getTime(),
-      ),
-    );
-    const referenceTime = now ?? stableReference;
-
     const cx = OPEN_SEA_CENTER.x;
     const cy = OPEN_SEA_CENTER.y;
 
-    // Group by age zones: <6h, <24h, <72h, <1w, >=1w
-    const zones: CanalBoat[][] = [[], [], [], [], []];
-    for (const boat of openSeaBoats) {
-      const updatedAtTime = boat.updatedAt
-        ? new Date(boat.updatedAt).getTime()
-        : new Date(boat.createdAt).getTime();
+    const timeOf = (b: CanalBoat) =>
+      new Date(b.updatedAt || b.createdAt).getTime();
 
-      const ageHours = (referenceTime - updatedAtTime) / (1000 * 60 * 60);
+    // Anchor age to wall-clock once mounted; before that fall back to the newest
+    // boat so the server and first client render agree (no layout shift).
+    const stableReference = Math.max(...openSeaBoats.map(timeOf));
+    const referenceTime = now ?? stableReference;
 
-      if (ageHours < 6) {
-        zones[0].push(boat);
-      } else if (ageHours < 24) {
-        zones[1].push(boat);
-      } else if (ageHours < 72) {
-        zones[2].push(boat);
-      } else if (ageHours < 168) {
-        zones[3].push(boat);
-      } else {
-        zones[4].push(boat);
-      }
+    // Bucket boats into 24h-wide age zones — one concentric ring per zone.
+    const zoneBoats = new Map<number, CanalBoat[]>();
+    for (const b of openSeaBoats) {
+      const ageHours = (referenceTime - timeOf(b)) / (1000 * 60 * 60);
+      const z = Math.min(
+        OPEN_SEA_MAX_ZONE,
+        Math.max(0, Math.floor(ageHours / OPEN_SEA_ZONE_HOURS)),
+      );
+      if (!zoneBoats.has(z)) zoneBoats.set(z, []);
+      zoneBoats.get(z)!.push(b);
     }
 
-    // Position boats fanned out in each zone
-    for (let z = 0; z < 5; z++) {
-      const zoneBoats = zones[z]!;
-      // Sort so older PRs (lower timestamp / earlier merge) are positioned further along the fan
-      zoneBoats.sort((a, b) => {
-        const tA = a.updatedAt
-          ? new Date(a.updatedAt).getTime()
-          : new Date(a.createdAt).getTime();
-        const tB = b.updatedAt
-          ? new Date(b.updatedAt).getTime()
-          : new Date(b.createdAt).getTime();
-        return tA - tB;
-      });
+    const minAngle = OPEN_SEA_BOAT_ARC_CENTER - OPEN_SEA_HALF_SPAN;
+    const span = 2 * OPEN_SEA_HALF_SPAN;
 
-      const count = zoneBoats.length;
-      const minAngle = -Math.PI / 4.8;
-      const maxAngle = Math.PI / 2.3;
+    for (const [z, boatsInZone] of zoneBoats) {
+      const radius = OPEN_SEA_INNER_RADIUS + z * OPEN_SEA_RING_SPACING;
 
-      const rCenter =
-        z === 0 ? 75 : z === 1 ? 160 : z === 2 ? 270 : z === 3 ? 400 : 540;
-
-      for (let idx = 0; idx < count; idx++) {
-        const boat = zoneBoats[idx]!;
-        let theta = (minAngle + maxAngle) / 2;
-        if (count > 1) {
-          theta = minAngle + (idx / (count - 1)) * (maxAngle - minAngle);
-        }
-
-        const rStagger = count > 1 ? (idx % 2 === 0 ? -12 : 12) : 0;
-        const radius = rCenter + rStagger;
-
-        const x = cx + radius * Math.cos(theta);
-        const y = cy + radius * Math.sin(theta);
-
-        positions.set(`${boat.repo}-${boat.prNumber}`, { x, y });
+      // Cluster boats from the same repo together on this ring.
+      const repoGroups = new Map<string, CanalBoat[]>();
+      for (const b of boatsInZone) {
+        if (!repoGroups.has(b.repo)) repoGroups.set(b.repo, []);
+        repoGroups.get(b.repo)!.push(b);
       }
+      // Order clusters along the arc by their newest boat for a stable layout.
+      const clusters = [...repoGroups.values()].sort(
+        (a, b) => Math.max(...b.map(timeOf)) - Math.max(...a.map(timeOf)),
+      );
+
+      clusters.forEach((cluster, ci) => {
+        const frac = clusters.length > 1 ? ci / (clusters.length - 1) : 0.5;
+        const theta = minAngle + frac * span;
+        const gx = cx + radius * Math.cos(theta);
+        const gy = cy + radius * Math.sin(theta);
+
+        // Same-repo boats overlap in a tight stack, oldest at the back.
+        cluster
+          .sort((a, b) => timeOf(a) - timeOf(b))
+          .forEach((boat, bi) => {
+            positions.set(`${boat.repo}-${boat.prNumber}`, {
+              x: gx + bi * OPEN_SEA_GROUP_OFFSET_X,
+              y: gy + bi * OPEN_SEA_GROUP_OFFSET_Y,
+            });
+          });
+      });
     }
     return positions;
   }, [boats, now]);
@@ -309,12 +299,10 @@ export function Canal({ boats, layer = "all" }: Props) {
 
           {/* Open Sea Age Markings */}
           <g className="open-sea-markings" aria-hidden="true">
-            {[
-              { r: OPEN_SEA_MARKER_RADII[0], label: "6h" },
-              { r: OPEN_SEA_MARKER_RADII[1], label: "24h" },
-              { r: OPEN_SEA_MARKER_RADII[2], label: "72h" },
-              { r: OPEN_SEA_MARKER_RADII[3], label: "1w" },
-            ].map(({ r, label }) => {
+            {Array.from({ length: OPEN_SEA_MAX_ZONE }, (_, z) => ({
+              r: OPEN_SEA_INNER_RADIUS + z * OPEN_SEA_RING_SPACING,
+              label: `${z + 1}d`,
+            })).map(({ r, label }) => {
               const cx = OPEN_SEA_CENTER.x;
               const cy = OPEN_SEA_CENTER.y;
               const startAngle = OPEN_SEA_ARC_START_ANGLE;
