@@ -364,21 +364,22 @@ export function Canal({ boats, layer = "all" }: Props) {
                   <path
                     d={d}
                     fill="none"
-                    stroke="rgba(142, 199, 223, 0.22)"
-                    strokeWidth={1.5}
-                    strokeDasharray="4 6"
+                    stroke="rgba(142, 199, 223, 0.55)"
+                    strokeWidth={2.5}
+                    strokeDasharray="6 8"
                   />
                   <text
                     x={lx}
                     y={ly}
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    fontSize={10}
+                    fontSize={30}
                     fontWeight={700}
-                    fill="rgba(142, 199, 223, 0.65)"
+                    fill="rgba(142, 199, 223, 0.90)"
                     style={{
                       pointerEvents: "none",
-                      textShadow: "0 1px 3px rgba(0, 0, 0, 0.9)",
+                      textShadow:
+                        "0 1px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.7)",
                       letterSpacing: "0.05em",
                     }}
                   >

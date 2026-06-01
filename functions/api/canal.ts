@@ -166,10 +166,13 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     );
   }
 
-  // Fetch all open PRs + all PRs merged within the last 7 days, paginating
-  // each query so no boats are silently dropped by a page-size cap.
+  // Fetch all open PRs + all PRs merged/closed within the last 7 days,
+  // paginating each query so no boats are silently dropped by a page-size cap.
   const DAY = 24 * 60 * 60 * 1000;
   const cutoffDate = new Date(Date.now() - 7 * DAY)
+    .toISOString()
+    .split("T")[0]!;
+  const scuttleCutoffDate = new Date(Date.now() - DAY)
     .toISOString()
     .split("T")[0]!;
 
@@ -207,12 +210,14 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     };
   }
 
-  // Two bounded queries cover the full canal state with no page-size cap:
+  // Three bounded queries cover the full canal state with no page-size cap:
   //   1. All currently open PRs (may be older than a week — still on the canal).
   //   2. All PRs merged within the last 7 days (fills the Open Sea bay).
+  //   3. All PRs closed-not-merged within the last day (scuttled wrecks).
   const queries = [
     `is:pr user:${OWNER} is:open`,
     `is:pr user:${OWNER} is:merged merged:>=${cutoffDate}`,
+    `is:pr user:${OWNER} is:closed is:unmerged closed:>=${scuttleCutoffDate}`,
   ];
 
   const seen = new Set<string>();
