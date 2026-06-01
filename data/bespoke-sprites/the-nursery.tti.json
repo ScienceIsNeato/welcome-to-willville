@@ -1,0 +1,15 @@
+{
+  "style": "",
+  "backend": "dalle",
+  "model": "gpt-image-1",
+  "size": "1536x1024",
+  "quality": "high",
+  "output_dir": "./output/bespoke-sprites",
+  "images": [
+    {
+      "id": "the-nursery",
+      "prompt": "Dense Magic Maze-like hidden-object board-game diorama tile for a town district called The Nursery, seen from an elevated three-quarter top-down view. Hand-painted board-game miniature texture, crisp tiny shapes, wobbly hand-drawn contours, saturated but readable colors, many small repeated objects, playful puzzle-map density. The district is a plant nursery and propagation grounds: tiny glass greenhouses, rows of seedling beds, sprouting saplings, potting sheds, raised garden boxes, watering cans, trellises, neat rows of tiny saplings in terracotta pots, propagation tables, and winding little footpaths between the beds. Palette of fresh spring green, tender leaf green, soft moss, terracotta pots, warm soil brown, and pale sprout gold. Fill the ENTIRE frame edge to edge with this dense miniature town detail - no isolated central object, no empty margins, no transparent background. Everything at tiny board-game miniature scale. No labels, no readable text, no UI, no map pins, no logos, no watermarks, no people. Do not copy any specific existing game artwork.",
+      "raw_prompt": true
+    }
+  ]
+}

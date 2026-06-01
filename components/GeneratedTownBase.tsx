@@ -6,6 +6,18 @@ const RENDER_PADDING = 6;
 
 type DistrictLayer = (typeof districtArt.layers)[number];
 
+const LAND_CLIP_DISTRICT_IDS = new Set(
+  GENERATED_TOWN_LAYOUT.districts
+    .filter((district) => (district as { clip?: string }).clip === "land")
+    .map((district) => district.id),
+);
+
+function districtClipId(layerId: string) {
+  return LAND_CLIP_DISTRICT_IDS.has(layerId)
+    ? "url(#generated-town-land-clip)"
+    : "url(#generated-town-footprint-clip)";
+}
+
 function districtRenderBox(layer: DistrictLayer) {
   const minX = Math.max(
     0,
@@ -49,6 +61,9 @@ export function GeneratedTownBase() {
         <clipPath id="generated-town-footprint-clip">
           <path d={GENERATED_TOWN_LAYOUT.townFootprintPath} />
         </clipPath>
+        <clipPath id="generated-town-land-clip">
+          <path d={GENERATED_TOWN_LAYOUT.landPath} />
+        </clipPath>
       </defs>
       {districtLayers.length === 0 && (
         <image
@@ -69,7 +84,7 @@ export function GeneratedTownBase() {
           }`}
           {...districtRenderBox(layer)}
           preserveAspectRatio="none"
-          clipPath="url(#generated-town-footprint-clip)"
+          clipPath={districtClipId(layer.id)}
         />
       ))}
     </g>

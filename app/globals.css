@@ -12,6 +12,7 @@
   --willville-judgement: #8a1c3b;
   --willville-zeitgeist: #4a90d9;
   --willville-town-square: #8b6f47;
+  --willville-nursery: #5fbf65;
   --willville-hell: #7a3da6;
   --willville-dogwallow: #c97c5d;
   --font-geist-sans: Arial, Helvetica, sans-serif;
@@ -30,6 +31,7 @@
   --color-judgement: var(--willville-judgement);
   --color-zeitgeist: var(--willville-zeitgeist);
   --color-town-square: var(--willville-town-square);
+  --color-nursery: var(--willville-nursery);
   --color-hell: var(--willville-hell);
   --color-dogwallow: var(--willville-dogwallow);
   --font-sans: var(--font-geist-sans);

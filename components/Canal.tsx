@@ -27,29 +27,57 @@ const CANAL_BANKS = [
   { id: "north", path: CANAL_SECTION.northBankPath, duration: 116 },
   { id: "south", path: CANAL_SECTION.southBankPath, duration: 124 },
 ];
-const OPEN_SEA_CENTER_BASE = { x: 1260, y: 810 } as const;
 const OPEN_SEA_ARC_START_ANGLE = -Math.PI / 4.5;
 const OPEN_SEA_ARC_END_ANGLE = Math.PI / 2.3;
 const OPEN_SEA_LABEL_ANGLE = -0.15;
-const OPEN_SEA_MARKER_RADII = [110, 210, 330, 470] as const;
-const OPEN_SEA_OUTER_BOAT_RADIUS = 540;
-const OPEN_SEA_WEST_EDGE_SHIFT =
-  OPEN_SEA_MARKER_RADII[1] * Math.cos(OPEN_SEA_LABEL_ANGLE) -
-  OPEN_SEA_OUTER_BOAT_RADIUS * Math.cos(OPEN_SEA_ARC_END_ANGLE);
-const OPEN_SEA_CENTER = {
-  x: OPEN_SEA_CENTER_BASE.x + OPEN_SEA_WEST_EDGE_SHIFT,
-  y: OPEN_SEA_CENTER_BASE.y,
-} as const;
+// Focal point of the age rings, placed so the bay's mouth lines up with the
+// canal exit (nudged down and left from the old center).
+const OPEN_SEA_CENTER = { x: 1210, y: 930 } as const;
+
+// Boats spread into open sea purely by age. Each zone is exactly 24h wide and
+// sits one concentric ring further out; every ring uses the same arc width, so
+// age alone fans the boats — older boats land on bigger rings that naturally
+// have more circumference (room) to spread. Boats from the same repo cluster
+// together on their ring and overlap.
+const OPEN_SEA_BOAT_ARC_CENTER = (-Math.PI / 4.8 + Math.PI / 2.3) / 2;
+const OPEN_SEA_INNER_RADIUS = 150;
+const OPEN_SEA_RING_SPACING = 108;
+const OPEN_SEA_HALF_SPAN = 0.85;
+const OPEN_SEA_ZONE_HOURS = 24;
+const OPEN_SEA_MAX_ZONE = 7;
+// Clusters fill the center (0°, straight out of the bay) first and only fan to
+// the sides as more pile up — this is the angle between adjacent cluster centers.
+const OPEN_SEA_CLUSTER_ANGLE_STEP = 0.32;
+// Same-repo boats scatter into a loose overlapping clump (a mini-armada) instead
+// of a regular stamped line: golden-angle packing plus a seeded jitter.
+const GOLDEN_ANGLE = 2.399963;
+const OPEN_SEA_CLUSTER_STEP = 22;
+const OPEN_SEA_CLUSTER_JITTER = 16;
+
+// Tiny deterministic hash + PRNG so each boat's jitter is stable across renders
+// (no hydration mismatch) but looks random.
+function seaHash(key: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) {
+    h ^= key.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function seaRand(seed: number): number {
+  let x = seed || 1;
+  x ^= x << 13;
+  x ^= x >>> 17;
+  x ^= x << 5;
+  return ((x >>> 0) % 1000000) / 1000000;
+}
 
 export function Canal({ boats, layer = "all" }: Props) {
+  // Age zones are wall-clock based, so re-tick occasionally.
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
-    const t = window.setTimeout(() => {
-      setNow(Date.now());
-    }, 0);
-    const interval = window.setInterval(() => {
-      setNow(Date.now());
-    }, 60_000);
+    const t = window.setTimeout(() => setNow(Date.now()), 0);
+    const interval = window.setInterval(() => setNow(Date.now()), 60_000);
     return () => {
       window.clearTimeout(t);
       window.clearInterval(interval);
@@ -71,77 +99,79 @@ export function Canal({ boats, layer = "all" }: Props) {
 
     if (openSeaBoats.length === 0) return positions;
 
-    // Use latest update time as a stable fallback for referenceTime before now mounts to prevent post-mount layout shift
-    const stableReference = Math.max(
-      ...openSeaBoats.map((b) =>
-        b.updatedAt
-          ? new Date(b.updatedAt).getTime()
-          : new Date(b.createdAt).getTime(),
-      ),
-    );
-    const referenceTime = now ?? stableReference;
-
     const cx = OPEN_SEA_CENTER.x;
     const cy = OPEN_SEA_CENTER.y;
 
-    // Group by age zones: <6h, <24h, <72h, <1w, >=1w
-    const zones: CanalBoat[][] = [[], [], [], [], []];
-    for (const boat of openSeaBoats) {
-      const updatedAtTime = boat.updatedAt
-        ? new Date(boat.updatedAt).getTime()
-        : new Date(boat.createdAt).getTime();
+    const timeOf = (b: CanalBoat) =>
+      new Date(b.updatedAt || b.createdAt).getTime();
 
-      const ageHours = (referenceTime - updatedAtTime) / (1000 * 60 * 60);
+    // Anchor age to wall-clock once mounted; before that fall back to the newest
+    // boat so the server and first client render agree (no layout shift).
+    const stableReference = Math.max(...openSeaBoats.map(timeOf));
+    const referenceTime = now ?? stableReference;
 
-      if (ageHours < 6) {
-        zones[0].push(boat);
-      } else if (ageHours < 24) {
-        zones[1].push(boat);
-      } else if (ageHours < 72) {
-        zones[2].push(boat);
-      } else if (ageHours < 168) {
-        zones[3].push(boat);
-      } else {
-        zones[4].push(boat);
-      }
+    // Bucket boats into 24h-wide age zones — one concentric ring per zone.
+    const zoneBoats = new Map<number, CanalBoat[]>();
+    for (const b of openSeaBoats) {
+      const ageHours = (referenceTime - timeOf(b)) / (1000 * 60 * 60);
+      // Clamp to the outermost rendered ring index. Rings are generated with
+      // indices 0..OPEN_SEA_MAX_ZONE-1, so a boat aged past the window must
+      // land on the last ring rather than beyond it.
+      const z = Math.min(
+        OPEN_SEA_MAX_ZONE - 1,
+        Math.max(0, Math.floor(ageHours / OPEN_SEA_ZONE_HOURS)),
+      );
+      if (!zoneBoats.has(z)) zoneBoats.set(z, []);
+      zoneBoats.get(z)!.push(b);
     }
 
-    // Position boats fanned out in each zone
-    for (let z = 0; z < 5; z++) {
-      const zoneBoats = zones[z]!;
-      // Sort so older PRs (lower timestamp / earlier merge) are positioned further along the fan
-      zoneBoats.sort((a, b) => {
-        const tA = a.updatedAt
-          ? new Date(a.updatedAt).getTime()
-          : new Date(a.createdAt).getTime();
-        const tB = b.updatedAt
-          ? new Date(b.updatedAt).getTime()
-          : new Date(b.createdAt).getTime();
-        return tA - tB;
-      });
+    const halfSpan = OPEN_SEA_HALF_SPAN;
 
-      const count = zoneBoats.length;
-      const minAngle = -Math.PI / 4.8;
-      const maxAngle = Math.PI / 2.3;
+    for (const [z, boatsInZone] of zoneBoats) {
+      const radius = OPEN_SEA_INNER_RADIUS + z * OPEN_SEA_RING_SPACING;
 
-      const rCenter =
-        z === 0 ? 75 : z === 1 ? 160 : z === 2 ? 270 : z === 3 ? 400 : 540;
-
-      for (let idx = 0; idx < count; idx++) {
-        const boat = zoneBoats[idx]!;
-        let theta = (minAngle + maxAngle) / 2;
-        if (count > 1) {
-          theta = minAngle + (idx / (count - 1)) * (maxAngle - minAngle);
-        }
-
-        const rStagger = count > 1 ? (idx % 2 === 0 ? -12 : 12) : 0;
-        const radius = rCenter + rStagger;
-
-        const x = cx + radius * Math.cos(theta);
-        const y = cy + radius * Math.sin(theta);
-
-        positions.set(`${boat.repo}-${boat.prNumber}`, { x, y });
+      // Cluster boats from the same repo together on this ring.
+      const repoGroups = new Map<string, CanalBoat[]>();
+      for (const b of boatsInZone) {
+        if (!repoGroups.has(b.repo)) repoGroups.set(b.repo, []);
+        repoGroups.get(b.repo)!.push(b);
       }
+      // Newest cluster first — it takes the center channel; the rest fan outward.
+      const clusters = [...repoGroups.values()].sort(
+        (a, b) => Math.max(...b.map(timeOf)) - Math.max(...a.map(timeOf)),
+      );
+
+      clusters.forEach((cluster, ci) => {
+        // Center-out placement: 0 → dead center (0°, straight out of the bay),
+        // then alternate to either side so the middle fills before the edges.
+        const rank = Math.ceil(ci / 2) * (ci % 2 === 1 ? 1 : -1);
+        const theta = Math.max(
+          OPEN_SEA_BOAT_ARC_CENTER - halfSpan,
+          Math.min(
+            OPEN_SEA_BOAT_ARC_CENTER + halfSpan,
+            OPEN_SEA_BOAT_ARC_CENTER + rank * OPEN_SEA_CLUSTER_ANGLE_STEP,
+          ),
+        );
+        const gx = cx + radius * Math.cos(theta);
+        const gy = cy + radius * Math.sin(theta);
+
+        // Scatter same-repo boats into a loose overlapping clump (mini-armada).
+        cluster
+          .sort((a, b) => timeOf(a) - timeOf(b))
+          .forEach((boat, bi) => {
+            const seed = seaHash(`${boat.repo}-${boat.prNumber}`);
+            const jitterA = seaRand(seed);
+            const jitterD = seaRand(seed ^ 0x9e3779b9);
+            const a = bi * GOLDEN_ANGLE + jitterA * 0.9;
+            const d =
+              OPEN_SEA_CLUSTER_STEP * Math.sqrt(bi) +
+              (jitterD - 0.5) * OPEN_SEA_CLUSTER_JITTER;
+            positions.set(`${boat.repo}-${boat.prNumber}`, {
+              x: gx + Math.cos(a) * d,
+              y: gy + Math.sin(a) * d,
+            });
+          });
+      });
     }
     return positions;
   }, [boats, now]);
@@ -309,12 +339,10 @@ export function Canal({ boats, layer = "all" }: Props) {
 
           {/* Open Sea Age Markings */}
           <g className="open-sea-markings" aria-hidden="true">
-            {[
-              { r: OPEN_SEA_MARKER_RADII[0], label: "6h" },
-              { r: OPEN_SEA_MARKER_RADII[1], label: "24h" },
-              { r: OPEN_SEA_MARKER_RADII[2], label: "72h" },
-              { r: OPEN_SEA_MARKER_RADII[3], label: "1w" },
-            ].map(({ r, label }) => {
+            {Array.from({ length: OPEN_SEA_MAX_ZONE }, (_, z) => ({
+              r: OPEN_SEA_INNER_RADIUS + z * OPEN_SEA_RING_SPACING,
+              label: `${z + 1}d`,
+            })).map(({ r, label }) => {
               const cx = OPEN_SEA_CENTER.x;
               const cy = OPEN_SEA_CENTER.y;
               const startAngle = OPEN_SEA_ARC_START_ANGLE;
@@ -336,21 +364,22 @@ export function Canal({ boats, layer = "all" }: Props) {
                   <path
                     d={d}
                     fill="none"
-                    stroke="rgba(142, 199, 223, 0.22)"
-                    strokeWidth={1.5}
-                    strokeDasharray="4 6"
+                    stroke="rgba(142, 199, 223, 0.55)"
+                    strokeWidth={2.5}
+                    strokeDasharray="6 8"
                   />
                   <text
                     x={lx}
                     y={ly}
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    fontSize={10}
+                    fontSize={30}
                     fontWeight={700}
-                    fill="rgba(142, 199, 223, 0.65)"
+                    fill="rgba(142, 199, 223, 0.90)"
                     style={{
                       pointerEvents: "none",
-                      textShadow: "0 1px 3px rgba(0, 0, 0, 0.9)",
+                      textShadow:
+                        "0 1px 4px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 0, 0, 0.7)",
                       letterSpacing: "0.05em",
                     }}
                   >

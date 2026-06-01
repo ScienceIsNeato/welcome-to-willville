@@ -235,6 +235,35 @@
       }
     },
     {
+      "id": "the-nursery",
+      "displayName": "The Nursery",
+      "src": "/art/town/districts/the-nursery.png",
+      "contentHash": "district-art-the-nursery-2026-06-01-0415",
+      "mask": "/art/town/masks/district-art/the-nursery.png",
+      "components": [
+        {
+          "id": "the-nursery-1",
+          "bounds": {
+            "x": 263,
+            "y": 897,
+            "width": 407,
+            "height": 296
+          },
+          "centroid": {
+            "x": 451.1,
+            "y": 1055.6
+          },
+          "area": 74847
+        }
+      ],
+      "artKind": "custom",
+      "scale": 4,
+      "pixelSize": {
+        "width": 6400,
+        "height": 4960
+      }
+    },
+    {
       "id": "gates-of-hell",
       "displayName": "The Gates of Hell",
       "src": "/art/town/districts/gates-of-hell.png",

@@ -49,8 +49,9 @@ type GraphQLPR = {
 };
 
 const QUERY = `
-query ($q: String!) {
-  search(query: $q, type: ISSUE, first: 80) {
+query ($q: String!, $cursor: String) {
+  search(query: $q, type: ISSUE, first: 100, after: $cursor) {
+    pageInfo { hasNextPage endCursor }
     nodes {
       ... on PullRequest {
         number
@@ -165,25 +166,84 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     );
   }
 
-  // Query open + recently merged PRs so the Open Sea isn't permanently empty.
-  const query = `is:pr user:${OWNER} sort:updated-desc`;
-  const r = await fetch("https://api.github.com/graphql", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "User-Agent": "willville-edge",
-    },
-    body: JSON.stringify({ query: QUERY, variables: { q: query } }),
-  });
+  // Fetch all open PRs + all PRs merged/closed within the last 7 days,
+  // paginating each query so no boats are silently dropped by a page-size cap.
+  const DAY = 24 * 60 * 60 * 1000;
+  const cutoffDate = new Date(Date.now() - 7 * DAY)
+    .toISOString()
+    .split("T")[0]!;
+  const scuttleCutoffDate = new Date(Date.now() - DAY)
+    .toISOString()
+    .split("T")[0]!;
 
-  if (!r.ok) {
+  async function fetchPage(
+    q: string,
+    cursor: string | null,
+  ): Promise<{
+    nodes: GraphQLPR[];
+    hasNextPage: boolean;
+    endCursor: string | null;
+  }> {
+    const r = await fetch("https://api.github.com/graphql", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "User-Agent": "willville-edge",
+      },
+      body: JSON.stringify({ query: QUERY, variables: { q, cursor } }),
+    });
+    if (!r.ok) throw new Error(`GitHub GraphQL returned ${r.status}`);
+    const payload = (await r.json()) as {
+      data?: {
+        search?: {
+          pageInfo: { hasNextPage: boolean; endCursor: string | null };
+          nodes: GraphQLPR[];
+        };
+      };
+    };
+    const search = payload.data?.search;
+    return {
+      nodes: (search?.nodes ?? []).filter((n) => n && n.repository),
+      hasNextPage: search?.pageInfo.hasNextPage ?? false,
+      endCursor: search?.pageInfo.endCursor ?? null,
+    };
+  }
+
+  // Three bounded queries cover the full canal state with no page-size cap:
+  //   1. All currently open PRs (may be older than a week — still on the canal).
+  //   2. All PRs merged within the last 7 days (fills the Open Sea bay).
+  //   3. All PRs closed-not-merged within the last day (scuttled wrecks).
+  const queries = [
+    `is:pr user:${OWNER} is:open`,
+    `is:pr user:${OWNER} is:merged merged:>=${cutoffDate}`,
+    `is:pr user:${OWNER} is:closed is:unmerged closed:>=${scuttleCutoffDate}`,
+  ];
+
+  const seen = new Set<string>();
+  const nodes: GraphQLPR[] = [];
+  try {
+    for (const q of queries) {
+      let cursor: string | null = null;
+      do {
+        const page = await fetchPage(q, cursor);
+        for (const node of page.nodes) {
+          const key = `${node.repository.nameWithOwner}#${node.number}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            nodes.push(node);
+          }
+        }
+        cursor = page.hasNextPage ? page.endCursor : null;
+      } while (cursor);
+    }
+  } catch (err) {
     return new Response(
       JSON.stringify({
         mayor: true,
         generatedAt: new Date().toISOString(),
         boats: [],
-        warning: `GitHub GraphQL returned ${r.status}`,
+        warning: String(err),
       }),
       {
         status: 200,
@@ -194,22 +254,17 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     );
   }
 
-  const payload = (await r.json()) as {
-    data?: { search?: { nodes: GraphQLPR[] } };
-  };
-  const nodes = (payload.data?.search?.nodes ?? []).filter(
-    (n) => n && n.repository,
-  );
-
   let boats = nodes.map(mapPr);
 
-  // Recent open-sea boats keep their visibility short — only show items merged
-  // within the last 24h so the lock doesn't fill up forever.
-  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  // The Open Sea (the bay) shows merged PRs fanning out by age across rings that
+  // run to a full week, so keep open-sea boats around for 7 days. Scuttled
+  // wrecks still only linger for a day so they don't pile up forever.
+  const openSeaCutoff = Date.now() - 7 * DAY;
+  const scuttleCutoff = Date.now() - DAY;
   boats = boats.filter((b) => {
-    // Terminal locks (merged / scuttled) only linger for a day.
-    if (b.lock !== "open-sea" && b.lock !== "scuttle") return true;
-    return Date.parse(b.updatedAt) > cutoff;
+    if (b.lock === "open-sea") return Date.parse(b.updatedAt) > openSeaCutoff;
+    if (b.lock === "scuttle") return Date.parse(b.updatedAt) > scuttleCutoff;
+    return true;
   });
 
   const cacheControl = "public, s-maxage=45, stale-while-revalidate=180";

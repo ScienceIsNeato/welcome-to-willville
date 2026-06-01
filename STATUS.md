@@ -1,5 +1,40 @@
 # Status
 
+## Done (2026-06-01) - Nursery Painted In The Magic Maze Style
+
+- Replaced The Nursery's hand-authored solid-green placeholder art with AI-painted Magic Maze diorama art, matching the other seven districts.
+- Root cause: `the-nursery` was missing from the `regionDirections` map in `scripts/generate-town-region-art-prompts.mjs`, so the district never got a proper Magic Maze prompt or generated art. Added a nursery palette/motifs entry (greenhouses, seedling beds, sprouting saplings, potting sheds, raised garden boxes, watering cans, trellises) and regenerated the prompt.
+- Generated the painted tile via ganglia-studio (`gpt-image-1`, 1536x1024) from the new prompt, then shaped it through `apply-town-district-art` into the district polygon and regenerated render assets.
+- Validation: layout check passed, shaped art confirmed (PNG 96% transparent), and the live map now shows The Nursery with dense painted garden/nursery detail instead of a flat green block. `activate && sm swab --json --output-file .slopmop/last_swab.json` passed before commit.
+
+## Done (2026-06-01) - Nursery Moved South With Painted Background
+
+- Moved The Nursery back to the open land south of Dogwallow Ramble II (no overlap with neighbors) by restoring its southern vertices, while keeping the shared north border aligned to Slop Wharf and Dogwallow.
+- Root-caused the southern region getting erased: two separate footprint clips (the mask generator and the render-time SVG clip in `GeneratedTownBase`). Added a per-district `clip: "land"` override so The Nursery clips to the land path instead of the shorter town footprint, in both places.
+- Root-caused the "solid green" complaint: the source art (`nursery.svg`) was an unshaped opaque rectangle. Re-baked it through the district-art masker (`apply-town-district-art`) to produce a shaped `the-nursery.png`, pointed the manifest `src` at it, and regenerated render assets so the painted vegetation now renders shaped to the polygon.
+- Cleared a stray light-green speck at the Slop Wharf corner by raising the mask-contract connected-component noise threshold from 64 to 512px (next-smallest real component is 1285, so no real art is affected). The Nursery now has a single component `the-nursery-1` (area `74847`).
+- Validation: `node scripts/validate-town-layout.mjs` passed (9 districts, 14 shared edges), shaped art confirmed (PNG 96% transparent, webp shows shaped vegetation), and the live map shows The Nursery south with its painted background. `sm swab` run before commit.
+
+## Done (2026-06-01) - Nursery North Border Snapped To Shared District Chain
+
+- Reworked The Nursery north edge so it is coincident with existing Slop Wharf and Dogwallow border segments instead of crossing into those districts.
+- Kept the west edge inland and regenerated masks/render assets against the revised geometry.
+- Validation: `node scripts/validate-town-layout.mjs` passed with 14 shared edges, `activate && sm swab --json --output-file .slopmop/last_swab.json` passed, and local rebuild confirmed the overlap is gone in the live map.
+
+## Done (2026-06-01) - Nursery Took Root
+
+- Added The Nursery as a new green district in the open south-west town space and pulled its west edge back inside the land mask.
+- Routed newly detected sites into The Nursery by default when no explicit district override exists.
+- Brought the district art and rendered map assets along so it shows up in the live town.
+- Validation: layout check passed, `activate && sm swab --json --output-file .slopmop/last_swab.json` passed, and the rebuilt town shows The Nursery in the district list.
+
+## Done (2026-05-31) - Tower Eye Tab Icon + Deploy Failure Triage
+
+- Synced latest `main`, opened branch `codex/tab-icon-eye-tower-deploy-fix`, and added a dedicated tower-eye site icon for browser tabs.
+- Wired metadata icons in the app layout to serve the new SVG tab icon route consistently, then removed the stale favicon fallback so the eye is the only tab icon source.
+- Validation: `./scripts/deploy_app.sh` rebuilt cleanly, and the rendered head now exposes only the eye SVG icon links for browser tabs.
+- Deploy triage: the failing deploy job is returning Cloudflare auth errors (`code: 10000` and `code: 9109` invalid access token) at deploy-time, which points to token/account credentials rather than app build regressions.
+
 ## Done (2026-05-31) - Willville Planner Renamed To City Planner
 
 - Renamed the reposition UI heading from Willville Planner to City Planner.
