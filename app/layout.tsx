@@ -8,9 +8,9 @@ export const metadata: Metadata = {
   description:
     "A purely-visual town where Will's projects live. Wander the districts, watch the trains run.",
   icons: {
-    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
-    shortcut: [{ url: "/icon.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    icon: [{ url: "/icon.svg?eye=1", type: "image/svg+xml" }],
+    shortcut: [{ url: "/icon.svg?eye=1", type: "image/svg+xml" }],
+    apple: [{ url: "/icon.svg?eye=1", type: "image/svg+xml" }],
   },
 };
 
