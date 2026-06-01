@@ -26,6 +26,7 @@ import {
   WillvilleManifestClient,
 } from "./town-manifests";
 import { buildTownStops, persistTownSnapshot } from "./town-snapshot";
+import { buildCanalBoats, persistCanalSnapshot } from "./canal-snapshot";
 
 interface Env {
   GITHUB_PAT?: string;
@@ -345,6 +346,20 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         );
       } catch {
         // Keep bell response healthy even if snapshot rebuild fails.
+      }
+
+      // The bell also owns the canal: build the live PR/boat state once here
+      // and persist it so GET /api/canal reads boats straight from the durable
+      // layer instead of crawling GitHub GraphQL on every hard refresh.
+      try {
+        const boats = await buildCanalBoats(token);
+        await persistCanalSnapshot(
+          env.WILLVILLE_MANIFEST_CACHE,
+          new Date().toISOString(),
+          boats,
+        );
+      } catch {
+        // Keep bell response healthy even if canal rebuild fails.
       }
 
       push({

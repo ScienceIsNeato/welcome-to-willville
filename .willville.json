@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Made the bell the only thing that ever updates the saved town. Loading the page just shows the last saved snapshot instantly — no more re-checking GitHub on every visit. Whoever rings the bell refreshes the picture for everyone who comes after",
+    "status": "Did the same for the canal boats that I did for the town: ringing the bell now saves the boats too, so the canal loads instantly from the last saved snapshot instead of waiting 13 seconds to ask GitHub on every refresh. The bell is now the one thing that refreshes everything",
     "direction": "Wrapping up the data plumbing ahead of the big production release",
-    "last_update": "2026-06-01T06:15:00Z"
+    "last_update": "2026-06-01T06:30:00Z"
   }
 }
