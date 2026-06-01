@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Ringing the bell now refreshes the boats right away too, not just the buildings, and the town stays up even if a rebuild hiccups. Clearing the last couple of review notes before going live",
+    "status": "Tidied up how the bell reloads the town so it grabs the freshly saved version instead of rebuilding it twice, and made the boats stop fetching cleanly when you leave the page. Last couple of review notes are handled",
     "direction": "Final review polish, then shipping to production",
-    "last_update": "2026-06-01T09:40:00Z"
+    "last_update": "2026-06-01T10:15:00Z"
   }
 }
