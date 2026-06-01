@@ -137,10 +137,16 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       return townResponse(request, snapshot);
     }
 
-    return townResponse(
-      request,
-      await rebuildAndPersistTownSnapshot(env, manifestCachedAt),
-    );
+    try {
+      return townResponse(
+        request,
+        await rebuildAndPersistTownSnapshot(env, manifestCachedAt),
+      );
+    } catch {
+      // Rebuild failed — serve the stale snapshot so the town stays available
+      // rather than erroring (mirrors the canal stale-path fallback).
+      return townResponse(request, snapshot);
+    }
   }
 
   // Cold DB: nothing has rung the bell yet. Build a live snapshot so the first

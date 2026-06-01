@@ -701,6 +701,47 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     };
   }, [loadTown]);
 
+  const [boats, setBoats] = useState<CanalBoat[]>([]);
+  const hasAppliedApiBoatsRef = useRef(false);
+  const loadCanal = useCallback((options: { fresh?: boolean } = {}) => {
+    const url = options.fresh
+      ? `/api/canal?refresh=${encodeURIComponent(String(Date.now()))}`
+      : "/api/canal";
+    return fetchApiRoute(url, {
+      cache: options.fresh ? "no-store" : "default",
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && Array.isArray(data.boats)) {
+          const incoming = data.boats as CanalBoat[];
+          const browserSnapshot = readBrowserCanalSnapshot();
+          const apiGeneratedAt = parseTimestamp(
+            typeof data.generatedAt === "string" ? data.generatedAt : undefined,
+          );
+          const browserCachedAt = parseTimestamp(browserSnapshot?.cachedAt);
+
+          if (
+            Number.isFinite(apiGeneratedAt) &&
+            Number.isFinite(browserCachedAt) &&
+            apiGeneratedAt < browserCachedAt
+          ) {
+            return data;
+          }
+
+          hasAppliedApiBoatsRef.current = true;
+          setBoats(incoming);
+          writeBrowserCanalSnapshot(incoming, {
+            cachedAt:
+              typeof data.generatedAt === "string"
+                ? data.generatedAt
+                : undefined,
+          });
+        }
+        return data;
+      })
+      .catch(() => undefined);
+  }, []);
+
   useEffect(() => {
     if (forcedMobileSafeMode !== null) return;
     if (!isClient || typeof window.matchMedia !== "function") {
@@ -768,6 +809,10 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       })
       .then(() => loadTown({ fresh: true }))
       .then((data) => {
+        // The bell also persisted a fresh canal snapshot; force-refresh boats
+        // (cache-busted) so they update immediately instead of waiting for the
+        // 60s poll or CDN expiry.
+        void loadCanal({ fresh: true });
         const nextStops =
           data && Array.isArray(data.stops)
             ? mergeStops(previousStops, data.stops as Stop[])
@@ -816,7 +861,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           populateResetTimerRef.current = null;
         }, 4000);
       });
-  }, [currentStops, loadTown, populating]);
+  }, [currentStops, loadCanal, loadTown, populating]);
 
   const handleEasterEgg = useCallback(() => {
     if (boardAnnouncementTimerRef.current !== null) {
@@ -863,8 +908,6 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     router.replace(routeWithCurrentSearch("/"), { scroll: false });
   }, [routeWithCurrentSearch, router]);
 
-  const [boats, setBoats] = useState<CanalBoat[]>([]);
-  const hasAppliedApiBoatsRef = useRef(false);
   useEffect(() => {
     let cancelled = false;
     // Instant paint: seed from the browser snapshot on the client (this effect
@@ -882,48 +925,15 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         setBoats(seeded.boats);
       }
     }, 0);
-    const load = () =>
-      fetchApiRoute("/api/canal")
-        .then((r) => (r.ok ? r.json() : null))
-        .then((data) => {
-          if (!cancelled && data && Array.isArray(data.boats)) {
-            const incoming = data.boats as CanalBoat[];
-            const browserSnapshot = readBrowserCanalSnapshot();
-            const apiGeneratedAt = parseTimestamp(
-              typeof data.generatedAt === "string"
-                ? data.generatedAt
-                : undefined,
-            );
-            const browserCachedAt = parseTimestamp(browserSnapshot?.cachedAt);
-
-            if (
-              Number.isFinite(apiGeneratedAt) &&
-              Number.isFinite(browserCachedAt) &&
-              apiGeneratedAt < browserCachedAt
-            ) {
-              return;
-            }
-
-            hasAppliedApiBoatsRef.current = true;
-            setBoats(incoming);
-            writeBrowserCanalSnapshot(incoming, {
-              cachedAt:
-                typeof data.generatedAt === "string"
-                  ? data.generatedAt
-                  : undefined,
-            });
-          }
-        })
-        .catch(() => undefined);
-    load();
+    loadCanal();
     // Re-poll so boats shift locks as CI, threads, and buff rounds change.
-    const interval = window.setInterval(load, 60_000);
+    const interval = window.setInterval(() => loadCanal(), 60_000);
     return () => {
       cancelled = true;
       window.clearTimeout(seedTimer);
       window.clearInterval(interval);
     };
-  }, []);
+  }, [loadCanal]);
 
   useEffect(() => {
     const initial = window.setTimeout(() => setNow(Date.now()), 0);
