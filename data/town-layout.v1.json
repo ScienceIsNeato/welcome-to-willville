@@ -50,6 +50,12 @@
     "slop_dog": { "x": 478, "y": 953 },
     "slop_canal": { "x": 560, "y": 890 },
     "dog_hub": { "x": 820, "y": 850 },
+    "nursery_nw": { "x": 274, "y": 872 },
+    "nursery_mid": { "x": 408, "y": 892 },
+    "nursery_ne": { "x": 592, "y": 924 },
+    "nursery_e": { "x": 690, "y": 1008 },
+    "nursery_s": { "x": 666, "y": 1180 },
+    "nursery_w": { "x": 300, "y": 1142 },
     "hell_bridge": { "x": 1378, "y": 865 }
   },
   "canal": {
@@ -197,6 +203,21 @@
         "south_bay_m",
         "dog_coast",
         "slop_dog"
+      ]
+    },
+    {
+      "id": "the-nursery",
+      "displayName": "The Nursery",
+      "subtitle": "Seedlings, saplings, and fresh starts",
+      "label": { "x": 474, "y": 1090 },
+      "clip": "land",
+      "vertexIds": [
+        "wharf_w",
+        "wharf_s",
+        "slop_dog",
+        "dog_coast",
+        "nursery_s",
+        "nursery_w"
       ]
     },
     {

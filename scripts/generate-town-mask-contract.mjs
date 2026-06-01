@@ -41,9 +41,10 @@ function svgMask(path, options = {}) {
 
 function svgTownFootprintClippedMask(basePath, options = {}) {
   const subtractPath = options.subtractPath;
+  const clipPath = options.clipPath ?? layout.townFootprintPath;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${layout.size.width}" height="${layout.size.height}" viewBox="0 0 ${layout.size.width} ${layout.size.height}">
   <defs>
-    <clipPath id="town-footprint-clip"><path d="${layout.townFootprintPath}" /></clipPath>
+    <clipPath id="town-footprint-clip"><path d="${clipPath}" /></clipPath>
   </defs>
   <rect width="${layout.size.width}" height="${layout.size.height}" fill="black" />
   <path d="${basePath}" fill="white" clip-path="url(#town-footprint-clip)" />
@@ -129,7 +130,7 @@ async function connectedComponentsForMask(relativePath) {
         area: Number(area),
       };
     })
-    .filter((component) => component && component.area > 64)
+    .filter((component) => component && component.area > 512)
     .sort((a, b) => b.area - a.area)
     .map((component, index) => ({
       ...component,
@@ -143,14 +144,17 @@ async function connectedComponentsForMask(relativePath) {
 const districtMasks = new Map();
 for (const district of layout.districts) {
   const districtPath = pointsToPath(district.polygon);
+  const clipPath =
+    district.clip === "land" ? layout.landPath : layout.townFootprintPath;
   const mask = await writeMask(
     `districts/${district.id}.png`,
-    svgTownFootprintClippedMask(districtPath),
+    svgTownFootprintClippedMask(districtPath, { clipPath }),
   );
   const artMaskRelativePath = `district-art/${district.id}.png`;
   const artMask = await writeMask(
     artMaskRelativePath,
     svgTownFootprintClippedMask(districtPath, {
+      clipPath,
       subtractPath: pointsToPath(canalSection.polygon),
     }),
   );

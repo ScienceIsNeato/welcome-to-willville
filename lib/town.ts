@@ -297,54 +297,8 @@ export type RepoMeta = {
 };
 
 // ---------------------------------------------------------------------------
-// Topic-based auto-layout
+// Topic-based line mapping
 // ---------------------------------------------------------------------------
-
-/** Maps GitHub topic strings to Willville district IDs. First match wins. */
-const TOPIC_DISTRICT: Partial<Record<string, DistrictId>> = {
-  // The Graveyard (inactive AI/misc projects)
-  ai: "the-graveyard",
-  "machine-learning": "the-graveyard",
-  "deep-learning": "the-graveyard",
-  llm: "the-graveyard",
-  gpt: "the-graveyard",
-  openai: "the-graveyard",
-  ganglia: "the-graveyard",
-  // The Zeitgeist (web-facing)
-  web: "the-zeitgeist",
-  react: "the-zeitgeist",
-  nextjs: "the-zeitgeist",
-  "next-js": "the-zeitgeist",
-  frontend: "the-zeitgeist",
-  website: "the-zeitgeist",
-  // Mirrored Mile (published works)
-  writing: "mirrored-mile",
-  blog: "mirrored-mile",
-  novel: "mirrored-mile",
-  fiction: "mirrored-mile",
-  // Slop Wharf
-  quality: "slop-wharf",
-  testing: "slop-wharf",
-  linting: "slop-wharf",
-  ci: "slop-wharf",
-  "github-actions": "slop-wharf",
-  "code-quality": "slop-wharf",
-  // Dogwallow Ramble II (homesteading)
-  hardware: "dogwallow-ramble-ii",
-  arduino: "dogwallow-ramble-ii",
-  "raspberry-pi": "dogwallow-ramble-ii",
-  iot: "dogwallow-ramble-ii",
-  electronics: "dogwallow-ramble-ii",
-  // Gates of Hell (Halloween)
-  halloween: "gates-of-hell",
-  spooky: "gates-of-hell",
-  horror: "gates-of-hell",
-  // Halls of Judgement (evals/audit)
-  monitoring: "halls-of-judgement",
-  observability: "halls-of-judgement",
-  analytics: "halls-of-judgement",
-  audit: "halls-of-judgement",
-};
 
 /** Maps GitHub topic strings to Willville transit line IDs. All matches kept. */
 const TOPIC_LINE: Partial<Record<string, LineId>> = {
@@ -386,14 +340,6 @@ function normalizeManifestLines(
     LINE_IDS.has(line as LineId),
   );
   return valid.length > 0 ? [...new Set(valid)] : undefined;
-}
-
-function topicsToDistrict(topics: string[]): DistrictId {
-  for (const t of topics) {
-    const d = TOPIC_DISTRICT[t.toLowerCase()];
-    if (d) return d;
-  }
-  return "the-graveyard";
 }
 
 function topicsToLines(topics: string[]): LineId[] {
@@ -482,7 +428,7 @@ function buildStop(meta: RepoMeta, heuristic?: Heuristic): Stop {
   const district =
     normalizeManifestDistrict(manifestProject?.district) ??
     heuristic?.district ??
-    topicsToDistrict(meta.topics ?? []);
+    "the-nursery";
   const lines =
     normalizeManifestLines(manifestProject?.lines) ??
     heuristic?.lines ??

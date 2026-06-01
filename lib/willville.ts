@@ -52,6 +52,7 @@ export type DistrictId =
   | "gates-of-hell"
   | "dogwallow-ramble-ii"
   | "town-square"
+  | "the-nursery"
   | "the-graveyard";
 
 export type LineId =
@@ -97,6 +98,7 @@ const DISTRICT_BLURBS: Record<DistrictId, string> = {
   "gates-of-hell": "Anything Halloween related.",
   "dogwallow-ramble-ii": "Homesteading projects and household work.",
   "town-square": "The central hub.",
+  "the-nursery": "Fresh growth, seedlings, and new life.",
   "the-graveyard": "Inactive projects, old experiments, and reference work.",
 };
 
@@ -108,6 +110,7 @@ const DISTRICT_COLOR_VARS: Record<DistrictId, string> = {
   "gates-of-hell": "--willville-hell",
   "dogwallow-ramble-ii": "--willville-dogwallow",
   "town-square": "--willville-town-square",
+  "the-nursery": "--willville-nursery",
   "the-graveyard": "--willville-graveyard",
 };
 
