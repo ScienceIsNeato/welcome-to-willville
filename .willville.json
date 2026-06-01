@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Tidied up how the bell reloads the town so it grabs the freshly saved version instead of rebuilding it twice, and made the boats stop fetching cleanly when you leave the page. Last couple of review notes are handled",
+    "status": "Made the town hold steady if a refresh hiccups by falling back to the last saved version, and taught the boats to ignore an empty update so they don't blink out. Clearing the final review notes",
     "direction": "Final review polish, then shipping to production",
-    "last_update": "2026-06-01T10:15:00Z"
+    "last_update": "2026-06-01T10:45:00Z"
   }
 }

@@ -117,10 +117,21 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     const manifestCachedAt = await readPersistedManifestCacheCachedAt(
       env.WILLVILLE_MANIFEST_CACHE,
     );
-    return townResponse(
-      request,
-      await rebuildAndPersistTownSnapshot(env, manifestCachedAt),
-    );
+    try {
+      return townResponse(
+        request,
+        await rebuildAndPersistTownSnapshot(env, manifestCachedAt),
+      );
+    } catch (error) {
+      // A transient rebuild failure (e.g. GitHub error) on the refresh path
+      // should still serve the last stored snapshot rather than 500, mirroring
+      // the stale read-repair fallback below.
+      const stored = await readTownSnapshot(env.WILLVILLE_MANIFEST_CACHE);
+      if (stored) {
+        return townResponse(request, stored);
+      }
+      throw error;
+    }
   }
 
   // Read the bell-written snapshot. The bell is the primary writer, so this

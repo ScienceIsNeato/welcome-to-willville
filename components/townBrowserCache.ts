@@ -119,7 +119,7 @@ export function writeBrowserCanalSnapshot(
   boats: CanalBoat[],
   options: { cachedAt?: string } = {},
 ): void {
-  if (typeof window === "undefined") {
+  if (typeof window === "undefined" || boats.length === 0) {
     return;
   }
 

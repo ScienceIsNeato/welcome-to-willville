@@ -592,6 +592,14 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         .then((data) => {
           if (data && Array.isArray(data.boats)) {
             const incoming = data.boats as CanalBoat[];
+            // A degraded canal response (missing token, cold-DB GraphQL
+            // failure) can return HTTP 200 with an empty boats array and a
+            // fresh generatedAt. Skip it so it doesn't clear the instant-paint
+            // boats or clobber the good browser snapshot — mirrors the town
+            // path, which never persists an empty stops list.
+            if (incoming.length === 0) {
+              return data;
+            }
             const browserSnapshot = readBrowserCanalSnapshot();
             const apiGeneratedAt = parseTimestamp(
               typeof data.generatedAt === "string"
