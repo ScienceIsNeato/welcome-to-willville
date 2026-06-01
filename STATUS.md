@@ -1,5 +1,12 @@
 # Status
 
+## Done (2026-06-01) - Nursery Painted In The Magic Maze Style
+
+- Replaced The Nursery's hand-authored solid-green placeholder art with AI-painted Magic Maze diorama art, matching the other seven districts.
+- Root cause: `the-nursery` was missing from the `regionDirections` map in `scripts/generate-town-region-art-prompts.mjs`, so the district never got a proper Magic Maze prompt or generated art. Added a nursery palette/motifs entry (greenhouses, seedling beds, sprouting saplings, potting sheds, raised garden boxes, watering cans, trellises) and regenerated the prompt.
+- Generated the painted tile via ganglia-studio (`gpt-image-1`, 1536x1024) from the new prompt, then shaped it through `apply-town-district-art` into the district polygon and regenerated render assets.
+- Validation: layout check passed, shaped art confirmed (PNG 96% transparent), and the live map now shows The Nursery with dense painted garden/nursery detail instead of a flat green block. `activate && sm swab --json --output-file .slopmop/last_swab.json` passed before commit.
+
 ## Done (2026-06-01) - Nursery Moved South With Painted Background
 
 - Moved The Nursery back to the open land south of Dogwallow Ramble II (no overlap with neighbors) by restoring its southern vertices, while keeping the shared north border aligned to Slop Wharf and Dogwallow.

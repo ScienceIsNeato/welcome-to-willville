@@ -57,6 +57,12 @@ const regionDirections = {
     motifs:
       "crooked gates, playful spooky studio buildings, pumpkins, lanterns, glowing windows, smoke, bridges, theatrical props",
   },
+  "the-nursery": {
+    palette:
+      "fresh spring green, tender leaf green, soft moss, terracotta pots, warm soil brown, pale sprout gold",
+    motifs:
+      "greenhouses, seedling beds, sprouting saplings, potting sheds, raised garden boxes, watering cans, trellises, tiny saplings in rows, propagation tables",
+  },
 };
 
 function componentSummary(district) {
