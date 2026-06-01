@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Fixed the last bit of boat lag — the boats now pop up instantly on a hard refresh from a copy saved in your browser, instead of leaving an empty canal for several seconds while it phones home. Same trick the town buildings already use",
-    "direction": "Wrapping up the data plumbing ahead of the big production release",
-    "last_update": "2026-06-01T06:45:00Z"
+    "status": "Tightened up two edge cases the reviewer caught: the boats no longer flicker back to an older state if a slow cached response shows up after a fresh one, and the town won't keep showing stale info if a refresh half-finishes. Belt-and-suspenders before going live",
+    "direction": "Final review polish, then shipping to production",
+    "last_update": "2026-06-01T07:30:00Z"
   }
 }

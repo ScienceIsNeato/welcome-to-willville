@@ -18,6 +18,7 @@ import { withCorsHeaders } from "./cors";
 import {
   type ManifestCacheStore,
   hydrateManifestCacheFromStore,
+  readPersistedManifestCacheCachedAt,
 } from "./town-manifests";
 import {
   buildTownStops,
@@ -29,6 +30,38 @@ interface Env {
   GITHUB_PAT?: string;
   WILLVILLE_MAYOR_KEY?: string;
   WILLVILLE_MANIFEST_CACHE?: ManifestCacheStore;
+}
+
+function parseTimestamp(value: string | null | undefined): number {
+  if (!value) {
+    return Number.NaN;
+  }
+
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : Number.NaN;
+}
+
+/**
+ * A snapshot is stale when the manifest cache has been refreshed more recently
+ * than the manifest data the snapshot was built from. This happens when a bell
+ * ring updates the manifest cache but the town rebuild/persist step fails — the
+ * old snapshot would otherwise be served indefinitely.
+ */
+function isTownSnapshotStale(
+  snapshot: TownSnapshot,
+  manifestCachedAt: string | null,
+): boolean {
+  const manifestTime = parseTimestamp(manifestCachedAt);
+  const snapshotManifestTime = parseTimestamp(snapshot.manifestCachedAt);
+
+  if (
+    !Number.isFinite(manifestTime) ||
+    !Number.isFinite(snapshotManifestTime)
+  ) {
+    return false;
+  }
+
+  return manifestTime > snapshotManifestTime;
 }
 
 function townResponse(request: Request, snapshot: TownSnapshot): Response {
@@ -48,11 +81,27 @@ function townResponse(request: Request, snapshot: TownSnapshot): Response {
 }
 
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
-  // Read the bell-written snapshot and serve it as-is — no staleness check, no
-  // rebuild, no DB write. The bell is the sole writer.
+  // Read the bell-written snapshot. The bell is the sole writer, so this handler
+  // never persists — but it does guard against a snapshot that fell behind the
+  // manifest cache (e.g. a bell ring updated manifests but the town rebuild
+  // failed). A stale snapshot is rebuilt live and served without persisting.
   const snapshot = await readTownSnapshot(env.WILLVILLE_MANIFEST_CACHE);
   if (snapshot) {
-    return townResponse(request, snapshot);
+    const manifestCachedAt = await readPersistedManifestCacheCachedAt(
+      env.WILLVILLE_MANIFEST_CACHE,
+    );
+    if (!isTownSnapshotStale(snapshot, manifestCachedAt)) {
+      return townResponse(request, snapshot);
+    }
+
+    await hydrateManifestCacheFromStore(env.WILLVILLE_MANIFEST_CACHE);
+    const stops = await buildTownStops(env.GITHUB_PAT);
+    return townResponse(request, {
+      schemaVersion: 1,
+      generatedAt: new Date().toISOString(),
+      manifestCachedAt: manifestCachedAt ?? undefined,
+      stops,
+    });
   }
 
   // Cold DB: nothing has rung the bell yet. Build a live snapshot so the first

@@ -182,17 +182,27 @@ function readBrowserCanalSnapshot(): BrowserCanalSnapshot | null {
   }
 }
 
-function writeBrowserCanalSnapshot(boats: CanalBoat[]): void {
+function writeBrowserCanalSnapshot(
+  boats: CanalBoat[],
+  options: { cachedAt?: string } = {},
+): void {
   if (typeof window === "undefined") {
     return;
   }
+
+  const incomingCachedAt = options.cachedAt;
+  const cachedAt =
+    typeof incomingCachedAt === "string" &&
+    Number.isFinite(parseTimestamp(incomingCachedAt))
+      ? incomingCachedAt
+      : new Date().toISOString();
 
   try {
     window.localStorage.setItem(
       BROWSER_CANAL_CACHE_KEY,
       JSON.stringify({
         schemaVersion: 1,
-        cachedAt: new Date().toISOString(),
+        cachedAt,
         boats,
       } satisfies BrowserCanalSnapshot),
     );
@@ -864,8 +874,29 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         .then((data) => {
           if (!cancelled && data && Array.isArray(data.boats)) {
             const incoming = data.boats as CanalBoat[];
+            const browserSnapshot = readBrowserCanalSnapshot();
+            const apiGeneratedAt = parseTimestamp(
+              typeof data.generatedAt === "string"
+                ? data.generatedAt
+                : undefined,
+            );
+            const browserCachedAt = parseTimestamp(browserSnapshot?.cachedAt);
+
+            if (
+              Number.isFinite(apiGeneratedAt) &&
+              Number.isFinite(browserCachedAt) &&
+              apiGeneratedAt < browserCachedAt
+            ) {
+              return;
+            }
+
             setBoats(incoming);
-            writeBrowserCanalSnapshot(incoming);
+            writeBrowserCanalSnapshot(incoming, {
+              cachedAt:
+                typeof data.generatedAt === "string"
+                  ? data.generatedAt
+                  : undefined,
+            });
           }
         })
         .catch(() => undefined);
