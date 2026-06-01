@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Tightened up two edge cases the reviewer caught: the boats no longer flicker back to an older state if a slow cached response shows up after a fresh one, and the town won't keep showing stale info if a refresh half-finishes. Belt-and-suspenders before going live",
+    "status": "More review polish: the town now heals itself after a half-finished refresh instead of re-fetching everything on every visit, and the boats' instant-paint kicks in reliably on the very first load. Tidying the last review notes before going live",
     "direction": "Final review polish, then shipping to production",
-    "last_update": "2026-06-01T07:30:00Z"
+    "last_update": "2026-06-01T08:10:00Z"
   }
 }

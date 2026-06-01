@@ -22,6 +22,7 @@ import {
 } from "./town-manifests";
 import {
   buildTownStops,
+  persistTownSnapshot,
   readTownSnapshot,
   type TownSnapshot,
 } from "./town-snapshot";
@@ -94,14 +95,27 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       return townResponse(request, snapshot);
     }
 
+    // Stale snapshot: the manifest cache moved ahead of the town snapshot
+    // (e.g. a bell ring refreshed manifests but the town rebuild/persist step
+    // failed). Rebuild once and persist it as a read-repair so this self-heals
+    // instead of re-crawling GitHub on every subsequent request. The bell is
+    // still the primary writer; this is a bounded recovery path.
     await hydrateManifestCacheFromStore(env.WILLVILLE_MANIFEST_CACHE);
     const stops = await buildTownStops(env.GITHUB_PAT);
-    return townResponse(request, {
+    const generatedAt = new Date().toISOString();
+    const repaired: TownSnapshot = {
       schemaVersion: 1,
-      generatedAt: new Date().toISOString(),
+      generatedAt,
       manifestCachedAt: manifestCachedAt ?? undefined,
       stops,
-    });
+    };
+    await persistTownSnapshot(
+      env.WILLVILLE_MANIFEST_CACHE,
+      generatedAt,
+      manifestCachedAt ?? generatedAt,
+      stops,
+    );
+    return townResponse(request, repaired);
   }
 
   // Cold DB: nothing has rung the bell yet. Build a live snapshot so the first

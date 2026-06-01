@@ -863,11 +863,22 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     router.replace(routeWithCurrentSearch("/"), { scroll: false });
   }, [routeWithCurrentSearch, router]);
 
-  const [boats, setBoats] = useState<CanalBoat[]>(
-    () => readBrowserCanalSnapshot()?.boats ?? [],
-  );
+  const [boats, setBoats] = useState<CanalBoat[]>([]);
   useEffect(() => {
     let cancelled = false;
+    // Instant paint: seed from the browser snapshot on the client (this effect
+    // never runs during SSR, so localStorage access is safe) before the network
+    // round trip resolves. Deferred a tick so the seed doesn't run as a
+    // synchronous setState inside the effect body.
+    const seedTimer = window.setTimeout(() => {
+      if (cancelled) {
+        return;
+      }
+      const seeded = readBrowserCanalSnapshot();
+      if (seeded?.boats.length) {
+        setBoats(seeded.boats);
+      }
+    }, 0);
     const load = () =>
       fetchApiRoute("/api/canal")
         .then((r) => (r.ok ? r.json() : null))
@@ -905,6 +916,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     const interval = window.setInterval(load, 60_000);
     return () => {
       cancelled = true;
+      window.clearTimeout(seedTimer);
       window.clearInterval(interval);
     };
   }, []);
