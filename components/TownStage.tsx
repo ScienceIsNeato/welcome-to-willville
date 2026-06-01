@@ -144,6 +144,63 @@ function writeBrowserTownSnapshot(
   }
 }
 
+const BROWSER_CANAL_CACHE_KEY = "willville:canal:last:v1";
+
+type BrowserCanalSnapshot = {
+  schemaVersion: 1;
+  cachedAt: string;
+  boats: CanalBoat[];
+};
+
+function readBrowserCanalSnapshot(): BrowserCanalSnapshot | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(BROWSER_CANAL_CACHE_KEY);
+    if (!raw) {
+      return null;
+    }
+
+    const parsed = JSON.parse(raw) as Partial<BrowserCanalSnapshot>;
+    if (
+      parsed.schemaVersion !== 1 ||
+      typeof parsed.cachedAt !== "string" ||
+      !Array.isArray(parsed.boats)
+    ) {
+      return null;
+    }
+
+    return {
+      schemaVersion: 1,
+      cachedAt: parsed.cachedAt,
+      boats: parsed.boats as CanalBoat[],
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeBrowserCanalSnapshot(boats: CanalBoat[]): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      BROWSER_CANAL_CACHE_KEY,
+      JSON.stringify({
+        schemaVersion: 1,
+        cachedAt: new Date().toISOString(),
+        boats,
+      } satisfies BrowserCanalSnapshot),
+    );
+  } catch {
+    // Ignore storage errors (private mode/quota) and keep boats rendering.
+  }
+}
+
 /**
  * Persistent SVG stage with viewport camera (pan/zoom) and center HUD for stops.
  */
@@ -796,7 +853,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     router.replace(routeWithCurrentSearch("/"), { scroll: false });
   }, [routeWithCurrentSearch, router]);
 
-  const [boats, setBoats] = useState<CanalBoat[]>([]);
+  const [boats, setBoats] = useState<CanalBoat[]>(
+    () => readBrowserCanalSnapshot()?.boats ?? [],
+  );
   useEffect(() => {
     let cancelled = false;
     const load = () =>
@@ -804,7 +863,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {
           if (!cancelled && data && Array.isArray(data.boats)) {
-            setBoats(data.boats as CanalBoat[]);
+            const incoming = data.boats as CanalBoat[];
+            setBoats(incoming);
+            writeBrowserCanalSnapshot(incoming);
           }
         })
         .catch(() => undefined);
