@@ -1030,9 +1030,27 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       e.stopPropagation();
       if (isRepositionMode) return;
       markSkipDrag();
-      openStopHud(stop);
+      // When hitboxes overlap (e.g. large replacement-underlay stops), SVG
+      // z-order picks the wrong stop. Use distance-to-center to find the
+      // stop whose visual center is actually closest to the click point.
+      const svg = svgRef.current;
+      const snap = getCameraSnapshot();
+      const nearest = svg
+        ? (() => {
+            const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
+            return findStopAt(currentStops, wx, wy, snap.scale) ?? stop;
+          })()
+        : stop;
+      openStopHud(nearest);
     },
-    [isRepositionMode, markSkipDrag, openStopHud],
+    [
+      currentStops,
+      getCameraSnapshot,
+      isRepositionMode,
+      markSkipDrag,
+      openStopHud,
+      svgRef,
+    ],
   );
 
   const handleStopDoubleClick = useCallback(
