@@ -19,11 +19,14 @@ import type { RepoMeta, WillvilleManifest } from "../../lib/town";
 import { heuristicForRepo } from "../../lib/willville.heuristics";
 import { withCorsHeaders } from "./cors";
 import {
+  getManifestCacheCachedAt,
   type ManifestCacheStore,
   persistManifestCacheToStore,
   replaceManifestCache,
   WillvilleManifestClient,
 } from "./town-manifests";
+import { buildTownStops, persistTownSnapshot } from "./town-snapshot";
+import { buildCanalBoats, persistCanalSnapshot } from "./canal-snapshot";
 
 interface Env {
   GITHUB_PAT?: string;
@@ -32,7 +35,6 @@ interface Env {
 
 const OWNER = "ScienceIsNeato";
 const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
-const TOWN_SNAPSHOT_KEY = "willville:town:snapshot:v1";
 
 async function mapLimit<T, R>(
   items: T[],
@@ -326,10 +328,39 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         nextCache,
         env.WILLVILLE_MANIFEST_CACHE,
       );
+
+      // The bell is the town's refresh trigger. Now that the manifest cache is
+      // hot, run the full "huge query" and persist the rich town snapshot
+      // (PR/commit/size/branch/workflow data) so the durable layer holds
+      // everything a first client load needs — instead of deleting it and
+      // forcing the next reader to rebuild from scratch.
       try {
-        await env.WILLVILLE_MANIFEST_CACHE?.delete?.(TOWN_SNAPSHOT_KEY);
+        const stops = await buildTownStops(token);
+        const generatedAt = new Date().toISOString();
+        const manifestCachedAt = getManifestCacheCachedAt() ?? generatedAt;
+        await persistTownSnapshot(
+          env.WILLVILLE_MANIFEST_CACHE,
+          generatedAt,
+          manifestCachedAt,
+          stops,
+        );
       } catch {
-        // Keep bell response healthy even if snapshot invalidation fails.
+        // Keep bell response healthy even if snapshot rebuild fails.
+      }
+
+      // The bell also owns the canal: build the live PR/boat state once here
+      // and persist it so GET /api/canal reads boats straight from the durable
+      // layer instead of crawling GitHub GraphQL on every hard refresh.
+      try {
+        const boats = await buildCanalBoats(token);
+        await persistCanalSnapshot(
+          env.WILLVILLE_MANIFEST_CACHE,
+          new Date().toISOString(),
+          boats,
+          getManifestCacheCachedAt() ?? undefined,
+        );
+      } catch {
+        // Keep bell response healthy even if canal rebuild fails.
       }
 
       push({

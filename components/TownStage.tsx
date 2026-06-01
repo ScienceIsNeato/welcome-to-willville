@@ -67,82 +67,13 @@ import {
   markBellRepoCompletion,
   readManifestProgress,
 } from "./townStageManifestProgress";
-
-const BROWSER_TOWN_CACHE_KEY = "willville:town:last:v1";
-
-type BrowserTownSnapshot = {
-  schemaVersion: 1;
-  cachedAt: string;
-  stops: Stop[];
-};
-
-function parseTimestamp(value: string | undefined): number {
-  if (!value) {
-    return Number.NaN;
-  }
-
-  const parsed = Date.parse(value);
-  return Number.isFinite(parsed) ? parsed : Number.NaN;
-}
-
-function readBrowserTownSnapshot(): BrowserTownSnapshot | null {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  try {
-    const raw = window.localStorage.getItem(BROWSER_TOWN_CACHE_KEY);
-    if (!raw) {
-      return null;
-    }
-
-    const parsed = JSON.parse(raw) as Partial<BrowserTownSnapshot>;
-    if (
-      parsed.schemaVersion !== 1 ||
-      typeof parsed.cachedAt !== "string" ||
-      !Array.isArray(parsed.stops)
-    ) {
-      return null;
-    }
-
-    return {
-      schemaVersion: 1,
-      cachedAt: parsed.cachedAt,
-      stops: parsed.stops as Stop[],
-    };
-  } catch {
-    return null;
-  }
-}
-
-function writeBrowserTownSnapshot(
-  stops: Stop[],
-  options: { cachedAt?: string } = {},
-): void {
-  if (typeof window === "undefined" || stops.length === 0) {
-    return;
-  }
-
-  const incomingCachedAt = options.cachedAt;
-  const cachedAt =
-    typeof incomingCachedAt === "string" &&
-    Number.isFinite(parseTimestamp(incomingCachedAt))
-      ? incomingCachedAt
-      : new Date().toISOString();
-
-  try {
-    window.localStorage.setItem(
-      BROWSER_TOWN_CACHE_KEY,
-      JSON.stringify({
-        schemaVersion: 1,
-        cachedAt,
-        stops,
-      } satisfies BrowserTownSnapshot),
-    );
-  } catch {
-    // Ignore storage errors (private mode/quota) and keep town rendering.
-  }
-}
+import {
+  parseTimestamp,
+  readBrowserCanalSnapshot,
+  readBrowserTownSnapshot,
+  writeBrowserCanalSnapshot,
+  writeBrowserTownSnapshot,
+} from "./townBrowserCache";
 
 /**
  * Persistent SVG stage with viewport camera (pan/zoom) and center HUD for stops.
@@ -573,12 +504,24 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   );
 
   const loadTown = useCallback(
-    (options: { signal?: AbortSignal; fresh?: boolean } = {}) => {
+    (
+      options: {
+        signal?: AbortSignal;
+        fresh?: boolean;
+        bustCache?: boolean;
+      } = {},
+    ) => {
+      // `fresh` forces a server-side live rebuild (?refresh=). `bustCache` only
+      // busts the browser/CDN edge cache with a unique query param the server
+      // ignores — used right after the bell, which already persisted a fresh
+      // snapshot, so we read that instead of triggering a redundant rebuild.
       const url = options.fresh
         ? `/api/town?refresh=${encodeURIComponent(String(Date.now()))}`
-        : "/api/town";
+        : options.bustCache
+          ? `/api/town?t=${encodeURIComponent(String(Date.now()))}`
+          : "/api/town";
       return fetchApiRoute(url, {
-        cache: options.fresh ? "no-store" : "default",
+        cache: options.fresh || options.bustCache ? "no-store" : "default",
         signal: options.signal,
       })
         .then((r) => (r.ok ? r.json() : null))
@@ -633,6 +576,61 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       controller.abort();
     };
   }, [loadTown]);
+
+  const [boats, setBoats] = useState<CanalBoat[]>([]);
+  const hasAppliedApiBoatsRef = useRef(false);
+  const loadCanal = useCallback(
+    (options: { signal?: AbortSignal; fresh?: boolean } = {}) => {
+      const url = options.fresh
+        ? `/api/canal?refresh=${encodeURIComponent(String(Date.now()))}`
+        : "/api/canal";
+      return fetchApiRoute(url, {
+        cache: options.fresh ? "no-store" : "default",
+        signal: options.signal,
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data && Array.isArray(data.boats)) {
+            const incoming = data.boats as CanalBoat[];
+            // A degraded canal response (missing token, cold-DB GraphQL
+            // failure) can return HTTP 200 with an empty boats array and a
+            // fresh generatedAt. Skip it so it doesn't clear the instant-paint
+            // boats or clobber the good browser snapshot — mirrors the town
+            // path, which never persists an empty stops list.
+            if (incoming.length === 0) {
+              return data;
+            }
+            const browserSnapshot = readBrowserCanalSnapshot();
+            const apiGeneratedAt = parseTimestamp(
+              typeof data.generatedAt === "string"
+                ? data.generatedAt
+                : undefined,
+            );
+            const browserCachedAt = parseTimestamp(browserSnapshot?.cachedAt);
+
+            if (
+              Number.isFinite(apiGeneratedAt) &&
+              Number.isFinite(browserCachedAt) &&
+              apiGeneratedAt < browserCachedAt
+            ) {
+              return data;
+            }
+
+            hasAppliedApiBoatsRef.current = true;
+            setBoats(incoming);
+            writeBrowserCanalSnapshot(incoming, {
+              cachedAt:
+                typeof data.generatedAt === "string"
+                  ? data.generatedAt
+                  : undefined,
+            });
+          }
+          return data;
+        })
+        .catch(() => undefined);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (forcedMobileSafeMode !== null) return;
@@ -699,8 +697,13 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
         throw new Error(await getBellErrorDetail(response));
       })
-      .then(() => loadTown({ fresh: true }))
+      .then(() => loadTown({ bustCache: true }))
       .then((data) => {
+        // The bell already persisted fresh town + canal snapshots, so we only
+        // cache-bust (no redundant server rebuild) to read them. Force-refresh
+        // boats too so they update immediately instead of waiting for the 60s
+        // poll or CDN expiry.
+        void loadCanal({ fresh: true });
         const nextStops =
           data && Array.isArray(data.stops)
             ? mergeStops(previousStops, data.stops as Stop[])
@@ -749,7 +752,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           populateResetTimerRef.current = null;
         }, 4000);
       });
-  }, [currentStops, loadTown, populating]);
+  }, [currentStops, loadCanal, loadTown, populating]);
 
   const handleEasterEgg = useCallback(() => {
     if (boardAnnouncementTimerRef.current !== null) {
@@ -796,26 +799,39 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     router.replace(routeWithCurrentSearch("/"), { scroll: false });
   }, [routeWithCurrentSearch, router]);
 
-  const [boats, setBoats] = useState<CanalBoat[]>([]);
   useEffect(() => {
     let cancelled = false;
-    const load = () =>
-      fetchApiRoute("/api/canal")
-        .then((r) => (r.ok ? r.json() : null))
-        .then((data) => {
-          if (!cancelled && data && Array.isArray(data.boats)) {
-            setBoats(data.boats as CanalBoat[]);
-          }
-        })
-        .catch(() => undefined);
-    load();
+    const controller = new AbortController();
+    // Instant paint: seed from the browser snapshot on the client (this effect
+    // never runs during SSR, so localStorage access is safe) before the network
+    // round trip resolves. Deferred a tick so the seed doesn't run as a
+    // synchronous setState inside the effect body.
+    const seedTimer = window.setTimeout(() => {
+      if (cancelled || hasAppliedApiBoatsRef.current) {
+        // The network already applied fresher boats; don't paint stale cache
+        // over them (mirrors hasAppliedApiStopsRef on the town path).
+        return;
+      }
+      const seeded = readBrowserCanalSnapshot();
+      if (seeded?.boats.length) {
+        setBoats(seeded.boats);
+      }
+    }, 0);
+    loadCanal({ signal: controller.signal });
     // Re-poll so boats shift locks as CI, threads, and buff rounds change.
-    const interval = window.setInterval(load, 60_000);
+    const interval = window.setInterval(
+      () => loadCanal({ signal: controller.signal }),
+      60_000,
+    );
     return () => {
       cancelled = true;
+      // Abort in-flight fetches so a late /api/canal response can't setBoats
+      // after unmount (the cancelled flag only guards the deferred seed timer).
+      controller.abort();
+      window.clearTimeout(seedTimer);
       window.clearInterval(interval);
     };
-  }, []);
+  }, [loadCanal]);
 
   useEffect(() => {
     const initial = window.setTimeout(() => setNow(Date.now()), 0);
