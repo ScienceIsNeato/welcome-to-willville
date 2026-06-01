@@ -45,9 +45,32 @@ const OPEN_SEA_RING_SPACING = 108;
 const OPEN_SEA_HALF_SPAN = 0.85;
 const OPEN_SEA_ZONE_HOURS = 24;
 const OPEN_SEA_MAX_ZONE = 7;
-// Per-boat offset within a same-repo cluster, so they overlap in a tight stack.
-const OPEN_SEA_GROUP_OFFSET_X = 16;
-const OPEN_SEA_GROUP_OFFSET_Y = 11;
+// Clusters fill the center (0°, straight out of the bay) first and only fan to
+// the sides as more pile up — this is the angle between adjacent cluster centers.
+const OPEN_SEA_CLUSTER_ANGLE_STEP = 0.32;
+// Same-repo boats scatter into a loose overlapping clump (a mini-armada) instead
+// of a regular stamped line: golden-angle packing plus a seeded jitter.
+const GOLDEN_ANGLE = 2.399963;
+const OPEN_SEA_CLUSTER_STEP = 22;
+const OPEN_SEA_CLUSTER_JITTER = 16;
+
+// Tiny deterministic hash + PRNG so each boat's jitter is stable across renders
+// (no hydration mismatch) but looks random.
+function seaHash(key: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) {
+    h ^= key.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function seaRand(seed: number): number {
+  let x = seed || 1;
+  x ^= x << 13;
+  x ^= x >>> 17;
+  x ^= x << 5;
+  return ((x >>> 0) % 1000000) / 1000000;
+}
 
 export function Canal({ boats, layer = "all" }: Props) {
   // Age zones are wall-clock based, so re-tick occasionally.
@@ -91,16 +114,18 @@ export function Canal({ boats, layer = "all" }: Props) {
     const zoneBoats = new Map<number, CanalBoat[]>();
     for (const b of openSeaBoats) {
       const ageHours = (referenceTime - timeOf(b)) / (1000 * 60 * 60);
+      // Clamp to the outermost rendered ring index. Rings are generated with
+      // indices 0..OPEN_SEA_MAX_ZONE-1, so a boat aged past the window must
+      // land on the last ring rather than beyond it.
       const z = Math.min(
-        OPEN_SEA_MAX_ZONE,
+        OPEN_SEA_MAX_ZONE - 1,
         Math.max(0, Math.floor(ageHours / OPEN_SEA_ZONE_HOURS)),
       );
       if (!zoneBoats.has(z)) zoneBoats.set(z, []);
       zoneBoats.get(z)!.push(b);
     }
 
-    const minAngle = OPEN_SEA_BOAT_ARC_CENTER - OPEN_SEA_HALF_SPAN;
-    const span = 2 * OPEN_SEA_HALF_SPAN;
+    const halfSpan = OPEN_SEA_HALF_SPAN;
 
     for (const [z, boatsInZone] of zoneBoats) {
       const radius = OPEN_SEA_INNER_RADIUS + z * OPEN_SEA_RING_SPACING;
@@ -111,24 +136,39 @@ export function Canal({ boats, layer = "all" }: Props) {
         if (!repoGroups.has(b.repo)) repoGroups.set(b.repo, []);
         repoGroups.get(b.repo)!.push(b);
       }
-      // Order clusters along the arc by their newest boat for a stable layout.
+      // Newest cluster first — it takes the center channel; the rest fan outward.
       const clusters = [...repoGroups.values()].sort(
         (a, b) => Math.max(...b.map(timeOf)) - Math.max(...a.map(timeOf)),
       );
 
       clusters.forEach((cluster, ci) => {
-        const frac = clusters.length > 1 ? ci / (clusters.length - 1) : 0.5;
-        const theta = minAngle + frac * span;
+        // Center-out placement: 0 → dead center (0°, straight out of the bay),
+        // then alternate to either side so the middle fills before the edges.
+        const rank = Math.ceil(ci / 2) * (ci % 2 === 1 ? 1 : -1);
+        const theta = Math.max(
+          OPEN_SEA_BOAT_ARC_CENTER - halfSpan,
+          Math.min(
+            OPEN_SEA_BOAT_ARC_CENTER + halfSpan,
+            OPEN_SEA_BOAT_ARC_CENTER + rank * OPEN_SEA_CLUSTER_ANGLE_STEP,
+          ),
+        );
         const gx = cx + radius * Math.cos(theta);
         const gy = cy + radius * Math.sin(theta);
 
-        // Same-repo boats overlap in a tight stack, oldest at the back.
+        // Scatter same-repo boats into a loose overlapping clump (mini-armada).
         cluster
           .sort((a, b) => timeOf(a) - timeOf(b))
           .forEach((boat, bi) => {
+            const seed = seaHash(`${boat.repo}-${boat.prNumber}`);
+            const jitterA = seaRand(seed);
+            const jitterD = seaRand(seed ^ 0x9e3779b9);
+            const a = bi * GOLDEN_ANGLE + jitterA * 0.9;
+            const d =
+              OPEN_SEA_CLUSTER_STEP * Math.sqrt(bi) +
+              (jitterD - 0.5) * OPEN_SEA_CLUSTER_JITTER;
             positions.set(`${boat.repo}-${boat.prNumber}`, {
-              x: gx + bi * OPEN_SEA_GROUP_OFFSET_X,
-              y: gy + bi * OPEN_SEA_GROUP_OFFSET_Y,
+              x: gx + Math.cos(a) * d,
+              y: gy + Math.sin(a) * d,
             });
           });
       });
