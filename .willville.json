@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "More review polish: the town now heals itself after a half-finished refresh instead of re-fetching everything on every visit, and the boats' instant-paint kicks in reliably on the very first load. Tidying the last review notes before going live",
+    "status": "Restored the 'force a fresh rebuild' shortcut so that when you tweak where a building sits and accept it, the change shows up right away instead of waiting for the next big refresh. Clearing the last review note before going live",
     "direction": "Final review polish, then shipping to production",
-    "last_update": "2026-06-01T08:10:00Z"
+    "last_update": "2026-06-01T08:40:00Z"
   }
 }

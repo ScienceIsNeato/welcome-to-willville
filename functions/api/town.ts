@@ -81,11 +81,53 @@ function townResponse(request: Request, snapshot: TownSnapshot): Response {
   );
 }
 
+/**
+ * Run the live "huge query" town build, persist it as the durable snapshot
+ * (read-repair / explicit-refresh path), and return it. Persisting keeps the
+ * refresh self-healing — a forced rebuild fixes the stored snapshot so later
+ * reads serve a fixed result instead of re-crawling GitHub on every request.
+ */
+async function rebuildAndPersistTownSnapshot(
+  env: Env,
+  manifestCachedAt: string | null,
+): Promise<TownSnapshot> {
+  await hydrateManifestCacheFromStore(env.WILLVILLE_MANIFEST_CACHE);
+  const stops = await buildTownStops(env.GITHUB_PAT);
+  const generatedAt = new Date().toISOString();
+  await persistTownSnapshot(
+    env.WILLVILLE_MANIFEST_CACHE,
+    generatedAt,
+    manifestCachedAt ?? generatedAt,
+    stops,
+  );
+  return {
+    schemaVersion: 1,
+    generatedAt,
+    manifestCachedAt: manifestCachedAt ?? undefined,
+    stops,
+  };
+}
+
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
-  // Read the bell-written snapshot. The bell is the sole writer, so this handler
-  // never persists — but it does guard against a snapshot that fell behind the
-  // manifest cache (e.g. a bell ring updated manifests but the town rebuild
-  // failed). A stale snapshot is rebuilt live and served without persisting.
+  // An explicit ?refresh= cache-buster (used by the bell flow and the repaint
+  // accept flow) forces a live rebuild so freshly-updated heuristics land in
+  // the durable snapshot immediately instead of waiting for the next bell ring.
+  const wantsRefresh = new URL(request.url).searchParams.has("refresh");
+  if (wantsRefresh) {
+    const manifestCachedAt = await readPersistedManifestCacheCachedAt(
+      env.WILLVILLE_MANIFEST_CACHE,
+    );
+    return townResponse(
+      request,
+      await rebuildAndPersistTownSnapshot(env, manifestCachedAt),
+    );
+  }
+
+  // Read the bell-written snapshot. The bell is the primary writer, so this
+  // handler avoids rebuilding on read — but it does guard against a snapshot
+  // that fell behind the manifest cache (e.g. a bell ring updated manifests but
+  // the town rebuild/persist failed). A stale snapshot is rebuilt and persisted
+  // once as a read-repair so it self-heals instead of re-crawling every request.
   const snapshot = await readTownSnapshot(env.WILLVILLE_MANIFEST_CACHE);
   if (snapshot) {
     const manifestCachedAt = await readPersistedManifestCacheCachedAt(
@@ -95,27 +137,10 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       return townResponse(request, snapshot);
     }
 
-    // Stale snapshot: the manifest cache moved ahead of the town snapshot
-    // (e.g. a bell ring refreshed manifests but the town rebuild/persist step
-    // failed). Rebuild once and persist it as a read-repair so this self-heals
-    // instead of re-crawling GitHub on every subsequent request. The bell is
-    // still the primary writer; this is a bounded recovery path.
-    await hydrateManifestCacheFromStore(env.WILLVILLE_MANIFEST_CACHE);
-    const stops = await buildTownStops(env.GITHUB_PAT);
-    const generatedAt = new Date().toISOString();
-    const repaired: TownSnapshot = {
-      schemaVersion: 1,
-      generatedAt,
-      manifestCachedAt: manifestCachedAt ?? undefined,
-      stops,
-    };
-    await persistTownSnapshot(
-      env.WILLVILLE_MANIFEST_CACHE,
-      generatedAt,
-      manifestCachedAt ?? generatedAt,
-      stops,
+    return townResponse(
+      request,
+      await rebuildAndPersistTownSnapshot(env, manifestCachedAt),
     );
-    return townResponse(request, repaired);
   }
 
   // Cold DB: nothing has rung the bell yet. Build a live snapshot so the first
