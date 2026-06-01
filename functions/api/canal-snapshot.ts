@@ -23,6 +23,7 @@ export const CANAL_SNAPSHOT_KEY = "willville:canal:snapshot:v1";
 export type CanalSnapshot = {
   schemaVersion: 1;
   generatedAt: string;
+  manifestCachedAt?: string;
   boats: CanalBoat[];
 };
 
@@ -257,9 +258,15 @@ export function parseCanalSnapshot(raw: unknown): CanalSnapshot | undefined {
     return undefined;
   }
 
+  const manifestCachedAt =
+    typeof candidate.manifestCachedAt === "string"
+      ? candidate.manifestCachedAt
+      : undefined;
+
   return {
     schemaVersion: 1,
     generatedAt: candidate.generatedAt,
+    manifestCachedAt,
     boats: candidate.boats as CanalBoat[],
   };
 }
@@ -283,6 +290,7 @@ export async function persistCanalSnapshot(
   store: ManifestCacheStore | undefined,
   generatedAt: string,
   boats: CanalBoat[],
+  manifestCachedAt?: string,
 ): Promise<void> {
   if (!store) {
     return;
@@ -296,6 +304,7 @@ export async function persistCanalSnapshot(
       JSON.stringify({
         schemaVersion: 1,
         generatedAt,
+        manifestCachedAt,
         boats,
       } satisfies CanalSnapshot),
     );

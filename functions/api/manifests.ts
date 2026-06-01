@@ -357,6 +357,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
           env.WILLVILLE_MANIFEST_CACHE,
           new Date().toISOString(),
           boats,
+          getManifestCacheCachedAt() ?? undefined,
         );
       } catch {
         // Keep bell response healthy even if canal rebuild fails.

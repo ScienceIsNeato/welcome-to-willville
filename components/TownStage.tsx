@@ -864,6 +864,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   }, [routeWithCurrentSearch, router]);
 
   const [boats, setBoats] = useState<CanalBoat[]>([]);
+  const hasAppliedApiBoatsRef = useRef(false);
   useEffect(() => {
     let cancelled = false;
     // Instant paint: seed from the browser snapshot on the client (this effect
@@ -871,7 +872,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     // round trip resolves. Deferred a tick so the seed doesn't run as a
     // synchronous setState inside the effect body.
     const seedTimer = window.setTimeout(() => {
-      if (cancelled) {
+      if (cancelled || hasAppliedApiBoatsRef.current) {
+        // The network already applied fresher boats; don't paint stale cache
+        // over them (mirrors hasAppliedApiStopsRef on the town path).
         return;
       }
       const seeded = readBrowserCanalSnapshot();
@@ -901,6 +904,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               return;
             }
 
+            hasAppliedApiBoatsRef.current = true;
             setBoats(incoming);
             writeBrowserCanalSnapshot(incoming, {
               cachedAt:
