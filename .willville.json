@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Made the town hold steady if a refresh hiccups by falling back to the last saved version, and taught the boats to ignore an empty update so they don't blink out. Clearing the final review notes",
+    "status": "Made the freshness check smarter so older saved versions of the town and canal still get refreshed instead of getting stuck. Working through the last review note",
     "direction": "Final review polish, then shipping to production",
-    "last_update": "2026-06-01T10:45:00Z"
+    "last_update": "2026-06-01T11:05:00Z"
   }
 }

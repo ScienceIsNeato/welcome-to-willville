@@ -61,7 +61,12 @@ function isCanalSnapshotStale(
   manifestCachedAt: string | null,
 ): boolean {
   const manifestTime = parseTimestamp(manifestCachedAt);
-  const snapshotManifestTime = parseTimestamp(snapshot.manifestCachedAt);
+  // Older KV rows persisted before manifestCachedAt existed fall back to
+  // generatedAt so they can still qualify for read-repair instead of being
+  // treated as permanently fresh.
+  const snapshotManifestTime = parseTimestamp(
+    snapshot.manifestCachedAt ?? snapshot.generatedAt,
+  );
 
   if (
     !Number.isFinite(manifestTime) ||
