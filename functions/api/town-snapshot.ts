@@ -1,17 +1,16 @@
 /**
  * Shared town-snapshot builder + durable persistence.
  *
- * Both the read path (GET /api/town) and the bell (POST /api/manifests) need to
- * run the same "huge query" against GitHub (repos, milestones, commit counts,
- * branches, PR/release signals, workflow runs) and fold the result into the
- * flat Stop[] the SVG layer renders.
+ * The bell (POST /api/manifests) is the sole writer of the town snapshot. It
+ * runs the "huge query" against GitHub (repos, milestones, commit counts,
+ * branches, PR/release signals, workflow runs), folds the result into the flat
+ * Stop[] the SVG layer renders, and persists it here. The read path
+ * (GET /api/town) only ever reads this snapshot — it never rebuilds-on-read or
+ * writes to the DB.
  *
- * Previously this lived only in the GET handler, so the bell could refresh the
- * `.willville.json` packet cache but never persisted the rich repo data. The
- * bell would instead *delete* the snapshot, forcing the next reader to rebuild
- * it lazily. This module lets the bell build + persist the full snapshot so the
- * durable layer holds everything we query — PR info, commit info, size, etc. —
- * as a ready default for the first client load after a cold start.
+ * The snapshot is stored without a TTL, so it survives until the next bell ring
+ * overwrites it: ringing the bell from any client refreshes the durable data
+ * for every future session.
  */
 
 import {
@@ -30,14 +29,6 @@ const OWNER = "ScienceIsNeato";
 const TWO_YEARS_MS = 2 * 365 * 24 * 60 * 60 * 1000;
 
 export const TOWN_SNAPSHOT_KEY = "willville:town:snapshot:v1";
-/**
- * Durable TTL so the full snapshot survives server restarts as a default,
- * matching the 7-day packet cache. Live freshness is governed by the
- * generatedAt age check (see SNAPSHOT_FRESH_MS), not TTL expiry.
- */
-export const TOWN_SNAPSHOT_TTL_SECONDS = 60 * 60 * 24 * 7;
-/** Rebuild live GitHub data when the stored snapshot is older than this. */
-export const SNAPSHOT_FRESH_MS = 15 * 60 * 1000;
 
 export type TownSnapshot = {
   schemaVersion: 1;
@@ -77,37 +68,6 @@ export function parseTownSnapshot(raw: unknown): TownSnapshot | undefined {
   };
 }
 
-export function snapshotBaselineCachedAt(snapshot: TownSnapshot): number {
-  const basis = snapshot.manifestCachedAt ?? snapshot.generatedAt;
-  const parsed = Date.parse(basis);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-/** A snapshot is fresh only if neither the manifest cache nor age has moved. */
-export function isTownSnapshotStale(
-  snapshot: TownSnapshot,
-  manifestCachedAt: string | null,
-): boolean {
-  const generatedParsed = Date.parse(snapshot.generatedAt);
-  if (
-    Number.isFinite(generatedParsed) &&
-    Date.now() - generatedParsed > SNAPSHOT_FRESH_MS
-  ) {
-    return true;
-  }
-
-  if (!manifestCachedAt) {
-    return false;
-  }
-
-  const manifestParsed = Date.parse(manifestCachedAt);
-  if (!Number.isFinite(manifestParsed)) {
-    return false;
-  }
-
-  return manifestParsed > snapshotBaselineCachedAt(snapshot);
-}
-
 export async function readTownSnapshot(
   store?: ManifestCacheStore,
 ): Promise<TownSnapshot | undefined> {
@@ -138,6 +98,8 @@ export async function persistTownSnapshot(
   }
 
   try {
+    // No TTL: the snapshot is owned by the bell and persists until the next
+    // ring overwrites it, so a quiet town never expires back to a blank DB.
     await store.put(
       TOWN_SNAPSHOT_KEY,
       JSON.stringify({
@@ -146,9 +108,6 @@ export async function persistTownSnapshot(
         manifestCachedAt,
         stops,
       } satisfies TownSnapshot),
-      {
-        expirationTtl: TOWN_SNAPSHOT_TTL_SECONDS,
-      },
     );
   } catch {
     // Keep API available even if durable cache writes fail.

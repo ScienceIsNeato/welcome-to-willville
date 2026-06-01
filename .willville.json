@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Teaching the bell to save the whole town when it rings — all the PR, commit, size, and branch details — so the very first person to load the site after a restart sees the real, full picture instead of a blank slate",
+    "status": "Made the bell the only thing that ever updates the saved town. Loading the page just shows the last saved snapshot instantly — no more re-checking GitHub on every visit. Whoever rings the bell refreshes the picture for everyone who comes after",
     "direction": "Wrapping up the data plumbing ahead of the big production release",
-    "last_update": "2026-06-01T06:00:00Z"
+    "last_update": "2026-06-01T06:15:00Z"
   }
 }
