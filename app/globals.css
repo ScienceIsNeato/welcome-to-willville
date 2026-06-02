@@ -359,6 +359,28 @@ body {
   }
 }
 
+/*
+ * Perf: the district borders animate forever, and each `will-change` hint pins a
+ * standing compositor layer the GPU has to recomposite every camera frame. On
+ * phones (mobile-safe mode) hold them static and drop the layer hint; on any
+ * device, pause the decorative dash/smoke animations while the camera is being
+ * actively dragged so the compositor isn't repainting them mid-interaction.
+ *
+ * Note: we measured fully hiding the outlines on mobile too — it added only ~7%
+ * avg fps and didn't reduce dropped/long frames, so the freeze stays and the
+ * borders remain visible. The remaining stutter floor is the world transform.
+ */
+.willville-stage--mobile-safe .district-zone-border-dash {
+  animation: none;
+  will-change: auto;
+  opacity: 0.6;
+}
+
+.willville-stage--interacting .district-zone-border-dash,
+.willville-stage--interacting .smoke-puff-anim {
+  animation-play-state: paused;
+}
+
 @keyframes dynamic-wall-dash-left {
   from {
     stroke-dashoffset: var(--dash-start, 0);
