@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Made the freshness check smarter so older saved versions of the town and canal still get refreshed instead of getting stuck. Working through the last review note",
-    "direction": "Final review polish, then shipping to production",
-    "last_update": "2026-06-01T11:05:00Z"
+    "status": "Adding a guest book to the town forum board so visitors passing through can sign in and leave whatever note they want",
+    "direction": "Get the open logbook live so messages stick around for everyone who visits next",
+    "last_update": "2026-06-02T00:10:00Z"
   }
 }
