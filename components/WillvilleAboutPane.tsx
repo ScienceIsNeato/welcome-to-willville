@@ -1,3 +1,5 @@
+import { WillvilleGuestbook } from "./WillvilleGuestbook";
+
 type Props = {
   panelOpacity?: number;
   onClose: () => void;
@@ -369,6 +371,8 @@ export function WillvilleAboutPane({ panelOpacity = 1, onClose }: Props) {
           </a>
         ))}
       </div>
+
+      <WillvilleGuestbook />
     </section>
   );
 }
