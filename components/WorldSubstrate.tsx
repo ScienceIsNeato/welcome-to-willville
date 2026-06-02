@@ -6,7 +6,7 @@ import {
 import { TOWN_OFFSET, WORLD } from "@/lib/willville";
 
 const LANDSCAPE_ART =
-  "/art/town/willville-landscape-v1.png?v=isthmus-coastline-20260526";
+  "/art/town/willville-landscape-v1.webp?v=landscape-webp-20260602";
 const WATER_TILE = "/art/town/willville-water-tile-v1.png?v=ocean-256-20260526";
 
 export function WorldSubstrate() {

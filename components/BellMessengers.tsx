@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { Stop } from "@/lib/town";
 import { GENERATED_TOWN_LAYOUT } from "@/lib/town-layout";
 import { makeNoiseBuffer } from "@/lib/audio-noise";
@@ -200,8 +200,16 @@ export function BellMessengers({
     [messengers.length],
   );
 
-  const [frameTime, setFrameTime] = useState(0);
   const audioRef = useRef<BellAudioSession | null>(null);
+
+  // Each messenger contributes at most one core particle plus up to MAX_PR_SPARKS
+  // trailing sparks, so a fixed-size pool can hold every particle the swarm can
+  // ever show at once. We render the pool once and drive position/size/opacity
+  // imperatively in the rAF loop below — no per-frame React state, no re-render.
+  const maxSlots = messengers.length * (1 + MAX_PR_SPARKS);
+  const slotGroupRefs = useRef<(SVGGElement | null)[]>([]);
+  const slotHaloRefs = useRef<(SVGCircleElement | null)[]>([]);
+  const slotCoreRefs = useRef<(SVGCircleElement | null)[]>([]);
   const animationEndTime = useMemo(() => {
     if (phase !== "done" || startedAt === null) {
       return null;
@@ -228,9 +236,51 @@ export function BellMessengers({
       return;
     }
 
+    const start = startedAt;
+    const applyFrame = (timestamp: number) => {
+      const elapsed = Math.max(0, (timestamp - start) / 1000);
+      const particles = messengers.flatMap((messenger, index) =>
+        particleForMessenger({
+          messenger,
+          index,
+          stagger,
+          elapsed,
+          startedAt: start,
+          completedAt: completedAtByStopId[messenger.stopId],
+        }),
+      );
+
+      const slots = slotGroupRefs.current.length;
+      for (let i = 0; i < slots; i += 1) {
+        const group = slotGroupRefs.current[i];
+        if (!group) continue;
+        const particle = particles[i];
+        if (!particle) {
+          if (group.style.display !== "none") {
+            group.style.display = "none";
+          }
+          continue;
+        }
+        group.style.display = "";
+        group.setAttribute("transform", `translate(${particle.x} ${particle.y})`);
+        const halo = slotHaloRefs.current[i];
+        if (halo) {
+          halo.setAttribute("r", String(particle.radius * 1.95));
+          halo.setAttribute("fill", particle.color);
+          halo.setAttribute("opacity", String(particle.opacity * 0.16));
+        }
+        const core = slotCoreRefs.current[i];
+        if (core) {
+          core.setAttribute("r", String(particle.radius));
+          core.setAttribute("fill", particle.color);
+          core.setAttribute("opacity", String(particle.opacity));
+        }
+      }
+    };
+
     let raf = 0;
     const tick = (timestamp: number) => {
-      setFrameTime(timestamp);
+      applyFrame(timestamp);
       if (animationEndTime !== null && timestamp >= animationEndTime) {
         return;
       }
@@ -241,7 +291,14 @@ export function BellMessengers({
     return () => {
       window.cancelAnimationFrame(raf);
     };
-  }, [animationEndTime, phase, startedAt]);
+  }, [
+    animationEndTime,
+    completedAtByStopId,
+    messengers,
+    phase,
+    stagger,
+    startedAt,
+  ]);
 
   useEffect(() => {
     if (phase !== "running" || startedAt === null || messengers.length === 0) {
@@ -315,25 +372,7 @@ export function BellMessengers({
     [],
   );
 
-  const activeParticles = useMemo(() => {
-    if (phase === "error" || startedAt === null) {
-      return [];
-    }
-
-    const elapsed = Math.max(0, (frameTime - startedAt) / 1000);
-    return messengers.flatMap((messenger, index) =>
-      particleForMessenger({
-        messenger,
-        index,
-        stagger,
-        elapsed,
-        startedAt,
-        completedAt: completedAtByStopId[messenger.stopId],
-      }),
-    );
-  }, [completedAtByStopId, frameTime, messengers, phase, stagger, startedAt]);
-
-  if (phase === "error" || activeParticles.length === 0) {
+  if (phase === "error" || startedAt === null || maxSlots === 0) {
     return null;
   }
 
@@ -359,21 +398,24 @@ export function BellMessengers({
         </filter>
       </defs>
 
-      {activeParticles.map((particle) => (
+      {Array.from({ length: maxSlots }, (_, slot) => (
         <g
-          key={particle.key}
-          transform={`translate(${particle.x} ${particle.y})`}
+          key={slot}
+          ref={(el) => {
+            slotGroupRefs.current[slot] = el;
+          }}
           filter="url(#bell-messenger-glow)"
+          style={{ display: "none" }}
         >
           <circle
-            r={particle.radius * 1.95}
-            fill={particle.color}
-            opacity={particle.opacity * 0.16}
+            ref={(el) => {
+              slotHaloRefs.current[slot] = el;
+            }}
           />
           <circle
-            r={particle.radius}
-            fill={particle.color}
-            opacity={particle.opacity}
+            ref={(el) => {
+              slotCoreRefs.current[slot] = el;
+            }}
           />
         </g>
       ))}

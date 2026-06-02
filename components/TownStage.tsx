@@ -1162,6 +1162,14 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   return (
     <div
       id="willville-stage"
+      className={
+        [
+          mobileSafeMode ? "willville-stage--mobile-safe" : "",
+          isDragging ? "willville-stage--interacting" : "",
+        ]
+          .filter(Boolean)
+          .join(" ") || undefined
+      }
       style={{
         position: "relative",
         display: "grid",
