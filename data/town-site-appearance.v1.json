@@ -175,7 +175,16 @@
       "underlay": {
         "enabled": true,
         "src": "/art/town/glyph-halos/rizldizl.png",
-        "cacheKey": "auto-v1-1780223655694"
+        "cacheKey": "auto-v1-1780223655695"
+      }
+    },
+    {
+      "stopId": "queueit",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/queueit.png",
+        "cacheKey": "auto-v1-1780484232160"
       }
     }
   ]

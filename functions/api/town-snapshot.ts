@@ -14,7 +14,12 @@
  */
 
 import {
+  allyContributorLogin,
+  allyEntries,
+  buildAllyStops,
   buildTown,
+  type AllyInput,
+  type Contribution,
   type GitHubWorkflowRun,
   type RepoMeta,
   type Stop,
@@ -583,6 +588,176 @@ async function fetchRecentBranches(
   }
 }
 
+function githubHeaders(token?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    "User-Agent": "willville-edge",
+    Accept: "application/vnd.github+json",
+  };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return headers;
+}
+
+/** Fetch a single repo's metadata by full name (for ally repos we don't own). */
+async function fetchSingleRepo(
+  fullName: string,
+  token?: string,
+): Promise<GitHubRepo | undefined> {
+  try {
+    const r = await fetch(`https://api.github.com/repos/${fullName}`, {
+      headers: githubHeaders(token),
+    });
+    if (!r.ok) return undefined;
+    return (await r.json()) as GitHubRepo;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * My contribution footprint in an ally repo: commits I authored (capped at one
+ * page) and PRs I opened (open + merged, via the Search API).
+ */
+async function fetchContribution(
+  fullName: string,
+  login: string,
+  token?: string,
+): Promise<Contribution> {
+  const headers = githubHeaders(token);
+  const result: Contribution = { login };
+
+  try {
+    const r = await fetch(
+      `https://api.github.com/repos/${fullName}/commits?author=${encodeURIComponent(login)}&per_page=100`,
+      { headers },
+    );
+    if (r.ok) {
+      const batch = (await r.json()) as Array<{
+        commit?: {
+          author?: { date?: string | null } | null;
+          committer?: { date?: string | null } | null;
+        } | null;
+      }>;
+      if (Array.isArray(batch)) {
+        result.commits = batch.length;
+        const latest =
+          batch[0]?.commit?.author?.date ?? batch[0]?.commit?.committer?.date;
+        if (latest) result.lastCommitAt = latest;
+      }
+    }
+  } catch {
+    // leave commits undefined
+  }
+
+  const prCount = async (qualifier: string): Promise<number | undefined> => {
+    try {
+      const q = `repo:${fullName} type:pr author:${login} ${qualifier}`;
+      const r = await fetch(
+        `https://api.github.com/search/issues?q=${encodeURIComponent(q)}&per_page=1`,
+        { headers },
+      );
+      if (!r.ok) return undefined;
+      const data = (await r.json()) as { total_count?: number };
+      return typeof data.total_count === "number"
+        ? data.total_count
+        : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+
+  result.openPrs = await prCount("state:open");
+  result.mergedPrs = await prCount("is:merged");
+  return result;
+}
+
+/**
+ * Fetch the curated ally repos (Ally Alley) — same repo-health signals as owned
+ * repos, plus my contribution footprint. Keyed by config index so each isle's
+ * position stays stable even if a fetch fails.
+ */
+async function buildAllyInputs(token?: string): Promise<AllyInput[]> {
+  const entries = allyEntries();
+  if (entries.length === 0) return [];
+  const login = allyContributorLogin();
+
+  const inputs = await mapLimit(
+    entries,
+    4,
+    async (entry): Promise<AllyInput | null> => {
+      const index = entries.indexOf(entry);
+      const fullName = entry.repo;
+      const repo = await fetchSingleRepo(fullName, token);
+      if (!repo) return null;
+      const [owner, name] = fullName.split("/") as [string, string];
+
+      const [
+        milestones,
+        commitCounts,
+        branchResult,
+        repoSignals,
+        workflowRuns,
+        contribution,
+      ] = await Promise.all([
+        fetchMilestones(owner, name, token),
+        fetchCommitCounts(repo.full_name, token),
+        fetchRecentBranches(repo.full_name, repo.default_branch, token),
+        fetchRepoSignals(owner, name, token),
+        fetchWorkflowRuns(repo.full_name, token),
+        fetchContribution(repo.full_name, login, token),
+      ]);
+
+      const meta: RepoMeta = {
+        repo: repo.full_name,
+        source: "ally",
+        isPrivate: repo.private,
+        isFork: repo.fork,
+        isArchived: repo.archived,
+        pushedAt: repo.pushed_at,
+        createdAt: repo.created_at,
+        defaultBranch: repo.default_branch,
+        homepage: repo.homepage ?? undefined,
+        description: repo.description ?? undefined,
+        topics: repo.topics ?? [],
+        sizeKb: repo.size > 0 ? repo.size : undefined,
+        totalCommits: repoSignals?.totalCommits,
+        openMilestones: milestones.map((m) => ({
+          title: m.title,
+          dueOn: m.due_on,
+          openIssues: m.open_issues,
+        })),
+        openIssuesCount: Math.max(
+          0,
+          repo.open_issues_count - (repoSignals?.openPrCount ?? 0),
+        ),
+        stars: repo.stargazers_count,
+        language: repo.language ?? undefined,
+        openPrCount: repoSignals?.openPrCount,
+        branchCount: repoSignals?.branchCount,
+        commits3d: commitCounts?.d3,
+        commits7d: commitCounts?.d7,
+        commits21d: commitCounts?.d21,
+        lastCommitAt: commitCounts?.latestCommitAt,
+        lastMergeAt: repoSignals?.lastMergeAt,
+        latestRelease: repoSignals?.latestRelease,
+        activeBranch: branchResult.activeBranch,
+        recentCommits: commitCounts?.recentCommits,
+        workflowRuns,
+        contribution,
+      };
+
+      return {
+        meta,
+        index,
+        displayName: entry.displayName,
+        blurb: entry.blurb,
+        position: entry.position,
+      } satisfies AllyInput;
+    },
+  );
+
+  return inputs.filter((input): input is AllyInput => input !== null);
+}
+
 /**
  * Runs the full "huge query" and folds repo metadata into Stop[].
  *
@@ -655,5 +830,7 @@ export async function buildTownStops(token?: string): Promise<Stop[]> {
     };
   });
 
-  return buildTown(repoMetas);
+  const ownerStops = buildTown(repoMetas);
+  const allyStops = buildAllyStops(await buildAllyInputs(token));
+  return [...ownerStops, ...allyStops];
 }

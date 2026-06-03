@@ -345,11 +345,14 @@ function validatePlacementPayload(body) {
         .filter((line) => line.length > 0)
     : [];
 
+  const source = body.source === "ally" ? "ally" : "owned";
+
   return {
     change,
     repo: body.repo.trim(),
     displayName,
     lines,
+    source,
   };
 }
 
@@ -507,6 +510,23 @@ function rewriteHeuristicPlacement(source, { repo, displayName, lines, to }) {
   );
 }
 
+// Ally Alley stops are sourced from data/ally-alley.v1.json, not the heuristics
+// file. Writing a heuristic entry for them would double-source the repo and
+// duplicate the stop, so their placement is persisted as a `position` on the
+// ally config entry instead. District is left alone — allies live in ally-alley.
+function rewriteAllyPlacement(source, { repo, to }) {
+  const config = JSON.parse(source);
+  const allies = Array.isArray(config.allies) ? config.allies : [];
+  const entry = allies.find((ally) => ally && ally.repo === repo);
+  if (!entry) {
+    throw new Error(
+      `No ally entry found for ${repo} in data/ally-alley.v1.json.`,
+    );
+  }
+  entry.position = { x: to.x, y: to.y };
+  return `${JSON.stringify(config, null, 2)}\n`;
+}
+
 async function acceptPlacementJob() {
   const state = await readState();
   const job = state.activePlacement;
@@ -514,17 +534,28 @@ async function acceptPlacementJob() {
     throw new Error("No staged site change is waiting for review.");
   }
 
-  const heuristicsPath = resolve(root, "lib/willville.heuristics.ts");
-  const before = await readFile(heuristicsPath, "utf8");
-  const after = rewriteHeuristicPlacement(before, {
-    repo: job.repo,
-    displayName: job.displayName,
-    lines: job.lines,
-    to: job.change.to,
-  });
-
-  if (after !== before) {
-    await writeFile(heuristicsPath, after);
+  if (job.source === "ally") {
+    const allyPath = resolve(root, "data/ally-alley.v1.json");
+    const before = await readFile(allyPath, "utf8");
+    const after = rewriteAllyPlacement(before, {
+      repo: job.repo,
+      to: job.change.to,
+    });
+    if (after !== before) {
+      await writeFile(allyPath, after);
+    }
+  } else {
+    const heuristicsPath = resolve(root, "lib/willville.heuristics.ts");
+    const before = await readFile(heuristicsPath, "utf8");
+    const after = rewriteHeuristicPlacement(before, {
+      repo: job.repo,
+      displayName: job.displayName,
+      lines: job.lines,
+      to: job.change.to,
+    });
+    if (after !== before) {
+      await writeFile(heuristicsPath, after);
+    }
   }
 
   await refreshTownSnapshotCache();
@@ -566,7 +597,13 @@ async function rejectPlacementJob() {
   };
 }
 
-async function stagePlacementChange(change, repo, displayName, lines = []) {
+async function stagePlacementChange(
+  change,
+  repo,
+  displayName,
+  lines = [],
+  source = "owned",
+) {
   const state = await readState();
   if (state.activePlacement) {
     throw new Error(
@@ -581,6 +618,7 @@ async function stagePlacementChange(change, repo, displayName, lines = []) {
       repo,
       displayName,
       lines,
+      source,
       status: "awaiting_review",
       createdAt: nowIso(),
       change,
@@ -1161,6 +1199,7 @@ async function handleRequest(req, res) {
         payload.repo,
         payload.displayName,
         payload.lines,
+        payload.source,
       );
       sendJson(req, res, 202, nextState);
       return;

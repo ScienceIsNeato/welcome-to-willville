@@ -424,6 +424,16 @@
       "height": 100,
       "anchorX": 50,
       "anchorY": 78
+    },
+    {
+      "stopId": "queueit",
+      "district": "ally-alley",
+      "kind": "workshop",
+      "src": "/art/stops/queueit.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
     }
   ]
 }

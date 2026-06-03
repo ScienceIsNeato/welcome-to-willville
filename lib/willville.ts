@@ -53,7 +53,8 @@ export type DistrictId =
   | "dogwallow-ramble-ii"
   | "town-square"
   | "the-nursery"
-  | "the-graveyard";
+  | "the-graveyard"
+  | "ally-alley";
 
 export type LineId =
   | "ai"
@@ -100,6 +101,7 @@ const DISTRICT_BLURBS: Record<DistrictId, string> = {
   "town-square": "The central hub.",
   "the-nursery": "Fresh growth, seedlings, and new life.",
   "the-graveyard": "Inactive projects, old experiments, and reference work.",
+  "ally-alley": "Allied projects I pitch in on but don't own.",
 };
 
 const DISTRICT_COLOR_VARS: Record<DistrictId, string> = {
@@ -112,6 +114,9 @@ const DISTRICT_COLOR_VARS: Record<DistrictId, string> = {
   "town-square": "--willville-town-square",
   "the-nursery": "--willville-nursery",
   "the-graveyard": "--willville-graveyard",
+  // Reuses the teal "slop" token for now — Phase 2 (art) can give Ally Alley its
+  // own sea-colored variable.
+  "ally-alley": "--willville-slop",
 };
 
 const LINE_META: Record<LineId, Omit<Line, "id" | "path">> = {
