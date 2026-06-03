@@ -238,6 +238,7 @@ export function usePlacementPipeline({
         repo: plannerStop.repo,
         displayName: plannerStop.displayName,
         lines: plannerStop.lines,
+        source: plannerStop.source ?? "owned",
         change: {
           stopId: plannerStop.id,
           from: {

@@ -150,7 +150,7 @@
     {
       "id": "slop-wharf",
       "displayName": "Slop Wharf",
-      "src": "/art/town/districts-inpainted/slop-wharf.png",
+      "src": "/art/town/districts/slop-wharf.png",
       "contentHash": "district-art-slop-wharf-site-inpaint-2026-05-28-0201",
       "mask": "/art/town/masks/district-art/slop-wharf.png",
       "components": [
@@ -188,8 +188,7 @@
       "pixelSize": {
         "width": 6400,
         "height": 4960
-      },
-      "originalSrc": "/art/town/districts/slop-wharf.png"
+      }
     },
     {
       "id": "dogwallow-ramble-ii",
@@ -283,6 +282,35 @@
             "y": 950.1
           },
           "area": 82913
+        }
+      ],
+      "artKind": "custom",
+      "scale": 4,
+      "pixelSize": {
+        "width": 6400,
+        "height": 4960
+      }
+    },
+    {
+      "id": "ally-alley",
+      "displayName": "Ally Alley",
+      "src": "/art/town/districts/ally-alley.png",
+      "contentHash": "district-art-ally-alley-2026-06-03-0751",
+      "mask": "/art/town/masks/district-art/ally-alley.png",
+      "components": [
+        {
+          "id": "ally-alley-1",
+          "bounds": {
+            "x": 720,
+            "y": 1075,
+            "width": 265,
+            "height": 151
+          },
+          "centroid": {
+            "x": 851.8,
+            "y": 1154.4
+          },
+          "area": 25196
         }
       ],
       "artKind": "custom",

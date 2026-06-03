@@ -262,7 +262,10 @@ export function BellMessengers({
           continue;
         }
         group.style.display = "";
-        group.setAttribute("transform", `translate(${particle.x} ${particle.y})`);
+        group.setAttribute(
+          "transform",
+          `translate(${particle.x} ${particle.y})`,
+        );
         const halo = slotHaloRefs.current[i];
         if (halo) {
           halo.setAttribute("r", String(particle.radius * 1.95));

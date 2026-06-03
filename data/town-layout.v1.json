@@ -56,7 +56,9 @@
     "nursery_e": { "x": 690, "y": 1008 },
     "nursery_s": { "x": 666, "y": 1180 },
     "nursery_w": { "x": 300, "y": 1142 },
-    "hell_bridge": { "x": 1378, "y": 865 }
+    "hell_bridge": { "x": 1378, "y": 865 },
+    "ally_se": { "x": 985, "y": 1195 },
+    "ally_sw": { "x": 720, "y": 1215 }
   },
   "canal": {
     "pathD": "M 150 900 C 260 842, 370 832, 478 890 C 602 956, 718 918, 820 850 C 922 782, 1045 760, 1168 800 C 1260 830, 1320 882, 1378 890",
@@ -234,6 +236,20 @@
         "south_bay_m",
         "dog_hub",
         "halls_sw"
+      ]
+    },
+    {
+      "id": "ally-alley",
+      "displayName": "Ally Alley",
+      "subtitle": "Friends' projects I pitch in on — crisscrossing alleys among tall buildings",
+      "label": { "x": 850, "y": 1155 },
+      "clip": "land",
+      "vertexIds": [
+        "hell_coast",
+        "ally_se",
+        "ally_sw",
+        "south_bay_m",
+        "south_bay_e"
       ]
     }
   ],

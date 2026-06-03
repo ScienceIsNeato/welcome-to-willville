@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "contributorLogin": "ScienceIsNeato",
+  "allies": [
+    {
+      "repo": "schezel2000/queueIt",
+      "displayName": "QueueIt",
+      "blurb": "Jason's project — I pitch in here but don't own it.",
+      "position": {
+        "x": 774,
+        "y": 1162
+      }
+    }
+  ]
+}

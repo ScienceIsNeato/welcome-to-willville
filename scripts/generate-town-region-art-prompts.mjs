@@ -63,6 +63,12 @@ const regionDirections = {
     motifs:
       "greenhouses, seedling beds, sprouting saplings, potting sheds, raised garden boxes, watering cans, trellises, tiny saplings in rows, propagation tables",
   },
+  "ally-alley": {
+    palette:
+      "slate gray, weathered brick red, iron black, warm streetlamp amber, faded teal signage",
+    motifs:
+      "crisscrossing narrow alleyways winding between tall close-packed buildings, brick tenements, fire escapes and iron stairs, overhead crossing wires and strung lights, hanging shop signs, cobbled lanes, archways and connecting bridges between rooftops, glowing windows and street lamps in the dusk",
+  },
 };
 
 function componentSummary(district) {

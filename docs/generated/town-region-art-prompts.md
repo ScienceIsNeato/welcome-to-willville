@@ -9,3 +9,4 @@
 - [Dogwallow Ramble II](./town-region-art-prompts/dogwallow-ramble-ii.md) -> `/art/town/masks/district-art/dogwallow-ramble-ii.png`
 - [The Nursery](./town-region-art-prompts/the-nursery.md) -> `/art/town/masks/district-art/the-nursery.png`
 - [The Gates of Hell](./town-region-art-prompts/gates-of-hell.md) -> `/art/town/masks/district-art/gates-of-hell.png`
+- [Ally Alley](./town-region-art-prompts/ally-alley.md) -> `/art/town/masks/district-art/ally-alley.png`

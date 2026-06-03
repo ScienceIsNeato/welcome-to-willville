@@ -19,6 +19,53 @@ import {
 } from "./willville";
 import { HEURISTICS, type Heuristic } from "./willville.heuristics";
 import { sitePositionForStop } from "./town-layout";
+import allyAlleyConfig from "../data/ally-alley.v1.json";
+
+/** My contribution footprint in an ally repo (one I help on but don't own). */
+export type Contribution = {
+  /** Whose contributions these are (the site owner's GitHub login). */
+  login: string;
+  /** Commits authored by me (capped at one page; treat 100 as "100+"). */
+  commits?: number;
+  /** ISO timestamp of my most recent commit. */
+  lastCommitAt?: string;
+  /** PRs I've opened that are still open. */
+  openPrs?: number;
+  /** PRs I've opened that have merged. */
+  mergedPrs?: number;
+};
+
+/** A repo I contribute to but don't own, declared in data/ally-alley.v1.json. */
+export type AllyConfigEntry = {
+  repo: string;
+  displayName?: string;
+  blurb?: string;
+  /** Persisted City Planner placement (town coords). Falls back to auto-layout. */
+  position?: { x: number; y: number };
+};
+
+/** Fetched ally repo metadata plus its config slot, ready to fold into a Stop. */
+export type AllyInput = {
+  meta: RepoMeta;
+  /** Stable index from the config list — drives the isle's position. */
+  index: number;
+  displayName?: string;
+  blurb?: string;
+  position?: { x: number; y: number };
+};
+
+/** The curated ally list, in declaration order. */
+export function allyEntries(): AllyConfigEntry[] {
+  return (allyAlleyConfig.allies ?? []) as AllyConfigEntry[];
+}
+
+/** The GitHub login whose contributions Ally Alley tracks. */
+export function allyContributorLogin(): string {
+  return (
+    (allyAlleyConfig as { contributorLogin?: string }).contributorLogin ??
+    "ScienceIsNeato"
+  );
+}
 
 type StatusState =
   | "idea"
@@ -154,6 +201,10 @@ export type Stop = {
   workflowRuns?: GitHubWorkflowRun[];
   /** Committed Willville agent packet from .willville.json, if present. */
   agent?: WillvilleAgentPacket;
+  /** "owned" (default, my town) or "ally" (a repo I contribute to, in Ally Alley). */
+  source?: "owned" | "ally";
+  /** My contribution footprint — populated for ally stops only. */
+  contribution?: Contribution;
 };
 
 /**
@@ -294,6 +345,10 @@ export type RepoMeta = {
   recentCommits?: GitHubRecentCommit[];
   /** Last 3 GitHub Actions workflow runs for the repo. */
   workflowRuns?: GitHubWorkflowRun[];
+  /** "owned" (default) or "ally". */
+  source?: "owned" | "ally";
+  /** My contribution footprint — set for ally repos. */
+  contribution?: Contribution;
 };
 
 // ---------------------------------------------------------------------------
@@ -521,6 +576,64 @@ export function buildTown(repoMetas: RepoMeta[]): Stop[] {
   return stops;
 }
 
+// ---------------------------------------------------------------------------
+// Ally Alley — repos I contribute to but don't own.
+//
+// Ally Alley is a real district (south of the Gates of Hell, on the green land),
+// so ally stops get the same deterministic in-polygon placement as owned stops
+// via sitePositionForStop. They skip the .willville.json / heuristic district
+// assignment and are pinned to "ally-alley" with source: "ally".
+// ---------------------------------------------------------------------------
+
+function buildAllyStop(input: AllyInput): Stop {
+  const { meta } = input;
+  const stopId = meta.repo.split("/")[1]!.toLowerCase();
+  return {
+    id: stopId,
+    displayName: input.displayName ?? repoDisplayName(meta.repo),
+    district: "ally-alley",
+    lines: [],
+    position:
+      input.position ?? sitePositionForStop("ally-alley", stopId, meta.repo),
+    repo: meta.repo,
+    homepage: meta.homepage,
+    blurb: input.blurb,
+    glyph: defaultGlyphForRepo(meta.repo),
+    visibility: "public",
+    isPrivate: meta.isPrivate,
+    source: "ally",
+    contribution: meta.contribution,
+    // Ally repos don't broadcast a .willville.json, so the lifecycle state stays
+    // "unknown"; the isle's liveliness comes from the GitHub health signals below.
+    status: {
+      state: "unknown",
+      summary: meta.description,
+    },
+    createdAt: meta.createdAt,
+    sizeKb: meta.sizeKb,
+    totalCommits: meta.totalCommits,
+    openIssues: meta.openIssuesCount,
+    stars: meta.stars,
+    language: meta.language,
+    openPrCount: meta.openPrCount,
+    branchCount: meta.branchCount,
+    commits3d: meta.commits3d,
+    commits7d: meta.commits7d,
+    commits21d: meta.commits21d,
+    lastCommitAt: meta.lastCommitAt,
+    lastMergeAt: meta.lastMergeAt,
+    latestRelease: meta.latestRelease,
+    activeBranch: meta.activeBranch,
+    recentCommits: meta.recentCommits,
+    workflowRuns: meta.workflowRuns,
+  };
+}
+
+/** Fold fetched ally repo metadata into ally Stops. */
+export function buildAllyStops(inputs: AllyInput[]): Stop[] {
+  return inputs.map(buildAllyStop);
+}
+
 // Remove re-export of DISTRICTS and LINES - not used by app
 
 /**
@@ -561,6 +674,30 @@ export function buildInitialStops(): Stop[] {
       queue: h.queue,
     });
   }
+  // Ally Alley placeholders so the isles render on first paint; the live GitHub
+  // signal + my contribution footprint arrive via /api/town after a bell ring.
+  // Skip any ally whose slug already exists (owned repo wins) so stop ids stay
+  // unique — the same dedup the snapshot builder applies.
+  const existingIds = new Set(stops.map((stop) => stop.id));
+  allyEntries().forEach((entry) => {
+    const stopId = entry.repo.split("/")[1]!.toLowerCase();
+    if (existingIds.has(stopId)) return;
+    existingIds.add(stopId);
+    stops.push({
+      id: stopId,
+      displayName: entry.displayName ?? repoDisplayName(entry.repo),
+      district: "ally-alley",
+      lines: [],
+      position:
+        entry.position ?? sitePositionForStop("ally-alley", stopId, entry.repo),
+      repo: entry.repo,
+      blurb: entry.blurb,
+      glyph: defaultGlyphForRepo(entry.repo),
+      visibility: "public",
+      source: "ally",
+      status: { state: "unknown" },
+    });
+  });
   return stops;
 }
 

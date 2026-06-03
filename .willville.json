@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Putting up the mobile smoothness work — lighter backdrop, calmer district borders, leaner bell ceremony — measured a near-doubling of frame rate on phones",
-    "direction": "Go after the last big source of pan-and-zoom stutter so the whole map glides on a phone",
-    "last_update": "2026-06-02T05:25:00Z"
+    "status": "Ally Alley is live — allied buildings move without duplicating, and per-building repainting works again (queueit got a hand-painted alley landmark)",
+    "direction": "Light the allied spots up with live project data once the private repo can be reached",
+    "last_update": "2026-06-03T05:00:00Z"
   }
 }

@@ -285,17 +285,16 @@ async function extractOverlay(originalPath, editedPath, outputPath, threshold) {
 }
 
 async function runGanglia(commandArgs, cwd) {
+  // Run under `direnv exec` so the ganglia-studio .envrc (OPENAI_API_KEY) is
+  // loaded for the OpenAI image-edit call.
+  const fullArgs = ["exec", cwd, gangliaPython, ...commandArgs];
   if (dryRun) {
     console.log(
-      JSON.stringify(
-        { cwd, command: gangliaPython, args: commandArgs },
-        null,
-        2,
-      ),
+      JSON.stringify({ cwd, command: "direnv", args: fullArgs }, null, 2),
     );
     return;
   }
-  const { stdout, stderr } = await execFileAsync(gangliaPython, commandArgs, {
+  const { stdout, stderr } = await execFileAsync("direnv", fullArgs, {
     cwd,
     maxBuffer: 1024 * 1024 * 20,
   });
@@ -435,9 +434,7 @@ if (dryRun) {
 
 await runGanglia(
   [
-    "-m",
-    "ganglia_studio.cli",
-    "insert-glyph",
+    resolve(root, "scripts/ganglia_inpaint.py"),
     "--input",
     cropInput,
     "--mask",

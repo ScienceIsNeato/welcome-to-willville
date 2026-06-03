@@ -567,6 +567,22 @@ export const HEURISTICS: Heuristic[] = [
     position: { x: 928, y: 233 },
     blurb: "Best-guess placement - override via .willville.json.",
   },
+  {
+    repo: "ScienceIsNeato/tattoo-renderer",
+    displayName: "tattoo-renderer",
+    district: "the-nursery",
+    lines: [],
+    position: { x: 486, y: 1046 },
+    blurb: "Best-guess placement - override via .willville.json.",
+  },
+  {
+    repo: "ScienceIsNeato/GANGLIA_ARCHIVES",
+    displayName: "GANGLIA_ARCHIVES",
+    district: "the-graveyard",
+    lines: [],
+    position: { x: 1323, y: 462 },
+    blurb: "Best-guess placement - override via .willville.json.",
+  },
 ];
 
 export function heuristicForRepo(repo: string): Heuristic | undefined {
