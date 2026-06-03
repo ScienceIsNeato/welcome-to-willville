@@ -32,6 +32,9 @@ jobs:
       - name: Install slop-mop
         run: |
           .venv/bin/pip install 'slopmop[all]==1.5.0'
+          # slopmop's transitive mcp/semgrep resolve pyjwt to a version flagged by
+          # PYSEC-2026-175/177/179; both accept >=2.13.0, so force the patched one.
+          .venv/bin/pip install 'pyjwt>=2.13.0'
           echo "$GITHUB_WORKSPACE/.venv/bin" >> "$GITHUB_PATH"
 
       - name: Install slop-mop JS gate tools
