@@ -676,8 +676,13 @@ export function buildInitialStops(): Stop[] {
   }
   // Ally Alley placeholders so the isles render on first paint; the live GitHub
   // signal + my contribution footprint arrive via /api/town after a bell ring.
+  // Skip any ally whose slug already exists (owned repo wins) so stop ids stay
+  // unique — the same dedup the snapshot builder applies.
+  const existingIds = new Set(stops.map((stop) => stop.id));
   allyEntries().forEach((entry) => {
     const stopId = entry.repo.split("/")[1]!.toLowerCase();
+    if (existingIds.has(stopId)) return;
+    existingIds.add(stopId);
     stops.push({
       id: stopId,
       displayName: entry.displayName ?? repoDisplayName(entry.repo),

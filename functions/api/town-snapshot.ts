@@ -831,6 +831,12 @@ export async function buildTownStops(token?: string): Promise<Stop[]> {
   });
 
   const ownerStops = buildTown(repoMetas);
-  const allyStops = buildAllyStops(await buildAllyInputs(token));
+  // Stop ids are the lowercase repo slug, so an owned repo sharing a slug with
+  // an ally repo (different owner, same name) would collide. Owned wins; drop
+  // any ally stop whose id is already taken to keep ids unique in the snapshot.
+  const ownerIds = new Set(ownerStops.map((stop) => stop.id));
+  const allyStops = buildAllyStops(await buildAllyInputs(token)).filter(
+    (stop) => !ownerIds.has(stop.id),
+  );
   return [...ownerStops, ...allyStops];
 }
