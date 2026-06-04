@@ -101,6 +101,25 @@ export function MobileDetailBoard({ stop, boats, panelOpacity = 1 }: Props) {
         </dl>
       </section>
 
+      {stop.source === "ally" && stop.contribution && (
+        <section style={{ ...cardStyle, ...cardChrome }}>
+          <span style={sectionLabelStyle}>Your Footprint</span>
+          <p
+            style={textValueStyle}
+            title={tooltipText(`Your contributions to ${stop.repo}`)}
+          >
+            {stop.contribution.commits === 100
+              ? "100+"
+              : (stop.contribution.commits ?? 0)}{" "}
+            commits · {stop.contribution.mergedPrs ?? 0} merged ·{" "}
+            {stop.contribution.openPrs ?? 0} open PRs
+            {stop.contribution.lastCommitAt
+              ? ` · last ${timeAgo(stop.contribution.lastCommitAt)}`
+              : ""}
+          </p>
+        </section>
+      )}
+
       <section style={{ ...cardStyle, ...cardChrome }}>
         <div style={textSectionStyle}>
           <span style={sectionLabelStyle}>Status</span>

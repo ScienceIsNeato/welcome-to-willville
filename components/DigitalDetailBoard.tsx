@@ -84,6 +84,7 @@ export function DigitalDetailBoard({ stop, boats, panelOpacity = 1 }: Props) {
                 ["Last Merged", timeAgo(stop.lastMergeAt)],
               ]}
             />
+            <ContributionBadge stop={stop} />
           </section>
 
           <section style={workColumnStyle}>
@@ -125,6 +126,28 @@ function FactGrid({ facts }: { facts: Array<[string, string]> }) {
         </div>
       ))}
     </dl>
+  );
+}
+
+function ContributionBadge({ stop }: { stop: Stop }) {
+  if (stop.source !== "ally" || !stop.contribution) {
+    return null;
+  }
+  const c = stop.contribution;
+  const commits = c.commits === 100 ? "100+" : String(c.commits ?? 0);
+  const summary =
+    `${commits} commits · ${c.mergedPrs ?? 0} merged · ${c.openPrs ?? 0} open PRs` +
+    (c.lastCommitAt ? ` · last ${timeAgo(c.lastCommitAt)}` : "");
+  return (
+    <div style={contributionStyle}>
+      <span style={sectionLabelStyle}>Your Footprint</span>
+      <p
+        style={contributionValueStyle}
+        title={tooltipText(`Your contributions to ${stop.repo}`)}
+      >
+        {summary}
+      </p>
+    </div>
   );
 }
 
@@ -439,6 +462,25 @@ const factValueStyle: CSSProperties = {
   overflowWrap: "anywhere",
   whiteSpace: "normal",
   textShadow: "0 0 8px rgba(51, 255, 87, 0.55)",
+};
+
+const contributionStyle: CSSProperties = {
+  display: "grid",
+  gap: 4,
+  marginTop: 6,
+  paddingTop: 6,
+  borderTop: "1px solid rgb(51 255 87 / calc(0.16 * var(--panel-opacity, 1)))",
+  minWidth: 0,
+};
+
+const contributionValueStyle: CSSProperties = {
+  margin: 0,
+  color: "#baffc2",
+  fontSize: 13,
+  lineHeight: 1.18,
+  fontWeight: 800,
+  overflowWrap: "anywhere",
+  textShadow: "0 0 8px rgba(51, 255, 87, 0.45)",
 };
 
 const textSectionStyle: CSSProperties = {
