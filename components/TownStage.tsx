@@ -1410,10 +1410,10 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             </defs>
 
             <g ref={cameraGroupRef} transform={cameraTransform.get()}>
-              <WorldSubstrate />
+              <WorldSubstrate mobileSafeMode={mobileSafeMode} />
 
               <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
-                <GeneratedTownBase />
+                <GeneratedTownBase mobileSafeMode={mobileSafeMode} />
                 <TownSiteAppearances
                   stops={currentStops}
                   previewUnderlayHrefs={previewUnderlayHrefs}

@@ -52,8 +52,15 @@ function districtRenderBox(layer: DistrictLayer) {
   return { x: left, y: top, width: right - left, height: bottom - top };
 }
 
-export function GeneratedTownBase() {
+export function GeneratedTownBase({
+  mobileSafeMode = false,
+}: {
+  mobileSafeMode?: boolean;
+}) {
   const districtLayers = districtArt.layers;
+  // Phones OOM on the full-res district art (~88MB decoded). Mobile-safe mode
+  // loads the half-res `.mobile.webp` variants (~22MB decoded) instead.
+  const renderExt = mobileSafeMode ? "mobile.webp" : "webp";
 
   return (
     <g id="generated-town-base" aria-hidden="true">
@@ -79,7 +86,7 @@ export function GeneratedTownBase() {
       {districtLayers.map((layer) => (
         <image
           key={layer.id}
-          href={`/art/town/districts-render/${layer.id}.webp?v=${
+          href={`/art/town/districts-render/${layer.id}.${renderExt}?v=${
             layer.contentHash ?? districtArt.version
           }`}
           {...districtRenderBox(layer)}

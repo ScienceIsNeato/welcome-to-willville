@@ -7,10 +7,17 @@ import { TOWN_OFFSET, WORLD } from "@/lib/willville";
 
 const LANDSCAPE_ART =
   "/art/town/willville-landscape-v1.webp?v=landscape-webp-20260602";
+const LANDSCAPE_ART_MOBILE =
+  "/art/town/willville-landscape-v1.mobile.webp?v=landscape-webp-20260602";
 const WATER_TILE = "/art/town/willville-water-tile-v1.png?v=ocean-256-20260526";
 
-export function WorldSubstrate() {
+export function WorldSubstrate({
+  mobileSafeMode = false,
+}: {
+  mobileSafeMode?: boolean;
+}) {
   const canalCutout = pointsToPath(CANAL_SECTION.polygon);
+  const landscapeArt = mobileSafeMode ? LANDSCAPE_ART_MOBILE : LANDSCAPE_ART;
 
   return (
     <g aria-hidden>
@@ -47,7 +54,7 @@ export function WorldSubstrate() {
         fill="url(#willville-water-tile)"
       />
       <image
-        href={LANDSCAPE_ART}
+        href={landscapeArt}
         width={WORLD.width}
         height={WORLD.height}
         preserveAspectRatio="none"
