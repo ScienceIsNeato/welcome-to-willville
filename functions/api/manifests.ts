@@ -30,6 +30,8 @@ import { buildCanalBoats, persistCanalSnapshot } from "./canal-snapshot";
 
 interface Env {
   GITHUB_PAT?: string;
+  /** Classic PAT with `repo` scope for ally repos (often private, other-owner). */
+  ALLY_GITHUB_PAT?: string;
   WILLVILLE_MANIFEST_CACHE?: ManifestCacheStore;
 }
 
@@ -335,7 +337,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       // everything a first client load needs — instead of deleting it and
       // forcing the next reader to rebuild from scratch.
       try {
-        const stops = await buildTownStops(token);
+        const stops = await buildTownStops(token, env.ALLY_GITHUB_PAT);
         const generatedAt = new Date().toISOString();
         const manifestCachedAt = getManifestCacheCachedAt() ?? generatedAt;
         await persistTownSnapshot(

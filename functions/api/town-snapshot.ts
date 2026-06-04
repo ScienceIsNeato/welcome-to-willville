@@ -765,7 +765,10 @@ async function buildAllyInputs(token?: string): Promise<AllyInput[]> {
  * (hydrated by the bell), falling back to a live fetch per repo. Callers should
  * ensure the manifest cache is hydrated before invoking.
  */
-export async function buildTownStops(token?: string): Promise<Stop[]> {
+export async function buildTownStops(
+  token?: string,
+  allyToken?: string,
+): Promise<Stop[]> {
   const repos = await listOwnerRepos(token);
   const cutoff = Date.now() - TWO_YEARS_MS;
   const manifestClient = new WillvilleManifestClient(token);
@@ -835,8 +838,12 @@ export async function buildTownStops(token?: string): Promise<Stop[]> {
   // an ally repo (different owner, same name) would collide. Owned wins; drop
   // any ally stop whose id is already taken to keep ids unique in the snapshot.
   const ownerIds = new Set(ownerStops.map((stop) => stop.id));
-  const allyStops = buildAllyStops(await buildAllyInputs(token)).filter(
-    (stop) => !ownerIds.has(stop.id),
-  );
+  // Ally repos are often someone else's private repo, which the site's
+  // fine-grained GITHUB_PAT can't read. Prefer a dedicated ALLY_GITHUB_PAT
+  // (a classic token from an account that collaborates on the ally repos),
+  // falling back to the main token for public allies.
+  const allyStops = buildAllyStops(
+    await buildAllyInputs(allyToken ?? token),
+  ).filter((stop) => !ownerIds.has(stop.id));
   return [...ownerStops, ...allyStops];
 }
