@@ -377,19 +377,21 @@ body {
 }
 
 /*
- * Pure-CSS belt-and-suspenders: freeze the decorative border/smoke animations on
- * any touch or small-screen device, evaluated by the browser directly with zero
+ * Pure-CSS belt-and-suspenders: freeze EVERY animated map element on any touch
+ * or small-screen device, evaluated by the browser directly with zero
  * dependence on the JS mobile-safe detection (which can fail to engage on some
- * real devices). `!important` so it wins regardless of hydration state.
+ * real devices). The animated district borders are dynamic walls / canal
+ * rainbow-bricks that set their animation INLINE, so a plain class rule can't
+ * stop them — `[style*="animation"]` catches the inline-animated elements, and
+ * `animation: none !important` overrides even inline styles.
  */
 @media (hover: none), (pointer: coarse), (max-width: 820px) {
-  .district-zone-border-dash {
+  #willville-stage [style*="animation"],
+  #willville-stage .district-zone-border-dash,
+  #willville-stage .smoke-puff-anim {
     animation: none !important;
+    animation-name: none !important;
     will-change: auto !important;
-    opacity: 0.6;
-  }
-  .smoke-puff-anim {
-    animation: none !important;
   }
 }
 
