@@ -29,6 +29,8 @@ import {
 
 interface Env {
   GITHUB_PAT?: string;
+  /** Classic PAT with `repo` scope for ally repos (often private, other-owner). */
+  ALLY_GITHUB_PAT?: string;
   WILLVILLE_MAYOR_KEY?: string;
   WILLVILLE_MANIFEST_CACHE?: ManifestCacheStore;
 }
@@ -97,7 +99,7 @@ async function rebuildAndPersistTownSnapshot(
   manifestCachedAt: string | null,
 ): Promise<TownSnapshot> {
   await hydrateManifestCacheFromStore(env.WILLVILLE_MANIFEST_CACHE);
-  const stops = await buildTownStops(env.GITHUB_PAT);
+  const stops = await buildTownStops(env.GITHUB_PAT, env.ALLY_GITHUB_PAT);
   const generatedAt = new Date().toISOString();
   await persistTownSnapshot(
     env.WILLVILLE_MANIFEST_CACHE,
@@ -169,7 +171,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   // load isn't blank, but do NOT persist it — the DB only changes on a bell
   // ring. Always use the PAT when available to dodge unauthenticated limits.
   await hydrateManifestCacheFromStore(env.WILLVILLE_MANIFEST_CACHE);
-  const stops = await buildTownStops(env.GITHUB_PAT);
+  const stops = await buildTownStops(env.GITHUB_PAT, env.ALLY_GITHUB_PAT);
   return townResponse(request, {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),

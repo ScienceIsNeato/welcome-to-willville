@@ -7,10 +7,18 @@ import { TOWN_OFFSET, WORLD } from "@/lib/willville";
 
 const LANDSCAPE_ART =
   "/art/town/willville-landscape-v1.webp?v=landscape-webp-20260602";
+const LANDSCAPE_ART_MOBILE =
+  "/art/town/willville-landscape-v1.mobile.webp?v=landscape-webp-20260602";
 const WATER_TILE = "/art/town/willville-water-tile-v1.png?v=ocean-256-20260526";
 
-export function WorldSubstrate() {
+export function WorldSubstrate({
+  fullResArt = false,
+}: {
+  fullResArt?: boolean;
+}) {
   const canalCutout = pointsToPath(CANAL_SECTION.polygon);
+  // Mobile-first: default to the light landscape; confirmed desktops upgrade.
+  const landscapeArt = fullResArt ? LANDSCAPE_ART : LANDSCAPE_ART_MOBILE;
 
   return (
     <g aria-hidden>
@@ -46,8 +54,18 @@ export function WorldSubstrate() {
         height={WORLD.height}
         fill="url(#willville-water-tile)"
       />
+      {/* Flat land-green base under the art (clipped to land). When the heavy
+          land/district rasters blank for a frame during a zoom repaint, this
+          shows through instead of the blue water — a subtle green that blends
+          with the map rather than a jarring full-screen blue flash. */}
+      <rect
+        width={WORLD.width}
+        height={WORLD.height}
+        fill="#4c8029"
+        clipPath="url(#willville-world-land-mask)"
+      />
       <image
-        href={LANDSCAPE_ART}
+        href={landscapeArt}
         width={WORLD.width}
         height={WORLD.height}
         preserveAspectRatio="none"

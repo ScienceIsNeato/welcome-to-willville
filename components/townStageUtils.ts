@@ -12,9 +12,11 @@ const PAGES_API_ORIGIN = "https://welcome-to-willville.pages.dev";
 const API_FALLBACK_HOSTS = new Set(["willville.ai", "www.willville.ai"]);
 
 export const MOBILE_TOWN_CAMERA = {
-  cx: TOWN_CENTER.x,
-  cy: TOWN_CENTER.y,
-  scale: 1.35,
+  // Fresh mobile loads open zoomed in on the town core (bell tower / Town
+  // Square) rather than the full-out world view, which felt heavy on load.
+  cx: TOWN_CENTER.x - 80,
+  cy: TOWN_CENTER.y - 60,
+  scale: 1.7,
 };
 
 export type BoardAnnouncement = {

@@ -6,6 +6,10 @@ const ROOT = process.cwd();
 const ART_MANIFEST = path.join(ROOT, "data/town-district-art.v1.json");
 const OUTPUT_DIR = path.join(ROOT, "public/art/town/districts-render");
 const RENDER_PADDING = 6;
+// Half-resolution `<id>.mobile.webp` variants quarter the decoded pixel buffer
+// (~100MB of full-res district art -> ~25MB) so phones don't OOM and crash the
+// tab. Mobile-safe rendering loads these instead of the full-res renders.
+const MOBILE_SCALE = 0.5;
 
 function layerBounds(layer) {
   const bounds = layer.components.map((component) => component.bounds);
@@ -43,10 +47,21 @@ async function main() {
       Math.ceil(bounds.maxY * scale),
     );
 
-    await sharp(path.join(ROOT, `public${layer.src}`))
-      .extract({ left, top, width: right - left, height: bottom - top })
+    const src = path.join(ROOT, `public${layer.src}`);
+    const cropW = right - left;
+    const cropH = bottom - top;
+    const extractOpts = { left, top, width: cropW, height: cropH };
+
+    await sharp(src)
+      .extract(extractOpts)
       .webp({ quality: 88, effort: 6 })
       .toFile(path.join(OUTPUT_DIR, `${layer.id}.webp`));
+
+    await sharp(src)
+      .extract(extractOpts)
+      .resize({ width: Math.max(1, Math.round(cropW * MOBILE_SCALE)) })
+      .webp({ quality: 80, effort: 6 })
+      .toFile(path.join(OUTPUT_DIR, `${layer.id}.mobile.webp`));
   }
 }
 

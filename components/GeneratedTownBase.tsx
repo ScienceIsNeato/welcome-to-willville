@@ -52,8 +52,16 @@ function districtRenderBox(layer: DistrictLayer) {
   return { x: left, y: top, width: right - left, height: bottom - top };
 }
 
-export function GeneratedTownBase() {
+export function GeneratedTownBase({
+  fullResArt = false,
+}: {
+  fullResArt?: boolean;
+}) {
   const districtLayers = districtArt.layers;
+  // Mobile-first: SSR and first paint use the half-res `.mobile.webp` variants
+  // (~22MB decoded) so phones don't load the ~88MB full-res art straight from
+  // the HTML (which crashes hydration). Only confirmed desktops upgrade to full.
+  const renderExt = fullResArt ? "webp" : "mobile.webp";
 
   return (
     <g id="generated-town-base" aria-hidden="true">
@@ -79,7 +87,7 @@ export function GeneratedTownBase() {
       {districtLayers.map((layer) => (
         <image
           key={layer.id}
-          href={`/art/town/districts-render/${layer.id}.webp?v=${
+          href={`/art/town/districts-render/${layer.id}.${renderExt}?v=${
             layer.contentHash ?? districtArt.version
           }`}
           {...districtRenderBox(layer)}
