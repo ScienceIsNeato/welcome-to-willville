@@ -376,6 +376,23 @@ body {
   opacity: 0.6;
 }
 
+/*
+ * Pure-CSS belt-and-suspenders: freeze the decorative border/smoke animations on
+ * any touch or small-screen device, evaluated by the browser directly with zero
+ * dependence on the JS mobile-safe detection (which can fail to engage on some
+ * real devices). `!important` so it wins regardless of hydration state.
+ */
+@media (hover: none), (pointer: coarse), (max-width: 820px) {
+  .district-zone-border-dash {
+    animation: none !important;
+    will-change: auto !important;
+    opacity: 0.6;
+  }
+  .smoke-puff-anim {
+    animation: none !important;
+  }
+}
+
 .willville-stage--interacting .district-zone-border-dash,
 .willville-stage--interacting .smoke-puff-anim {
   animation-play-state: paused;
