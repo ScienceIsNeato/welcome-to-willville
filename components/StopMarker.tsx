@@ -3,12 +3,7 @@
 import { memo, type MouseEvent, type PointerEvent } from "react";
 import type { Stop } from "@/lib/town";
 import siteSpriteManifest from "@/data/town-site-sprites.v1.json";
-import { glyphHaloCropBoxForSprite } from "@/lib/glyphHalo";
-import {
-  labelHitBoxForStop,
-  repoLabelForStop,
-  spriteSizeForStop,
-} from "@/lib/stop-marker-hitbox";
+import { repoLabelForStop, spriteSizeForStop } from "@/lib/stop-marker-hitbox";
 import {
   siteForegroundModeForStop,
   siteUnderlayForStop,
@@ -39,93 +34,18 @@ const STATE_COLOR: Record<Stop["status"]["state"], string> = {
 const SITE_SPRITES = new Map(
   siteSpriteManifest.sprites.map((sprite) => [sprite.stopId, sprite]),
 );
-type SiteSprite = (typeof siteSpriteManifest.sprites)[number];
 const SPRITE_CACHE_VERSION = "repo-labels-20260522";
 const SITE_ART_CENTER = { x: 0, y: 0 };
 const LABEL_VERTICAL_GAP = 22;
 const LABEL_FALLBACK_Y = -30;
 
-type HitBox = {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-};
-
-function mergeHitBoxes(...boxes: Array<HitBox | null>): HitBox {
-  const definedBoxes = boxes.filter((box): box is HitBox => box !== null);
-  const left = Math.min(...definedBoxes.map((box) => box.x));
-  const top = Math.min(...definedBoxes.map((box) => box.y));
-  const right = Math.max(...definedBoxes.map((box) => box.x + box.width));
-  const bottom = Math.max(...definedBoxes.map((box) => box.y + box.height));
-
-  return {
-    x: left,
-    y: top,
-    width: right - left,
-    height: bottom - top,
-  };
-}
-
-function spriteHitBoxForSize(
-  spriteWidth: number,
-  spriteHeight: number,
-): HitBox | null {
-  if (spriteWidth <= 0 || spriteHeight <= 0) {
-    return null;
-  }
-
-  return {
-    x: SITE_ART_CENTER.x - spriteWidth / 2,
-    y: SITE_ART_CENTER.y - spriteHeight / 2,
-    width: spriteWidth,
-    height: spriteHeight,
-  };
-}
-
-function replacementHitBoxForStop(
-  stop: Stop,
-  sprite: SiteSprite | undefined,
-  hasReplacementAppearance: boolean,
-): HitBox | null {
-  if (!hasReplacementAppearance || !sprite) {
-    return null;
-  }
-
-  const crop = glyphHaloCropBoxForSprite(sprite, stop.position);
-  return {
-    x: crop.x - stop.position.x,
-    y: crop.y - stop.position.y,
-    width: crop.width,
-    height: crop.height,
-  };
-}
-
-function interactionHitBoxForStop(params: {
-  stop: Stop;
-  sprite: SiteSprite | undefined;
-  spriteWidth: number;
-  spriteHeight: number;
-  labelHitBox: HitBox;
-  showSprite: boolean;
-  hasReplacementAppearance: boolean;
-}): HitBox {
-  const {
-    stop,
-    sprite,
-    spriteWidth,
-    spriteHeight,
-    labelHitBox,
-    showSprite,
-    hasReplacementAppearance,
-  } = params;
-
-  return mergeHitBoxes(
-    labelHitBox,
-    showSprite ? spriteHitBoxForSize(spriteWidth, spriteHeight) : null,
-    replacementHitBoxForStop(stop, sprite, hasReplacementAppearance),
-  );
-}
+// The clickable hit area is a circle of this radius centered on the stop —
+// deliberately identical to the green selection ring drawn in FocusRings, so
+// "what you can click" always matches "what lights up when selected". Keeping
+// the target tight (rather than a sprite-sized rect) stops neighboring stops'
+// hit areas from overlapping, which previously let SVG paint-order select the
+// wrong building (e.g. ganglia-studio registering as halloween-tracker).
+const SELECTION_RADIUS = 22;
 
 function RecentUpdatePulse({ color }: { color: string }) {
   return (
@@ -162,7 +82,7 @@ function FocusRings() {
   return (
     <g>
       <circle
-        r={22}
+        r={SELECTION_RADIUS}
         cx={SITE_ART_CENTER.x}
         cy={SITE_ART_CENTER.y}
         fill="none"
@@ -235,7 +155,7 @@ function SpriteArt({
       width={spriteWidth}
       height={spriteHeight}
       preserveAspectRatio="xMidYMid meet"
-      style={{ pointerEvents: "all" }}
+      style={{ pointerEvents: "none" }}
     />
   );
 }
@@ -276,16 +196,6 @@ function StopMarkerInner({
     Boolean(sprite) && foregroundMode !== "background-only" && !forceHideSprite;
   const { width: spriteWidth, height: spriteHeight } = spriteSizeForStop(stop);
   const label = repoLabelForStop(stop);
-  const labelHitBox = labelHitBoxForStop(stop);
-  const interactionHitBox = interactionHitBoxForStop({
-    stop,
-    sprite,
-    spriteWidth,
-    spriteHeight,
-    labelHitBox,
-    showSprite,
-    hasReplacementAppearance,
-  });
   const handleDragEnd = (e: PointerEvent<SVGGElement>) => {
     const isDragActive =
       draggable || e.currentTarget.hasPointerCapture(e.pointerId);
@@ -324,11 +234,10 @@ function StopMarkerInner({
       onLostPointerCapture={handleDragEnd}
       aria-label={label}
     >
-      <rect
-        x={interactionHitBox.x}
-        y={interactionHitBox.y}
-        width={interactionHitBox.width}
-        height={interactionHitBox.height}
+      <circle
+        cx={SITE_ART_CENTER.x}
+        cy={SITE_ART_CENTER.y}
+        r={SELECTION_RADIUS}
         fill="transparent"
         pointerEvents="all"
       />
