@@ -54,6 +54,16 @@ export function WorldSubstrate({
         height={WORLD.height}
         fill="url(#willville-water-tile)"
       />
+      {/* Flat land-green base under the art (clipped to land). When the heavy
+          land/district rasters blank for a frame during a zoom repaint, this
+          shows through instead of the blue water — a subtle green that blends
+          with the map rather than a jarring full-screen blue flash. */}
+      <rect
+        width={WORLD.width}
+        height={WORLD.height}
+        fill="#4c8029"
+        clipPath="url(#willville-world-land-mask)"
+      />
       <image
         href={landscapeArt}
         width={WORLD.width}
