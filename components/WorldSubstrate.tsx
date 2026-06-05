@@ -12,12 +12,13 @@ const LANDSCAPE_ART_MOBILE =
 const WATER_TILE = "/art/town/willville-water-tile-v1.png?v=ocean-256-20260526";
 
 export function WorldSubstrate({
-  mobileSafeMode = false,
+  fullResArt = false,
 }: {
-  mobileSafeMode?: boolean;
+  fullResArt?: boolean;
 }) {
   const canalCutout = pointsToPath(CANAL_SECTION.polygon);
-  const landscapeArt = mobileSafeMode ? LANDSCAPE_ART_MOBILE : LANDSCAPE_ART;
+  // Mobile-first: default to the light landscape; confirmed desktops upgrade.
+  const landscapeArt = fullResArt ? LANDSCAPE_ART : LANDSCAPE_ART_MOBILE;
 
   return (
     <g aria-hidden>

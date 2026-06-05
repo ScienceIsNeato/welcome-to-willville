@@ -53,14 +53,15 @@ function districtRenderBox(layer: DistrictLayer) {
 }
 
 export function GeneratedTownBase({
-  mobileSafeMode = false,
+  fullResArt = false,
 }: {
-  mobileSafeMode?: boolean;
+  fullResArt?: boolean;
 }) {
   const districtLayers = districtArt.layers;
-  // Phones OOM on the full-res district art (~88MB decoded). Mobile-safe mode
-  // loads the half-res `.mobile.webp` variants (~22MB decoded) instead.
-  const renderExt = mobileSafeMode ? "mobile.webp" : "webp";
+  // Mobile-first: SSR and first paint use the half-res `.mobile.webp` variants
+  // (~22MB decoded) so phones don't load the ~88MB full-res art straight from
+  // the HTML (which crashes hydration). Only confirmed desktops upgrade to full.
+  const renderExt = fullResArt ? "webp" : "mobile.webp";
 
   return (
     <g id="generated-town-base" aria-hidden="true">

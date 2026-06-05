@@ -148,6 +148,16 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const [responsiveMobileSafeMode, setResponsiveMobileSafeMode] =
     useState(false);
   const mobileSafeMode = forcedMobileSafeMode ?? responsiveMobileSafeMode;
+  // Mobile-first art: false on SSR/first paint (everyone loads the light
+  // `.mobile.webp` art), flipped true only once a real desktop is confirmed.
+  // A forced site_type wins; otherwise it follows the detected desktop input.
+  const [detectedDesktop, setDetectedDesktop] = useState(false);
+  const prefersFullArt =
+    forcedMobileSafeMode === false
+      ? true
+      : forcedMobileSafeMode === true
+        ? false
+        : detectedDesktop;
   const [mobileDrawerExpanded, setMobileDrawerExpanded] = useState(false);
   const [populating, setPopulating] = useState<
     "idle" | "running" | "done" | "error"
@@ -659,6 +669,27 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     return () => {
       touchLikeInput.removeListener(apply);
     };
+  }, [forcedMobileSafeMode, isClient]);
+
+  // Upgrade to full-res art only on a confirmed desktop (fine pointer + hover).
+  // Forced site_type is handled by the derivation above; this only tracks the
+  // detected input, so the default (incl. SSR) stays light for phones.
+  useEffect(() => {
+    if (forcedMobileSafeMode !== null) return;
+    if (!isClient || typeof window.matchMedia !== "function") {
+      return;
+    }
+    const desktopInput = window.matchMedia(
+      "(pointer: fine) and (hover: hover)",
+    );
+    const apply = () => setDetectedDesktop(desktopInput.matches);
+    apply();
+    if (typeof desktopInput.addEventListener === "function") {
+      desktopInput.addEventListener("change", apply);
+      return () => desktopInput.removeEventListener("change", apply);
+    }
+    desktopInput.addListener(apply);
+    return () => desktopInput.removeListener(apply);
   }, [forcedMobileSafeMode, isClient]);
 
   useEffect(
@@ -1410,10 +1441,10 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             </defs>
 
             <g ref={cameraGroupRef} transform={cameraTransform.get()}>
-              <WorldSubstrate mobileSafeMode={mobileSafeMode} />
+              <WorldSubstrate fullResArt={prefersFullArt} />
 
               <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
-                <GeneratedTownBase mobileSafeMode={mobileSafeMode} />
+                <GeneratedTownBase fullResArt={prefersFullArt} />
                 <TownSiteAppearances
                   stops={currentStops}
                   previewUnderlayHrefs={previewUnderlayHrefs}
