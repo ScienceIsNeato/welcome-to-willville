@@ -1449,8 +1449,11 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                   stops={currentStops}
                   previewUnderlayHrefs={previewUnderlayHrefs}
                 />
-                <ChimneySmoke />
-                <DynamicWalls />
+                {/* Smoke (blur filter) + dynamic walls (drop-shadow filters)
+                    re-rasterize every zoom frame. Skip them on mobile — the
+                    backgrounds, workers, train, and canal stay. */}
+                {!mobileSafeMode && <ChimneySmoke />}
+                {!mobileSafeMode && <DynamicWalls />}
                 <Canal boats={boats} layer="base" />
                 {DISTRICTS.map((d) => (
                   <DistrictZone

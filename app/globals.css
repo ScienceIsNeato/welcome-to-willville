@@ -376,6 +376,12 @@ body {
   opacity: 0.6;
 }
 
+/* Drop the district-border glow on mobile — its drop-shadow filter re-rasters
+   every zoom frame. The (frozen) dash outline stays. */
+.willville-stage--mobile-safe .district-zone-border-glow {
+  display: none;
+}
+
 /*
  * Pure-CSS belt-and-suspenders: freeze EVERY animated map element on any touch
  * or small-screen device, evaluated by the browser directly with zero
