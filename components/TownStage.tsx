@@ -56,7 +56,6 @@ import {
   buildEasterEggAnnouncement,
   buildTourismBoardAnnouncement,
   fetchApiRoute,
-  findStopAt,
   getBellErrorDetail,
   mergeStops,
   playBellChime,
@@ -1023,22 +1022,17 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   );
 
   const handleStageClick = useCallback(
-    (e: MouseEvent<HTMLDivElement>) => {
+    (_e: MouseEvent<HTMLDivElement>) => {
       if (isRepositionMode) return;
-      const svg = svgRef.current;
-      if (!svg || wasDragging()) return;
-      const snap = getCameraSnapshot();
-      const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
-      const hit = findStopAt(currentStops, wx, wy, snap.scale);
-      if (hit) openStopHud(hit);
+      if (wasDragging()) return;
+      // If a stop's SVG hitbox was clicked, handleStopClick fires first and
+      // calls e.stopPropagation(), so this handler only runs for genuine
+      // background clicks (empty map, district labels, sea). Treat those as
+      // "miss" and close the HUD rather than re-running proximity detection,
+      // which caused district headers and nearby stops to be mis-selected.
+      closeHud();
     },
-    [
-      currentStops,
-      getCameraSnapshot,
-      wasDragging,
-      openStopHud,
-      isRepositionMode,
-    ],
+    [closeHud, isRepositionMode, wasDragging],
   );
 
   const handleStageDoubleClick = useCallback(
@@ -1049,26 +1043,20 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       if (!svg) return;
       const snap = getCameraSnapshot();
       const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
-      const hit = findStopAt(currentStops, wx, wy, snap.scale);
-      if (hit) {
-        zoomAtWorldPoint(wx, wy);
-        openStopHud(hit);
-        return;
-      }
+      // Double-click on a stop is handled by handleStopDoubleClick (which
+      // stopPropagates), so this only fires on background. Just zoom — don't
+      // use proximity detection to open a stop, which mis-selects neighbors.
       zoomAtWorldPoint(wx, wy);
-      if (selectedStop) {
-        closeHud();
-      }
+      if (selectedStop) closeHud();
     },
     [
       closeHud,
-      currentStops,
       getCameraSnapshot,
-      markSkipDrag,
-      openStopHud,
-      selectedStop,
-      zoomAtWorldPoint,
       isRepositionMode,
+      markSkipDrag,
+      selectedStop,
+      svgRef,
+      zoomAtWorldPoint,
     ],
   );
 
@@ -1077,27 +1065,15 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       e.stopPropagation();
       if (isRepositionMode) return;
       markSkipDrag();
-      // When hitboxes overlap (e.g. large replacement-underlay stops), SVG
-      // z-order picks the wrong stop. Use distance-to-center to find the
-      // stop whose visual center is actually closest to the click point.
-      const svg = svgRef.current;
-      const snap = getCameraSnapshot();
-      const nearest = svg
-        ? (() => {
-            const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
-            return findStopAt(currentStops, wx, wy, snap.scale) ?? stop;
-          })()
-        : stop;
-      openStopHud(nearest);
+      // Trust the stop the SVG gave us — it already did pixel-perfect hit
+      // testing against the drawn hitbox rect. The old approach re-ran
+      // findStopAt (nearest-center) here, which overwrote the correct SVG
+      // result with whichever stop's *position* happened to be closest,
+      // causing misselection when neighbors are near (e.g. ganglia-studio
+      // → halloween-tracker).
+      openStopHud(stop);
     },
-    [
-      currentStops,
-      getCameraSnapshot,
-      isRepositionMode,
-      markSkipDrag,
-      openStopHud,
-      svgRef,
-    ],
+    [isRepositionMode, markSkipDrag, openStopHud],
   );
 
   const handleStopDoubleClick = useCallback(
