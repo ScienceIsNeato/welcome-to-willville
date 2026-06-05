@@ -42,10 +42,13 @@ const LABEL_FALLBACK_Y = -30;
 // The clickable hit area is a circle of this radius centered on the stop —
 // deliberately identical to the green selection ring drawn in FocusRings, so
 // "what you can click" always matches "what lights up when selected". Keeping
-// the target tight (rather than a sprite-sized rect) stops neighboring stops'
-// hit areas from overlapping, which previously let SVG paint-order select the
-// wrong building (e.g. ganglia-studio registering as halloween-tracker).
-const SELECTION_RADIUS = 22;
+// the target a tight circle (rather than a sprite-sized rect) stops neighboring
+// stops' hit areas from overlapping, which previously let SVG paint-order select
+// the wrong building (e.g. ganglia-studio registering as halloween-tracker).
+// 30 world units ≈ a comfortable target when zoomed in. At this radius every
+// real stop pair stays non-overlapping except the two tightly-clustered slop
+// wharf stops (~32 units apart); those resolve by SVG paint order.
+const SELECTION_RADIUS = 30;
 
 function RecentUpdatePulse({ color }: { color: string }) {
   return (
@@ -93,7 +96,7 @@ function FocusRings() {
         opacity={0.85}
       />
       <circle
-        r={30}
+        r={SELECTION_RADIUS + 8}
         cx={SITE_ART_CENTER.x}
         cy={SITE_ART_CENTER.y}
         fill="none"
