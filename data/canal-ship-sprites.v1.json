@@ -81,6 +81,18 @@
     {
       "stopId": "slop-mop-website",
       "src": "/art/stops/slop-mop-website-ship.png"
+    },
+    {
+      "stopId": "seo_optimization",
+      "src": "/art/stops/seo_optimization-ship.png"
+    },
+    {
+      "stopId": "rizldizl-website",
+      "src": "/art/stops/rizldizl-website-ship.png"
+    },
+    {
+      "stopId": "queueit",
+      "src": "/art/stops/queueit-ship.png"
     }
   ]
 }
