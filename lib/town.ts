@@ -585,6 +585,25 @@ export function buildTown(repoMetas: RepoMeta[]): Stop[] {
 // assignment and are pinned to "ally-alley" with source: "ally".
 // ---------------------------------------------------------------------------
 
+/**
+ * Ally repos don't broadcast a .willville.json packet, so there's no declared
+ * lifecycle state — without this they'd always read "unknown" even when the
+ * project is clearly active. Derive a sensible state from GitHub commit recency
+ * so the isle reflects real liveliness.
+ */
+function allyStateFromSignals(meta: RepoMeta): StatusState {
+  if (meta.isArchived) return "dormant";
+  const commits7d = meta.commits7d ?? 0;
+  const commits21d = meta.commits21d ?? 0;
+  const lastCommit = meta.lastCommitAt ? Date.parse(meta.lastCommitAt) : NaN;
+  const daysSinceCommit = Number.isFinite(lastCommit)
+    ? (Date.now() - lastCommit) / 86_400_000
+    : Infinity;
+  if (commits7d > 0) return "wip"; // pushed something within the week
+  if (commits21d > 0 || daysSinceCommit <= 60) return "maintenance"; // recent-ish
+  return "dormant"; // quiet for a couple of months
+}
+
 function buildAllyStop(input: AllyInput): Stop {
   const { meta } = input;
   const stopId = meta.repo.split("/")[1]!.toLowerCase();
@@ -603,10 +622,10 @@ function buildAllyStop(input: AllyInput): Stop {
     isPrivate: meta.isPrivate,
     source: "ally",
     contribution: meta.contribution,
-    // Ally repos don't broadcast a .willville.json, so the lifecycle state stays
-    // "unknown"; the isle's liveliness comes from the GitHub health signals below.
+    // No .willville.json packet for ally repos — derive lifecycle state from
+    // GitHub commit activity instead of leaving it "unknown".
     status: {
-      state: "unknown",
+      state: allyStateFromSignals(meta),
       summary: meta.description,
     },
     createdAt: meta.createdAt,

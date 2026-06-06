@@ -14,9 +14,19 @@
 
 import { lockForPr, type CanalBoat, type LockId } from "../../lib/canal";
 import { HEURISTICS } from "../../lib/willville.heuristics";
+import allyAlleyConfig from "../../data/ally-alley.v1.json";
 import { type ManifestCacheStore } from "./town-manifests";
 
 const OWNER = "ScienceIsNeato";
+
+/** owner/name slugs for the ally repos (someone else's repos I contribute to). */
+function allyRepoFullNames(): string[] {
+  const allies =
+    (allyAlleyConfig as { allies?: Array<{ repo?: string }> }).allies ?? [];
+  return allies
+    .map((a) => a.repo)
+    .filter((r): r is string => typeof r === "string" && r.includes("/"));
+}
 
 export const CANAL_SNAPSHOT_KEY = "willville:canal:snapshot:v1";
 
@@ -85,12 +95,24 @@ query ($q: String!, $cursor: String) {
 
 function repoToStop(repo: string) {
   const h = HEURISTICS.find((x) => x.repo.toLowerCase() === repo.toLowerCase());
-  return h
-    ? {
-        district: h.district,
-        stopId: h.repo.split("/")[1]!.toLowerCase(),
-      }
-    : undefined;
+  if (h) {
+    return {
+      district: h.district,
+      stopId: h.repo.split("/")[1]!.toLowerCase(),
+    };
+  }
+  // Ally repos aren't in HEURISTICS — they live in Ally Alley, with a stop id
+  // that's the lowercase repo slug (matching buildAllyStop in lib/town).
+  const ally = allyRepoFullNames().find(
+    (r) => r.toLowerCase() === repo.toLowerCase(),
+  );
+  if (ally) {
+    return {
+      district: "ally-alley" as const,
+      stopId: ally.split("/")[1]!.toLowerCase(),
+    };
+  }
+  return undefined;
 }
 
 const BUFF_ROUNDS_PREFIX = "buff-rounds/";
@@ -154,7 +176,10 @@ function mapPr(pr: GraphQLPR): CanalBoat {
  * Throws if GitHub returns a non-OK response, so callers can decide how to
  * degrade. Requires a token; without one the canal is empty by definition.
  */
-export async function buildCanalBoats(token: string): Promise<CanalBoat[]> {
+export async function buildCanalBoats(
+  token: string,
+  allyToken?: string,
+): Promise<CanalBoat[]> {
   const DAY = 24 * 60 * 60 * 1000;
   const cutoffDate = new Date(Date.now() - 7 * DAY)
     .toISOString()
@@ -166,6 +191,7 @@ export async function buildCanalBoats(token: string): Promise<CanalBoat[]> {
   async function fetchPage(
     q: string,
     cursor: string | null,
+    authToken: string,
   ): Promise<{
     nodes: GraphQLPR[];
     hasNextPage: boolean;
@@ -174,7 +200,7 @@ export async function buildCanalBoats(token: string): Promise<CanalBoat[]> {
     const r = await fetch("https://api.github.com/graphql", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${authToken}`,
         "Content-Type": "application/json",
         "User-Agent": "willville-edge",
       },
@@ -201,27 +227,52 @@ export async function buildCanalBoats(token: string): Promise<CanalBoat[]> {
   //   1. All currently open PRs (may be older than a week — still on the canal).
   //   2. All PRs merged within the last 7 days (fills the Open Sea bay).
   //   3. All PRs closed-not-merged within the last day (scuttled wrecks).
-  const queries = [
-    `is:pr user:${OWNER} is:open`,
-    `is:pr user:${OWNER} is:merged merged:>=${cutoffDate}`,
-    `is:pr user:${OWNER} is:closed is:unmerged closed:>=${scuttleCutoffDate}`,
+  const queryShapes = (scope: string) => [
+    `is:pr ${scope} is:open`,
+    `is:pr ${scope} is:merged merged:>=${cutoffDate}`,
+    `is:pr ${scope} is:closed is:unmerged closed:>=${scuttleCutoffDate}`,
   ];
+
+  // Owner repos: searched by `user:` with the main token (fatal on failure —
+  // the owner canal is the baseline). Ally repos: someone else's (often private)
+  // repos the main fine-grained token can't read, so search them per-repo with
+  // the dedicated ally token. Ally failures are non-fatal — a missing/invalid
+  // ally token must never blank the owner canal.
+  const ownerJobs = queryShapes(`user:${OWNER}`).map((q) => ({
+    q,
+    authToken: token,
+    fatal: true,
+  }));
+  const allyAuth = allyToken ?? token;
+  const allyJobs = allyRepoFullNames().flatMap((repo) =>
+    queryShapes(`repo:${repo}`).map((q) => ({
+      q,
+      authToken: allyAuth,
+      fatal: false,
+    })),
+  );
 
   const seen = new Set<string>();
   const nodes: GraphQLPR[] = [];
-  for (const q of queries) {
-    let cursor: string | null = null;
-    do {
-      const page = await fetchPage(q, cursor);
-      for (const node of page.nodes) {
-        const key = `${node.repository.nameWithOwner}#${node.number}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          nodes.push(node);
+  for (const { q, authToken, fatal } of [...ownerJobs, ...allyJobs]) {
+    try {
+      let cursor: string | null = null;
+      do {
+        const page = await fetchPage(q, cursor, authToken);
+        for (const node of page.nodes) {
+          const key = `${node.repository.nameWithOwner}#${node.number}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            nodes.push(node);
+          }
         }
-      }
-      cursor = page.hasNextPage ? page.endCursor : null;
-    } while (cursor);
+        cursor = page.hasNextPage ? page.endCursor : null;
+      } while (cursor);
+    } catch (err) {
+      if (fatal) throw err;
+      // Ally query failed (no ally token, expired, or lost access) — skip this
+      // repo's boats and keep the rest of the canal afloat.
+    }
   }
 
   let boats = nodes.map(mapPr);

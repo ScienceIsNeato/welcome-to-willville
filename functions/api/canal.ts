@@ -37,6 +37,8 @@ import {
 
 interface Env {
   GITHUB_PAT?: string;
+  /** Classic PAT with `repo` scope for ally repos (often private, other-owner). */
+  ALLY_GITHUB_PAT?: string;
   WILLVILLE_MAYOR_KEY?: string;
   WILLVILLE_MANIFEST_CACHE?: ManifestCacheStore;
 }
@@ -111,7 +113,7 @@ async function rebuildAndPersistCanalSnapshot(
   token: string,
   manifestCachedAt: string | null,
 ): Promise<{ generatedAt: string; boats: CanalBoat[] }> {
-  const boats = await buildCanalBoats(token);
+  const boats = await buildCanalBoats(token, env.ALLY_GITHUB_PAT);
   const generatedAt = new Date().toISOString();
   await persistCanalSnapshot(
     env.WILLVILLE_MANIFEST_CACHE,
@@ -166,7 +168,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   // Cold DB: the bell has never rung. Run one live build so the first visitor
   // still sees boats, but do not persist — the bell remains the sole writer.
   try {
-    const boats = await buildCanalBoats(token);
+    const boats = await buildCanalBoats(token, env.ALLY_GITHUB_PAT);
     return canalResponse(request, new Date().toISOString(), boats);
   } catch (err) {
     return canalResponse(request, new Date().toISOString(), [], {
