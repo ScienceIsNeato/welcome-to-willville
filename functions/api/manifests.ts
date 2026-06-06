@@ -354,7 +354,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       // and persist it so GET /api/canal reads boats straight from the durable
       // layer instead of crawling GitHub GraphQL on every hard refresh.
       try {
-        const boats = await buildCanalBoats(token);
+        const boats = await buildCanalBoats(token, env.ALLY_GITHUB_PAT);
         await persistCanalSnapshot(
           env.WILLVILLE_MANIFEST_CACHE,
           new Date().toISOString(),
