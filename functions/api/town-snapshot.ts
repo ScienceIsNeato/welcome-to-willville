@@ -679,6 +679,8 @@ async function buildAllyInputs(token?: string): Promise<AllyInput[]> {
   const entries = allyEntries();
   if (entries.length === 0) return [];
   const login = allyContributorLogin();
+  // Use the ally token to read .willville.json from ally repos (often private).
+  const allyManifestClient = new WillvilleManifestClient(token);
 
   const inputs = await mapLimit(
     entries,
@@ -705,6 +707,14 @@ async function buildAllyInputs(token?: string): Promise<AllyInput[]> {
         fetchWorkflowRuns(repo.full_name, token),
         fetchContribution(repo.full_name, login, token),
       ]);
+
+      // Fetch the .willville.json from the ally repo so its status/direction
+      // show in the HUD just like owned repos. The ally token has repo access.
+      const willvilleManifest = await allyManifestClient.fetchRepoManifest(
+        repo.full_name,
+        repo.default_branch,
+        branchResult.activeBranch,
+      );
 
       const meta: RepoMeta = {
         repo: repo.full_name,
@@ -743,6 +753,7 @@ async function buildAllyInputs(token?: string): Promise<AllyInput[]> {
         recentCommits: commitCounts?.recentCommits,
         workflowRuns,
         contribution,
+        willvilleManifest,
       };
 
       return {
