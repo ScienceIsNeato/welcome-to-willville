@@ -253,6 +253,7 @@ export const HEURISTICS: Heuristic[] = [
     repo: "ScienceIsNeato/slop-mop-website",
     displayName: "slop-mop-website",
     district: "slop-wharf",
+    position: { x: 467, y: 632 },
     lines: ["quality", "web"],
     blurb: "The public front door for slop-mop.",
     glyph: {
@@ -582,6 +583,23 @@ export const HEURISTICS: Heuristic[] = [
     lines: [],
     position: { x: 1323, y: 462 },
     blurb: "Best-guess placement - override via .willville.json.",
+  },
+
+  // These two appear in Mayor's Express with recent commits but had no heuristic
+  // entry, so clicking them from the board caused a 500 (no pre-rendered route).
+  {
+    repo: "ScienceIsNeato/fogofdog-site",
+    displayName: "fogofdog-site",
+    district: "the-nursery",
+    lines: ["web"],
+    blurb: "FogOfDog website.",
+  },
+  {
+    repo: "ScienceIsNeato/queueup-website",
+    displayName: "queueup-website",
+    district: "the-nursery",
+    lines: ["web"],
+    blurb: "Queueup project website.",
   },
 ];
 

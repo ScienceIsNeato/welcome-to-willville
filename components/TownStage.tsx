@@ -19,7 +19,7 @@ import {
   type DistrictId,
 } from "@/lib/willville";
 import type { Stop } from "@/lib/town";
-import { isKnownDistrict } from "@/lib/slugs";
+import { isKnownDistrict, KNOWN_STOPS } from "@/lib/slugs";
 import type { CanalBoat } from "@/lib/canal";
 import { sitePositionForStop } from "@/lib/town-layout";
 import { type RepositionStopDelta } from "./repositionPlannerUtils";
@@ -982,9 +982,23 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       transitioningToStopIdRef.current = stop.id;
       dismissedStopIdRef.current = null;
       setSelectedStop(stop);
-      router.replace(routeWithCurrentSearch(`/${stop.district}/${stop.id}/`), {
-        scroll: false,
-      });
+      // Only push a URL route for stops that were pre-rendered at build time
+      // (i.e. present in KNOWN_STOPS). Newly-discovered repos added by a bell
+      // ring may appear in the Mayor's Express or on the map but don't have a
+      // pre-rendered [district]/[stop] page yet; navigating there causes a 500
+      // under `output: export` with `dynamicParams = false`.
+      if (
+        KNOWN_STOPS.some(
+          (s) => s.district === stop.district && s.id === stop.id,
+        )
+      ) {
+        router.replace(
+          routeWithCurrentSearch(`/${stop.district}/${stop.id}/`),
+          {
+            scroll: false,
+          },
+        );
+      }
     },
     [
       mobileSafeMode,
