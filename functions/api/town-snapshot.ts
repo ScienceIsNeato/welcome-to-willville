@@ -171,7 +171,7 @@ async function listOwnerRepos(token?: string): Promise<GitHubRepo[]> {
     const url = token
       ? `https://api.github.com/user/repos?per_page=100&page=${page}&affiliation=owner&sort=pushed&direction=desc`
       : `https://api.github.com/users/${OWNER}/repos?per_page=100&page=${page}&sort=pushed&direction=desc`;
-    const r = await fetch(url, { headers });
+    const r = await fetch(url, { headers, cache: "no-store" });
     if (!r.ok) break;
     const batch = (await r.json()) as GitHubRepo[];
     if (!Array.isArray(batch) || batch.length === 0) break;
@@ -252,7 +252,7 @@ async function fetchWorkflowRuns(
   try {
     const response = await fetch(
       `https://api.github.com/repos/${fullName}/actions/runs?per_page=3`,
-      { headers },
+      { headers, cache: "no-store" },
     );
     if (!response.ok) return undefined;
 
@@ -334,7 +334,7 @@ async function fetchMilestones(
   if (token) headers.Authorization = `Bearer ${token}`;
   const url = `https://api.github.com/repos/${owner}/${name}/milestones?state=open&sort=due_on&direction=asc&per_page=5`;
   try {
-    const r = await fetch(url, { headers });
+    const r = await fetch(url, { headers, cache: "no-store" });
     if (!r.ok) return [];
     const data = (await r.json()) as GitHubMilestone[];
     return Array.isArray(data) ? data : [];
@@ -383,7 +383,7 @@ async function fetchCommitCounts(
     while (true) {
       const r = await fetch(
         `https://api.github.com/repos/${fullName}/commits?since=${since}&per_page=100&page=${page}`,
-        { headers },
+        { headers, cache: "no-store" },
       );
       if (!r.ok) return undefined;
       const batch = (await r.json()) as CommitEntry[];
@@ -552,7 +552,7 @@ async function fetchRecentBranches(
     };
     const response = await fetch(
       `https://api.github.com/repos/${fullName}/events?per_page=30`,
-      { headers },
+      { headers, cache: "no-store" },
     );
     if (!response.ok) return fallback;
 
@@ -588,6 +588,13 @@ async function fetchRecentBranches(
   }
 }
 
+// All GitHub REST calls below pass `cache: "no-store"`. GitHub's 404 responses
+// carry no Cache-Control and a Vary that omits Authorization, so a single
+// no-access 404 (e.g. before ALLY_GITHUB_PAT was set, or from the fine-grained
+// token that can't see a private ally repo) can get cached at the Cloudflare
+// edge keyed by URL alone — and then served to every later request regardless
+// of the token, silently hiding ally repos from the town. POST/GraphQL isn't
+// cached, which is why the canal saw queueit while the town didn't.
 function githubHeaders(token?: string): Record<string, string> {
   const headers: Record<string, string> = {
     "User-Agent": "willville-edge",
@@ -605,6 +612,7 @@ async function fetchSingleRepo(
   try {
     const r = await fetch(`https://api.github.com/repos/${fullName}`, {
       headers: githubHeaders(token),
+      cache: "no-store",
     });
     if (!r.ok) return undefined;
     return (await r.json()) as GitHubRepo;
@@ -628,7 +636,7 @@ async function fetchContribution(
   try {
     const r = await fetch(
       `https://api.github.com/repos/${fullName}/commits?author=${encodeURIComponent(login)}&per_page=100`,
-      { headers },
+      { headers, cache: "no-store" },
     );
     if (r.ok) {
       const batch = (await r.json()) as Array<{
@@ -653,7 +661,7 @@ async function fetchContribution(
       const q = `repo:${fullName} type:pr author:${login} ${qualifier}`;
       const r = await fetch(
         `https://api.github.com/search/issues?q=${encodeURIComponent(q)}&per_page=1`,
-        { headers },
+        { headers, cache: "no-store" },
       );
       if (!r.ok) return undefined;
       const data = (await r.json()) as { total_count?: number };
