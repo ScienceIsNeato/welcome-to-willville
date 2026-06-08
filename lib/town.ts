@@ -607,6 +607,9 @@ function allyStateFromSignals(meta: RepoMeta): StatusState {
 function buildAllyStop(input: AllyInput): Stop {
   const { meta } = input;
   const stopId = meta.repo.split("/")[1]!.toLowerCase();
+  const manifest = meta.willvilleManifest;
+  const agent = manifest?.agent;
+  const manifestStatus = manifest?.status;
   return {
     id: stopId,
     displayName: input.displayName ?? repoDisplayName(meta.repo),
@@ -622,11 +625,17 @@ function buildAllyStop(input: AllyInput): Stop {
     isPrivate: meta.isPrivate,
     source: "ally",
     contribution: meta.contribution,
-    // No .willville.json packet for ally repos — derive lifecycle state from
-    // GitHub commit activity instead of leaving it "unknown".
+    // Use .willville.json when present (same fields as owned repos: agent
+    // status/direction, manifest state). Fall back to signal-derived state
+    // (commit recency) so the building still reads as alive without a packet.
     status: {
-      state: allyStateFromSignals(meta),
-      summary: meta.description,
+      state: manifestStatus?.state ?? allyStateFromSignals(meta),
+      doing: agent?.status,
+      next: agent?.direction,
+      blocked:
+        manifestStatus?.blockers?.[0] ?? normalizeNone(agent?.difficulties),
+      summary: manifestStatus?.summary ?? meta.description,
+      updated: agent?.lastUpdate ?? manifestStatus?.updated,
     },
     createdAt: meta.createdAt,
     sizeKb: meta.sizeKb,

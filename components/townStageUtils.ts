@@ -322,6 +322,15 @@ function centerBoardText(input: string): string {
 
 function stopSyncChanged(previous: Stop | undefined, next: Stop): boolean {
   if (!previous) return true;
+  // IMPORTANT: only compare fields that change when the repo's *content* changes.
+  // Deliberately excluded are the time-relative, now-derived fields —
+  // commits3d/7d/21d (rolling-window commit counts) and queue.etaDays (a
+  // countdown). Those drift as wall-clock time passes even with zero GitHub
+  // activity: a commit that sat "within 3 days" yesterday slides out of the
+  // window today, and an ETA ticks down daily. Diffing them against a stale
+  // stored snapshot flagged ~11 untouched repos as "updated" on every fresh
+  // bell. A genuine new commit still flips lastCommitAt + activeBranch.commitHash
+  // below, so excluding the rolling counts loses no real-change detection.
   return (
     previous.status.updated !== next.status.updated ||
     previous.status.doing !== next.status.doing ||
@@ -330,10 +339,6 @@ function stopSyncChanged(previous: Stop | undefined, next: Stop): boolean {
     previous.status.blocked !== next.status.blocked ||
     previous.status.risk !== next.status.risk ||
     previous.queue?.milestone !== next.queue?.milestone ||
-    previous.queue?.etaDays !== next.queue?.etaDays ||
-    previous.commits3d !== next.commits3d ||
-    previous.commits7d !== next.commits7d ||
-    previous.commits21d !== next.commits21d ||
     previous.lastCommitAt !== next.lastCommitAt ||
     previous.activeBranch?.name !== next.activeBranch?.name ||
     previous.activeBranch?.pushedAt !== next.activeBranch?.pushedAt ||
@@ -398,7 +403,17 @@ export function buildBellBoardAnnouncement(
       boardStopLabel(left).localeCompare(boardStopLabel(right)),
     )
     .map((stop) => fitBoardText(`UPD ${boardStopLabel(stop)}`));
-  const routeChanges = buildRouteChangeLines(previousStops, nextStops);
+  // The Mayor's Express ranking is ordered by the same now-relative commit
+  // windows as above, so comparing a stale snapshot to a fresh rebuild reorders
+  // it purely from elapsed time (a repo slides down or "OFF ROUTE" as its
+  // commits age out) even when nothing was actually pushed. A genuine route
+  // change is always driven by a real commit — which also shows up in
+  // updatedRepos — so only surface route changes when at least one repo's
+  // content actually changed. Otherwise the board correctly reads "steady".
+  const routeChanges =
+    updatedRepos.length > 0
+      ? buildRouteChangeLines(previousStops, nextStops)
+      : [];
 
   if (updatedRepos.length === 0 && routeChanges.length === 0) {
     return {

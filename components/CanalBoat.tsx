@@ -80,14 +80,14 @@ export function CanalBoat({ boat, position }: Props) {
         : "saturate(0.3) brightness(0.92)";
 
   const stopStageClick = (e: MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
     e.stopPropagation();
-    window.location.assign(boat.url);
   };
 
   return (
     <a
       href={boat.url}
+      target="_blank"
+      rel="noopener noreferrer"
       onClick={stopStageClick}
       style={{ cursor: "pointer", pointerEvents: "all" }}
       role="link"

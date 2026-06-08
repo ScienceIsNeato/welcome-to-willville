@@ -43,15 +43,24 @@ export function WorldSubstrate({
             transform={`translate(${TOWN_OFFSET.x} ${TOWN_OFFSET.y})`}
           />
         </clipPath>
-        <radialGradient id="town-world-vignette" cx="50%" cy="47%" r="73%">
-          <stop offset="56%" stopColor="#000000" stopOpacity="0" />
+        <radialGradient
+          id="town-world-vignette"
+          cx={WORLD.width / 2}
+          cy={WORLD.height / 2}
+          r={WORLD.width * 0.73}
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0%" stopColor="#000000" stopOpacity="0" />
+          <stop offset="40%" stopColor="#000000" stopOpacity="0" />
           <stop offset="100%" stopColor="#080515" stopOpacity="0.32" />
         </radialGradient>
       </defs>
 
       <rect
-        width={WORLD.width}
-        height={WORLD.height}
+        x={-500000}
+        y={-500000}
+        width={1000000}
+        height={1000000}
         fill="url(#willville-water-tile)"
       />
       {/* Flat land-green base under the art (clipped to land). When the heavy
@@ -59,6 +68,8 @@ export function WorldSubstrate({
           shows through instead of the blue water — a subtle green that blends
           with the map rather than a jarring full-screen blue flash. */}
       <rect
+        x={0}
+        y={0}
         width={WORLD.width}
         height={WORLD.height}
         fill="#4c8029"
@@ -66,14 +77,18 @@ export function WorldSubstrate({
       />
       <image
         href={landscapeArt}
+        x={0}
+        y={0}
         width={WORLD.width}
         height={WORLD.height}
         preserveAspectRatio="none"
         clipPath="url(#willville-world-land-mask)"
       />
       <rect
-        width={WORLD.width}
-        height={WORLD.height}
+        x={-500000}
+        y={-500000}
+        width={1000000}
+        height={1000000}
         fill="url(#town-world-vignette)"
         pointerEvents="none"
       />

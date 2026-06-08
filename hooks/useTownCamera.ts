@@ -45,21 +45,7 @@ function clampScale(s: number): number {
 
 function clampCamera(c: Camera): Camera {
   const scale = clampScale(c.scale);
-  const halfW = WORLD.width / (2 * scale);
-  const halfH = WORLD.height / (2 * scale);
-  const worldHalfW = WORLD.width / 2;
-  const worldHalfH = WORLD.height / 2;
-  // Zoomed out (world fits in viewport): lock camera to world centre.
-  // Zoomed in: clamp so world edges stay flush with viewport edges.
-  const cx =
-    halfW >= worldHalfW
-      ? worldHalfW
-      : Math.min(WORLD.width - halfW, Math.max(halfW, c.cx));
-  const cy =
-    halfH >= worldHalfH
-      ? worldHalfH
-      : Math.min(WORLD.height - halfH, Math.max(halfH, c.cy));
-  return { cx, cy, scale };
+  return { cx: c.cx, cy: c.cy, scale };
 }
 
 export function cameraAtCorner(corner: CameraCorner, scale: number): Camera {
@@ -285,6 +271,7 @@ export function useTownCamera(
           !!(event.target as Element)?.closest?.("[data-project-hud]") ||
           !!(event.target as Element)?.closest?.('[data-no-pan="true"]');
         if (!hudDragRef.current) {
+          if (event.cancelable) event.preventDefault();
           stopAnims();
           didTriggerDragRef.current = false;
           wasDraggingRef.current = false;
@@ -292,6 +279,7 @@ export function useTownCamera(
       },
       onDrag: ({ delta: [dx, dy], pinching, event }) => {
         if (hudDragRef.current || pinching) return;
+        if (event.cancelable) event.preventDefault();
         if (!didTriggerDragRef.current) {
           didTriggerDragRef.current = true;
           setIsDragging(true);
