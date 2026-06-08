@@ -928,6 +928,18 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       if (transitioningToStopIdRef.current !== null) {
         return;
       }
+
+      // If we have a selected stop but no path, it might be an unrouted stop
+      // (e.g. newly discovered). Only auto-dismiss if the currently selected
+      // stop WAS a routed one (meaning we really should have a path).
+      if (selectedStop) {
+        const routed = KNOWN_STOPS.some(
+          (s) =>
+            s.id === selectedStop.id && s.district === selectedStop.district,
+        );
+        if (!routed) return;
+      }
+
       dismissedStopIdRef.current = null;
       const dismiss = window.setTimeout(() => {
         setSelectedStop(null);
@@ -982,22 +994,27 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
       transitioningToStopIdRef.current = stop.id;
       dismissedStopIdRef.current = null;
       setSelectedStop(stop);
+
+      const routed = KNOWN_STOPS.some(
+        (s) => s.district === stop.district && s.id === stop.id,
+      );
+
       // Only push a URL route for stops that were pre-rendered at build time
       // (i.e. present in KNOWN_STOPS). Newly-discovered repos added by a bell
       // ring may appear in the Mayor's Express or on the map but don't have a
       // pre-rendered [district]/[stop] page yet; navigating there causes a 500
       // under `output: export` with `dynamicParams = false`.
-      if (
-        KNOWN_STOPS.some(
-          (s) => s.district === stop.district && s.id === stop.id,
-        )
-      ) {
+      if (routed) {
         router.replace(
           routeWithCurrentSearch(`/${stop.district}/${stop.id}/`),
           {
             scroll: false,
           },
         );
+      } else {
+        // Clear it now if we aren't navigating, so the sync effect below
+        // doesn't hang on a transitioning state that will never resolve.
+        transitioningToStopIdRef.current = null;
       }
     },
     [
@@ -1103,6 +1120,10 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     [isRepositionMode, markSkipDrag, openStopHud, zoomAtWorldPoint],
   );
 
+  const [hoveredDistrictId, setHoveredDistrictId] = useState<string | null>(
+    null,
+  );
+
   const stopMarkers = useMemo(
     () =>
       currentStops.map((stop) => {
@@ -1123,19 +1144,24 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           repaintQueueState !== "review" &&
           repaintQueueState !== "running";
         return (
-          <StopMarker
+          <g
             key={`${stop.district}-${stop.id}`}
-            stop={stop}
-            isFocused={focusedStopKey === `${stop.district}/${stop.id}`}
-            recentlyUpdated={recently}
-            onClick={handleStopClick}
-            onDoubleClick={handleStopDoubleClick}
-            forceHideSprite={replacementUnderlayStopIds.has(stop.id)}
-            draggable={markerDraggable}
-            onDragStart={handleMarkerDragStart}
-            onDragMove={handleMarkerDragMove}
-            onDragEnd={handleMarkerDragEnd}
-          />
+            onMouseEnter={() => setHoveredDistrictId(stop.district)}
+            onMouseLeave={() => setHoveredDistrictId(null)}
+          >
+            <StopMarker
+              stop={stop}
+              isFocused={focusedStopKey === `${stop.district}/${stop.id}`}
+              recentlyUpdated={recently}
+              onClick={handleStopClick}
+              onDoubleClick={handleStopDoubleClick}
+              forceHideSprite={replacementUnderlayStopIds.has(stop.id)}
+              draggable={markerDraggable}
+              onDragStart={handleMarkerDragStart}
+              onDragMove={handleMarkerDragMove}
+              onDragEnd={handleMarkerDragEnd}
+            />
+          </g>
         );
       }),
     [
@@ -1446,12 +1472,19 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                 {!mobileSafeMode && <DynamicWalls />}
                 <Canal boats={boats} layer="base" />
                 {DISTRICTS.map((d) => (
-                  <DistrictZone
+                  <g
                     key={d.id}
-                    district={d}
-                    layer="hit"
-                    onEnterDistrict={enterDistrict}
-                  />
+                    onMouseEnter={() => setHoveredDistrictId(d.id)}
+                    onMouseLeave={() => setHoveredDistrictId(null)}
+                  >
+                    <DistrictZone
+                      district={d}
+                      layer="hit"
+                      isSelected={pathDistrict === d.id}
+                      isHovered={hoveredDistrictId === d.id}
+                      onEnterDistrict={enterDistrict}
+                    />
+                  </g>
                 ))}
                 <MainLine
                   stops={currentStops}
@@ -1470,12 +1503,19 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                 )}
                 {stopMarkers}
                 {DISTRICTS.map((d) => (
-                  <DistrictZone
+                  <g
                     key={`label-${d.id}`}
-                    district={d}
-                    layer="label"
-                    onEnterDistrict={enterDistrict}
-                  />
+                    onMouseEnter={() => setHoveredDistrictId(d.id)}
+                    onMouseLeave={() => setHoveredDistrictId(null)}
+                  >
+                    <DistrictZone
+                      district={d}
+                      layer="label"
+                      isSelected={pathDistrict === d.id}
+                      isHovered={hoveredDistrictId === d.id}
+                      onEnterDistrict={enterDistrict}
+                    />
+                  </g>
                 ))}
                 <SpecialTownLandmarks
                   mobileSafeMode={mobileSafeMode}

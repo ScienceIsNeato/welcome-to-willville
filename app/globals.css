@@ -84,6 +84,10 @@ body {
       rgba(21, 16, 42, 0.12) 100%
     ),
     linear-gradient(180deg, #283b6d 0%, #283b6d 28%, #244631 72%, #244631 100%);
+  user-select: none;
+  touch-action: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 .train-glow {
@@ -338,6 +342,43 @@ body {
   animation-delay:
     var(--district-border-delay, 0s), var(--district-border-delay, 0s);
   will-change: stroke-dashoffset, opacity;
+}
+
+.district-zone-backlight {
+  filter: blur(14px);
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+  will-change: opacity;
+}
+
+.district-zone-backlight--selected {
+  opacity: 0.55;
+  animation: district-backlight-breathe 4s ease-in-out infinite;
+}
+
+.district-zone-hit-area {
+  outline: none;
+}
+
+.district-zone-backlight--hovered,
+.district-zone-hit-area:focus-visible ~ .district-zone-backlight {
+  opacity: 0.38;
+  animation: district-backlight-breathe 4s ease-in-out infinite;
+}
+
+.district-zone-border-glow--hovered,
+.district-zone-hit-area:focus-visible ~ .district-zone-border-glow {
+  opacity: 0.45;
+}
+
+@keyframes district-backlight-breathe {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.65;
+  }
 }
 
 @keyframes district-zone-border-dash {

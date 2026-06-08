@@ -3,7 +3,7 @@ import type { GitHubWorkflowRun, Stop } from "@/lib/town";
 
 export function followLink(event: MouseEvent<HTMLAnchorElement>) {
   event.preventDefault();
-  window.location.assign(event.currentTarget.href);
+  window.open(event.currentTarget.href, "_blank", "noopener,noreferrer");
 }
 
 export function repoShortName(repo: string | undefined): string {

@@ -6,12 +6,16 @@ import type { District } from "@/lib/willville";
 type Props = {
   district: District;
   onEnterDistrict: (district: District) => void;
+  isSelected?: boolean;
+  isHovered?: boolean;
   layer?: "hit" | "label" | "all";
 };
 
 export function DistrictZone({
   district,
   onEnterDistrict,
+  isSelected = false,
+  isHovered = false,
   layer = "all",
 }: Props) {
   const borderPhaseSeed = Array.from(district.id).reduce(
@@ -36,7 +40,7 @@ export function DistrictZone({
 
   return (
     <g
-      className={`district-${district.id.replace(/^the-/, "")}`}
+      className={`district-zone-group district-${district.id.replace(/^the-/, "")}`}
       style={{ cursor: "pointer" }}
       aria-label={district.displayName}
     >
@@ -44,7 +48,36 @@ export function DistrictZone({
         <>
           <polygon
             points={district.polygon}
-            className="district-zone-border district-zone-border-glow"
+            className="district-zone-hit-area"
+            fill="transparent"
+            stroke="transparent"
+            strokeWidth={0}
+            pointerEvents="all"
+            role="link"
+            tabIndex={0}
+            aria-label={`Open ${district.displayName}`}
+            onClick={enterDistrict}
+            onKeyDown={enterDistrictFromKeyboard}
+          >
+            <title>{district.displayName}</title>
+          </polygon>
+          <polygon
+            points={district.polygon}
+            className={`district-zone-backlight ${
+              isSelected ? "district-zone-backlight--selected" : ""
+            } ${isHovered ? "district-zone-backlight--hovered" : ""}`}
+            style={borderStyle}
+            fill="none"
+            stroke="var(--district-border-color)"
+            strokeWidth={12}
+            pointerEvents="none"
+            aria-hidden="true"
+          />
+          <polygon
+            points={district.polygon}
+            className={`district-zone-border district-zone-border-glow ${
+              isHovered ? "district-zone-border-glow--hovered" : ""
+            }`}
             style={borderStyle}
             fill="none"
             pointerEvents="none"
@@ -58,20 +91,6 @@ export function DistrictZone({
             pointerEvents="none"
             aria-hidden="true"
           />
-          <polygon
-            points={district.polygon}
-            fill="transparent"
-            stroke="transparent"
-            strokeWidth={0}
-            pointerEvents="all"
-            role="link"
-            tabIndex={0}
-            aria-label={`Open ${district.displayName}`}
-            onClick={enterDistrict}
-            onKeyDown={enterDistrictFromKeyboard}
-          >
-            <title>{district.displayName}</title>
-          </polygon>
         </>
       )}
       {(layer === "label" || layer === "all") && (
