@@ -27,9 +27,6 @@ const CANAL_BANKS = [
   { id: "north", path: CANAL_SECTION.northBankPath, duration: 116 },
   { id: "south", path: CANAL_SECTION.southBankPath, duration: 124 },
 ];
-const OPEN_SEA_ARC_START_ANGLE = -Math.PI / 4.5;
-const OPEN_SEA_ARC_END_ANGLE = Math.PI / 2.3;
-const OPEN_SEA_LABEL_ANGLE = -0.15;
 // Focal point of the age rings, placed so the bay's mouth lines up with the
 // canal exit (nudged down and left from the old center).
 const OPEN_SEA_CENTER = { x: 1210, y: 930 } as const;
@@ -39,12 +36,15 @@ const OPEN_SEA_CENTER = { x: 1210, y: 930 } as const;
 // age alone fans the boats — older boats land on bigger rings that naturally
 // have more circumference (room) to spread. Boats from the same repo cluster
 // together on their ring and overlap.
-const OPEN_SEA_BOAT_ARC_CENTER = (-Math.PI / 4.8 + Math.PI / 2.3) / 2;
+//
+// With 2-year history, rings at 108px spacing reach ~78k px radius — well past
+// the SVG canvas, just like the Gulf Stream heading to the African coast. Pan
+// east to see older merges streaming off into the open ocean.
 const OPEN_SEA_INNER_RADIUS = 150;
 const OPEN_SEA_RING_SPACING = 108;
 const OPEN_SEA_HALF_SPAN = 0.85;
 const OPEN_SEA_ZONE_HOURS = 24;
-const OPEN_SEA_MAX_ZONE = 7;
+const OPEN_SEA_MAX_ZONE = 730; // 2 years of daily zones — no age clamping
 // Clusters fill the center (0°, straight out of the bay) first and only fan to
 // the sides as more pile up — this is the angle between adjacent cluster centers.
 const OPEN_SEA_CLUSTER_ANGLE_STEP = 0.32;
@@ -53,6 +53,61 @@ const OPEN_SEA_CLUSTER_ANGLE_STEP = 0.32;
 const GOLDEN_ANGLE = 2.399963;
 const OPEN_SEA_CLUSTER_STEP = 22;
 const OPEN_SEA_CLUSTER_JITTER = 16;
+
+/**
+ * How wide the boat arc is at a given zone index.
+ * Full spread for the first week; then hyperbolic convergence toward the spine
+ * so the fleet looks like rivers merging into a single Gulf Stream current.
+ *   zone 6  (7d)  → 1.0× = full fan
+ *   zone 13 (14d) → 0.5×
+ *   zone 27 (28d) → 0.25×
+ *   zone 59 (2mo) → 0.11×  (basically a ribbon)
+ */
+function zoneHalfSpan(z: number): number {
+  if (z < 7) return OPEN_SEA_HALF_SPAN;
+  return OPEN_SEA_HALF_SPAN * (7 / (z + 1));
+}
+
+// Gulf Stream curve parameters.
+// The outgoing spine starts heading slightly SE (matching the canal exit),
+// sweeps through a pronounced Nike-swoosh turn, and settles into NNE —
+// like the real Gulf Stream curving away from the coast toward the open ocean.
+const SPINE_START_ANGLE = 0.42; // slightly SE (right + a little down in SVG)
+const SPINE_END_ANGLE = -Math.PI / 3; // NNE (right + strongly up in SVG, ~60° above east)
+const SPINE_CURVE_ZONES = 28; // ~4 weeks to complete most of the bend
+
+/**
+ * Direction angle of the Gulf Stream spine at zone z.
+ * Smoothly rotates from SPINE_START_ANGLE to SPINE_END_ANGLE using
+ * exponential easing so the bend is tight near shore and straightens far out.
+ */
+function gulfStreamAngle(z: number): number {
+  const eased = 1 - Math.exp(-3 * Math.min(1, z / SPINE_CURVE_ZONES));
+  return SPINE_START_ANGLE + (SPINE_END_ANGLE - SPINE_START_ANGLE) * eased;
+}
+
+/**
+ * Milestone rings to draw in the open sea.
+ * Days 1–7 every day, then every 7 days through month 1, then monthly.
+ */
+function openSeaMilestones(): Array<{ zone: number; label: string }> {
+  const marks: Array<{ zone: number; label: string }> = [];
+  // Every day for the first week
+  for (let d = 1; d <= 7; d++) {
+    marks.push({ zone: d - 1, label: `${d}d` });
+  }
+  // Every 7 days: 14d, 21d, 28d
+  for (const d of [14, 21, 28]) {
+    const zone = d - 1;
+    if (zone < OPEN_SEA_MAX_ZONE) marks.push({ zone, label: `${d}d` });
+  }
+  // Monthly from 1mo to 24mo (≈30.44 days each)
+  for (let m = 1; m <= 24; m++) {
+    const zone = Math.floor(m * 30.44) - 1;
+    if (zone < OPEN_SEA_MAX_ZONE) marks.push({ zone, label: `${m}mo` });
+  }
+  return marks;
+}
 
 // Tiny deterministic hash + PRNG so each boat's jitter is stable across renders
 // (no hydration mismatch) but looks random.
@@ -125,10 +180,10 @@ export function Canal({ boats, layer = "all" }: Props) {
       zoneBoats.get(z)!.push(b);
     }
 
-    const halfSpan = OPEN_SEA_HALF_SPAN;
-
     for (const [z, boatsInZone] of zoneBoats) {
       const radius = OPEN_SEA_INNER_RADIUS + z * OPEN_SEA_RING_SPACING;
+      // Arc width shrinks with age: full fan near shore, single ribbon far out.
+      const halfSpan = zoneHalfSpan(z);
 
       // Cluster boats from the same repo together on this ring.
       const repoGroups = new Map<string, CanalBoat[]>();
@@ -142,14 +197,17 @@ export function Canal({ boats, layer = "all" }: Props) {
       );
 
       clusters.forEach((cluster, ci) => {
-        // Center-out placement: 0 → dead center (0°, straight out of the bay),
-        // then alternate to either side so the middle fills before the edges.
+        // Center-out placement: 0 → dead center on the spine, then alternate
+        // to either side so the middle fills before the edges.
+        // The spine itself curves from SE (near shore) to NNE (far out) via
+        // gulfStreamAngle — boats ride the current as it bends northward.
         const rank = Math.ceil(ci / 2) * (ci % 2 === 1 ? 1 : -1);
+        const streamAngle = gulfStreamAngle(z);
         const theta = Math.max(
-          OPEN_SEA_BOAT_ARC_CENTER - halfSpan,
+          streamAngle - halfSpan,
           Math.min(
-            OPEN_SEA_BOAT_ARC_CENTER + halfSpan,
-            OPEN_SEA_BOAT_ARC_CENTER + rank * OPEN_SEA_CLUSTER_ANGLE_STEP,
+            streamAngle + halfSpan,
+            streamAngle + rank * OPEN_SEA_CLUSTER_ANGLE_STEP,
           ),
         );
         const gx = cx + radius * Math.cos(theta);
@@ -337,35 +395,49 @@ export function Canal({ boats, layer = "all" }: Props) {
             ))}
           </g>
 
-          {/* Open Sea Age Markings */}
+          {/* Open Sea Age Markings — milestone rings only */}
           <g className="open-sea-markings" aria-hidden="true">
-            {Array.from({ length: OPEN_SEA_MAX_ZONE }, (_, z) => ({
-              r: OPEN_SEA_INNER_RADIUS + z * OPEN_SEA_RING_SPACING,
-              label: `${z + 1}d`,
-            })).map(({ r, label }) => {
+            {openSeaMilestones().map(({ zone, label }) => {
+              const r = OPEN_SEA_INNER_RADIUS + zone * OPEN_SEA_RING_SPACING;
               const cx = OPEN_SEA_CENTER.x;
               const cy = OPEN_SEA_CENTER.y;
-              const startAngle = OPEN_SEA_ARC_START_ANGLE;
-              const endAngle = OPEN_SEA_ARC_END_ANGLE;
+
+              // Each ring spans only as wide as the boats at that age — the
+              // same hyperbolic decay used for boat placement. Near shore the
+              // arcs are wide fans; far out they narrow to a short tick on the
+              // spine, giving the Nike-swoosh / Gulf Stream convergence shape.
+              // The spine angle rotates with the current so rings always face
+              // the direction the fleet is heading at that distance.
+              const halfArc = Math.max(0.02, zoneHalfSpan(zone));
+              const streamAngle = gulfStreamAngle(zone);
+              const startAngle = streamAngle - halfArc;
+              const endAngle = streamAngle + halfArc;
 
               const x1 = cx + r * Math.cos(startAngle);
               const y1 = cy + r * Math.sin(startAngle);
               const x2 = cx + r * Math.cos(endAngle);
               const y2 = cy + r * Math.sin(endAngle);
-              const d = `M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}`;
+              const arcD = `M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}`;
 
-              // Place label along the arc at angle -0.15 radians
-              const labelAngle = OPEN_SEA_LABEL_ANGLE;
-              const lx = cx + r * Math.cos(labelAngle);
-              const ly = cy + r * Math.sin(labelAngle);
+              // Label lives on the midline spine — placed just inshore of the
+              // ring so it reads "you are X away from port" as you pan outward.
+              const lx = cx + (r - 28) * Math.cos(streamAngle);
+              const ly = cy + (r - 28) * Math.sin(streamAngle);
+
+              // Monthly rings are slightly brighter so the year-scale markers
+              // stand out from the week-scale ones.
+              const isMajor = label.endsWith("mo") || label === "7d";
+              const arcOpacity = isMajor ? 0.65 : 0.42;
+              const textOpacity = isMajor ? 1.0 : 0.82;
+              const fontSize = isMajor ? 34 : 26;
 
               return (
                 <g key={`marking-${label}`}>
                   <path
-                    d={d}
+                    d={arcD}
                     fill="none"
-                    stroke="rgba(142, 199, 223, 0.55)"
-                    strokeWidth={2.5}
+                    stroke={`rgba(142, 199, 223, ${arcOpacity})`}
+                    strokeWidth={isMajor ? 2.5 : 1.5}
                     strokeDasharray="6 8"
                   />
                   <text
@@ -373,9 +445,9 @@ export function Canal({ boats, layer = "all" }: Props) {
                     y={ly}
                     textAnchor="middle"
                     dominantBaseline="middle"
-                    fontSize={30}
+                    fontSize={fontSize}
                     fontWeight={700}
-                    fill="rgba(142, 199, 223, 0.90)"
+                    fill={`rgba(142, 199, 223, ${textOpacity})`}
                     style={{
                       pointerEvents: "none",
                       textShadow:

@@ -25,6 +25,7 @@ import { type CanalBoat } from "../../lib/canal";
 import { withCorsHeaders } from "./cors";
 import {
   buildCanalBoats,
+  mergeOpenSeaBoats,
   persistCanalSnapshot,
   readCanalSnapshot,
   type CanalSnapshot,
@@ -107,21 +108,39 @@ function canalResponse(
  * and return it. Persisting keeps the recovery self-healing — a stale snapshot
  * is fixed once instead of re-crawling GitHub GraphQL on every request. The
  * bell remains the primary writer; this is a bounded recovery path.
+ *
+ * Preserves the accumulated open-sea fleet from the existing snapshot and uses
+ * lastBellRingAt as the delta `since` date so we only fetch new merges.
  */
 async function rebuildAndPersistCanalSnapshot(
   env: Env,
   token: string,
   manifestCachedAt: string | null,
+  existingSnapshot?: CanalSnapshot,
 ): Promise<{ generatedAt: string; boats: CanalBoat[] }> {
-  const boats = await buildCanalBoats(token, env.ALLY_GITHUB_PAT);
+  const since = existingSnapshot?.lastBellRingAt;
+  const existingOpenSea = (existingSnapshot?.boats ?? []).filter(
+    (b) => b.lock === "open-sea",
+  );
+  const newBoats = await buildCanalBoats(token, env.ALLY_GITHUB_PAT, since);
+  const mergedOpenSea = mergeOpenSeaBoats(existingOpenSea, newBoats);
+  const allBoats = [
+    ...newBoats.filter((b) => b.lock !== "open-sea"),
+    ...mergedOpenSea,
+  ];
   const generatedAt = new Date().toISOString();
   await persistCanalSnapshot(
     env.WILLVILLE_MANIFEST_CACHE,
     generatedAt,
-    boats,
+    allBoats,
     manifestCachedAt ?? generatedAt,
+    // If a bell has rung before, preserve its timestamp so the next real ring
+    // fetches only the delta from that point. If no bell has ever rung (cold
+    // boot), stamp generatedAt so repeated read-repairs don't re-crawl 2 years
+    // every time — the next bell ring will delta from here.
+    existingSnapshot?.lastBellRingAt ?? generatedAt,
   );
-  return { generatedAt, boats };
+  return { generatedAt, boats: allBoats };
 }
 
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
@@ -135,7 +154,11 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       env.WILLVILLE_MANIFEST_CACHE,
     );
     if (!isCanalSnapshotStale(snapshot, manifestCachedAt)) {
-      return canalResponse(request, snapshot.generatedAt, snapshot.boats);
+      return canalResponse(request, snapshot.generatedAt, snapshot.boats, {
+        ...(snapshot.lastBellRingAt && {
+          lastBellRingAt: snapshot.lastBellRingAt,
+        }),
+      });
     }
 
     const token = env.GITHUB_PAT;
@@ -146,6 +169,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
           env,
           token,
           manifestCachedAt,
+          snapshot,
         );
         return canalResponse(request, repaired.generatedAt, repaired.boats);
       } catch {
@@ -167,8 +191,17 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
 
   // Cold DB: the bell has never rung. Run one live build so the first visitor
   // still sees boats, but do not persist — the bell remains the sole writer.
+  // Cap to 7 days so we don't hit Cloudflare CPU limits — the full 2-year
+  // backfill belongs to the bell, not the cold-read path.
   try {
-    const boats = await buildCanalBoats(token, env.ALLY_GITHUB_PAT);
+    const sevenDaysAgo = new Date(
+      Date.now() - 7 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+    const boats = await buildCanalBoats(
+      token,
+      env.ALLY_GITHUB_PAT,
+      sevenDaysAgo,
+    );
     return canalResponse(request, new Date().toISOString(), boats);
   } catch (err) {
     return canalResponse(request, new Date().toISOString(), [], {

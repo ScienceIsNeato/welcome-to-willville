@@ -166,6 +166,11 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     Record<string, number>
   >({});
   const [bellErrorMessage, setBellErrorMessage] = useState("✕ Bell failed");
+  const [bellCanalInfo, setBellCanalInfo] = useState<{
+    /** null = full 2yr backfill; string = human-readable age like "2d ago" */
+    sinceLabel: string | null;
+    newBoats: number;
+  } | null>(null);
   const [boardAnnouncement, setBoardAnnouncement] =
     useState<BoardAnnouncement | null>(null);
   const mobileDefaultCameraAppliedRef = useRef(false);
@@ -233,8 +238,22 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     if (tally.running > 0) parts.push(`${tally.running} building`);
     if (tally.attention > 0) parts.push(`${tally.attention} need you`);
     if (tally.dormant > 0) parts.push(`${tally.dormant} quiet`);
+    if (bellCanalInfo !== null) {
+      if (bellCanalInfo.sinceLabel === null) {
+        // No prior bell ring — full 2-year history was backfilled.
+        parts.push(`⛵ 2yr backfill (${bellCanalInfo.newBoats} ships)`);
+      } else if (bellCanalInfo.newBoats > 0) {
+        // Delta ring — new merges since last bell.
+        parts.push(
+          `⛵ +${bellCanalInfo.newBoats} ships (since ${bellCanalInfo.sinceLabel})`,
+        );
+      } else {
+        // Delta ring — nothing new merged since last bell.
+        parts.push("⛵ fleet up to date");
+      }
+    }
     return parts.length > 0 ? `🔔 ${parts.join(" · ")}` : "✓ Manifests synced";
-  }, [currentStops]);
+  }, [currentStops, bellCanalInfo]);
 
   const repositionableStops = useMemo(
     () =>
@@ -727,7 +746,33 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
 
         throw new Error(await getBellErrorDetail(response));
       })
-      .then(() => loadTown({ bustCache: true }))
+      .then((completeEvent) => {
+        // Capture how much fleet history was backfilled so the summary can
+        // report it. canalSince === undefined means the canal build failed
+        // (don't show a fleet line); null = full 2yr backfill; string = delta.
+        // Compute sinceLabel here (event handler, not render) so Date.now()
+        // doesn't violate the React purity rule inside useMemo.
+        if (completeEvent.canalSince !== undefined) {
+          let sinceLabel: string | null = null;
+          if (completeEvent.canalSince !== null) {
+            const sinceDate = new Date(completeEvent.canalSince);
+            const daysDiff = Math.round(
+              (Date.now() - sinceDate.getTime()) / (1000 * 60 * 60 * 24),
+            );
+            sinceLabel =
+              daysDiff === 0
+                ? "today"
+                : daysDiff === 1
+                  ? "yesterday"
+                  : `${daysDiff}d ago`;
+          }
+          setBellCanalInfo({
+            sinceLabel,
+            newBoats: completeEvent.canalNewBoats ?? 0,
+          });
+        }
+        return loadTown({ bustCache: true });
+      })
       .then((data) => {
         // The bell already persisted fresh town + canal snapshots, so we only
         // cache-bust (no redundant server rebuild) to read them. Force-refresh
@@ -765,6 +810,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           setPopulating("idle");
           setBellStartedAt(null);
           setBellCompletedAtByStopId({});
+          setBellCanalInfo(null);
           populateResetTimerRef.current = null;
         }, 4000);
       })
@@ -779,6 +825,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           setPopulating("idle");
           setBellStartedAt(null);
           setBellCompletedAtByStopId({});
+          setBellCanalInfo(null);
           populateResetTimerRef.current = null;
         }, 4000);
       });

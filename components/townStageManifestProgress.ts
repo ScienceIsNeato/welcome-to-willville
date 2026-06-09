@@ -20,6 +20,15 @@ export type ManifestCompleteEvent = {
   registered: RegisteredManifestRepo[];
   newlyRegistered: string[];
   total: number;
+  /**
+   * ISO timestamp the canal query started from.
+   * null  = no prior bell ring, full 2-year backfill was performed.
+   * string = delta from this timestamp.
+   * undefined = canal build was skipped or failed (don't show fleet line).
+   */
+  canalSince?: string | null;
+  /** Number of new open-sea boats added in this ring. */
+  canalNewBoats?: number;
 };
 
 export function markBellRepoCompletion(
