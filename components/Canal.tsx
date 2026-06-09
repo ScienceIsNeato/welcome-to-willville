@@ -384,8 +384,14 @@ export function Canal({ boats, layer = "all" }: Props) {
               const r = OPEN_SEA_INNER_RADIUS + zone * OPEN_SEA_RING_SPACING;
               const cx = OPEN_SEA_CENTER.x;
               const cy = OPEN_SEA_CENTER.y;
-              const startAngle = OPEN_SEA_ARC_START_ANGLE;
-              const endAngle = OPEN_SEA_ARC_END_ANGLE;
+
+              // Each ring spans only as wide as the boats at that age — the
+              // same hyperbolic decay used for boat placement. Near shore the
+              // arcs are wide fans; far out they narrow to a short tick on the
+              // spine, giving the Nike-swoosh / Gulf Stream convergence shape.
+              const halfArc = Math.max(0.02, zoneHalfSpan(zone));
+              const startAngle = OPEN_SEA_BOAT_ARC_CENTER - halfArc;
+              const endAngle = OPEN_SEA_BOAT_ARC_CENTER + halfArc;
 
               const x1 = cx + r * Math.cos(startAngle);
               const y1 = cy + r * Math.sin(startAngle);
@@ -393,8 +399,11 @@ export function Canal({ boats, layer = "all" }: Props) {
               const y2 = cy + r * Math.sin(endAngle);
               const arcD = `M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}`;
 
-              const lx = cx + r * Math.cos(OPEN_SEA_LABEL_ANGLE);
-              const ly = cy + r * Math.sin(OPEN_SEA_LABEL_ANGLE);
+              // Label lives on the midline spine — the direction all boats
+              // converge toward — placed just inshore of the ring so it reads
+              // "you are X away from port" as you pan outward.
+              const lx = cx + (r - 28) * Math.cos(OPEN_SEA_BOAT_ARC_CENTER);
+              const ly = cy + (r - 28) * Math.sin(OPEN_SEA_BOAT_ARC_CENTER);
 
               // Monthly rings are slightly brighter so the year-scale markers
               // stand out from the week-scale ones.
