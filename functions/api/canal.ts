@@ -191,17 +191,8 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
 
   // Cold DB: the bell has never rung. Run one live build so the first visitor
   // still sees boats, but do not persist — the bell remains the sole writer.
-  // Cap to 7 days so we don't hit Cloudflare CPU limits — the full 2-year
-  // backfill belongs to the bell, not the cold-read path.
   try {
-    const sevenDaysAgo = new Date(
-      Date.now() - 7 * 24 * 60 * 60 * 1000,
-    ).toISOString();
-    const boats = await buildCanalBoats(
-      token,
-      env.ALLY_GITHUB_PAT,
-      sevenDaysAgo,
-    );
+    const boats = await buildCanalBoats(token, env.ALLY_GITHUB_PAT);
     return canalResponse(request, new Date().toISOString(), boats);
   } catch (err) {
     return canalResponse(request, new Date().toISOString(), [], {
