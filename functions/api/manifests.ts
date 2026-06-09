@@ -365,11 +365,17 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       // First ring (no lastBellRingAt) → full 2-year backfill (~3 min).
       // The accumulated open-sea fleet from prior rings is merged with the
       // new boats so the full history lives in the snapshot forever.
+      //
+      // canalSince/canalNewBoats are forwarded to the complete event so the
+      // UI can report how much history was backfilled this ring.
+      let canalSince: string | null | undefined = undefined;
+      let canalNewBoats = 0;
       try {
         const existingSnapshot = await readCanalSnapshot(
           env.WILLVILLE_MANIFEST_CACHE,
         );
-        const since = existingSnapshot?.lastBellRingAt;
+        // null = first ring (full backfill); string = delta from last bell.
+        canalSince = existingSnapshot?.lastBellRingAt ?? null;
         const existingOpenSea = (existingSnapshot?.boats ?? []).filter(
           (b) => b.lock === "open-sea",
         );
@@ -377,8 +383,9 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         const newBoats = await buildCanalBoats(
           token,
           env.ALLY_GITHUB_PAT,
-          since,
+          canalSince ?? undefined,
         );
+        canalNewBoats = newBoats.filter((b) => b.lock === "open-sea").length;
         // Merge the full fleet: existing history + new merges since last ring.
         const mergedOpenSea = mergeOpenSeaBoats(existingOpenSea, newBoats);
         const allBoats = [
@@ -394,6 +401,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         );
       } catch {
         // Keep bell response healthy even if canal rebuild fails.
+        // canalSince remains undefined so the UI skips the fleet line.
       }
 
       push({
@@ -405,6 +413,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         registered,
         newlyRegistered,
         total: candidates.length,
+        ...(canalSince !== undefined && { canalSince, canalNewBoats }),
       });
 
       if (!streamClosed) {
