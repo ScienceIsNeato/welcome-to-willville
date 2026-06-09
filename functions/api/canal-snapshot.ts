@@ -308,8 +308,12 @@ export async function buildCanalBoats(
 
 /**
  * Merge two sets of open-sea boats, deduplicating by repo+prNumber.
- * Incoming boats overwrite existing ones so metadata stays fresh (title
- * edits, author renames, etc.), but the full historical fleet is preserved.
+ * Incoming boats with open-sea lock overwrite existing entries so metadata
+ * stays fresh (title edits, author renames, etc.) while full history is kept.
+ * Incoming boats with any other lock evict the old open-sea entry — this
+ * handles PRs that reappear in the delta as scuttle or a canal lock (e.g.
+ * a reopened PR), preventing the same PR from appearing twice in allBoats
+ * and causing duplicate React keys on the map.
  */
 export function mergeOpenSeaBoats(
   existing: CanalBoat[],
@@ -320,8 +324,13 @@ export function mergeOpenSeaBoats(
     map.set(`${b.repo}#${b.prNumber}`, b);
   }
   for (const b of incoming) {
+    const key = `${b.repo}#${b.prNumber}`;
     if (b.lock === "open-sea") {
-      map.set(`${b.repo}#${b.prNumber}`, b);
+      map.set(key, b);
+    } else {
+      // PR reappeared with a different lock — evict the stale open-sea entry
+      // so it doesn't ghost alongside the boat's current position.
+      map.delete(key);
     }
   }
   return [...map.values()];

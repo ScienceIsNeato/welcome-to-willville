@@ -375,7 +375,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
           env.WILLVILLE_MANIFEST_CACHE,
         );
         // null = first ring (full backfill); string = delta from last bell.
-        canalSince = existingSnapshot?.lastBellRingAt ?? null;
+        const since = existingSnapshot?.lastBellRingAt ?? null;
         const existingOpenSea = (existingSnapshot?.boats ?? []).filter(
           (b) => b.lock === "open-sea",
         );
@@ -383,10 +383,13 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
         const newBoats = await buildCanalBoats(
           token,
           env.ALLY_GITHUB_PAT,
-          canalSince ?? undefined,
+          since ?? undefined,
         );
-        canalNewBoats = newBoats.filter((b) => b.lock === "open-sea").length;
         // Merge the full fleet: existing history + new merges since last ring.
+        // mergeOpenSeaBoats also evicts any boat that reappeared as non-open-sea.
+        const existingKeys = new Set(
+          existingOpenSea.map((b) => `${b.repo}#${b.prNumber}`),
+        );
         const mergedOpenSea = mergeOpenSeaBoats(existingOpenSea, newBoats);
         const allBoats = [
           ...newBoats.filter((b) => b.lock !== "open-sea"),
@@ -399,9 +402,17 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
           getManifestCacheCachedAt() ?? undefined,
           bellRingAt,
         );
+        // Only update reporting vars after a successful persist so the UI
+        // doesn't show a fleet backfill line if the snapshot wasn't saved.
+        canalSince = since;
+        // Count truly new ships added to the fleet (deduped, excluding boats
+        // already in existingOpenSea), not the raw delta result count.
+        canalNewBoats = mergedOpenSea.filter(
+          (b) => !existingKeys.has(`${b.repo}#${b.prNumber}`),
+        ).length;
       } catch {
         // Keep bell response healthy even if canal rebuild fails.
-        // canalSince remains undefined so the UI skips the fleet line.
+        // canalSince stays undefined → UI skips the fleet line entirely.
       }
 
       push({
