@@ -72,6 +72,24 @@ function zoneHalfSpan(z: number): number {
   return OPEN_SEA_HALF_SPAN * (7 / (z + 1));
 }
 
+// Gulf Stream curve parameters.
+// The outgoing spine starts heading slightly SE (matching the canal exit),
+// sweeps through a pronounced Nike-swoosh turn, and settles into NNE —
+// like the real Gulf Stream curving away from the coast toward the open ocean.
+const SPINE_START_ANGLE = 0.42; // slightly SE (right + a little down in SVG)
+const SPINE_END_ANGLE = -Math.PI / 3; // NNE (right + strongly up in SVG, ~60° above east)
+const SPINE_CURVE_ZONES = 28; // ~4 weeks to complete most of the bend
+
+/**
+ * Direction angle of the Gulf Stream spine at zone z.
+ * Smoothly rotates from SPINE_START_ANGLE to SPINE_END_ANGLE using
+ * exponential easing so the bend is tight near shore and straightens far out.
+ */
+function gulfStreamAngle(z: number): number {
+  const eased = 1 - Math.exp(-3 * Math.min(1, z / SPINE_CURVE_ZONES));
+  return SPINE_START_ANGLE + (SPINE_END_ANGLE - SPINE_START_ANGLE) * eased;
+}
+
 /**
  * Milestone rings to draw in the open sea.
  * Days 1–7 every day, then every 7 days through month 1, then monthly.
@@ -183,14 +201,17 @@ export function Canal({ boats, layer = "all" }: Props) {
       );
 
       clusters.forEach((cluster, ci) => {
-        // Center-out placement: 0 → dead center (0°, straight out of the bay),
-        // then alternate to either side so the middle fills before the edges.
+        // Center-out placement: 0 → dead center on the spine, then alternate
+        // to either side so the middle fills before the edges.
+        // The spine itself curves from SE (near shore) to NNE (far out) via
+        // gulfStreamAngle — boats ride the current as it bends northward.
         const rank = Math.ceil(ci / 2) * (ci % 2 === 1 ? 1 : -1);
+        const streamAngle = gulfStreamAngle(z);
         const theta = Math.max(
-          OPEN_SEA_BOAT_ARC_CENTER - halfSpan,
+          streamAngle - halfSpan,
           Math.min(
-            OPEN_SEA_BOAT_ARC_CENTER + halfSpan,
-            OPEN_SEA_BOAT_ARC_CENTER + rank * OPEN_SEA_CLUSTER_ANGLE_STEP,
+            streamAngle + halfSpan,
+            streamAngle + rank * OPEN_SEA_CLUSTER_ANGLE_STEP,
           ),
         );
         const gx = cx + radius * Math.cos(theta);
@@ -389,9 +410,12 @@ export function Canal({ boats, layer = "all" }: Props) {
               // same hyperbolic decay used for boat placement. Near shore the
               // arcs are wide fans; far out they narrow to a short tick on the
               // spine, giving the Nike-swoosh / Gulf Stream convergence shape.
+              // The spine angle rotates with the current so rings always face
+              // the direction the fleet is heading at that distance.
               const halfArc = Math.max(0.02, zoneHalfSpan(zone));
-              const startAngle = OPEN_SEA_BOAT_ARC_CENTER - halfArc;
-              const endAngle = OPEN_SEA_BOAT_ARC_CENTER + halfArc;
+              const streamAngle = gulfStreamAngle(zone);
+              const startAngle = streamAngle - halfArc;
+              const endAngle = streamAngle + halfArc;
 
               const x1 = cx + r * Math.cos(startAngle);
               const y1 = cy + r * Math.sin(startAngle);
@@ -399,11 +423,10 @@ export function Canal({ boats, layer = "all" }: Props) {
               const y2 = cy + r * Math.sin(endAngle);
               const arcD = `M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}`;
 
-              // Label lives on the midline spine — the direction all boats
-              // converge toward — placed just inshore of the ring so it reads
-              // "you are X away from port" as you pan outward.
-              const lx = cx + (r - 28) * Math.cos(OPEN_SEA_BOAT_ARC_CENTER);
-              const ly = cy + (r - 28) * Math.sin(OPEN_SEA_BOAT_ARC_CENTER);
+              // Label lives on the midline spine — placed just inshore of the
+              // ring so it reads "you are X away from port" as you pan outward.
+              const lx = cx + (r - 28) * Math.cos(streamAngle);
+              const ly = cy + (r - 28) * Math.sin(streamAngle);
 
               // Monthly rings are slightly brighter so the year-scale markers
               // stand out from the week-scale ones.

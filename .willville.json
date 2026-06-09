@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Wiring up two-year ship history — first bell ring backfills every merged PR, then each ring just fetches the delta",
-    "direction": "Ship it, ring the bell once to do the backfill, and see the full armada stream off toward the African coast",
-    "last_update": "2026-06-09T00:00:00Z"
+    "status": "Gulf Stream now curves NNE — exits the bay heading slightly SE, sweeps northward over the first month, then streams off NNE toward the open ocean",
+    "direction": "Merge PR #36 and #38, ring the bell for the 2-year backfill, see the full armada riding the current",
+    "last_update": "2026-06-09T09:30:00Z"
   }
 }
