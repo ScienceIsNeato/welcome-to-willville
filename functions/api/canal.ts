@@ -155,7 +155,9 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     );
     if (!isCanalSnapshotStale(snapshot, manifestCachedAt)) {
       return canalResponse(request, snapshot.generatedAt, snapshot.boats, {
-        ...(snapshot.lastBellRingAt && { lastBellRingAt: snapshot.lastBellRingAt }),
+        ...(snapshot.lastBellRingAt && {
+          lastBellRingAt: snapshot.lastBellRingAt,
+        }),
       });
     }
 
@@ -195,7 +197,11 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
     const sevenDaysAgo = new Date(
       Date.now() - 7 * 24 * 60 * 60 * 1000,
     ).toISOString();
-    const boats = await buildCanalBoats(token, env.ALLY_GITHUB_PAT, sevenDaysAgo);
+    const boats = await buildCanalBoats(
+      token,
+      env.ALLY_GITHUB_PAT,
+      sevenDaysAgo,
+    );
     return canalResponse(request, new Date().toISOString(), boats);
   } catch (err) {
     return canalResponse(request, new Date().toISOString(), [], {
