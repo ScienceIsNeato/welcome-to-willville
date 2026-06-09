@@ -7,3 +7,10 @@ pages_build_output_dir = "./out"
 
 [vars]
 # GITHUB_PAT is set as a secret via: wrangler pages secret put GITHUB_PAT --project-name welcome-to-willville
+
+# Local dev KV store — wrangler creates a SQLite-backed store under .wrangler/state/
+# for local runs. The id value only matters for production (dashboard-assigned);
+# locally wrangler ignores it and uses the binding name as the store key.
+[[kv_namespaces]]
+binding = "WILLVILLE_MANIFEST_CACHE"
+id = "placeholder-willville-manifest-cache"
