@@ -39,12 +39,16 @@ const OPEN_SEA_CENTER = { x: 1210, y: 930 } as const;
 // age alone fans the boats — older boats land on bigger rings that naturally
 // have more circumference (room) to spread. Boats from the same repo cluster
 // together on their ring and overlap.
+//
+// With 2-year history, rings at 108px spacing reach ~78k px radius — well past
+// the SVG canvas, just like the Gulf Stream heading to the African coast. Pan
+// east to see older merges streaming off into the open ocean.
 const OPEN_SEA_BOAT_ARC_CENTER = (-Math.PI / 4.8 + Math.PI / 2.3) / 2;
 const OPEN_SEA_INNER_RADIUS = 150;
 const OPEN_SEA_RING_SPACING = 108;
 const OPEN_SEA_HALF_SPAN = 0.85;
 const OPEN_SEA_ZONE_HOURS = 24;
-const OPEN_SEA_MAX_ZONE = 7;
+const OPEN_SEA_MAX_ZONE = 730; // 2 years of daily zones — no age clamping
 // Clusters fill the center (0°, straight out of the bay) first and only fan to
 // the sides as more pile up — this is the angle between adjacent cluster centers.
 const OPEN_SEA_CLUSTER_ANGLE_STEP = 0.32;

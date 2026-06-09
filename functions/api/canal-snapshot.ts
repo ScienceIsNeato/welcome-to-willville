@@ -33,6 +33,14 @@ export const CANAL_SNAPSHOT_KEY = "willville:canal:snapshot:v1";
 export type CanalSnapshot = {
   schemaVersion: 1;
   generatedAt: string;
+  /**
+   * When the bell last rang and this snapshot was committed. The next bell ring
+   * uses this as its `since` date so it only fetches PRs merged after this
+   * moment — keeping each ring bounded regardless of how far back history goes.
+   * Absent on old snapshots; the next ring will treat that as "never rung" and
+   * do the full 2-year backfill once.
+   */
+  lastBellRingAt?: string;
   manifestCachedAt?: string;
   boats: CanalBoat[];
 };
@@ -175,15 +183,22 @@ function mapPr(pr: GraphQLPR): CanalBoat {
  *
  * Throws if GitHub returns a non-OK response, so callers can decide how to
  * degrade. Requires a token; without one the canal is empty by definition.
+ *
+ * @param since - ISO date string for the merged-PR lower bound. When provided
+ *   (subsequent bell rings) only PRs merged after this moment are fetched,
+ *   keeping the query bounded. When absent (first ring / cold-DB) the full
+ *   2-year backfill runs — expect ~3 min on the first ring.
  */
 export async function buildCanalBoats(
   token: string,
   allyToken?: string,
+  since?: string,
 ): Promise<CanalBoat[]> {
   const DAY = 24 * 60 * 60 * 1000;
-  const cutoffDate = new Date(Date.now() - 7 * DAY)
-    .toISOString()
-    .split("T")[0]!;
+  // First ring (no since) → 2-year backfill. Subsequent rings → delta only.
+  const cutoffDate = since
+    ? since.split("T")[0]!
+    : new Date(Date.now() - 2 * 365 * DAY).toISOString().split("T")[0]!;
   const scuttleCutoffDate = new Date(Date.now() - DAY)
     .toISOString()
     .split("T")[0]!;
@@ -277,18 +292,39 @@ export async function buildCanalBoats(
 
   let boats = nodes.map(mapPr);
 
-  // The Open Sea (the bay) shows merged PRs fanning out by age across rings that
-  // run to a full week, so keep open-sea boats around for 7 days. Scuttled
-  // wrecks still only linger for a day so they don't pile up forever.
-  const openSeaCutoff = Date.now() - 7 * DAY;
+  // Scuttled wrecks linger for a day then disappear — they don't accumulate.
+  // Open-sea boats (merged PRs) are NOT filtered here: the bell ring caller
+  // merges incoming boats with the accumulated fleet from previous rings, so
+  // the full history lives in the snapshot rather than being re-fetched every
+  // time. See mergeOpenSeaBoats + the bell handler in manifests.ts.
   const scuttleCutoff = Date.now() - DAY;
   boats = boats.filter((b) => {
-    if (b.lock === "open-sea") return Date.parse(b.updatedAt) > openSeaCutoff;
     if (b.lock === "scuttle") return Date.parse(b.updatedAt) > scuttleCutoff;
     return true;
   });
 
   return boats;
+}
+
+/**
+ * Merge two sets of open-sea boats, deduplicating by repo+prNumber.
+ * Incoming boats overwrite existing ones so metadata stays fresh (title
+ * edits, author renames, etc.), but the full historical fleet is preserved.
+ */
+export function mergeOpenSeaBoats(
+  existing: CanalBoat[],
+  incoming: CanalBoat[],
+): CanalBoat[] {
+  const map = new Map<string, CanalBoat>();
+  for (const b of existing) {
+    map.set(`${b.repo}#${b.prNumber}`, b);
+  }
+  for (const b of incoming) {
+    if (b.lock === "open-sea") {
+      map.set(`${b.repo}#${b.prNumber}`, b);
+    }
+  }
+  return [...map.values()];
 }
 
 export function parseCanalSnapshot(raw: unknown): CanalSnapshot | undefined {
@@ -314,9 +350,15 @@ export function parseCanalSnapshot(raw: unknown): CanalSnapshot | undefined {
       ? candidate.manifestCachedAt
       : undefined;
 
+  const lastBellRingAt =
+    typeof candidate.lastBellRingAt === "string"
+      ? candidate.lastBellRingAt
+      : undefined;
+
   return {
     schemaVersion: 1,
     generatedAt: candidate.generatedAt,
+    lastBellRingAt,
     manifestCachedAt,
     boats: candidate.boats as CanalBoat[],
   };
@@ -342,6 +384,7 @@ export async function persistCanalSnapshot(
   generatedAt: string,
   boats: CanalBoat[],
   manifestCachedAt?: string,
+  lastBellRingAt?: string,
 ): Promise<void> {
   if (!store) {
     return;
@@ -355,6 +398,7 @@ export async function persistCanalSnapshot(
       JSON.stringify({
         schemaVersion: 1,
         generatedAt,
+        lastBellRingAt,
         manifestCachedAt,
         boats,
       } satisfies CanalSnapshot),

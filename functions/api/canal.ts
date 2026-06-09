@@ -25,6 +25,7 @@ import { type CanalBoat } from "../../lib/canal";
 import { withCorsHeaders } from "./cors";
 import {
   buildCanalBoats,
+  mergeOpenSeaBoats,
   persistCanalSnapshot,
   readCanalSnapshot,
   type CanalSnapshot,
@@ -107,21 +108,37 @@ function canalResponse(
  * and return it. Persisting keeps the recovery self-healing — a stale snapshot
  * is fixed once instead of re-crawling GitHub GraphQL on every request. The
  * bell remains the primary writer; this is a bounded recovery path.
+ *
+ * Preserves the accumulated open-sea fleet from the existing snapshot and uses
+ * lastBellRingAt as the delta `since` date so we only fetch new merges.
  */
 async function rebuildAndPersistCanalSnapshot(
   env: Env,
   token: string,
   manifestCachedAt: string | null,
+  existingSnapshot?: CanalSnapshot,
 ): Promise<{ generatedAt: string; boats: CanalBoat[] }> {
-  const boats = await buildCanalBoats(token, env.ALLY_GITHUB_PAT);
+  const since = existingSnapshot?.lastBellRingAt;
+  const existingOpenSea = (existingSnapshot?.boats ?? []).filter(
+    (b) => b.lock === "open-sea",
+  );
+  const newBoats = await buildCanalBoats(token, env.ALLY_GITHUB_PAT, since);
+  const mergedOpenSea = mergeOpenSeaBoats(existingOpenSea, newBoats);
+  const allBoats = [
+    ...newBoats.filter((b) => b.lock !== "open-sea"),
+    ...mergedOpenSea,
+  ];
   const generatedAt = new Date().toISOString();
   await persistCanalSnapshot(
     env.WILLVILLE_MANIFEST_CACHE,
     generatedAt,
-    boats,
+    allBoats,
     manifestCachedAt ?? generatedAt,
+    // Preserve lastBellRingAt — read-repair doesn't move the bell timestamp so
+    // the next real ring still fetches the correct delta from the last bell.
+    existingSnapshot?.lastBellRingAt,
   );
-  return { generatedAt, boats };
+  return { generatedAt, boats: allBoats };
 }
 
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
@@ -146,6 +163,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
           env,
           token,
           manifestCachedAt,
+          snapshot,
         );
         return canalResponse(request, repaired.generatedAt, repaired.boats);
       } catch {

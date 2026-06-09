@@ -26,7 +26,12 @@ import {
   WillvilleManifestClient,
 } from "./town-manifests";
 import { buildTownStops, persistTownSnapshot } from "./town-snapshot";
-import { buildCanalBoats, persistCanalSnapshot } from "./canal-snapshot";
+import {
+  buildCanalBoats,
+  mergeOpenSeaBoats,
+  persistCanalSnapshot,
+  readCanalSnapshot,
+} from "./canal-snapshot";
 
 interface Env {
   GITHUB_PAT?: string;
@@ -353,13 +358,39 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       // The bell also owns the canal: build the live PR/boat state once here
       // and persist it so GET /api/canal reads boats straight from the durable
       // layer instead of crawling GitHub GraphQL on every hard refresh.
+      //
+      // Delta strategy: read the existing snapshot to find when the bell last
+      // rang. Pass that timestamp as `since` so we only fetch PRs merged after
+      // that moment — keeping each ring fast regardless of history depth.
+      // First ring (no lastBellRingAt) → full 2-year backfill (~3 min).
+      // The accumulated open-sea fleet from prior rings is merged with the
+      // new boats so the full history lives in the snapshot forever.
       try {
-        const boats = await buildCanalBoats(token, env.ALLY_GITHUB_PAT);
+        const existingSnapshot = await readCanalSnapshot(
+          env.WILLVILLE_MANIFEST_CACHE,
+        );
+        const since = existingSnapshot?.lastBellRingAt;
+        const existingOpenSea = (existingSnapshot?.boats ?? []).filter(
+          (b) => b.lock === "open-sea",
+        );
+        const bellRingAt = new Date().toISOString();
+        const newBoats = await buildCanalBoats(
+          token,
+          env.ALLY_GITHUB_PAT,
+          since,
+        );
+        // Merge the full fleet: existing history + new merges since last ring.
+        const mergedOpenSea = mergeOpenSeaBoats(existingOpenSea, newBoats);
+        const allBoats = [
+          ...newBoats.filter((b) => b.lock !== "open-sea"),
+          ...mergedOpenSea,
+        ];
         await persistCanalSnapshot(
           env.WILLVILLE_MANIFEST_CACHE,
-          new Date().toISOString(),
-          boats,
+          bellRingAt,
+          allBoats,
           getManifestCacheCachedAt() ?? undefined,
+          bellRingAt,
         );
       } catch {
         // Keep bell response healthy even if canal rebuild fails.
