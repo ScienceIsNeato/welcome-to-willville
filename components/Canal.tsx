@@ -27,9 +27,6 @@ const CANAL_BANKS = [
   { id: "north", path: CANAL_SECTION.northBankPath, duration: 116 },
   { id: "south", path: CANAL_SECTION.southBankPath, duration: 124 },
 ];
-const OPEN_SEA_ARC_START_ANGLE = -Math.PI / 4.5;
-const OPEN_SEA_ARC_END_ANGLE = Math.PI / 2.3;
-const OPEN_SEA_LABEL_ANGLE = -0.15;
 // Focal point of the age rings, placed so the bay's mouth lines up with the
 // canal exit (nudged down and left from the old center).
 const OPEN_SEA_CENTER = { x: 1210, y: 930 } as const;
@@ -43,7 +40,6 @@ const OPEN_SEA_CENTER = { x: 1210, y: 930 } as const;
 // With 2-year history, rings at 108px spacing reach ~78k px radius — well past
 // the SVG canvas, just like the Gulf Stream heading to the African coast. Pan
 // east to see older merges streaming off into the open ocean.
-const OPEN_SEA_BOAT_ARC_CENTER = (-Math.PI / 4.8 + Math.PI / 2.3) / 2;
 const OPEN_SEA_INNER_RADIUS = 150;
 const OPEN_SEA_RING_SPACING = 108;
 const OPEN_SEA_HALF_SPAN = 0.85;
@@ -107,7 +103,7 @@ function openSeaMilestones(): Array<{ zone: number; label: string }> {
   }
   // Monthly from 1mo to 24mo (≈30.44 days each)
   for (let m = 1; m <= 24; m++) {
-    const zone = Math.round(m * 30.44) - 1;
+    const zone = Math.floor(m * 30.44) - 1;
     if (zone < OPEN_SEA_MAX_ZONE) marks.push({ zone, label: `${m}mo` });
   }
   return marks;
