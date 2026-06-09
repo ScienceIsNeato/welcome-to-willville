@@ -18,7 +18,10 @@ export type CameraCorner =
   | "bottomLeft"
   | "bottomRight";
 
-export const MIN_SCALE = 0.6;
+// 0.015 lets you zoom out far enough to see the full 2-year Gulf Stream in one
+// view after panning east — the town shrinks to a ~36px dot at that scale.
+// Previous floor was 0.6 (town always filled the screen).
+export const MIN_SCALE = 0.015;
 const MAX_SCALE = 128;
 const DOUBLE_CLICK_ZOOM = 1.4;
 
