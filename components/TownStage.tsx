@@ -167,7 +167,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   >({});
   const [bellErrorMessage, setBellErrorMessage] = useState("✕ Bell failed");
   const [bellCanalInfo, setBellCanalInfo] = useState<{
-    since: string | null;
+    /** null = full 2yr backfill; string = human-readable age like "2d ago" */
+    sinceLabel: string | null;
     newBoats: number;
   } | null>(null);
   const [boardAnnouncement, setBoardAnnouncement] =
@@ -238,22 +239,14 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     if (tally.attention > 0) parts.push(`${tally.attention} need you`);
     if (tally.dormant > 0) parts.push(`${tally.dormant} quiet`);
     if (bellCanalInfo !== null) {
-      if (bellCanalInfo.since === null) {
+      if (bellCanalInfo.sinceLabel === null) {
         // No prior bell ring — full 2-year history was backfilled.
         parts.push(`⛵ 2yr backfill (${bellCanalInfo.newBoats} ships)`);
       } else if (bellCanalInfo.newBoats > 0) {
         // Delta ring — new merges since last bell.
-        const sinceDate = new Date(bellCanalInfo.since);
-        const daysDiff = Math.round(
-          (Date.now() - sinceDate.getTime()) / (1000 * 60 * 60 * 24),
+        parts.push(
+          `⛵ +${bellCanalInfo.newBoats} ships (since ${bellCanalInfo.sinceLabel})`,
         );
-        const sinceLabel =
-          daysDiff === 0
-            ? "today"
-            : daysDiff === 1
-              ? "yesterday"
-              : `${daysDiff}d ago`;
-        parts.push(`⛵ +${bellCanalInfo.newBoats} ships (since ${sinceLabel})`);
       } else {
         // Delta ring — nothing new merged since last bell.
         parts.push("⛵ fleet up to date");
@@ -757,9 +750,24 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
         // Capture how much fleet history was backfilled so the summary can
         // report it. canalSince === undefined means the canal build failed
         // (don't show a fleet line); null = full 2yr backfill; string = delta.
+        // Compute sinceLabel here (event handler, not render) so Date.now()
+        // doesn't violate the React purity rule inside useMemo.
         if (completeEvent.canalSince !== undefined) {
+          let sinceLabel: string | null = null;
+          if (completeEvent.canalSince !== null) {
+            const sinceDate = new Date(completeEvent.canalSince);
+            const daysDiff = Math.round(
+              (Date.now() - sinceDate.getTime()) / (1000 * 60 * 60 * 24),
+            );
+            sinceLabel =
+              daysDiff === 0
+                ? "today"
+                : daysDiff === 1
+                  ? "yesterday"
+                  : `${daysDiff}d ago`;
+          }
           setBellCanalInfo({
-            since: completeEvent.canalSince,
+            sinceLabel,
             newBoats: completeEvent.canalNewBoats ?? 0,
           });
         }

@@ -134,9 +134,11 @@ async function rebuildAndPersistCanalSnapshot(
     generatedAt,
     allBoats,
     manifestCachedAt ?? generatedAt,
-    // Preserve lastBellRingAt — read-repair doesn't move the bell timestamp so
-    // the next real ring still fetches the correct delta from the last bell.
-    existingSnapshot?.lastBellRingAt,
+    // If a bell has rung before, preserve its timestamp so the next real ring
+    // fetches only the delta from that point. If no bell has ever rung (cold
+    // boot), stamp generatedAt so repeated read-repairs don't re-crawl 2 years
+    // every time — the next bell ring will delta from here.
+    existingSnapshot?.lastBellRingAt ?? generatedAt,
   );
   return { generatedAt, boats: allBoats };
 }
