@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Fixed clicking the wrong building in crowded districts — tapping a stop now selects exactly that stop, matching the green ring. Also gave the three newest sites their own ships and turned the showboat into a riot of color",
-    "direction": "See if the click target feels right when zoomed out, or needs a touch more give",
-    "last_update": "2026-06-05T00:00:00Z"
+    "status": "Wiring up two-year ship history — first bell ring backfills every merged PR, then each ring just fetches the delta",
+    "direction": "Ship it, ring the bell once to do the backfill, and see the full armada stream off toward the African coast",
+    "last_update": "2026-06-09T00:00:00Z"
   }
 }
