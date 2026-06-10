@@ -531,7 +531,7 @@ if $LAN_MODE; then
   fi
 fi
 
-LOCAL_ORIGIN="http://127.0.0.1:$WRANGLER_PORT"
+LOCAL_ORIGIN="http://127.0.0.1:$WRANGLER_PORT,http://localhost:$WRANGLER_PORT"
 PUBLIC_ORIGIN="http://$PUBLIC_IP:$WRANGLER_PORT"
 
 echo ""

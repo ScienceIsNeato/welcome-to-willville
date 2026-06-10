@@ -16,7 +16,13 @@
       "width": 140,
       "height": 140,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the solitude stacks dandelion-resin monument glyph directly into the Mirrored Mile paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the solitude tower feel built into the district art: crystalline reflection pools echoing dandelion wisps, cold silver light split into doubled shadows, pale lavender mist hugging the base, glass-frost paving shards, echo geometry scored into the stone, and faint dried-resin bloom traces that match the whimsical reflective solitude style. Keep the center composition open enough for the foreground tower glyph to sit on top cleanly without doubling the silhouette. Match the Mirrored Mile palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "10000-years-of-solitude-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 10, "y": 0, "width": 120, "height": 140 }
+      }
     },
     {
       "stopId": "ganglia",
@@ -26,7 +32,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the GANGLIA furnace monument glyph directly into The Graveyard paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the industrial furnace feel built into the district art: cold ash scorch marks radiating through mossy stone, spectral ember drift, pale moonlit iron grating shadows, frost-dusted soot smears, phosphorescent lichen creeping the base, and blue-black shadow pools that match the whimsical gothic graveyard style. Keep the center composition open enough for the foreground furnace glyph to sit on top cleanly without doubling the silhouette. Match the Graveyard palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "ganglia-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "suno-api",
@@ -36,7 +48,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the Suno organ glyph directly into The Graveyard paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the spectral organ feel built into the district art: frosted pipe-shadow lines scoring the stone, ghostly resonance shimmer, pale azure lantern glow, cold fog curling through iron filigree, mossy cobbles stained with music-smoke, and hollow cathedral echo that match the whimsical gothic graveyard style. Keep the center composition open enough for the foreground organ glyph to sit on top cleanly without doubling the silhouette. Match the Graveyard palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "suno-api-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "fogofdog",
@@ -46,7 +64,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the FogOfDog kennel glyph directly into The Graveyard paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the gothic kennel feel built into the district art: pawprint impressions worn into moonlit cobbles, tattered iron-chain shadow, spectral dog-breath fog, pale lantern spill on moss-edged stone, faint howl-ripple scratches in the paving, and blue-grey grave-mist that match the whimsical gothic graveyard style. Keep the center composition open enough for the foreground kennel glyph to sit on top cleanly without doubling the silhouette. Match the Graveyard palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "fogofdog-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "epsilon",
@@ -56,7 +80,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the epsilon compiler's forge glyph directly into The Graveyard paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the spectral forge feel built into the district art: cold-ash circuit traces etched into grey stone, moonlit iron slag glints, phosphorescent compiler-glyph shadows, frost-touched bellows smoke, pale error-light flicker on cobbles, and chill blue-black forge shadow that match the whimsical gothic graveyard style. Keep the center composition open enough for the foreground forge glyph to sit on top cleanly without doubling the silhouette. Match the Graveyard palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "epsilon-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "gene-builder",
@@ -66,7 +96,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the gene-builder greenhouse glyph directly into The Graveyard paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the spectral greenhouse feel built into the district art: bioluminescent spore drift on moonlit stone, pale glass-pane reflections, cold vine-tendril shadows weaving through cobbles, phosphorescent moss patches, ghostly botanical bloom, and misty grave-soil seeping from the greenhouse base that match the whimsical gothic graveyard style. Keep the center composition open enough for the foreground greenhouse glyph to sit on top cleanly without doubling the silhouette. Match the Graveyard palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "gene-builder-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "go-playground",
@@ -76,7 +112,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the Go workbench glyph directly into The Graveyard paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the spectral workbench feel built into the district art: cold gopher-paw impressions worn into moonlit cobbles, frost-dusted tool-shadow lines, pale blue-grey worklight spill, phosphorescent shaving-curl shadows, moss-edged iron bracket marks, and hollow graveyard chill spreading from the workbench base that match the whimsical gothic graveyard style. Keep the center composition open enough for the foreground workbench glyph to sit on top cleanly without doubling the silhouette. Match the Graveyard palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "go-playground-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "dotfiles",
@@ -86,7 +128,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the dotfile cabinet glyph directly into The Graveyard paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the spectral filing cabinet feel built into the district art: faded config-line etchings worn into pale moonlit stone, cold iron drawer-shadow runners, phosphorescent dot-pattern glints on cobbles, ghostly paper-dust scatter, frost-touched brass handle gleam, and archive chill radiating from the cabinet base that match the whimsical gothic graveyard style. Keep the center composition open enough for the foreground cabinet glyph to sit on top cleanly without doubling the silhouette. Match the Graveyard palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "dotfiles-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "ganglia-core",
@@ -96,7 +144,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the ganglia-core infernal reactor glyph directly into the Gates of Hell paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the reactor feel built into the district art: violet plasma arc spill on scorched cobbles, deep magenta core-heat bloom, soot-stained brass conduit shadows, cracked paving glowing at the seams, occult coolant sigils burned into stone, and hellfire resonance haze that match the whimsical spooky town style. Keep the center composition open enough for the foreground reactor glyph to sit on top cleanly without doubling the silhouette. Match the surrounding Gates of Hell palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "ganglia-core-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "ganglia-studio",
@@ -169,7 +223,13 @@
       "width": 140,
       "height": 140,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the slop-mop totem glyph directly into the Slop Wharf planking beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the mop totem feel built into the dock art: soapy water rivulets running between salt-bleached boards, amber lantern puddle reflection, sudsy foam edging, rope-shadow coils on weathered planking, barnacle-dusted post base, and tidal watermark rings that match the whimsical harbor town style. Keep the center composition open enough for the foreground totem glyph to sit on top cleanly without doubling the silhouette. Match the Slop Wharf palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "slop-mop-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 10, "y": 0, "width": 120, "height": 140 }
+      }
     },
     {
       "stopId": "slop-mop-action",
@@ -179,7 +239,13 @@
       "width": 140,
       "height": 140,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the slop-mop action dock totem glyph directly into the Slop Wharf planking beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the action dock feel built into the dock art: spray-splash rings on salt-grey boards, amber dock-lantern glow, mooring-rope loops fraying at the edges, wet-plank sheen, iron cleat bolt shadows, and tidal surge foam that match the whimsical harbor town style. Keep the center composition open enough for the foreground totem glyph to sit on top cleanly without doubling the silhouette. Match the Slop Wharf palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "slop-mop-action-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 10, "y": 0, "width": 120, "height": 140 }
+      }
     },
     {
       "stopId": "bucket-o-slop",
@@ -189,7 +255,13 @@
       "width": 140,
       "height": 140,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the bucket o' slop totem glyph directly into the Slop Wharf planking beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the slop bucket feel built into the dock art: slop-dribble stains spreading across salt-bleached boards, briny puddle shimmer, rusted drip rings around the bucket base, amber lantern on wet grain, mossy caulk lines between planks, and pungent harbour spillage haze that match the whimsical harbor town style. Keep the center composition open enough for the foreground bucket glyph to sit on top cleanly without doubling the silhouette. Match the Slop Wharf palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "bucket-o-slop-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 10, "y": 0, "width": 120, "height": 140 }
+      }
     },
     {
       "stopId": "cursor-rules",
@@ -199,7 +271,13 @@
       "width": 140,
       "height": 140,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the cursor-rules rulebook totem glyph directly into the Slop Wharf planking beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the dockside rulebook feel built into the dock art: rain-warped page-shadow lines on salt-grey boards, ink blot rings, amber lantern on damp leather binding, rope-shadow hash marks, tide-lapped lower plank stain, and salt-crystalline edge trim that match the whimsical harbor town style. Keep the center composition open enough for the foreground rulebook glyph to sit on top cleanly without doubling the silhouette. Match the Slop Wharf palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "cursor-rules-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 10, "y": 0, "width": 120, "height": 140 }
+      }
     },
     {
       "stopId": "swe-audit",
@@ -209,7 +287,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the swe-audit audit house glyph directly into the Halls of Judgement floor beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the audit house feel built into the judicial district art: pale marble dust fanning across formal grey stone, parchment-yellow lamplight spill, stamped-seal wax-red shadow rings, iron bracket bolt-marks, etched ledger-line geometry in the paving, and formal legal-weight chill spreading from the building base that match the whimsical bureaucratic town style. Keep the center composition open enough for the foreground building glyph to sit on top cleanly without doubling the silhouette. Match the Halls of Judgement palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "swe-audit-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "imperium-swe-traces",
@@ -219,7 +303,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the imperium-swe-traces trace station glyph directly into the Halls of Judgement floor beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the trace station feel built into the judicial district art: formal grey-marble trace-line etchings radiating from the base, parchment-yellow lamplight on polished stone, black-ink shadow stamps, thin measurement-rule geometry scored into the paving, stern column-shadow bars, and archival hush cold spreading outward that match the whimsical bureaucratic town style. Keep the center composition open enough for the foreground station glyph to sit on top cleanly without doubling the silhouette. Match the Halls of Judgement palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "imperium-swe-traces-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "snorkelai-tasks",
@@ -229,7 +319,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the snorkelAI task forge glyph directly into the Halls of Judgement floor beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the task forge feel built into the judicial district art: pale forge-ash dusting formal grey stone, wax-seal amber heat rings, iron filing scatter on polished paving, parchment-burn shadow trim, brass rivet glints in the floor, and stern anvil-cool spreading from the forge base that match the whimsical bureaucratic town style. Keep the center composition open enough for the foreground forge glyph to sit on top cleanly without doubling the silhouette. Match the Halls of Judgement palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "snorkelai-tasks-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "hard-collesium",
@@ -239,7 +335,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the hard-collesium colosseum glyph directly into the Halls of Judgement floor beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the colosseum arena feel built into the judicial district art: pale arena-sand dust on formal grey marble, crowd-shadow geometry in the paving, wax-seal red shadow rings, worn flagstone combat scuffs, parchment-yellow torchlight wash, and formal column-shadow bars that match the whimsical bureaucratic town style. Keep the center composition open enough for the foreground colosseum glyph to sit on top cleanly without doubling the silhouette. Match the Halls of Judgement palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "hard-collesium-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "apertus_task_scaffolding",
@@ -249,7 +351,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the apertus task scaffolding drafting desk glyph directly into the Halls of Judgement floor beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the drafting desk feel built into the judicial district art: blueprint-line etchings on pale formal stone, parchment-yellow drafting lamp spill, ruled-margin shadow geometry, pencil-lead grey dust settling on polished paving, wax-sealing brass corner glints, and measured architectural chill spreading from the desk that match the whimsical bureaucratic town style. Keep the center composition open enough for the foreground desk glyph to sit on top cleanly without doubling the silhouette. Match the Halls of Judgement palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "apertus-task-scaffolding-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "pr-task-scaffolding",
@@ -259,7 +367,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the pr-task-scaffolding civic scaffold glyph directly into the Halls of Judgement floor beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the review scaffold feel built into the judicial district art: pale rope-lattice shadow geometry on formal grey stone, parchment-yellow civic lamplight, wax-seal red approval stamp rings, worn approval-path tracks in the paving, iron plank-shadow grids, and bureaucratic process chill spreading from the scaffold base that match the whimsical bureaucratic town style. Keep the center composition open enough for the foreground scaffold glyph to sit on top cleanly without doubling the silhouette. Match the Halls of Judgement palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "pr-task-scaffolding-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "codebase-navigation",
@@ -269,7 +383,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the codebase-navigation map room glyph directly into the Halls of Judgement floor beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the map room feel built into the judicial district art: floor-mosaic cartography lines radiating outward on pale formal stone, parchment-yellow chart-lamp glow, faint compass rose geometry etched in the paving, scroll-shadow arcs, blue-ink survey stain, and navigational chill spreading from the map room base that match the whimsical bureaucratic town style. Keep the center composition open enough for the foreground map room glyph to sit on top cleanly without doubling the silhouette. Match the Halls of Judgement palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "codebase-navigation-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "mystery",
@@ -279,7 +399,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the mystery manor glyph directly into the Halls of Judgement floor beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the manor feel built into the judicial district art: faint question-shadow geometry on pale formal stone, parchment-yellow lantern glow with unexplained dark patches, iron lock-shadow rings, redacted-document grey smudges in the paving, sealed wax-drip marks, and unsettling judicial quiet spreading from the manor base that match the whimsical bureaucratic town style. Keep the center composition open enough for the foreground manor glyph to sit on top cleanly without doubling the silhouette. Match the Halls of Judgement palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "mystery-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "chronicchronicler",
@@ -331,7 +457,13 @@
       "width": 140,
       "height": 140,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the lonely little vampire crypt glyph directly into the Mirrored Mile paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the vampire crypt feel built into the district art: mirror-pool shadow doubles reflected beneath the base, cold silver moonlight fractured through crystalline paving, pale lavender mist pooling around coffin-lid stone, doubled footfall wear marks, faint bat-wing shadow geometry, and lonely echo geometry in the reflective surface that match the whimsical mirrored district style. Keep the center composition open enough for the foreground crypt glyph to sit on top cleanly without doubling the silhouette. Match the Mirrored Mile palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "lonely-little-vampire-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 10, "y": 0, "width": 120, "height": 140 }
+      }
     },
     {
       "stopId": "loopcloser",
@@ -383,7 +515,13 @@
       "width": 140,
       "height": 140,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the Willville town hall glyph directly into the Town Square cobblestones beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the town hall feel built into the district art: warm golden lamplight fanning across civic cobblestones, plaza-wear polish on the central stones, community-banner shadow geometry, fountain-mist shimmer, amber welcome-lantern spill, and proud civic warmth spreading from the hall base that match the whimsical welcoming town style. Keep the center composition open enough for the foreground hall glyph to sit on top cleanly without doubling the silhouette. Match the Town Square palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "welcome-to-willville-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 10, "y": 0, "width": 120, "height": 140 }
+      }
     },
     {
       "stopId": "grocery-automation",
@@ -393,7 +531,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the grocery-automation pantry bot glyph directly into the Dogwallow Ramble II lane beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the pantry bot feel built into the ramble art: clay-orange earth worn smooth by cart wheels, warm tallow-candle glow on mossy cobbles, spilled-grain scatter, low hedge shadow arcs, cottage-garden green edging, and cozy homestead warmth spreading from the pantry base that match the whimsical humble village style. Keep the center composition open enough for the foreground bot glyph to sit on top cleanly without doubling the silhouette. Match the Dogwallow Ramble II palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "grocery-automation-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "randy-sharon",
@@ -403,7 +547,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the Randy Sharon cottage glyph directly into the Dogwallow Ramble II lane beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the cottage feel built into the ramble art: soft clay-mud patches worn by friendly footfall, warm hearth-amber glow on moss-veined stone, cottage-garden herb scatter, low picket shadow, tallow-candle window spill on the lane, and neighbourly warmth spreading from the cottage base that match the whimsical humble village style. Keep the center composition open enough for the foreground cottage glyph to sit on top cleanly without doubling the silhouette. Match the Dogwallow Ramble II palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "randy-sharon-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "thewallow",
@@ -413,7 +563,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the Wallow glyph directly into the Dogwallow Ramble II lane beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the wallow feel built into the ramble art: soft mud patches spreading across clay-orange earth, warm puddle shimmer, boot-print impressions in wet soil, low hedge shadow overhang, scattered leaf mulch, and drowsy wallowing warmth spreading from the hollow base that match the whimsical humble village style. Keep the center composition open enough for the foreground wallow glyph to sit on top cleanly without doubling the silhouette. Match the Dogwallow Ramble II palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "thewallow-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "slop-mop-website",
@@ -423,7 +579,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the slop-mop website glyph directly into the Gates of Hell paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the website feel built into the district art: violet ember spill on scorched cobbles, soot-smudged mop-water rivulets, burned-in brush stroke shadow traces, hellfire-warmed web-glow, scorch-ring moisture stains, and occult slop-haze that match the whimsical spooky town style. Keep the center composition open enough for the foreground glyph to sit on top cleanly without doubling the silhouette. Match the surrounding Gates of Hell palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "slop-mop-website-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     },
     {
       "stopId": "queueit",
@@ -433,7 +595,13 @@
       "width": 100,
       "height": 100,
       "anchorX": 50,
-      "anchorY": 78
+      "anchorY": 78,
+      "inpaintHalo": {
+        "description": "Paint a native background integration layer for the queueit workshop glyph directly into the Ally Alley lane beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the queue workshop feel built into the alley art: patched brick dust settling on worn threshold stone, makeshift lantern amber glow, layered paper-poster shadow texture, secondhand brass fitting gleam, narrow overhead-gap light sliver, and eclectic alley warmth spreading from the workshop entrance that match the whimsical ally alley style. Keep the center composition open enough for the foreground workshop glyph to sit on top cleanly without doubling the silhouette. Match the Ally Alley palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, no logos, no UI, no stickers, no hard outline.",
+        "cacheKey": "queueit-halo-v1",
+        "radialScale": 1.2,
+        "alphaBounds": { "x": 5, "y": 0, "width": 90, "height": 100 }
+      }
     }
   ]
 }
