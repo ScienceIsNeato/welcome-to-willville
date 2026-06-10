@@ -430,7 +430,7 @@ export const HEURISTICS: Heuristic[] = [
     displayName: "fogofdog-frontend",
     district: "the-zeitgeist",
     lines: ["web"],
-    position: { x: 932, y: 266 },
+    position: { x: 1008, y: 320 },
     blurb: "Explore your neighborhood from the perspective of a dog",
     glyph: {
       label: "storefront",
@@ -470,9 +470,9 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/razer-ripple",
     displayName: "razer-ripple",
-    district: "the-zeitgeist",
+    district: "the-graveyard",
     lines: ["workshop"],
-    position: { x: 942, y: 391 },
+    position: { x: 1145, y: 364 },
     blurb: "Razer Chroma LED tinkering.",
     glyph: {
       label: "light mill",
@@ -597,9 +597,18 @@ export const HEURISTICS: Heuristic[] = [
   {
     repo: "ScienceIsNeato/queueup-website",
     displayName: "queueup-website",
-    district: "the-nursery",
+    district: "ally-alley",
+    position: { x: 919, y: 1154 },
     lines: ["web"],
     blurb: "Queueup project website.",
+  },
+  {
+    repo: "ScienceIsNeato/lessllm",
+    displayName: "lessllm",
+    district: "the-zeitgeist",
+    lines: [],
+    position: { x: 945, y: 389 },
+    blurb: "Best-guess placement - override via .willville.json.",
   },
 ];
 
