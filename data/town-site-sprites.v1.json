@@ -606,8 +606,8 @@
       "anchorX": 50,
       "anchorY": 78,
       "inpaintHalo": {
-        "description": "Paint a native background integration layer for the razer-ripple light mill glyph directly into The Zeitgeist paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the light mill feel built into the district art: prismatic LED spill, cool glass reflections, soft electric haze, brushed brass hardware glints, rainbow refractions in the paving, and subtle workshop power shimmer that match the whimsical luminous city style. Keep the center composition open enough for the foreground light mill glyph to sit on top cleanly without doubling the silhouette. Match The Zeitgeist palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, logos, UI, stickers, or hard outline.",
-        "cacheKey": "razer-ripple-halo-v1",
+        "description": "Paint a native background integration layer for the razer-ripple light mill glyph directly into The Graveyard paving beneath it. This is not the foreground glyph itself. Instead, create an opaque environmental halo that makes the light mill feel built into the district art: prismatic LED spill refracting through moonlit cobbles, cold glass-arc reflections on moss-edged stone, spectral electric haze drifting over grave-dust, frost-touched brass hardware glints, rainbow light shards scattered across pale stone, and subtle phosphorescent workshop shimmer that match the whimsical gothic graveyard style. Keep the center composition open enough for the foreground light mill glyph to sit on top cleanly without doubling the silhouette. Match the Graveyard palette, perspective, texture density, and lighting so it feels painted into the map rather than pasted on. No readable text, logos, UI, stickers, or hard outline.",
+        "cacheKey": "razer-ripple-halo-v2",
         "radialScale": 1.2,
         "alphaBounds": {
           "x": 0,
