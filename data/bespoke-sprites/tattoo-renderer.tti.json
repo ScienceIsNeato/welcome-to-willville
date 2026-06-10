@@ -1,0 +1,14 @@
+{
+  "style": "Dense board-game diorama miniature, elevated three-quarter top-down view, hand-painted texture, crisp tiny details, warm saturated colors, soft drop shadow beneath, transparent background (PNG alpha). The object should be a self-contained sprite about 100x120 pixels conceptually, centered in frame with empty space around it.",
+  "backend": "dalle",
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "quality": "high",
+  "output_dir": "./output/bespoke-sprites",
+  "images": [
+    {
+      "id": "tattoo-renderer",
+      "prompt": "A tiny tattoo artist's parlor — a cozy narrow shopfront with a flickering neon sign showing a needle and lightning bolt. The window displays flash art sheets with classic tattoo motifs (roses, anchors, daggers, hearts). A vintage tattoo machine sits in the window display. Ink bottles line the sill. The wooden door has a peeling sticker of a skull. The whole building feels like a warm, lived-in creative den. Whimsical board-game piece style, transparent background."
+    }
+  ]
+}

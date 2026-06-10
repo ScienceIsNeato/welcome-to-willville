@@ -1,0 +1,14 @@
+{
+  "style": "Dense board-game diorama miniature, elevated three-quarter top-down view, hand-painted texture, crisp tiny details, warm saturated colors, soft drop shadow beneath, transparent background (PNG alpha). The object should be a self-contained sprite about 100x120 pixels conceptually, centered in frame with empty space around it.",
+  "backend": "dalle",
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "quality": "high",
+  "output_dir": "./output/bespoke-sprites",
+  "images": [
+    {
+      "id": "queueup-website",
+      "prompt": "A tiny orderly queue management booth — a compact municipal kiosk with a 'TAKE A NUMBER' dispenser on the counter, a numbered ticket display showing digits on a glowing board, velvet rope stanchions out front forming a little queue lane, and a helpful attendant window with a brass grille. A small digital display shows 'NOW SERVING: 47'. Tidy, civic, slightly officious but charming. Whimsical board-game piece style, transparent background."
+    }
+  ]
+}

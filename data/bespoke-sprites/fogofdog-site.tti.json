@@ -1,0 +1,14 @@
+{
+  "style": "Dense board-game diorama miniature, elevated three-quarter top-down view, hand-painted texture, crisp tiny details, warm saturated colors, soft drop shadow beneath, transparent background (PNG alpha). The object should be a self-contained sprite about 100x120 pixels conceptually, centered in frame with empty space around it.",
+  "backend": "dalle",
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "quality": "high",
+  "output_dir": "./output/bespoke-sprites",
+  "images": [
+    {
+      "id": "fogofdog-site",
+      "prompt": "A cheerful dog-themed internet café — a cozy little building with a dog-bone shaped sign above the door, a glowing paw-print logo on the window, and a chalkboard menu outside listing 'FETCH', 'SNIFF', 'BARK'. A happy cartoon dog face is painted above the entrance. The windows show warm yellow interior light and a computer screen glowing inside. The walls have polka-dot paw print patterns. Feels like a friendly neighborhood web hub. Whimsical board-game piece style, transparent background."
+    }
+  ]
+}

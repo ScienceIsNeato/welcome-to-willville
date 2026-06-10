@@ -1,0 +1,14 @@
+{
+  "style": "Dense board-game diorama miniature, elevated three-quarter top-down view, hand-painted texture, crisp tiny details, warm saturated colors, soft drop shadow beneath, transparent background (PNG alpha). The object should be a self-contained sprite about 100x120 pixels conceptually, centered in frame with empty space around it.",
+  "backend": "dalle",
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "quality": "high",
+  "output_dir": "./output/bespoke-sprites",
+  "images": [
+    {
+      "id": "rizldizlscarybitz",
+      "prompt": "A spooky haunted jukebox — an old-fashioned jukebox cabinet warped by ghostly energy. The chrome trim is tarnished green, the glass bubble glows an eerie violet, and ghostly sound waves ripple out of the speaker vents. A skeleton hand reaches out from the record-select panel. Cobwebs drape the top, tiny bats circle the chrome arch, and the selection buttons flicker with ghostlight. The base has cracked tiles. Combines retro music machine with Halloween haunting. Whimsical board-game piece style, transparent background."
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "style": "Dense board-game diorama miniature, elevated three-quarter top-down view, hand-painted texture, crisp tiny details, warm saturated colors, soft drop shadow beneath, transparent background (PNG alpha). The object should be a self-contained sprite about 100x120 pixels conceptually, centered in frame with empty space around it.",
+  "backend": "dalle",
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "quality": "high",
+  "output_dir": "./output/bespoke-sprites",
+  "images": [
+    {
+      "id": "seo_optimization",
+      "prompt": "A miniature SEO lighthouse — a squat cylindrical tower with a bright revolving search beam at the top that projects a magnifying glass silhouette. The tower walls are covered with ascending rank arrows (↑), star ratings, and keyword fragments carved in stone. A brass 'RANKED #1' plaque is mounted on the door. The base has a small podium with a trophy cup and laurel wreaths. The beam sweeps dramatically, promising visibility. Whimsical board-game piece style, transparent background."
+    }
+  ]
+}
