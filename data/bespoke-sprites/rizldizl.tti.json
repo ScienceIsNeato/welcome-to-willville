@@ -1,0 +1,14 @@
+{
+  "style": "Dense board-game diorama miniature, elevated three-quarter top-down view, hand-painted texture, crisp tiny details, warm saturated colors, soft drop shadow beneath, transparent background (PNG alpha). The object should be a self-contained sprite about 100x120 pixels conceptually, centered in frame with empty space around it.",
+  "backend": "dalle",
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "quality": "high",
+  "output_dir": "./output/bespoke-sprites",
+  "images": [
+    {
+      "id": "rizldizl",
+      "prompt": "A vibrant creative music studio tower — a tall narrow building packed with artistic energy. Colorful painted murals cover the facade, a giant spinning vinyl record protrudes from one side, and neon tubes in pink, yellow and cyan outline the windows. A rooftop satellite dish picks up frequencies. The entrance has a beaded curtain and glowing speaker cones flanking the door. Wildly decorated, maximalist, joyful creative chaos energy. Whimsical board-game piece style, transparent background."
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "style": "Dense board-game diorama miniature, elevated three-quarter top-down view, hand-painted texture, crisp tiny details, warm saturated colors, soft drop shadow beneath, transparent background (PNG alpha). The object should be a self-contained sprite about 100x120 pixels conceptually, centered in frame with empty space around it.",
+  "backend": "dalle",
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "quality": "high",
+  "output_dir": "./output/bespoke-sprites",
+  "images": [
+    {
+      "id": "ganglia_archives",
+      "prompt": "A gothic archive mausoleum — a small stone building with the look of a crypt crossed with an ancient library. Heavy stone walls with carved nerve-cell and circuit motifs. Iron-grated windows glow faintly green from within. Stacked stone filing drawers line the visible interior. A heavy padlocked door has a brass plate reading 'ARCHIVES'. Cobwebs, moss, and aged brass fittings everywhere. Feels like the knowledge is still alive but entombed. Whimsical board-game piece style, transparent background."
+    }
+  ]
+}

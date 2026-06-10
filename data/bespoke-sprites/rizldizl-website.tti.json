@@ -1,0 +1,14 @@
+{
+  "style": "Dense board-game diorama miniature, elevated three-quarter top-down view, hand-painted texture, crisp tiny details, warm saturated colors, soft drop shadow beneath, transparent background (PNG alpha). The object should be a self-contained sprite about 100x120 pixels conceptually, centered in frame with empty space around it.",
+  "backend": "dalle",
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "quality": "high",
+  "output_dir": "./output/bespoke-sprites",
+  "images": [
+    {
+      "id": "rizldizl-website",
+      "prompt": "A tiny music fan portal kiosk — a cheerful little booth shaped like a retro radio tower with a rounded marquee top. The front has a glowing backlit screen showing colorful waveform patterns. Neon tube letters spell out 'RIZL DIZL' across the marquee in pink and yellow light. Small speaker grilles on the sides, a coin slot, a spinning disco ball on top, colorful sound-wave art on the panels. Warm, festive, pop-music energy. Whimsical board-game piece style, transparent background."
+    }
+  ]
+}

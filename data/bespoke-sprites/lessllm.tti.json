@@ -1,0 +1,14 @@
+{
+  "style": "Dense board-game diorama miniature, elevated three-quarter top-down view, hand-painted texture, crisp tiny details, warm saturated colors, soft drop shadow beneath, transparent background (PNG alpha). The object should be a self-contained sprite about 100x120 pixels conceptually, centered in frame with empty space around it.",
+  "backend": "dalle",
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "quality": "high",
+  "output_dir": "./output/bespoke-sprites",
+  "images": [
+    {
+      "id": "lessllm",
+      "prompt": "A tiny efficiency shrine — a sleek minimalist monolith carved from cool grey-blue stone, about the size of a book, standing upright on a small pedestal. The face has a single thin horizontal aperture that glows with a soft teal light, like a power-save eye. Tiny circuit-etching lines run down the sides, suggesting compressed intelligence. The base is polished marble with a small brass plaque. The overall vibe is 'less is more' — clean, restrained, almost meditative. Whimsical board-game piece style, transparent background."
+    }
+  ]
+}
