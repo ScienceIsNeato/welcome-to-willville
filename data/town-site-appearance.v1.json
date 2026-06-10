@@ -66,7 +66,7 @@
       "underlay": {
         "enabled": true,
         "src": "/art/town/glyph-halos/razer-ripple.png",
-        "cacheKey": "razer-ripple-halo-v2"
+        "cacheKey": "razer-ripple-halo-v3"
       },
       "foregroundMode": "background-only"
     },
@@ -185,6 +185,15 @@
         "enabled": true,
         "src": "/art/town/glyph-halos/queueit.png",
         "cacheKey": "auto-v1-1780484232161"
+      }
+    },
+    {
+      "stopId": "lessllm",
+      "foregroundMode": "background-only",
+      "underlay": {
+        "enabled": true,
+        "src": "/art/town/glyph-halos/lessllm.png",
+        "cacheKey": "auto-v1-1781079560663"
       }
     }
   ]

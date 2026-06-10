@@ -472,7 +472,7 @@ export const HEURISTICS: Heuristic[] = [
     displayName: "razer-ripple",
     district: "the-graveyard",
     lines: ["workshop"],
-    position: { x: 1145, y: 364 },
+    position: { x: 1193, y: 282 },
     blurb: "Razer Chroma LED tinkering.",
     glyph: {
       label: "light mill",
