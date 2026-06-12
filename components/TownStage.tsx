@@ -406,7 +406,13 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                     backgrounds, workers, train, and canal stay. */}
                 {!mobileSafeMode && <ChimneySmoke />}
                 {!mobileSafeMode && <DynamicWalls />}
-                <Canal boats={historyBoats} layer="base" />
+                <Canal
+                  boats={historyBoats}
+                  layer="base"
+                  historyCurrentTime={
+                    isHistoryMode ? currentPlaybackTime : undefined
+                  }
+                />
                 {DISTRICTS.map((d) => (
                   <g
                     key={d.id}
@@ -427,7 +433,13 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                   onEngineClick={closeHud}
                   engineLabel="Return to the town overview"
                 />
-                <Canal boats={historyBoats} layer="traffic" />
+                <Canal
+                  boats={historyBoats}
+                  layer="traffic"
+                  historyCurrentTime={
+                    isHistoryMode ? currentPlaybackTime : undefined
+                  }
+                />
                 <WorldWorkerLayer stops={currentStops} />
                 {populating !== "idle" && (
                   <BellMessengers
