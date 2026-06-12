@@ -17,7 +17,7 @@ import {
 } from "./boardUtils";
 
 const MOBILE_BOARD_COLUMNS = 24;
-const MOBILE_BOARD_ROWS = 6;
+const MOBILE_BOARD_ROWS = 8;
 const ROW_DELAY_MS = 42;
 const COLUMN_DELAY_MS = 14;
 
