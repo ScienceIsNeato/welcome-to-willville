@@ -4,9 +4,30 @@ import { TownStage } from "@/components/TownStage";
 import { buildInitialStops } from "@/lib/town";
 
 export const metadata: Metadata = {
-  title: "Welcome to Willville",
+  metadataBase: new URL("https://willville.ai"),
+  title: {
+    default: "Welcome to Willville",
+    template: "%s · Willville",
+  },
   description:
-    "A purely-visual town where Will's projects live. Wander the districts, watch the trains run.",
+    "A purely-visual town where Will's projects live. Wander the districts, watch the trains run — or browse the project directory.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "Willville",
+    url: "https://willville.ai/",
+    title: "Welcome to Willville",
+    description:
+      "A purely-visual town where Will's projects live. Wander the districts, watch the trains run.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Welcome to Willville",
+    description:
+      "A purely-visual town where Will's projects live. Wander the districts, watch the trains run.",
+  },
   icons: {
     icon: [{ url: "/icon.svg?eye=1", type: "image/svg+xml" }],
     shortcut: [{ url: "/icon.svg?eye=1", type: "image/svg+xml" }],
