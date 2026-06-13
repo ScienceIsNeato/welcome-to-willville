@@ -1,0 +1,14 @@
+{
+  "style": "Dense board-game diorama miniature, elevated three-quarter top-down view, Magic Maze board game style, hand-painted board-game miniature texture, crisp tiny shapes, wobbly hand-drawn contours, saturated but readable colors, soft drop shadow beneath, transparent background (PNG alpha). The object should be a self-contained sprite about 100x120 pixels conceptually, centered in frame with empty space around it.",
+  "backend": "dalle",
+  "model": "gpt-image-1",
+  "size": "1024x1024",
+  "quality": "high",
+  "output_dir": "./output/bespoke-sprites",
+  "images": [
+    {
+      "id": "harbormaster",
+      "prompt": "A tiny Harbormaster's recordkeeping dockhouse built on tall wooden stilts (piles) extending down, meant to stand in the water. The structure features a small cozy wooden shack with a crimson tiled shingle roof, a tiny porch with a small writing desk, rolled-up maps, tiny record books, and a hanging brass lantern that casts a warm golden glow. The details are crisp, wobbly, and hand-painted, matching the playful Magic Maze board game diorama aesthetic. Transparent background."
+    }
+  ]
+}

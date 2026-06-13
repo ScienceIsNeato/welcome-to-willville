@@ -63,6 +63,8 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     boardAnnouncement,
     isRepositionMode,
     isHistoryMode,
+    setShowHistoryPanel,
+    handleExitHistoryMode,
     mayorEditingLocked,
     currentStops,
     bellTownHealthSummary,
@@ -484,6 +486,10 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                     markSkipDrag();
                     handleAboutPaneOpen();
                   }}
+                  onHarbormasterClick={() => {
+                    markSkipDrag();
+                    setShowHistoryPanel(true);
+                  }}
                 />
               </g>
             </g>
@@ -636,7 +642,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               onSpeedChange={setHistorySpeed}
               onStartDateChange={setHistoryStart}
               onEndDateChange={setHistoryEnd}
-              onExit={() => router.push("/")}
+              onExit={handleExitHistoryMode}
             />
           )}
         </div>

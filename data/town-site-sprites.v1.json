@@ -931,6 +931,16 @@
           "height": 100
         }
       }
+    },
+    {
+      "stopId": "harbormaster",
+      "district": "gates-of-hell",
+      "kind": "bespoke",
+      "src": "/art/stops/harbormaster.png",
+      "width": 100,
+      "height": 100,
+      "anchorX": 50,
+      "anchorY": 78
     }
   ]
 }

@@ -184,8 +184,18 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
     };
   }, [isClient]);
 
+  const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const isRepositionMode = pathname.startsWith("/reposition");
-  const isHistoryMode = pathname.startsWith("/history");
+  const isHistoryMode = pathname.startsWith("/history") || showHistoryPanel;
+
+  const handleExitHistoryMode = useCallback(() => {
+    if (showHistoryPanel) {
+      setShowHistoryPanel(false);
+    }
+    if (pathname.startsWith("/history")) {
+      router.push(routeWithCurrentSearch("/"));
+    }
+  }, [showHistoryPanel, pathname, router, routeWithCurrentSearch]);
 
   const mayorEditingLocked = useMemo(() => {
     if (!isClient) {
@@ -1391,6 +1401,9 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
     hasAppliedApiStopsRef,
     isRepositionMode,
     isHistoryMode,
+    showHistoryPanel,
+    setShowHistoryPanel,
+    handleExitHistoryMode,
     mayorEditingLocked,
     currentStops,
     bellTownHealthSummary,
