@@ -285,10 +285,20 @@ export function SpecialTownLandmarks({
       {/* Harbormaster's Recordkeeping Dockhouse */}
       <g
         transform="translate(1420, 560)"
+        role="button"
+        tabIndex={0}
+        aria-label="Open Harbormaster's Recordkeeping"
         style={{ cursor: "pointer" }}
         onMouseEnter={() => setHarbormasterHovered(true)}
         onMouseLeave={() => setHarbormasterHovered(false)}
         onClick={(event) => activate(event, onHarbormasterClick)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            event.stopPropagation();
+            onHarbormasterClick();
+          }
+        }}
       >
         {/* Water ripples */}
         <ellipse

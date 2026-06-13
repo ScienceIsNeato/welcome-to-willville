@@ -153,6 +153,7 @@ export function HistoryTimelapsePanel({
   return (
     <div
       className="history-timelapse-panel"
+      data-town-control
       style={{
         position: "absolute",
         bottom: 16,

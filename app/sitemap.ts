@@ -7,7 +7,7 @@ import { DISTRICT_SLUGS } from "@/lib/slugs";
 export const dynamic = "force-static";
 
 const BASE = "https://willville.ai";
-const LASTMOD = "2026-06-13";
+const LASTMOD = new Date().toISOString().split("T")[0];
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const home = {

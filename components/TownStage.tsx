@@ -351,7 +351,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                   x={TOWN_ART_FEATHER}
                   y={TOWN.height - TOWN_ART_FEATHER}
                   width={TOWN.width - TOWN_ART_FEATHER * 2}
-                  height={TOWN.height - TOWN_ART_FEATHER * 2}
+                  height={TOWN_ART_FEATHER}
                   fill="url(#town-feather-bottom)"
                 />
                 <rect

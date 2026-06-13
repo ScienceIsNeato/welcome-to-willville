@@ -8,7 +8,7 @@ import { DISTRICTS, type DistrictId } from "./willville";
 import { HEURISTICS } from "./willville.heuristics";
 import { liveSiteForRepo, repoUrl } from "./willville.links";
 
-export type DirectoryProject = {
+type DirectoryProject = {
   repo: string;
   displayName: string;
   blurb?: string;

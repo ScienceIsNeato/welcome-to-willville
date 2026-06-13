@@ -185,10 +185,12 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
   }, [isClient]);
 
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+  const [isHistoryPlaying, setIsHistoryPlaying] = useState(false);
   const isRepositionMode = pathname.startsWith("/reposition");
   const isHistoryMode = pathname.startsWith("/history") || showHistoryPanel;
 
   const handleExitHistoryMode = useCallback(() => {
+    setIsHistoryPlaying(false);
     if (showHistoryPanel) {
       setShowHistoryPanel(false);
     }
@@ -615,19 +617,24 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
   const effectiveStartStr = historyStart || boatBounds.startStr;
   const effectiveEndStr = historyEnd || boatBounds.endStr;
 
-  const effectiveStartMs = useMemo(
-    () => Date.parse(effectiveStartStr),
-    [effectiveStartStr],
-  );
-  const effectiveEndMs = useMemo(
-    () => Date.parse(effectiveEndStr),
-    [effectiveEndStr],
-  );
+  const [effectiveStartMs, effectiveEndMs] = useMemo(() => {
+    const parsedStart = Date.parse(effectiveStartStr);
+    const parsedEnd = Date.parse(effectiveEndStr);
+    const safeStart = Number.isFinite(parsedStart)
+      ? parsedStart
+      : boatBounds.minTime;
+    const safeEnd = Number.isFinite(parsedEnd) ? parsedEnd : boatBounds.maxTime;
+    return safeStart <= safeEnd ? [safeStart, safeEnd] : [safeEnd, safeStart];
+  }, [
+    effectiveStartStr,
+    effectiveEndStr,
+    boatBounds.minTime,
+    boatBounds.maxTime,
+  ]);
 
   const [historyCurrentTime, setHistoryCurrentTime] = useState<number>(0);
   const currentPlaybackTime = historyCurrentTime || effectiveStartMs;
 
-  const [isHistoryPlaying, setIsHistoryPlaying] = useState(false);
   const [historySpeed, setHistorySpeed] = useState<number>(24 * 3600 * 1000); // 1 day per second
 
   const lastFrameTimeRef = useRef<number | null>(null);

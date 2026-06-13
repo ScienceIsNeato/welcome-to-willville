@@ -59,7 +59,9 @@ export default function ProjectsDirectory() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <div style={{ maxWidth: 820, margin: "0 auto", padding: "48px 24px 96px" }}>
+      <div
+        style={{ maxWidth: 820, margin: "0 auto", padding: "48px 24px 96px" }}
+      >
         <p style={{ margin: "0 0 8px" }}>
           <Link href="/" style={{ color: "#9d8cff", textDecoration: "none" }}>
             ← Back to the town
@@ -69,10 +71,10 @@ export default function ProjectsDirectory() {
           Willville Project Directory
         </h1>
         <p style={{ margin: "0 0 40px", color: "#b3acc6", maxWidth: 640 }}>
-          Willville is a visual town where each of Will&rsquo;s projects lives in
-          a district. This is the readable index of that town — every project,
-          where it lives, what it does, and links to the live site and the source
-          repo.
+          Willville is a visual town where each of Will&rsquo;s projects lives
+          in a district. This is the readable index of that town — every
+          project, where it lives, what it does, and links to the live site and
+          the source repo.
         </p>
 
         {directory.map((district) => (

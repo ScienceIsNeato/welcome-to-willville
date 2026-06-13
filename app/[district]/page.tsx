@@ -22,9 +22,11 @@ export async function generateMetadata({
   if (!entry) return {};
 
   const names = entry.projects.map((p) => p.displayName).slice(0, 6);
-  const description =
-    `${entry.blurb} Projects in ${entry.displayName}: ${names.join(", ")}` +
-    `${entry.projects.length > names.length ? ", and more" : ""}.`;
+  const projectClause =
+    names.length === 0
+      ? ""
+      : ` Projects in ${entry.displayName}: ${names.join(", ")}${entry.projects.length > names.length ? ", and more" : ""}.`;
+  const description = `${entry.blurb}${projectClause}`;
   const canonical = `/${district}/`;
 
   return {
