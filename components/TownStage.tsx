@@ -232,6 +232,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             touchAction: "none",
             cursor: isDragging ? "grabbing" : "default",
             overflow: "hidden",
+            backgroundColor: "#063755",
           }}
           onClick={handleStageClick}
           onDoubleClick={handleStageDoubleClick}
@@ -250,7 +251,6 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             style={{
               pointerEvents: "auto",
               touchAction: "none",
-              background: "#063755",
             }}
           >
             <defs>

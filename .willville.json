@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "PR #42 threads all resolved — fixing blue zoom flash caused by transparent SVG background",
-    "direction": "Merge #42, deploy, and confirm the zoom flash is gone",
-    "last_update": "2026-06-13T00:00:00Z"
+    "status": "Chasing zoom flash on Retina Mac — moved background fallback behind SVG to avoid compositor promotion",
+    "direction": "Confirm flash is gone on native Mac, then merge and ship #42",
+    "last_update": "2026-06-14T00:00:00Z"
   }
 }
