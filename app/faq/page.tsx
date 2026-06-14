@@ -32,7 +32,7 @@ const FAQS: QA[] = [
   },
   {
     q: "What are the districts?",
-    a: "Districts group nearby stops by theme. The Graveyard holds Halloween and horror work. Gates of Hell is where the chaotic and experimental stuff lives. Slop Wharf is CLI tools and quality rails. The Zeitgeist is AI and LLM projects. Ally Alley is scrappy one-off utilities. Each district has its own art style.",
+    a: "Districts group stops by theme. The Graveyard is for projects no longer actively worked on. The Zeitgeist is public-facing work. Mirrored Mile is writing projects. Slop Wharf is everything slopmop-related. Gates of Hell is Halloween and ganglia projects. Ally Alley is projects Will contributes to but doesn't own. Halls of Judgement is AI training gigs. The Nursery is new projects just getting started. Town Square is the main socializing hub. Each district has its own art style.",
   },
   {
     q: "What is the Mayor's Express?",
