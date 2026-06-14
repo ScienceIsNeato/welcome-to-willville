@@ -12,6 +12,7 @@ type Props = {
   onEgg: () => void;
   onTourism: () => void;
   onAbout: () => void;
+  onHarbormasterClick: () => void;
 };
 
 export function SpecialTownLandmarks({
@@ -21,10 +22,12 @@ export function SpecialTownLandmarks({
   onEgg,
   onTourism,
   onAbout,
+  onHarbormasterClick,
 }: Props) {
   const [bellHovered, setBellHovered] = useState(false);
   const [eggHovered, setEggHovered] = useState(false);
   const [aboutHovered, setAboutHovered] = useState(false);
+  const [harbormasterHovered, setHarbormasterHovered] = useState(false);
 
   const activate = (event: MouseEvent<SVGGElement>, callback: () => void) => {
     event.stopPropagation();
@@ -274,6 +277,98 @@ export function SpecialTownLandmarks({
               fontFamily="var(--font-sans, sans-serif)"
             >
               Open the Willville Town Forum
+            </text>
+          </g>
+        )}
+      </g>
+
+      {/* Harbormaster's Recordkeeping Dockhouse */}
+      <g
+        transform="translate(1420, 560)"
+        role="button"
+        tabIndex={0}
+        aria-label="Open Harbormaster's Recordkeeping"
+        style={{ cursor: "pointer" }}
+        onMouseEnter={() => setHarbormasterHovered(true)}
+        onMouseLeave={() => setHarbormasterHovered(false)}
+        onClick={(event) => activate(event, onHarbormasterClick)}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            event.stopPropagation();
+            onHarbormasterClick();
+          }
+        }}
+      >
+        {/* Water ripples */}
+        <ellipse
+          cx={0}
+          cy={0}
+          rx={35}
+          ry={12}
+          fill="none"
+          stroke="rgba(100, 200, 255, 0.45)"
+          strokeWidth={1.5}
+        />
+        <ellipse
+          cx={0}
+          cy={0}
+          rx={55}
+          ry={18}
+          fill="none"
+          stroke="rgba(100, 200, 255, 0.25)"
+          strokeWidth={1.2}
+        />
+
+        <image
+          href="/art/stops/harbormaster.png?v=harbormaster-v2"
+          x={-60}
+          y={-96}
+          width={120}
+          height={120}
+          preserveAspectRatio="xMidYMid meet"
+          style={{
+            pointerEvents: "none",
+            filter: harbormasterHovered
+              ? "drop-shadow(0 0 12px rgba(230,198,106,0.65))"
+              : "drop-shadow(0 4px 10px rgba(0,0,0,0.35))",
+            transition: "filter 0.3s, transform 0.3s",
+            transform: harbormasterHovered ? "scale(1.05)" : "scale(1)",
+          }}
+        />
+
+        {/* Interaction hit box */}
+        <rect
+          x={-40}
+          y={-85}
+          width={80}
+          height={100}
+          fill="transparent"
+          pointerEvents="all"
+        />
+
+        {/* Hover label */}
+        {harbormasterHovered && (
+          <g style={{ pointerEvents: "none" }}>
+            <rect
+              x={-100}
+              y={-110}
+              width={200}
+              height={24}
+              rx={5}
+              fill="rgba(12,7,22,0.92)"
+              stroke="rgba(230,198,106,0.35)"
+              strokeWidth={1}
+            />
+            <text
+              x={0}
+              y={-93}
+              textAnchor="middle"
+              fontSize={13}
+              fill="#e6c66a"
+              fontFamily="var(--font-sans, sans-serif)"
+            >
+              Harbormaster&apos;s Recordkeeping
             </text>
           </g>
         )}

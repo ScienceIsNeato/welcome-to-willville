@@ -48,6 +48,12 @@ const MECHANISMS: Mechanism[] = [
 
 const LINK_CARDS: LinkCard[] = [
   {
+    title: "FAQ",
+    href: "/faq/",
+    note: "What are the ships? What's the bell? Everything explained.",
+    pullTabLabel: "Pull tab -> FAQ",
+  },
+  {
     title: "Main Street",
     href: "/",
     note: "Back to town square.",

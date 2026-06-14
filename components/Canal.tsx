@@ -20,6 +20,7 @@ import { CanalBoat as Boat } from "./CanalBoat";
 type Props = {
   boats: CanalBoat[];
   layer?: "base" | "traffic" | "all";
+  historyCurrentTime?: number;
 };
 
 const CANAL_WALL_PATH_LENGTH = 3600;
@@ -127,17 +128,20 @@ function seaRand(seed: number): number {
   return ((x >>> 0) % 1000000) / 1000000;
 }
 
-export function Canal({ boats, layer = "all" }: Props) {
+export function Canal({ boats, layer = "all", historyCurrentTime }: Props) {
   // Age zones are wall-clock based, so re-tick occasionally.
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
+    if (historyCurrentTime !== undefined) {
+      return;
+    }
     const t = window.setTimeout(() => setNow(Date.now()), 0);
     const interval = window.setInterval(() => setNow(Date.now()), 60_000);
     return () => {
       window.clearTimeout(t);
       window.clearInterval(interval);
     };
-  }, []);
+  }, [historyCurrentTime]);
 
   const groupId =
     layer === "all" ? "willville-canal" : `willville-canal-${layer}`;
@@ -163,7 +167,7 @@ export function Canal({ boats, layer = "all" }: Props) {
     // Anchor age to wall-clock once mounted; before that fall back to the newest
     // boat so the server and first client render agree (no layout shift).
     const stableReference = Math.max(...openSeaBoats.map(timeOf));
-    const referenceTime = now ?? stableReference;
+    const referenceTime = historyCurrentTime ?? now ?? stableReference;
 
     // Bucket boats into 24h-wide age zones — one concentric ring per zone.
     const zoneBoats = new Map<number, CanalBoat[]>();
@@ -232,7 +236,7 @@ export function Canal({ boats, layer = "all" }: Props) {
       });
     }
     return positions;
-  }, [boats, now]);
+  }, [boats, now, historyCurrentTime]);
 
   return (
     <g id={groupId} aria-label="The Canal">

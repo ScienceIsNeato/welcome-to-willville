@@ -411,6 +411,7 @@ body {
  * avg fps and didn't reduce dropped/long frames, so the freeze stays and the
  * borders remain visible. The remaining stutter floor is the world transform.
  */
+
 .willville-stage--mobile-safe .district-zone-border-dash {
   animation: none;
   will-change: auto;
