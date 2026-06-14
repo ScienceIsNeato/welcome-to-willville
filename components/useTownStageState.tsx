@@ -82,6 +82,8 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const cameraGroupRef = useRef<SVGGElement>(null);
+  // GPU wrapper around the <svg>; CSS-scaled during a zoom gesture (Stage 1).
+  const zoomWrapperRef = useRef<HTMLDivElement>(null);
   const perfProfiler = useTownInteractionProfiler(perfEnabled);
   const perfProbe = useMemo(
     () => ({
@@ -101,7 +103,15 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
     stageHandlers,
     wasDragging,
     zoomAtWorldPoint,
-  } = useTownCamera(svgRef, stageRef, perfEnabled ? perfProbe : undefined);
+    zoomActiveRef,
+    commitPendingZoom,
+  } = useTownCamera(
+    svgRef,
+    stageRef,
+    cameraGroupRef,
+    zoomWrapperRef,
+    perfEnabled ? perfProbe : undefined,
+  );
 
   const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
   const dismissedStopIdRef = useRef<string | null>(null);
@@ -478,6 +488,7 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
       if (activeDragIdRef.current !== stop.id) return;
       const svg = svgRef.current;
       if (!svg) return;
+      commitPendingZoom();
       const snap = getCameraSnapshot();
       const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
 
@@ -511,7 +522,7 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
         };
       });
     },
-    [getCameraSnapshot],
+    [commitPendingZoom, getCameraSnapshot],
   );
 
   const handleMarkerDragEnd = useCallback(
@@ -1032,6 +1043,10 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
 
   useLayoutEffect(() => {
     const applyTransform = (value: string) => {
+      // While a zoom gesture is active the camera hook drives the GPU wrapper
+      // instead; writing the <g> here would re-raster the SVG (the Retina blank).
+      // Pan and at-rest writes still go straight to the <g>.
+      if (zoomActiveRef.current) return;
       if (perfEnabled) {
         perfProbe.measure("domApply", () => {
           cameraGroupRef.current?.setAttribute("transform", value);
@@ -1042,7 +1057,7 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
     };
     applyTransform(cameraTransform.get());
     return cameraTransform.on("change", applyTransform);
-  }, [cameraTransform, perfEnabled, perfProbe]);
+  }, [cameraTransform, perfEnabled, perfProbe, zoomActiveRef]);
 
   const { runOfficialPerfProfile, downloadPerfReport } = useTownPerfJourney({
     currentStops,
@@ -1220,6 +1235,9 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
       markSkipDrag();
       const svg = svgRef.current;
       if (!svg) return;
+      // A click within the zoom settle window leaves the wrapper non-identity;
+      // commit so screenToWorld (root CTM + camera) maps correctly.
+      commitPendingZoom();
       const snap = getCameraSnapshot();
       const { wx, wy } = screenToWorld(svg, e.clientX, e.clientY, snap);
       zoomAtWorldPoint(wx, wy);
@@ -1227,6 +1245,7 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
     },
     [
       closeHud,
+      commitPendingZoom,
       getCameraSnapshot,
       isRepositionMode,
       isHistoryMode,
@@ -1370,6 +1389,7 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
     svgRef,
     stageRef,
     cameraGroupRef,
+    zoomWrapperRef,
     perfProfiler,
     perfProbe,
     getCameraSnapshot,

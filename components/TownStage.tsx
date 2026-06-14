@@ -33,6 +33,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     svgRef,
     stageRef,
     cameraGroupRef,
+    zoomWrapperRef,
     perfProfiler,
     isDragging,
     cameraTransform,
@@ -238,266 +239,286 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           onDoubleClick={handleStageDoubleClick}
           {...stageHandlers}
         >
-          <svg
-            ref={svgRef}
-            viewBox={`0 0 ${WORLD.width} ${WORLD.height}`}
-            preserveAspectRatio={
-              mobileSafeMode || areChromeBoardsHidden
-                ? "xMidYMid slice"
-                : "xMidYMid meet"
-            }
-            width="100%"
-            height="100%"
+          {/* GPU wrapper: CSS-scaled during a zoom gesture so the SVG raster is
+              scaled on the compositor instead of re-rastered every frame (the
+              Retina blank). Identity at rest; the camera hook drives it. */}
+          <div
+            ref={zoomWrapperRef}
             style={{
-              pointerEvents: "auto",
-              touchAction: "none",
+              position: "absolute",
+              inset: 0,
+              transformOrigin: "0 0",
+              willChange: "transform",
+              backfaceVisibility: "hidden",
             }}
           >
-            <defs>
-              <linearGradient id="town-feather-top" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="black" />
-                <stop offset="100%" stopColor="white" />
-              </linearGradient>
-              <linearGradient
-                id="town-feather-bottom"
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop offset="0%" stopColor="white" />
-                <stop offset="100%" stopColor="black" />
-              </linearGradient>
-              <linearGradient
-                id="town-feather-left"
-                x1="0"
-                y1="0"
-                x2="1"
-                y2="0"
-              >
-                <stop offset="0%" stopColor="black" />
-                <stop offset="100%" stopColor="white" />
-              </linearGradient>
-              <linearGradient
-                id="town-feather-right"
-                x1="0"
-                y1="0"
-                x2="1"
-                y2="0"
-              >
-                <stop offset="0%" stopColor="white" />
-                <stop offset="100%" stopColor="black" />
-              </linearGradient>
-              <radialGradient
-                id="town-feather-corner-top-left"
-                gradientUnits="userSpaceOnUse"
-                cx={TOWN_ART_FEATHER}
-                cy={TOWN_ART_FEATHER}
-                r={TOWN_ART_FEATHER}
-              >
-                <stop offset="0%" stopColor="white" />
-                <stop offset="100%" stopColor="black" />
-              </radialGradient>
-              <radialGradient
-                id="town-feather-corner-top-right"
-                gradientUnits="userSpaceOnUse"
-                cx={TOWN.width - TOWN_ART_FEATHER}
-                cy={TOWN_ART_FEATHER}
-                r={TOWN_ART_FEATHER}
-              >
-                <stop offset="0%" stopColor="white" />
-                <stop offset="100%" stopColor="black" />
-              </radialGradient>
-              <radialGradient
-                id="town-feather-corner-bottom-left"
-                gradientUnits="userSpaceOnUse"
-                cx={TOWN_ART_FEATHER}
-                cy={TOWN.height - TOWN_ART_FEATHER}
-                r={TOWN_ART_FEATHER}
-              >
-                <stop offset="0%" stopColor="white" />
-                <stop offset="100%" stopColor="black" />
-              </radialGradient>
-              <radialGradient
-                id="town-feather-corner-bottom-right"
-                gradientUnits="userSpaceOnUse"
-                cx={TOWN.width - TOWN_ART_FEATHER}
-                cy={TOWN.height - TOWN_ART_FEATHER}
-                r={TOWN_ART_FEATHER}
-              >
-                <stop offset="0%" stopColor="white" />
-                <stop offset="100%" stopColor="black" />
-              </radialGradient>
-              <mask
-                id="town-art-feather-mask"
-                maskUnits="userSpaceOnUse"
-                maskContentUnits="userSpaceOnUse"
-                x={0}
-                y={0}
-                width={TOWN.width}
-                height={TOWN.height}
-              >
-                <rect width={TOWN.width} height={TOWN.height} fill="black" />
-                <rect
-                  x={TOWN_ART_FEATHER}
-                  y={TOWN_ART_FEATHER}
-                  width={TOWN.width - TOWN_ART_FEATHER * 2}
-                  height={TOWN.height - TOWN_ART_FEATHER * 2}
-                  fill="white"
-                />
-                <rect
-                  x={TOWN_ART_FEATHER}
-                  width={TOWN.width - TOWN_ART_FEATHER * 2}
-                  height={TOWN_ART_FEATHER}
-                  fill="url(#town-feather-top)"
-                />
-                <rect
-                  x={TOWN_ART_FEATHER}
-                  y={TOWN.height - TOWN_ART_FEATHER}
-                  width={TOWN.width - TOWN_ART_FEATHER * 2}
-                  height={TOWN_ART_FEATHER}
-                  fill="url(#town-feather-bottom)"
-                />
-                <rect
-                  y={TOWN_ART_FEATHER}
-                  width={TOWN_ART_FEATHER}
-                  height={TOWN.height - TOWN_ART_FEATHER * 2}
-                  fill="url(#town-feather-left)"
-                />
-                <rect
-                  x={TOWN.width - TOWN_ART_FEATHER}
-                  y={TOWN_ART_FEATHER}
-                  width={TOWN_ART_FEATHER}
-                  height={TOWN.height - TOWN_ART_FEATHER * 2}
-                  fill="url(#town-feather-right)"
-                />
-                <rect
-                  width={TOWN_ART_FEATHER}
-                  height={TOWN_ART_FEATHER}
-                  fill="url(#town-feather-corner-top-left)"
-                />
-                <rect
-                  x={TOWN.width - TOWN_ART_FEATHER}
-                  width={TOWN_ART_FEATHER}
-                  height={TOWN_ART_FEATHER}
-                  fill="url(#town-feather-corner-top-right)"
-                />
-                <rect
-                  y={TOWN.height - TOWN_ART_FEATHER}
-                  width={TOWN_ART_FEATHER}
-                  height={TOWN_ART_FEATHER}
-                  fill="url(#town-feather-corner-bottom-left)"
-                />
-                <rect
-                  x={TOWN.width - TOWN_ART_FEATHER}
-                  y={TOWN.height - TOWN_ART_FEATHER}
-                  width={TOWN_ART_FEATHER}
-                  height={TOWN_ART_FEATHER}
-                  fill="url(#town-feather-corner-bottom-right)"
-                />
-              </mask>
-            </defs>
+            <svg
+              ref={svgRef}
+              viewBox={`0 0 ${WORLD.width} ${WORLD.height}`}
+              preserveAspectRatio={
+                mobileSafeMode || areChromeBoardsHidden
+                  ? "xMidYMid slice"
+                  : "xMidYMid meet"
+              }
+              width="100%"
+              height="100%"
+              style={{
+                pointerEvents: "auto",
+                touchAction: "none",
+              }}
+            >
+              <defs>
+                <linearGradient
+                  id="town-feather-top"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop offset="0%" stopColor="black" />
+                  <stop offset="100%" stopColor="white" />
+                </linearGradient>
+                <linearGradient
+                  id="town-feather-bottom"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop offset="0%" stopColor="white" />
+                  <stop offset="100%" stopColor="black" />
+                </linearGradient>
+                <linearGradient
+                  id="town-feather-left"
+                  x1="0"
+                  y1="0"
+                  x2="1"
+                  y2="0"
+                >
+                  <stop offset="0%" stopColor="black" />
+                  <stop offset="100%" stopColor="white" />
+                </linearGradient>
+                <linearGradient
+                  id="town-feather-right"
+                  x1="0"
+                  y1="0"
+                  x2="1"
+                  y2="0"
+                >
+                  <stop offset="0%" stopColor="white" />
+                  <stop offset="100%" stopColor="black" />
+                </linearGradient>
+                <radialGradient
+                  id="town-feather-corner-top-left"
+                  gradientUnits="userSpaceOnUse"
+                  cx={TOWN_ART_FEATHER}
+                  cy={TOWN_ART_FEATHER}
+                  r={TOWN_ART_FEATHER}
+                >
+                  <stop offset="0%" stopColor="white" />
+                  <stop offset="100%" stopColor="black" />
+                </radialGradient>
+                <radialGradient
+                  id="town-feather-corner-top-right"
+                  gradientUnits="userSpaceOnUse"
+                  cx={TOWN.width - TOWN_ART_FEATHER}
+                  cy={TOWN_ART_FEATHER}
+                  r={TOWN_ART_FEATHER}
+                >
+                  <stop offset="0%" stopColor="white" />
+                  <stop offset="100%" stopColor="black" />
+                </radialGradient>
+                <radialGradient
+                  id="town-feather-corner-bottom-left"
+                  gradientUnits="userSpaceOnUse"
+                  cx={TOWN_ART_FEATHER}
+                  cy={TOWN.height - TOWN_ART_FEATHER}
+                  r={TOWN_ART_FEATHER}
+                >
+                  <stop offset="0%" stopColor="white" />
+                  <stop offset="100%" stopColor="black" />
+                </radialGradient>
+                <radialGradient
+                  id="town-feather-corner-bottom-right"
+                  gradientUnits="userSpaceOnUse"
+                  cx={TOWN.width - TOWN_ART_FEATHER}
+                  cy={TOWN.height - TOWN_ART_FEATHER}
+                  r={TOWN_ART_FEATHER}
+                >
+                  <stop offset="0%" stopColor="white" />
+                  <stop offset="100%" stopColor="black" />
+                </radialGradient>
+                <mask
+                  id="town-art-feather-mask"
+                  maskUnits="userSpaceOnUse"
+                  maskContentUnits="userSpaceOnUse"
+                  x={0}
+                  y={0}
+                  width={TOWN.width}
+                  height={TOWN.height}
+                >
+                  <rect width={TOWN.width} height={TOWN.height} fill="black" />
+                  <rect
+                    x={TOWN_ART_FEATHER}
+                    y={TOWN_ART_FEATHER}
+                    width={TOWN.width - TOWN_ART_FEATHER * 2}
+                    height={TOWN.height - TOWN_ART_FEATHER * 2}
+                    fill="white"
+                  />
+                  <rect
+                    x={TOWN_ART_FEATHER}
+                    width={TOWN.width - TOWN_ART_FEATHER * 2}
+                    height={TOWN_ART_FEATHER}
+                    fill="url(#town-feather-top)"
+                  />
+                  <rect
+                    x={TOWN_ART_FEATHER}
+                    y={TOWN.height - TOWN_ART_FEATHER}
+                    width={TOWN.width - TOWN_ART_FEATHER * 2}
+                    height={TOWN_ART_FEATHER}
+                    fill="url(#town-feather-bottom)"
+                  />
+                  <rect
+                    y={TOWN_ART_FEATHER}
+                    width={TOWN_ART_FEATHER}
+                    height={TOWN.height - TOWN_ART_FEATHER * 2}
+                    fill="url(#town-feather-left)"
+                  />
+                  <rect
+                    x={TOWN.width - TOWN_ART_FEATHER}
+                    y={TOWN_ART_FEATHER}
+                    width={TOWN_ART_FEATHER}
+                    height={TOWN.height - TOWN_ART_FEATHER * 2}
+                    fill="url(#town-feather-right)"
+                  />
+                  <rect
+                    width={TOWN_ART_FEATHER}
+                    height={TOWN_ART_FEATHER}
+                    fill="url(#town-feather-corner-top-left)"
+                  />
+                  <rect
+                    x={TOWN.width - TOWN_ART_FEATHER}
+                    width={TOWN_ART_FEATHER}
+                    height={TOWN_ART_FEATHER}
+                    fill="url(#town-feather-corner-top-right)"
+                  />
+                  <rect
+                    y={TOWN.height - TOWN_ART_FEATHER}
+                    width={TOWN_ART_FEATHER}
+                    height={TOWN_ART_FEATHER}
+                    fill="url(#town-feather-corner-bottom-left)"
+                  />
+                  <rect
+                    x={TOWN.width - TOWN_ART_FEATHER}
+                    y={TOWN.height - TOWN_ART_FEATHER}
+                    width={TOWN_ART_FEATHER}
+                    height={TOWN_ART_FEATHER}
+                    fill="url(#town-feather-corner-bottom-right)"
+                  />
+                </mask>
+              </defs>
 
-            <g ref={cameraGroupRef} transform={cameraTransform.get()}>
-              <WorldSubstrate fullResArt={prefersFullArt} />
+              <g ref={cameraGroupRef} transform={cameraTransform.get()}>
+                <WorldSubstrate fullResArt={prefersFullArt} />
 
-              <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
-                <GeneratedTownBase fullResArt={prefersFullArt} />
-                <TownSiteAppearances
-                  stops={currentStops}
-                  previewUnderlayHrefs={previewUnderlayHrefs}
-                />
-                {/* Smoke (blur filter) + dynamic walls (drop-shadow filters)
+                <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>
+                  <GeneratedTownBase fullResArt={prefersFullArt} />
+                  <TownSiteAppearances
+                    stops={currentStops}
+                    previewUnderlayHrefs={previewUnderlayHrefs}
+                  />
+                  {/* Smoke (blur filter) + dynamic walls (drop-shadow filters)
                     re-rasterize every zoom frame. Skip them on mobile — the
                     backgrounds, workers, train, and canal stay. */}
-                {!mobileSafeMode && <ChimneySmoke />}
-                {!mobileSafeMode && <DynamicWalls />}
-                <Canal
-                  boats={historyBoats}
-                  layer="base"
-                  historyCurrentTime={
-                    isHistoryMode ? currentPlaybackTime : undefined
-                  }
-                />
-                {DISTRICTS.map((d) => (
-                  <g
-                    key={d.id}
-                    onMouseEnter={() => setHoveredDistrictId(d.id)}
-                    onMouseLeave={() => setHoveredDistrictId(null)}
-                  >
-                    <DistrictZone
-                      district={d}
-                      layer="hit"
-                      isSelected={pathDistrict === d.id}
-                      isHovered={hoveredDistrictId === d.id}
-                      onEnterDistrict={enterDistrict}
-                    />
-                  </g>
-                ))}
-                <MainLine
-                  stops={currentStops}
-                  onEngineClick={closeHud}
-                  engineLabel="Return to the town overview"
-                />
-                <Canal
-                  boats={historyBoats}
-                  layer="traffic"
-                  historyCurrentTime={
-                    isHistoryMode ? currentPlaybackTime : undefined
-                  }
-                />
-                <WorldWorkerLayer stops={currentStops} />
-                {populating !== "idle" && (
-                  <BellMessengers
-                    stops={currentStops}
-                    phase={populating}
-                    startedAt={bellStartedAt}
-                    completedAtByStopId={bellCompletedAtByStopId}
+                  {!mobileSafeMode && <ChimneySmoke />}
+                  {!mobileSafeMode && <DynamicWalls />}
+                  <Canal
+                    boats={historyBoats}
+                    layer="base"
+                    historyCurrentTime={
+                      isHistoryMode ? currentPlaybackTime : undefined
+                    }
                   />
-                )}
-                {stopMarkers}
-                {DISTRICTS.map((d) => (
-                  <g
-                    key={`label-${d.id}`}
-                    onMouseEnter={() => setHoveredDistrictId(d.id)}
-                    onMouseLeave={() => setHoveredDistrictId(null)}
-                  >
-                    <DistrictZone
-                      district={d}
-                      layer="label"
-                      isSelected={pathDistrict === d.id}
-                      isHovered={hoveredDistrictId === d.id}
-                      onEnterDistrict={enterDistrict}
+                  {DISTRICTS.map((d) => (
+                    <g
+                      key={d.id}
+                      onMouseEnter={() => setHoveredDistrictId(d.id)}
+                      onMouseLeave={() => setHoveredDistrictId(null)}
+                    >
+                      <DistrictZone
+                        district={d}
+                        layer="hit"
+                        isSelected={pathDistrict === d.id}
+                        isHovered={hoveredDistrictId === d.id}
+                        onEnterDistrict={enterDistrict}
+                      />
+                    </g>
+                  ))}
+                  <MainLine
+                    stops={currentStops}
+                    onEngineClick={closeHud}
+                    engineLabel="Return to the town overview"
+                  />
+                  <Canal
+                    boats={historyBoats}
+                    layer="traffic"
+                    historyCurrentTime={
+                      isHistoryMode ? currentPlaybackTime : undefined
+                    }
+                  />
+                  <WorldWorkerLayer stops={currentStops} />
+                  {populating !== "idle" && (
+                    <BellMessengers
+                      stops={currentStops}
+                      phase={populating}
+                      startedAt={bellStartedAt}
+                      completedAtByStopId={bellCompletedAtByStopId}
                     />
-                  </g>
-                ))}
-                <SpecialTownLandmarks
-                  mobileSafeMode={mobileSafeMode}
-                  populating={populating}
-                  onBell={() => {
-                    markSkipDrag();
-                    handlePopulate();
-                  }}
-                  onEgg={() => {
-                    markSkipDrag();
-                    handleEasterEgg();
-                  }}
-                  onTourism={() => {
-                    markSkipDrag();
-                    handleTourism();
-                  }}
-                  onAbout={() => {
-                    markSkipDrag();
-                    handleAboutPaneOpen();
-                  }}
-                  onHarbormasterClick={() => {
-                    markSkipDrag();
-                    setShowHistoryPanel(true);
-                  }}
-                />
+                  )}
+                  {stopMarkers}
+                  {DISTRICTS.map((d) => (
+                    <g
+                      key={`label-${d.id}`}
+                      onMouseEnter={() => setHoveredDistrictId(d.id)}
+                      onMouseLeave={() => setHoveredDistrictId(null)}
+                    >
+                      <DistrictZone
+                        district={d}
+                        layer="label"
+                        isSelected={pathDistrict === d.id}
+                        isHovered={hoveredDistrictId === d.id}
+                        onEnterDistrict={enterDistrict}
+                      />
+                    </g>
+                  ))}
+                  <SpecialTownLandmarks
+                    mobileSafeMode={mobileSafeMode}
+                    populating={populating}
+                    onBell={() => {
+                      markSkipDrag();
+                      handlePopulate();
+                    }}
+                    onEgg={() => {
+                      markSkipDrag();
+                      handleEasterEgg();
+                    }}
+                    onTourism={() => {
+                      markSkipDrag();
+                      handleTourism();
+                    }}
+                    onAbout={() => {
+                      markSkipDrag();
+                      handleAboutPaneOpen();
+                    }}
+                    onHarbormasterClick={() => {
+                      markSkipDrag();
+                      setShowHistoryPanel(true);
+                    }}
+                  />
+                </g>
               </g>
-            </g>
-          </svg>
+            </svg>
+          </div>
 
           {populating !== "idle" && (
             <div
