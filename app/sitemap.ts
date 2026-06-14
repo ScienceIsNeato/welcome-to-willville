@@ -24,6 +24,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.9,
   };
 
+  const faq = {
+    url: `${BASE}/faq/`,
+    lastModified: LASTMOD,
+    changeFrequency: "monthly" as const,
+    priority: 0.8,
+  };
+
   const districts = DISTRICT_SLUGS.map((slug) => ({
     url: `${BASE}/${slug}/`,
     lastModified: LASTMOD,
@@ -31,5 +38,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  return [home, directory, ...districts];
+  return [home, directory, faq, ...districts];
 }
