@@ -1271,12 +1271,16 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
       e.stopPropagation();
       if (isRepositionMode || isHistoryMode) return;
       markSkipDrag();
+      // Land any pending wheel-zoom before the animated zoom takes the direct
+      // path, so the frozen <g>/wrapper don't desync the view.
+      commitPendingZoom();
       const wx = TOWN_OFFSET.x + stop.position.x;
       const wy = TOWN_OFFSET.y + stop.position.y;
       zoomAtWorldPoint(wx, wy);
       openStopHud(stop);
     },
     [
+      commitPendingZoom,
       isRepositionMode,
       isHistoryMode,
       markSkipDrag,

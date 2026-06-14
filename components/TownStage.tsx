@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { DISTRICTS, TOWN, TOWN_OFFSET, WORLD } from "@/lib/willville";
 import type { Stop } from "@/lib/town";
@@ -27,6 +28,12 @@ import { useTownStageState } from "./useTownStageState";
 export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const state = useTownStageState({ initialStops });
 
+  // Capture the camera <g> transform ONCE for the initial/SSR render. After
+  // mount the camera hook owns this attribute imperatively (and freezes it
+  // during a zoom gesture). Passing a stable string here means a parent
+  // re-render won't rewrite the live transform and break the freeze.
+  const [initialCameraTransform] = useState(() => state.cameraTransform.get());
+
   const {
     localStops,
     perfEnabled,
@@ -36,7 +43,6 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     zoomWrapperRef,
     perfProfiler,
     isDragging,
-    cameraTransform,
     markSkipDrag,
     stageHandlers,
     showCentralBoard,
@@ -418,7 +424,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                 </mask>
               </defs>
 
-              <g ref={cameraGroupRef} transform={cameraTransform.get()}>
+              <g ref={cameraGroupRef} transform={initialCameraTransform}>
                 <WorldSubstrate fullResArt={prefersFullArt} />
 
                 <g transform={`translate(${TOWN_OFFSET.x}, ${TOWN_OFFSET.y})`}>

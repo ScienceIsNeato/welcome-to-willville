@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useRef, useState, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import {
   useMotionValue,
   useTransform,
@@ -82,7 +88,7 @@ export function screenToWorld(
 }
 
 /** viewBox→screen mapping: a uniform scale `s` + translate `(e,f)` (no skew). */
-export type RootCtm = { s: number; e: number; f: number };
+type RootCtm = { s: number; e: number; f: number };
 
 function readRootCtm(svg: SVGSVGElement | null): RootCtm {
   const ctm = svg?.getScreenCTM();
@@ -101,7 +107,7 @@ function readRootCtm(svg: SVGSVGElement | null): RootCtm {
  * (matches screenToWorld inverted). Matching W(S_committed)=S_live for all p
  * gives k = live.scale/committed.scale and the translates below.
  */
-export function computeWrapperTransform(
+function computeWrapperTransform(
   committed: Camera,
   live: Camera,
   R: RootCtm,
@@ -281,6 +287,10 @@ export function useTownCamera(
     scheduleSettle,
   ]);
 
+  // Cancel a pending settle commit if the component unmounts mid-gesture
+  // (e.g. navigation away) so the timer can't fire on a torn-down component.
+  useEffect(() => clearSettle, [clearSettle]);
+
   const panByPixels = useCallback(
     (dx: number, dy: number) => {
       const ctm = perf
@@ -457,6 +467,11 @@ export function useTownCamera(
         if (event && event.cancelable) {
           event.preventDefault();
         }
+        // Land any pending wheel-zoom (crisp <g>, wrapper reset) before pinch
+        // drives the camera directly — otherwise pinch would move the camera
+        // while the frozen <g>/non-identity wrapper desync the view + hit-test.
+        // (Pinch itself joins the hybrid in Stage 2.)
+        commitZoom();
         // Avoid drag/pinch contention when a second finger lands.
         resetDragInteraction();
       },
