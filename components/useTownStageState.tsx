@@ -188,6 +188,16 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
   const [isHistoryPlaying, setIsHistoryPlaying] = useState(false);
   const isRepositionMode = pathname.startsWith("/reposition");
   const isHistoryMode = pathname.startsWith("/history") || showHistoryPanel;
+  const isHistoryModeRef = useRef(false);
+  isHistoryModeRef.current = isHistoryMode;
+
+  // Clear history panel when navigating to non-history routes (e.g. /faq, /projects)
+  useEffect(() => {
+    if (showHistoryPanel && !pathname.startsWith("/history")) {
+      setShowHistoryPanel(false);
+      setIsHistoryPlaying(false);
+    }
+  }, [pathname, showHistoryPanel]);
 
   const handleExitHistoryMode = useCallback(() => {
     setIsHistoryPlaying(false);
@@ -635,6 +645,14 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
   const [historyCurrentTime, setHistoryCurrentTime] = useState<number>(0);
   const currentPlaybackTime = historyCurrentTime || effectiveStartMs;
 
+  // Clamp scrubber when effective bounds shift after async boat load
+  useEffect(() => {
+    setHistoryCurrentTime((t) => {
+      if (t === 0) return t;
+      return Math.max(effectiveStartMs, Math.min(effectiveEndMs, t));
+    });
+  }, [effectiveStartMs, effectiveEndMs]);
+
   const [historySpeed, setHistorySpeed] = useState<number>(24 * 3600 * 1000); // 1 day per second
 
   const lastFrameTimeRef = useRef<number | null>(null);
@@ -994,10 +1012,9 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
       }
     }, 0);
     loadCanal({ signal: controller.signal });
-    const interval = window.setInterval(
-      () => loadCanal({ signal: controller.signal }),
-      60_000,
-    );
+    const interval = window.setInterval(() => {
+      if (!isHistoryModeRef.current) loadCanal({ signal: controller.signal });
+    }, 60_000);
     return () => {
       cancelled = true;
       controller.abort();

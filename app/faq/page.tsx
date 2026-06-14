@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "FAQ – Willville",
+  title: "FAQ",
   description:
     "What is Willville? What are the ships? How does the bell work? Answers to the most common questions about the living town map.",
   alternates: { canonical: "/faq/" },

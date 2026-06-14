@@ -8,7 +8,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "History – Time Central – Willville",
+  title: "History – Time Central",
   description:
     "Replay the history of Willville's canal: watch every PR shipped across all projects animate as boats sailing west to east over two years.",
   openGraph: {
