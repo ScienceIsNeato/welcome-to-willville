@@ -646,7 +646,10 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
   const currentPlaybackTime =
     historyCurrentTime === 0
       ? effectiveStartMs
-      : Math.max(effectiveStartMs, Math.min(effectiveEndMs, historyCurrentTime));
+      : Math.max(
+          effectiveStartMs,
+          Math.min(effectiveEndMs, historyCurrentTime),
+        );
 
   const [historySpeed, setHistorySpeed] = useState<number>(24 * 3600 * 1000); // 1 day per second
 

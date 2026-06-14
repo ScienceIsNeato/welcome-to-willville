@@ -247,7 +247,11 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             }
             width="100%"
             height="100%"
-            style={{ pointerEvents: "auto", touchAction: "none" }}
+            style={{
+              pointerEvents: "auto",
+              touchAction: "none",
+              background: "#063755",
+            }}
           >
             <defs>
               <linearGradient id="town-feather-top" x1="0" y1="0" x2="0" y2="1">

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Fixing PR #42 review threads — duplicate titles, history panel leaks, scrubber clamp, poll pause",
-    "direction": "Get all Bugbot threads resolved, then merge and deploy",
+    "status": "PR #42 threads all resolved — fixing blue zoom flash caused by transparent SVG background",
+    "direction": "Merge #42, deploy, and confirm the zoom flash is gone",
     "last_update": "2026-06-13T00:00:00Z"
   }
 }
