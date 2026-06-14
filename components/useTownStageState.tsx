@@ -187,19 +187,15 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
   const [showHistoryPanel, setShowHistoryPanel] = useState(false);
   const [isHistoryPlaying, setIsHistoryPlaying] = useState(false);
   const isRepositionMode = pathname.startsWith("/reposition");
-  const isHistoryMode = pathname.startsWith("/history") || showHistoryPanel;
+  // showHistoryPanel only activates history mode on the root route; navigating to
+  // /faq, /projects, etc. shouldn't leave history mode active behind the overlay.
+  const isHistoryMode =
+    pathname.startsWith("/history") ||
+    (showHistoryPanel && (pathname === "/" || pathname === ""));
   const isHistoryModeRef = useRef(isHistoryMode);
   useEffect(() => {
     isHistoryModeRef.current = isHistoryMode;
   }, [isHistoryMode]);
-
-  // Clear history panel when navigating to non-history routes (e.g. /faq, /projects)
-  useEffect(() => {
-    if (showHistoryPanel && !pathname.startsWith("/history")) {
-      setShowHistoryPanel(false);
-      setIsHistoryPlaying(false);
-    }
-  }, [pathname, showHistoryPanel]);
 
   const handleExitHistoryMode = useCallback(() => {
     setIsHistoryPlaying(false);
@@ -645,15 +641,12 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
   ]);
 
   const [historyCurrentTime, setHistoryCurrentTime] = useState<number>(0);
-  const currentPlaybackTime = historyCurrentTime || effectiveStartMs;
-
-  // Clamp scrubber when effective bounds shift after async boat load
-  useEffect(() => {
-    setHistoryCurrentTime((t) => {
-      if (t === 0) return t;
-      return Math.max(effectiveStartMs, Math.min(effectiveEndMs, t));
-    });
-  }, [effectiveStartMs, effectiveEndMs]);
+  // Clamp into effective range during render so the scrubber can't exceed bounds
+  // when async boat load shifts effectiveEndMs after the user has scrubbed.
+  const currentPlaybackTime =
+    historyCurrentTime === 0
+      ? effectiveStartMs
+      : Math.max(effectiveStartMs, Math.min(effectiveEndMs, historyCurrentTime));
 
   const [historySpeed, setHistorySpeed] = useState<number>(24 * 3600 * 1000); // 1 day per second
 
