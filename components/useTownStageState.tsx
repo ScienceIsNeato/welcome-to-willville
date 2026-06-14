@@ -188,8 +188,10 @@ export function useTownStageState({ initialStops }: { initialStops: Stop[] }) {
   const [isHistoryPlaying, setIsHistoryPlaying] = useState(false);
   const isRepositionMode = pathname.startsWith("/reposition");
   const isHistoryMode = pathname.startsWith("/history") || showHistoryPanel;
-  const isHistoryModeRef = useRef(false);
-  isHistoryModeRef.current = isHistoryMode;
+  const isHistoryModeRef = useRef(isHistoryMode);
+  useEffect(() => {
+    isHistoryModeRef.current = isHistoryMode;
+  }, [isHistoryMode]);
 
   // Clear history panel when navigating to non-history routes (e.g. /faq, /projects)
   useEffect(() => {
