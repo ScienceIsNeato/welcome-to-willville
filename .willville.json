@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Chasing zoom flash on Retina Mac — moved background fallback behind SVG to avoid compositor promotion",
-    "direction": "Confirm flash is gone on native Mac, then merge and ship #42",
+    "status": "Killed the green flash on Retina zoom by dropping the solid land fallback so blanks stay ocean-toned",
+    "direction": "Confirm the map zooms clean on native Mac, then merge and ship #42",
     "last_update": "2026-06-14T00:00:00Z"
   }
 }
