@@ -155,16 +155,16 @@ export function HistoryTimelapsePanel({
     onIsPlayingChange(false);
   };
 
-  // Speed lives on the play button now: a chip shows the current preset and
-  // cycles to the next on tap (wrapping around). Falls back to the first preset
-  // if the current speed isn't one of the presets.
-  const speedIndex = SPEED_PRESETS.findIndex((p) => p.value === speed);
-  const currentSpeedLabel =
-    SPEED_PRESETS[speedIndex >= 0 ? speedIndex : 1].label;
-  const cycleSpeed = () => {
-    const next = SPEED_PRESETS[(speedIndex + 1) % SPEED_PRESETS.length];
-    onSpeedChange(next.value);
-  };
+  // Speed steppers flank the play button: the slower preset on the left, the
+  // faster preset on the right. Both show the actual adjacent preset label and
+  // update as the speed changes; disabled at the ends of the range.
+  const rawSpeedIndex = SPEED_PRESETS.findIndex((p) => p.value === speed);
+  const speedIndex = rawSpeedIndex >= 0 ? rawSpeedIndex : 1;
+  const currentSpeedLabel = SPEED_PRESETS[speedIndex].label;
+  const slowerPreset = SPEED_PRESETS[speedIndex - 1]; // undefined at slowest
+  const fasterPreset = SPEED_PRESETS[speedIndex + 1]; // undefined at fastest
+  const stepToSlower = () => slowerPreset && onSpeedChange(slowerPreset.value);
+  const stepToFaster = () => fasterPreset && onSpeedChange(fasterPreset.value);
 
   const cardStyle: React.CSSProperties = {
     position: "relative",
@@ -361,9 +361,9 @@ export function HistoryTimelapsePanel({
 
           {/* Play (with speed chip) & Reset buttons */}
           <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-            {/* Play/pause + speed chip share one rounded frame so the speed reads
-              as "on" the play button. Two tap zones: left toggles play, the
-              right chip cycles speed. */}
+            {/* Speed steppers flank the play button in one rounded frame:
+              slower preset on the left, faster preset on the right. The play
+              button (center) toggles play/pause and shows the current speed. */}
             <div
               style={{
                 flex: 1,
@@ -375,7 +375,40 @@ export function HistoryTimelapsePanel({
               }}
             >
               <button
+                onClick={stepToSlower}
+                disabled={!slowerPreset}
+                aria-label={
+                  slowerPreset
+                    ? `Slower playback (${slowerPreset.label})`
+                    : "Already at slowest playback"
+                }
+                title="Slower"
+                style={{
+                  background: "rgba(0,0,0,0.22)",
+                  border: "none",
+                  borderRight: "1px solid rgba(255,255,255,0.2)",
+                  color: "#ffffff",
+                  padding: "8px",
+                  fontSize: 11,
+                  fontWeight: "bold",
+                  whiteSpace: "nowrap",
+                  cursor: slowerPreset ? "pointer" : "default",
+                  opacity: slowerPreset ? 1 : 0.4,
+                  transition: "background 0.15s",
+                }}
+                onMouseEnter={(e) => {
+                  if (slowerPreset)
+                    e.currentTarget.style.background = "rgba(0,0,0,0.34)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(0,0,0,0.22)";
+                }}
+              >
+                {slowerPreset ? `‹ ${slowerPreset.label}` : "‹"}
+              </button>
+              <button
                 onClick={() => onIsPlayingChange(!isPlaying)}
+                title={isPlaying ? "Pause" : "Play"}
                 style={{
                   flex: 1,
                   // Dark brown to match the wood frame; the playing state is a
@@ -401,32 +434,39 @@ export function HistoryTimelapsePanel({
                     : "#5a3821";
                 }}
               >
-                {isPlaying ? "⏸ Pause" : "▶ Play"}
+                {isPlaying ? "⏸" : "▶"} {currentSpeedLabel}
               </button>
               <button
-                onClick={cycleSpeed}
-                aria-label={`Playback speed ${currentSpeedLabel}, tap to change`}
-                title="Tap to change playback speed"
+                onClick={stepToFaster}
+                disabled={!fasterPreset}
+                aria-label={
+                  fasterPreset
+                    ? `Faster playback (${fasterPreset.label})`
+                    : "Already at fastest playback"
+                }
+                title="Faster"
                 style={{
                   background: "rgba(0,0,0,0.22)",
                   border: "none",
-                  borderLeft: "1px solid rgba(255,255,255,0.25)",
+                  borderLeft: "1px solid rgba(255,255,255,0.2)",
                   color: "#ffffff",
-                  padding: "8px 10px",
-                  fontSize: 12,
+                  padding: "8px",
+                  fontSize: 11,
                   fontWeight: "bold",
                   whiteSpace: "nowrap",
-                  cursor: "pointer",
+                  cursor: fasterPreset ? "pointer" : "default",
+                  opacity: fasterPreset ? 1 : 0.4,
                   transition: "background 0.15s",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "rgba(0,0,0,0.34)";
+                  if (fasterPreset)
+                    e.currentTarget.style.background = "rgba(0,0,0,0.34)";
                 }}
                 onMouseLeave={(e) => {
                   e.currentTarget.style.background = "rgba(0,0,0,0.22)";
                 }}
               >
-                {currentSpeedLabel} ⇅
+                {fasterPreset ? `${fasterPreset.label} ›` : "›"}
               </button>
             </div>
             <button
