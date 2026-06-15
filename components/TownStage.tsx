@@ -114,8 +114,6 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
     historySpeed,
     setHistorySpeed,
     setHistoryCurrentTime,
-    setHistoryStart,
-    setHistoryEnd,
     effectiveStartStr,
     effectiveEndStr,
     historyBoats,
@@ -668,11 +666,10 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               startDate={effectiveStartStr}
               endDate={effectiveEndStr}
               boats={boats}
+              mobileSafeMode={mobileSafeMode}
               onCurrentTimeChange={setHistoryCurrentTime}
               onIsPlayingChange={setIsHistoryPlaying}
               onSpeedChange={setHistorySpeed}
-              onStartDateChange={setHistoryStart}
-              onEndDateChange={setHistoryEnd}
               onExit={handleExitHistoryMode}
             />
           )}
