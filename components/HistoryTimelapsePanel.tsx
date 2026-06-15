@@ -51,6 +51,7 @@ export function HistoryTimelapsePanel({
   const panelRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef({
     active: false,
+    pointerId: -1,
     startX: 0,
     startY: 0,
     baseX: 0,
@@ -59,10 +60,23 @@ export function HistoryTimelapsePanel({
     y: 0,
   });
 
+  const endDrag = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = dragRef.current;
+    // Only react to the pointer that actually started the drag (a Close/slider
+    // tap's pointerup bubbles here too); guard release so it never throws.
+    if (!d.active || e.pointerId !== d.pointerId) return;
+    d.active = false;
+    d.pointerId = -1;
+    if (e.currentTarget.hasPointerCapture?.(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    }
+  };
+
   const onGripPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     e.stopPropagation();
     const d = dragRef.current;
     d.active = true;
+    d.pointerId = e.pointerId;
     d.startX = e.clientX;
     d.startY = e.clientY;
     d.baseX = d.x;
@@ -71,17 +85,18 @@ export function HistoryTimelapsePanel({
   };
   const onGripPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     const d = dragRef.current;
-    if (!d.active) return;
+    if (!d.active || e.pointerId !== d.pointerId) return;
+    // If the button was released without a pointerup reaching us, stop dragging.
+    if (e.buttons === 0) {
+      endDrag(e);
+      return;
+    }
     e.stopPropagation();
     d.x = d.baseX + (e.clientX - d.startX);
     d.y = d.baseY + (e.clientY - d.startY);
     if (panelRef.current) {
       panelRef.current.style.transform = `translate(${d.x}px, ${d.y}px)`;
     }
-  };
-  const onGripPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
-    dragRef.current.active = false;
-    e.currentTarget.releasePointerCapture?.(e.pointerId);
   };
 
   const startMs = useMemo(
@@ -168,7 +183,9 @@ export function HistoryTimelapsePanel({
 
   const cardStyle: React.CSSProperties = {
     position: "relative",
-    background: "linear-gradient(135deg, #fdfbf7 0%, #f5eedc 100%)",
+    // Translucent card surface (alpha = boardOpacity) so the map shows through
+    // the board; the border and text stay opaque for legibility.
+    background: `linear-gradient(135deg, rgba(253,251,247,${boardOpacity}) 0%, rgba(245,238,220,${boardOpacity}) 100%)`,
     border: "1px solid #d2c5b0",
     borderRadius: 4,
     padding: "16px 14px 14px",
@@ -231,17 +248,16 @@ export function HistoryTimelapsePanel({
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Inner surface — this is the only part that goes transparent. */}
+      {/* Inner surface — only the cork/card BACKGROUNDS go translucent (alpha),
+          so controls and text stay fully legible at any transparency setting. */}
       <div
         style={{
-          opacity: boardOpacity,
           flex: 1,
           minHeight: 0,
           overflowY: "auto",
           display: "flex",
           flexDirection: "column",
-          background:
-            "linear-gradient(135deg, #cc9a6a 0%, #b27f4f 50%, #996738 100%)", // Cork board base
+          background: `linear-gradient(135deg, rgba(204,154,106,${boardOpacity}) 0%, rgba(178,127,79,${boardOpacity}) 50%, rgba(153,103,56,${boardOpacity}) 100%)`, // Cork board base
           boxShadow: "inset 0 4px 12px rgba(0,0,0,0.6)",
           padding: mobileSafeMode ? "12px 14px" : "16px 18px",
         }}
@@ -250,8 +266,9 @@ export function HistoryTimelapsePanel({
         <div
           onPointerDown={onGripPointerDown}
           onPointerMove={onGripPointerMove}
-          onPointerUp={onGripPointerUp}
-          onPointerCancel={onGripPointerUp}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+          onLostPointerCapture={endDrag}
           style={{
             display: "flex",
             flexDirection: "column",
