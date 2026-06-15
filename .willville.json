@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Making the Harbormaster's history board draggable, see-through, and mobile-friendly so it stops hogging the screen",
-    "direction": "Ship the board controls, then bring the GPU zoom smoothing to pinch and double-click",
+    "status": "Reworked wheel zoom to ride the GPU during the gesture and snap crisp on stop, so high-res screens stop flashing blank while zooming",
+    "direction": "Confirm clean wheel zoom on the Retina Mac, then bring the same treatment to pinch and double-click",
     "last_update": "2026-06-14T00:00:00Z"
   }
 }
