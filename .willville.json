@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Chasing zoom flash on Retina Mac — moved background fallback behind SVG to avoid compositor promotion",
-    "direction": "Confirm flash is gone on native Mac, then merge and ship #42",
+    "status": "Making the Harbormaster's history board draggable, see-through, and mobile-friendly so it stops hogging the screen",
+    "direction": "Ship the board controls, then bring the GPU zoom smoothing to pinch and double-click",
     "last_update": "2026-06-14T00:00:00Z"
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import { type CanalBoat } from "@/lib/canal";
 
 type HistoryTimelapsePanelProps = {
@@ -10,6 +10,7 @@ type HistoryTimelapsePanelProps = {
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   boats: CanalBoat[];
+  mobileSafeMode?: boolean;
   onCurrentTimeChange: (time: number) => void;
   onIsPlayingChange: (playing: boolean) => void;
   onSpeedChange: (speed: number) => void;
@@ -17,6 +18,8 @@ type HistoryTimelapsePanelProps = {
   onEndDateChange: (date: string) => void;
   onExit: () => void;
 };
+
+const MIN_BOARD_OPACITY = 0.3;
 
 // Preset speeds: labels and simulated ms per real-time second
 const SPEED_PRESETS = [
@@ -34,6 +37,7 @@ export function HistoryTimelapsePanel({
   startDate,
   endDate,
   boats,
+  mobileSafeMode = false,
   onCurrentTimeChange,
   onIsPlayingChange,
   onSpeedChange,
@@ -41,6 +45,48 @@ export function HistoryTimelapsePanel({
   onEndDateChange,
   onExit,
 }: HistoryTimelapsePanelProps) {
+  // Board transparency (see the map behind it) — slider in the header.
+  const [boardOpacity, setBoardOpacity] = useState(1);
+
+  // Drag-to-move via the header grip. Applied imperatively to panelRef so a
+  // drag doesn't re-render the whole board each frame; React never owns the
+  // `transform`, so the opacity re-render below can't clobber the drag offset.
+  const panelRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef({
+    active: false,
+    startX: 0,
+    startY: 0,
+    baseX: 0,
+    baseY: 0,
+    x: 0,
+    y: 0,
+  });
+
+  const onGripPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    const d = dragRef.current;
+    d.active = true;
+    d.startX = e.clientX;
+    d.startY = e.clientY;
+    d.baseX = d.x;
+    d.baseY = d.y;
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+  };
+  const onGripPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const d = dragRef.current;
+    if (!d.active) return;
+    e.stopPropagation();
+    d.x = d.baseX + (e.clientX - d.startX);
+    d.y = d.baseY + (e.clientY - d.startY);
+    if (panelRef.current) {
+      panelRef.current.style.transform = `translate(${d.x}px, ${d.y}px)`;
+    }
+  };
+  const onGripPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragRef.current.active = false;
+    e.currentTarget.releasePointerCapture?.(e.pointerId);
+  };
+
   const startMs = useMemo(
     () => (startDate ? Date.parse(startDate) : 0),
     [startDate],
@@ -152,6 +198,7 @@ export function HistoryTimelapsePanel({
 
   return (
     <div
+      ref={panelRef}
       className="history-timelapse-panel"
       data-town-control
       style={{
@@ -159,8 +206,9 @@ export function HistoryTimelapsePanel({
         bottom: 16,
         right: 16,
         width: "calc(100% - 32px)",
-        maxWidth: 370,
-        maxHeight: "calc(100vh - 48px)",
+        maxWidth: mobileSafeMode ? 300 : 370,
+        maxHeight: mobileSafeMode ? "min(440px, 60dvh)" : "calc(100vh - 48px)",
+        opacity: boardOpacity,
         display: "flex",
         flexDirection: "column",
         background:
@@ -170,7 +218,7 @@ export function HistoryTimelapsePanel({
         boxShadow:
           "inset 0 4px 12px rgba(0,0,0,0.6), 0 16px 32px rgba(0,0,0,0.6)",
         borderRadius: 12,
-        padding: "16px 18px",
+        padding: mobileSafeMode ? "12px 14px" : "16px 18px",
         fontFamily: "var(--font-sans), sans-serif",
         zIndex: 2500,
         overflowY: "auto",
@@ -178,53 +226,90 @@ export function HistoryTimelapsePanel({
       }}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* Header (Branded/Burned into wood style) */}
+      {/* Header — also the drag handle (grab the title bar to move the board). */}
       <div
+        onPointerDown={onGripPointerDown}
+        onPointerMove={onGripPointerMove}
+        onPointerUp={onGripPointerUp}
+        onPointerCancel={onGripPointerUp}
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          gap: 8,
           marginBottom: 18,
           borderBottom: "2px solid rgba(90, 56, 33, 0.2)",
           paddingBottom: 8,
+          cursor: "grab",
+          touchAction: "none",
         }}
       >
         <h2
           style={{
-            fontSize: 17,
+            fontSize: mobileSafeMode ? 14 : 17,
             fontWeight: 800,
             margin: 0,
             letterSpacing: 0.5,
             color: "#3c210f",
             textShadow: "0 1px 0 rgba(255, 255, 255, 0.45)",
             fontFamily: "Georgia, serif",
+            // Shrink/ellipsis on narrow screens so the controls below stay in
+            // view instead of being pushed off the right edge.
+            flex: "1 1 auto",
+            minWidth: 0,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
           }}
         >
           Harbormaster&apos;s Recordkeeping
         </h2>
-        <button
-          onClick={onExit}
+        <div
           style={{
-            background: "#d32f2f",
-            border: "1px solid #b71c1c",
-            borderRadius: 6,
-            color: "#ffffff",
-            padding: "5px 11px",
-            fontSize: 11,
-            fontWeight: "bold",
-            cursor: "pointer",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.25)",
-            transition: "all 0.15s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "#b71c1c";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "#d32f2f";
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            flexShrink: 0,
           }}
         >
-          Close
-        </button>
+          {/* Transparency slider — stop propagation so adjusting it doesn't drag */}
+          <input
+            type="range"
+            min={Math.round(MIN_BOARD_OPACITY * 100)}
+            max={100}
+            step={1}
+            value={Math.round(boardOpacity * 100)}
+            aria-label="Recordkeeping board opacity"
+            title="Board transparency"
+            onPointerDown={(e) => e.stopPropagation()}
+            onChange={(e) => setBoardOpacity(Number(e.target.value) / 100)}
+            style={{ width: mobileSafeMode ? 56 : 72, cursor: "pointer" }}
+          />
+          <button
+            onClick={onExit}
+            onPointerDown={(e) => e.stopPropagation()}
+            style={{
+              background: "#d32f2f",
+              border: "1px solid #b71c1c",
+              borderRadius: 6,
+              color: "#ffffff",
+              padding: "5px 11px",
+              fontSize: 11,
+              fontWeight: "bold",
+              cursor: "pointer",
+              boxShadow: "0 2px 4px rgba(0,0,0,0.25)",
+              transition: "all 0.15s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "#b71c1c";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "#d32f2f";
+            }}
+          >
+            Close
+          </button>
+        </div>
       </div>
 
       {/* Card 1: Clock Display (Simulated Timeline) */}
