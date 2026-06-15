@@ -14,8 +14,6 @@ type HistoryTimelapsePanelProps = {
   onCurrentTimeChange: (time: number) => void;
   onIsPlayingChange: (playing: boolean) => void;
   onSpeedChange: (speed: number) => void;
-  onStartDateChange: (date: string) => void;
-  onEndDateChange: (date: string) => void;
   onExit: () => void;
 };
 
@@ -41,8 +39,6 @@ export function HistoryTimelapsePanel({
   onCurrentTimeChange,
   onIsPlayingChange,
   onSpeedChange,
-  onStartDateChange,
-  onEndDateChange,
   onExit,
 }: HistoryTimelapsePanelProps) {
   // Board transparency (see the map behind it) — slider in the header.
@@ -156,6 +152,17 @@ export function HistoryTimelapsePanel({
   const handleReset = () => {
     onCurrentTimeChange(startMs);
     onIsPlayingChange(false);
+  };
+
+  // Speed lives on the play button now: a chip shows the current preset and
+  // cycles to the next on tap (wrapping around). Falls back to the first preset
+  // if the current speed isn't one of the presets.
+  const speedIndex = SPEED_PRESETS.findIndex((p) => p.value === speed);
+  const currentSpeedLabel =
+    SPEED_PRESETS[speedIndex >= 0 ? speedIndex : 1].label;
+  const cycleSpeed = () => {
+    const next = SPEED_PRESETS[(speedIndex + 1) % SPEED_PRESETS.length];
+    onSpeedChange(next.value);
   };
 
   const cardStyle: React.CSSProperties = {
@@ -346,36 +353,74 @@ export function HistoryTimelapsePanel({
       <div style={cardStyle}>
         {renderPin("blue")}
 
-        {/* Play & Reset buttons */}
+        {/* Play (with speed chip) & Reset buttons */}
         <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
-          <button
-            onClick={() => onIsPlayingChange(!isPlaying)}
+          {/* Play/pause + speed chip share one rounded frame so the speed reads
+              as "on" the play button. Two tap zones: left toggles play, the
+              right chip cycles speed. */}
+          <div
             style={{
               flex: 1,
-              background: isPlaying ? "#e65100" : "#1b5e20",
-              border: isPlaying ? "1px solid #b23c00" : "1px solid #0d3c12",
+              display: "flex",
               borderRadius: 6,
-              color: "#ffffff",
-              padding: "8px",
-              fontSize: 13,
-              fontWeight: "bold",
-              cursor: "pointer",
+              overflow: "hidden",
+              border: isPlaying ? "1px solid #b23c00" : "1px solid #0d3c12",
               boxShadow: "0 2px 4px rgba(0,0,0,0.15)",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = isPlaying
-                ? "#b23c00"
-                : "#0d3c12";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = isPlaying
-                ? "#e65100"
-                : "#1b5e20";
             }}
           >
-            {isPlaying ? "⏸ Pause" : "▶ Play Time"}
-          </button>
+            <button
+              onClick={() => onIsPlayingChange(!isPlaying)}
+              style={{
+                flex: 1,
+                background: isPlaying ? "#e65100" : "#1b5e20",
+                border: "none",
+                color: "#ffffff",
+                padding: "8px",
+                fontSize: 13,
+                fontWeight: "bold",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                transition: "background 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = isPlaying
+                  ? "#b23c00"
+                  : "#0d3c12";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = isPlaying
+                  ? "#e65100"
+                  : "#1b5e20";
+              }}
+            >
+              {isPlaying ? "⏸ Pause" : "▶ Play"}
+            </button>
+            <button
+              onClick={cycleSpeed}
+              aria-label={`Playback speed ${currentSpeedLabel}, tap to change`}
+              title="Tap to change playback speed"
+              style={{
+                background: "rgba(0,0,0,0.22)",
+                border: "none",
+                borderLeft: "1px solid rgba(255,255,255,0.25)",
+                color: "#ffffff",
+                padding: "8px 10px",
+                fontSize: 12,
+                fontWeight: "bold",
+                whiteSpace: "nowrap",
+                cursor: "pointer",
+                transition: "background 0.15s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(0,0,0,0.34)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(0,0,0,0.22)";
+              }}
+            >
+              {currentSpeedLabel} ⇅
+            </button>
+          </div>
           <button
             onClick={handleReset}
             style={{
@@ -431,124 +476,6 @@ export function HistoryTimelapsePanel({
               cursor: "pointer",
             }}
           />
-        </div>
-
-        {/* Date Inputs */}
-        <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-          <div style={{ flex: 1 }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: 10,
-                color: "#795548",
-                marginBottom: 3,
-                fontWeight: "bold",
-              }}
-            >
-              Start Date
-            </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => {
-                if (e.target.value) {
-                  onStartDateChange(e.target.value);
-                  const nextStartMs = Date.parse(e.target.value);
-                  if (currentTime < nextStartMs) {
-                    onCurrentTimeChange(nextStartMs);
-                  }
-                }
-              }}
-              style={{
-                width: "100%",
-                background: "#ffffff",
-                border: "1px solid #cbc2b0",
-                borderRadius: 4,
-                color: "#3e2723",
-                padding: "5px 6px",
-                fontSize: 11,
-                outline: "none",
-              }}
-            />
-          </div>
-          <div style={{ flex: 1 }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: 10,
-                color: "#795548",
-                marginBottom: 3,
-                fontWeight: "bold",
-              }}
-            >
-              End Date
-            </label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => {
-                if (e.target.value) {
-                  onEndDateChange(e.target.value);
-                  const nextEndMs = Date.parse(e.target.value);
-                  if (currentTime > nextEndMs) {
-                    onCurrentTimeChange(nextEndMs);
-                  }
-                }
-              }}
-              style={{
-                width: "100%",
-                background: "#ffffff",
-                border: "1px solid #cbc2b0",
-                borderRadius: 4,
-                color: "#3e2723",
-                padding: "5px 6px",
-                fontSize: 11,
-                outline: "none",
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Speed Selection */}
-        <div>
-          <label
-            style={{
-              display: "block",
-              fontSize: 10,
-              color: "#795548",
-              marginBottom: 4,
-              fontWeight: "bold",
-            }}
-          >
-            Playback Speed
-          </label>
-          <div style={{ display: "flex", gap: 4 }}>
-            {SPEED_PRESETS.map((preset) => {
-              const isSelected = speed === preset.value;
-              return (
-                <button
-                  key={preset.label}
-                  onClick={() => onSpeedChange(preset.value)}
-                  style={{
-                    flex: 1,
-                    background: isSelected ? "#5a3821" : "rgba(0,0,0,0.04)",
-                    border: isSelected
-                      ? "1px solid #331d0e"
-                      : "1px solid #cbc2b0",
-                    borderRadius: 4,
-                    color: isSelected ? "#ffffff" : "#5c4033",
-                    padding: "5px 2px",
-                    fontSize: 10,
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                    transition: "all 0.15s",
-                  }}
-                >
-                  {preset.label}
-                </button>
-              );
-            })}
-          </div>
         </div>
       </div>
 
