@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Reworked wheel zoom to ride the GPU during the gesture and snap crisp on stop, so high-res screens stop flashing blank while zooming",
-    "direction": "Confirm clean wheel zoom on the Retina Mac, then bring the same treatment to pinch and double-click",
-    "last_update": "2026-06-14T00:00:00Z"
+    "status": "Adding a simple public commit-count lookup so other towns' quests can read a repo's recent activity without keys",
+    "direction": "Ship the no-auth per-repo commit endpoint, then keep smoothing map zoom",
+    "last_update": "2026-06-15T00:00:00Z"
   }
 }
