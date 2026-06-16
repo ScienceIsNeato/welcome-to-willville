@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Adding a simple public commit-count lookup so other towns' quests can read a repo's recent activity without keys",
-    "direction": "Ship the no-auth per-repo commit endpoint, then keep smoothing map zoom",
-    "last_update": "2026-06-15T00:00:00Z"
+    "status": "Got town data persisting across deploys for real — wired up the durable store so it stops resetting, and recording the namespace in source",
+    "direction": "Tidy the config, then back to smoothing map zoom on pinch and double-click",
+    "last_update": "2026-06-16T00:00:00Z"
   }
 }
