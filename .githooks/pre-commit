@@ -12,6 +12,10 @@
 
 # Mirror slop-mop's pattern: run a focused guard script and block on non-zero.
 HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Don't let work pile up on a branch that's already been merged/deleted.
+bash "$HOOK_DIR/../scripts/check-branch-not-merged.sh" || exit 1
+
 bash "$HOOK_DIR/../scripts/check-willville-freshness.sh" || exit 1
 
 # Is STATUS.md being committed?
