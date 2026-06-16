@@ -1,27 +1,33 @@
 #!/usr/bin/env bash
 # ─────────────────────────────────────────────────────────────────────────────
-# Guard: refuse to commit on a branch whose remote head has been merged/deleted.
+# Guard: refuse to commit on a branch that's already been merged or deleted.
 #
-# Once a PR merges, GitHub usually deletes the branch. Continuing to commit on
-# that dead local branch is wasted work — the commits live on a ref nobody will
-# look at, and they have to be re-done on a fresh branch. This catches it at
-# commit time and tells you to branch off the default branch instead.
+# Once a PR merges, continuing to commit on that dead local branch is wasted
+# work — the commits live on a ref nobody will look at and have to be re-done on
+# a fresh branch. This catches it at commit time and points you at the default
+# branch instead.
 #
-# Best-effort + fail-open: network checks that can't reach the remote are
-# skipped, so offline commits are never blocked. Override one commit with
+# Detection, strongest first:
+#   1. A MERGED PR for this branch (via `gh`) — catches squash/rebase/merge
+#      regardless of whether the remote branch was deleted. Authoritative.
+#   2. Remote head deleted (ref query) — the usual post-merge state.
+#   3. Work already fully contained in a moved-on default branch (ref math).
+#
+# Best-effort + fail-open: any check that can't reach the network is skipped, so
+# offline commits are never blocked. Override one commit with
 # `git commit --no-verify`.
 # ─────────────────────────────────────────────────────────────────────────────
 
 set -uo pipefail
-export GIT_TERMINAL_PROMPT=0  # never hang on an auth prompt inside a hook
+export GIT_TERMINAL_PROMPT=0 # never hang on an auth prompt inside a hook
 
 # Skip mid-rebase / merge / cherry-pick (HEAD is intentionally unusual there).
 git_dir="$(git rev-parse --git-dir 2>/dev/null || echo .git)"
 [[ -d "$git_dir/rebase-merge" || -d "$git_dir/rebase-apply" \
-   || -f "$git_dir/MERGE_HEAD" || -f "$git_dir/CHERRY_PICK_HEAD" ]] && exit 0
+  || -f "$git_dir/MERGE_HEAD" || -f "$git_dir/CHERRY_PICK_HEAD" ]] && exit 0
 
 branch="$(git symbolic-ref --short -q HEAD || true)"
-[[ -z "$branch" ]] && exit 0  # detached HEAD — nothing to guard
+[[ -z "$branch" ]] && exit 0 # detached HEAD — nothing to guard
 
 # Integration branches are fine to commit on directly.
 case "$branch" in
@@ -32,8 +38,13 @@ esac
 upstream="$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null || true)"
 [[ -z "$upstream" ]] && exit 0
 
-remote="${upstream%%/*}"        # e.g. origin
-remote_branch="${upstream#*/}" # e.g. feat/foo
+remote="${upstream%%/*}"       # e.g. origin
+remote_branch="${upstream#*/}" # e.g. feat/foo (or the default branch, if base-tracking)
+
+# Resolve the remote's default branch instead of assuming "main".
+default_branch="$(git symbolic-ref --quiet --short "refs/remotes/$remote/HEAD" 2>/dev/null | sed "s#^$remote/##")"
+[[ -z "$default_branch" ]] && default_branch=main
+default_ref="$remote/$default_branch"
 
 block() {
   echo "" >&2
@@ -41,34 +52,40 @@ block() {
   echo "     You're committing onto a branch that's already closed out. Start fresh:" >&2
   echo "" >&2
   echo "         git fetch $remote --prune" >&2
-  echo "         git checkout -b <new-branch> $remote/main" >&2
+  echo "         git checkout -b <new-branch> $default_ref" >&2
   echo "" >&2
   echo "     (Intentional? Override this one commit with: git commit --no-verify)" >&2
   echo "" >&2
   exit 1
 }
 
-# 1) Remote head deleted? (the usual post-merge state). Only meaningful when the
-#    branch tracks its OWN remote branch — a branch created with
-#    `checkout -b X origin/main` tracks origin/main, and a never-pushed branch
-#    has no remote head, so checking those would false-positive. Single
-#    lightweight ref query; if the remote is unreachable, ls-remote fails and we
-#    fall through (fail-open).
-if [[ "$remote_branch" == "$branch" ]]; then
-  if remote_heads="$(git ls-remote --heads "$remote" "$remote_branch" 2>/dev/null)"; then
-    if [[ -z "$remote_heads" ]]; then
-      block "no longer exists on '$remote' (deleted — typically after a merge)"
-    fi
+# 1) Authoritative: does this branch have a MERGED PR? Catches squash/rebase
+#    merges that leave no ancestor relationship. Safe for base-tracking branches
+#    (they have no PR of their own). Fail-open if gh is missing/unauthed/offline.
+if command -v gh >/dev/null 2>&1; then
+  merged_pr="$(gh pr list --head "$branch" --state merged --json number \
+    --jq '.[0].number' 2>/dev/null || true)"
+  [[ -n "$merged_pr" ]] && block "was merged via PR #$merged_pr"
+fi
+
+# The remaining ref-based checks only make sense for a branch tracking its OWN
+# remote branch. A base-tracking branch (`checkout -b X $default_ref`) tracks the
+# default branch, so checking deletion/merge against it would false-positive once
+# the default moves ahead — skip those.
+[[ "$remote_branch" != "$branch" ]] && exit 0
+
+# 2) Remote head deleted? (the usual post-merge state). Single lightweight ref
+#    query; if the remote is unreachable, ls-remote fails and we fall through.
+if remote_heads="$(git ls-remote --heads "$remote" "$branch" 2>/dev/null)"; then
+  if [[ -z "$remote_heads" ]]; then
+    block "no longer exists on '$remote' (deleted — typically after a merge)"
   fi
 fi
 
-# 2) Already merged into the default branch? Refresh the default ref best-effort
-#    (fail-open) so a merge done on GitHub since the last fetch is still caught.
-#    Require the default branch to be strictly AHEAD of HEAD so a fresh branch
-#    sitting exactly at the default tip (no commits yet) isn't flagged — only a
-#    branch whose work is already absorbed into a moved-on default trips this.
-git fetch --quiet "$remote" main 2>/dev/null || true
-default_ref="$remote/main"
+# 3) Already fully merged into the default branch (non-squash)? Refresh the
+#    default ref best-effort (fail-open). Require the default to be strictly
+#    AHEAD of HEAD so a fresh branch sitting at the default tip isn't flagged.
+git fetch --quiet "$remote" "$default_branch" 2>/dev/null || true
 if git rev-parse --verify --quiet "$default_ref" >/dev/null; then
   ahead="$(git rev-list --count "HEAD..$default_ref" 2>/dev/null || echo 0)"
   if [[ "$ahead" -gt 0 ]] && git merge-base --is-ancestor HEAD "$default_ref" 2>/dev/null; then
