@@ -83,7 +83,7 @@ body {
       rgba(54, 94, 66, 0.36) 44%,
       rgba(21, 16, 42, 0.12) 100%
     ),
-    linear-gradient(180deg, #283b6d 0%, #283b6d 28%, #244631 72%, #244631 100%);
+    linear-gradient(180deg, #063755 0%, #063755 28%, #244631 72%, #244631 100%);
   user-select: none;
   touch-action: none;
   -webkit-user-select: none;

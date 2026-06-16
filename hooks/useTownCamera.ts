@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useRef, useState, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import {
   useMotionValue,
   useTransform,
@@ -81,9 +87,54 @@ export function screenToWorld(
   };
 }
 
+/** viewBox→screen mapping: a uniform scale `s` + translate `(e,f)` (no skew). */
+type RootCtm = { s: number; e: number; f: number };
+
+function readRootCtm(svg: SVGSVGElement | null): RootCtm {
+  const ctm = svg?.getScreenCTM();
+  if (!ctm) return { s: 1, e: 0, f: 0 };
+  return { s: ctm.a, e: ctm.e, f: ctm.f };
+}
+
+/**
+ * CSS transform for the GPU wrapper (transform-origin 0 0) that visually turns
+ * the SVG rendered at `committed` into the view at `live`. Derived so that
+ * W ∘ render(committed) == render(live): committing (re-render `<g>` at `live`
+ * + reset W to identity) is therefore pixel-identical and never jumps.
+ *
+ * Screen position of world point p under a camera is
+ *   S(p) = R.s·((p − c)·scale + WORLD/2) + (R.e, R.f)
+ * (matches screenToWorld inverted). Matching W(S_committed)=S_live for all p
+ * gives k = live.scale/committed.scale and the translates below.
+ */
+function computeWrapperTransform(
+  committed: Camera,
+  live: Camera,
+  R: RootCtm,
+): string {
+  const W2 = WORLD.width / 2;
+  const H2 = WORLD.height / 2;
+  const k = live.scale / committed.scale;
+  const tx =
+    R.s * ((committed.cx - live.cx) * live.scale + W2) +
+    R.e -
+    k * (R.s * W2 + R.e);
+  const ty =
+    R.s * ((committed.cy - live.cy) * live.scale + H2) +
+    R.f -
+    k * (R.s * H2 + R.f);
+  return `translate(${tx}px, ${ty}px) scale(${k})`;
+}
+
+// Stage 1 (wheel zoom) gesture/settle hybrid tuning.
+const ZOOM_SETTLE_MS = 140; // commit (crisp re-render) this long after last zoom
+const ZOOM_WRAPPER_MAX = 1.6; // re-baseline before the GPU-scaled raster gets soft
+
 export function useTownCamera(
   svgRef: RefObject<SVGSVGElement | null>,
   stageRef: RefObject<HTMLDivElement | null>,
+  cameraGroupRef: RefObject<SVGGElement | null>,
+  wrapperRef: RefObject<HTMLDivElement | null>,
   perf?: TownPerfProbe,
 ) {
   // MotionValues drive the visual transform directly — no React renders mid-drag.
@@ -154,6 +205,91 @@ export function useTownCamera(
     }),
     [mvCx, mvCy, mvScale],
   );
+
+  // --- Zoom gesture/settle hybrid (Stage 1: wheel) -------------------------
+  // During an active zoom gesture the camera <g> is frozen at `commitBaseline`
+  // (no per-frame SVG re-raster — that's the Retina blank). Instead the GPU
+  // `wrapper` is CSS-scaled to show the live camera. On settle we re-render the
+  // <g> crisp once and reset the wrapper. `zoomActiveRef` tells the <g> camera
+  // subscription (in useTownStageState) to stand down while we drive the wrapper.
+  const zoomActiveRef = useRef(false);
+  const commitBaselineRef = useRef<Camera>(INITIAL_CAMERA);
+  const rootCtmRef = useRef<RootCtm>({ s: 1, e: 0, f: 0 });
+  const settleTimerRef = useRef<number | null>(null);
+
+  const writeGroupTransform = useCallback(() => {
+    const g = cameraGroupRef.current;
+    if (!g) return;
+    const value = cameraTransform.get();
+    if (perf)
+      perf.measure("domApply", () => g.setAttribute("transform", value));
+    else g.setAttribute("transform", value);
+  }, [cameraGroupRef, cameraTransform, perf]);
+
+  const applyWrapperTransform = useCallback(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    wrapper.style.transform = computeWrapperTransform(
+      commitBaselineRef.current,
+      getCameraSnapshot(),
+      rootCtmRef.current,
+    );
+  }, [wrapperRef, getCameraSnapshot]);
+
+  const clearSettle = useCallback(() => {
+    if (settleTimerRef.current !== null) {
+      window.clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = null;
+    }
+  }, []);
+
+  const beginZoomGesture = useCallback(() => {
+    commitBaselineRef.current = getCameraSnapshot();
+    rootCtmRef.current = readRootCtm(svgRef.current);
+    zoomActiveRef.current = true;
+  }, [getCameraSnapshot, svgRef]);
+
+  // Crisp re-render at the live camera, then drop the wrapper — same task so no
+  // intermediate frame. Safe to call when no gesture is active (no-op).
+  const commitZoom = useCallback(() => {
+    clearSettle();
+    if (!zoomActiveRef.current) return;
+    writeGroupTransform();
+    const wrapper = wrapperRef.current;
+    if (wrapper) wrapper.style.transform = "none";
+    commitBaselineRef.current = getCameraSnapshot();
+    zoomActiveRef.current = false;
+  }, [clearSettle, writeGroupTransform, wrapperRef, getCameraSnapshot]);
+
+  const scheduleSettle = useCallback(() => {
+    clearSettle();
+    settleTimerRef.current = window.setTimeout(commitZoom, ZOOM_SETTLE_MS);
+  }, [clearSettle, commitZoom]);
+
+  // Called AFTER the wheel step has updated the live camera (the gesture is
+  // already begun, so `commitBaseline` is the pre-step camera). Drive the
+  // wrapper while zooming in (k>=1, magnifies the painted raster — no reveal,
+  // no blank). Zooming out below baseline, or scaling past the soft-raster
+  // bound, force-commits and re-baselines so the wrapper stays in [1, MAX].
+  const onWheelZoomStep = useCallback(() => {
+    const k = mvScale.get() / commitBaselineRef.current.scale;
+    if (k < 1 || k > ZOOM_WRAPPER_MAX) {
+      commitZoom();
+      beginZoomGesture();
+    }
+    applyWrapperTransform();
+    scheduleSettle();
+  }, [
+    mvScale,
+    commitZoom,
+    beginZoomGesture,
+    applyWrapperTransform,
+    scheduleSettle,
+  ]);
+
+  // Cancel a pending settle commit if the component unmounts mid-gesture
+  // (e.g. navigation away) so the timer can't fire on a torn-down component.
+  useEffect(() => clearSettle, [clearSettle]);
 
   const panByPixels = useCallback(
     (dx: number, dy: number) => {
@@ -266,6 +402,9 @@ export function useTownCamera(
   useGesture(
     {
       onDragStart: ({ event }) => {
+        // A drag reveals new content the wrapper can't fake — land any pending
+        // zoom (crisp <g>, wrapper reset) before pan takes the direct path.
+        commitZoom();
         if (isTownControlTarget(event)) {
           hudDragRef.current = true;
           return;
@@ -317,13 +456,22 @@ export function useTownCamera(
           event && typeof (event as any).clientY === "number"
             ? (event as any).clientY
             : 0;
+        // Snapshot the pre-step baseline BEFORE the camera moves, then drive the
+        // wrapper from the resulting delta (Stage 1 hybrid — see onWheelZoomStep).
+        if (!zoomActiveRef.current) beginZoomGesture();
         wheelZoomAtViewportPoint(clientX, clientY, dy);
+        onWheelZoomStep();
       },
       onPinchStart: ({ event }) => {
         if (isTownControlTarget(event)) return;
         if (event && event.cancelable) {
           event.preventDefault();
         }
+        // Land any pending wheel-zoom (crisp <g>, wrapper reset) before pinch
+        // drives the camera directly — otherwise pinch would move the camera
+        // while the frozen <g>/non-identity wrapper desync the view + hit-test.
+        // (Pinch itself joins the hybrid in Stage 2.)
+        commitZoom();
         // Avoid drag/pinch contention when a second finger lands.
         resetDragInteraction();
       },
@@ -386,6 +534,11 @@ export function useTownCamera(
     setCameraImmediate,
     wheelZoomAtViewportPoint,
     zoomAtWorldPoint,
+    // Zoom gesture/settle hybrid: the <g> camera subscription skips while this
+    // is true (the wrapper is driving), and click handlers commit any pending
+    // zoom so hit-testing sees a crisp <g> + identity wrapper.
+    zoomActiveRef,
+    commitPendingZoom: commitZoom,
     markSkipDrag: () => {},
     stageHandlers: {},
     wasDragging: () => wasDraggingRef.current,
