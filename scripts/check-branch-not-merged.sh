@@ -59,20 +59,21 @@ block() {
   exit 1
 }
 
+# Only guard branches that track their OWN remote branch. A base-tracking branch
+# (`checkout -b X $default_ref`) tracks the default branch and is just fresh work
+# about to start. Exit here BEFORE any merge lookup so that, e.g., an old merged
+# PR that happened to reuse this branch name can't block a fresh base-tracking
+# branch, and so the default moving ahead never false-positives.
+[[ "$remote_branch" != "$branch" ]] && exit 0
+
 # 1) Authoritative: does this branch have a MERGED PR? Catches squash/rebase
-#    merges that leave no ancestor relationship. Safe for base-tracking branches
-#    (they have no PR of their own). Fail-open if gh is missing/unauthed/offline.
+#    merges that leave no ancestor relationship. Fail-open if gh is
+#    missing/unauthed/offline.
 if command -v gh >/dev/null 2>&1; then
   merged_pr="$(gh pr list --head "$branch" --state merged --json number \
     --jq '.[0].number' 2>/dev/null || true)"
   [[ -n "$merged_pr" ]] && block "was merged via PR #$merged_pr"
 fi
-
-# The remaining ref-based checks only make sense for a branch tracking its OWN
-# remote branch. A base-tracking branch (`checkout -b X $default_ref`) tracks the
-# default branch, so checking deletion/merge against it would false-positive once
-# the default moves ahead — skip those.
-[[ "$remote_branch" != "$branch" ]] && exit 0
 
 # 2) Remote head deleted? (the usual post-merge state). Single lightweight ref
 #    query; if the remote is unreachable, ls-remote fails and we fall through.
