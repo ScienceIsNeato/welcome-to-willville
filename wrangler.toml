@@ -8,9 +8,15 @@ pages_build_output_dir = "./out"
 [vars]
 # GITHUB_PAT is set as a secret via: wrangler pages secret put GITHUB_PAT --project-name welcome-to-willville
 
-# Local dev KV store — wrangler creates a SQLite-backed store under .wrangler/state/
-# for local runs. The id value only matters for production (dashboard-assigned);
-# locally wrangler ignores it and uses the binding name as the store key.
+# Durable town/canal snapshot store (bell-written; read by /api/town, /api/canal,
+# /api/commits). The real namespace id is recorded below for reference.
+#
+# IMPORTANT: production binding is configured on the Pages PROJECT itself
+# (dashboard → welcome-to-willville → Settings → Bindings → KV namespace
+# WILLVILLE_MANIFEST_CACHE), NOT from this file — the CI deploy runs
+# `wrangler pages deploy ... --cwd /tmp`, so it never reads this wrangler.toml.
+# Locally, wrangler ignores the id and uses a SQLite-backed store under
+# .wrangler/state/ keyed by the binding name.
 [[kv_namespaces]]
 binding = "WILLVILLE_MANIFEST_CACHE"
-id = "placeholder-willville-manifest-cache"
+id = "b04d36ee35c549849171eae08ed23149"
