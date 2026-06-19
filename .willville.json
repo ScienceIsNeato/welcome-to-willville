@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Got town data persisting across deploys for real — wired up the durable store so it stops resetting, and recording the namespace in source",
-    "direction": "Tidy the config, then back to smoothing map zoom on pinch and double-click",
+    "status": "Put a little dog in the Graveyard that trots around Fog of Dog leaving a fading trail of paw prints",
+    "direction": "Get Anne's eyes on the pup, tweak the look, then back to map zoom polish",
     "last_update": "2026-06-16T00:00:00Z"
   }
 }
