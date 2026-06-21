@@ -13,6 +13,7 @@ import { DynamicWalls } from "./DynamicWalls";
 import { GeneratedTownBase } from "./GeneratedTownBase";
 import { TownSiteAppearances } from "./TownSiteAppearances";
 import { WorldWorkerLayer } from "./WorldWorkerLayer";
+import { FogDog } from "./FogDog";
 import { SpecialTownLandmarks } from "./SpecialTownLandmarks";
 import { TownPerfPanel } from "./TownPerfPanel";
 import { PanelChromeControls } from "./PanelChromeControls";
@@ -471,6 +472,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                     }
                   />
                   <WorldWorkerLayer stops={currentStops} />
+                  <FogDog />
                   {populating !== "idle" && (
                     <BellMessengers
                       stops={currentStops}
