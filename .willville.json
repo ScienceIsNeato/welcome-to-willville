@@ -1,8 +1,7 @@
 {
-  "schema_version": 1,
   "agent": {
-    "status": "Got town data persisting across deploys for real — wired up the durable store so it stops resetting, and recording the namespace in source",
-    "direction": "Tidy the config, then back to smoothing map zoom on pinch and double-click",
-    "last_update": "2026-06-16T00:00:00Z"
+    "status": "Moving CI onto the official slop-mop action and dropping a workaround that's no longer needed",
+    "direction": "Confirm the action keeps the gates green on the newer slop-mop, then move on",
+    "last_update": "2026-06-21T00:00:00Z"
   }
 }
