@@ -1,8 +1,7 @@
 {
-  "schema_version": 1,
   "agent": {
-    "status": "Moved the dog walker to fogofdog-frontend in The Zeitgeist and swapped in a real black lab sprite — PR #49",
-    "direction": "Get Anne's eyes on the updated dog, then merge",
+    "status": "Moving CI onto the official slop-mop action and dropping a workaround that's no longer needed",
+    "direction": "Confirm the action keeps the gates green on the newer slop-mop, then move on",
     "last_update": "2026-06-21T00:00:00Z"
   }
 }

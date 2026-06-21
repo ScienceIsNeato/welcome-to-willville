@@ -71,8 +71,10 @@ next-env.d.ts
 .claude/*.lock
 .specstory/
 
-# slop-mop working directory (machine-local state)
-.slopmop/
+# slop-mop working directory (machine-local state) — but track the committed
+# dependency manifest the v2 Action installs from.
+.slopmop/*
+!.slopmop/required-deps.json
 
 # perf test tooling (playwright, installed on first run)
 .perf-tools/
