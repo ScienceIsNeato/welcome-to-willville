@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Put a little dog in the Graveyard that trots around Fog of Dog leaving a fading trail of paw prints",
-    "direction": "Get Anne's eyes on the pup, tweak the look, then back to map zoom polish",
-    "last_update": "2026-06-16T00:00:00Z"
+    "status": "Moved the dog walker to fogofdog-frontend in The Zeitgeist and swapped in a real black lab sprite — PR #49",
+    "direction": "Get Anne's eyes on the updated dog, then merge",
+    "last_update": "2026-06-21T00:00:00Z"
   }
 }
