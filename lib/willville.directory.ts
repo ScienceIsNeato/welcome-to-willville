@@ -14,6 +14,7 @@ type DirectoryProject = {
   blurb?: string;
   repoUrl: string;
   liveUrl?: string;
+  repoIsPublic?: boolean;
 };
 
 export type DirectoryDistrict = {
@@ -30,6 +31,7 @@ function projectsInDistrict(id: DistrictId): DirectoryProject[] {
     blurb: h.blurb,
     repoUrl: repoUrl(h.repo),
     liveUrl: liveSiteForRepo(h.repo),
+    repoIsPublic: h.repoIsPublic,
   }));
 }
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { DISTRICTS, TOWN, TOWN_OFFSET, WORLD } from "@/lib/willville";
 import type { Stop } from "@/lib/town";
@@ -658,6 +659,49 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               editingLocked={mayorEditingLocked}
               editingLockedMessage="Only the mayor can edit Willville. Production mode is read-only."
             />
+          )}
+
+          {!isRepositionMode && !isHistoryMode && !mobileSafeMode && (
+            <nav
+              aria-label="Site navigation"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => e.stopPropagation()}
+              style={{
+                position: "absolute",
+                bottom: stageControlBottom,
+                right: 16,
+                display: "flex",
+                gap: 0,
+                color: "var(--willville-paper)",
+                opacity: 0.8,
+                fontSize: 14,
+                letterSpacing: 0.6,
+                pointerEvents: "auto",
+                textShadow: "0 1px 4px rgba(0,0,0,0.6)",
+              }}
+            >
+              {(
+                [
+                  { href: "/projects/", label: "Projects" },
+                  { href: "/faq/", label: "FAQ" },
+                  { href: "/history/", label: "History" },
+                ] as const
+              ).map(({ href, label }, i) => (
+                <span key={href}>
+                  {i > 0 && " · "}
+                  <Link
+                    href={href}
+                    style={{
+                      color: "inherit",
+                      textDecoration: "none",
+                    }}
+                  >
+                    {label}
+                  </Link>
+                </span>
+              ))}
+            </nav>
           )}
 
           {isHistoryMode && (

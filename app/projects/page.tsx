@@ -121,13 +121,17 @@ export default function ProjectsDirectory() {
                         Visit site ↗
                       </a>
                     )}
-                    <a
-                      href={p.repoUrl}
-                      rel="nofollow"
-                      style={{ color: "#7d7694" }}
-                    >
-                      Source ↗
-                    </a>
+                    {p.repoIsPublic ? (
+                      <a
+                        href={p.repoUrl}
+                        rel="nofollow"
+                        style={{ color: "#7d7694" }}
+                      >
+                        Source ↗
+                      </a>
+                    ) : (
+                      <span style={{ color: "#8f88a6" }}>Private repo</span>
+                    )}
                   </div>
                 </li>
               ))}
