@@ -43,7 +43,6 @@ export const HEURISTICS: Heuristic[] = [
     lines: ["writing"],
     position: { x: 376, y: 355 },
     blurb: "A novel-in-progress. Long form, slow loop.",
-    repoIsPublic: true,
     glyph: {
       label: "book",
       prompt: "weathered open book with gold-edged pages and a long bookmark",
