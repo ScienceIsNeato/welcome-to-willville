@@ -81,23 +81,38 @@ function isCanalSnapshotStale(
   return manifestTime > snapshotManifestTime;
 }
 
+function isMayor(request: Request, env: Env): boolean {
+  if (!env.WILLVILLE_MAYOR_KEY) return false;
+  const cookie = request.headers.get("Cookie") ?? "";
+  return cookie.split(";").some((c) => c.trim() === "willville_mayor=1");
+}
+
+function redactForTourist(boats: CanalBoat[]): CanalBoat[] {
+  return boats.map((b) => (b.isPrivate ? { ...b, title: "private" } : b));
+}
+
 function canalResponse(
   request: Request,
+  env: Env,
   generatedAt: string,
   boats: CanalBoat[],
   extra?: Record<string, unknown>,
 ): Response {
+  const mayor = isMayor(request, env);
+  const visibleBoats = mayor ? boats : redactForTourist(boats);
   return new Response(
     JSON.stringify({
-      mayor: true,
+      mayor,
       generatedAt,
-      boats,
+      boats: visibleBoats,
       ...extra,
     }),
     {
       headers: withCorsHeaders(request, {
         "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "public, s-maxage=45, stale-while-revalidate=180",
+        "Cache-Control": mayor
+          ? "private, no-store"
+          : "public, s-maxage=45, stale-while-revalidate=180",
       }),
     },
   );
@@ -154,7 +169,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       env.WILLVILLE_MANIFEST_CACHE,
     );
     if (!isCanalSnapshotStale(snapshot, manifestCachedAt)) {
-      return canalResponse(request, snapshot.generatedAt, snapshot.boats, {
+      return canalResponse(request, env, snapshot.generatedAt, snapshot.boats, {
         ...(snapshot.lastBellRingAt && {
           lastBellRingAt: snapshot.lastBellRingAt,
         }),
@@ -171,20 +186,20 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
           manifestCachedAt,
           snapshot,
         );
-        return canalResponse(request, repaired.generatedAt, repaired.boats);
+        return canalResponse(request, env, repaired.generatedAt, repaired.boats);
       } catch {
         // Rebuild failed — fall back to serving the stale snapshot so the
         // canal stays available rather than blank.
       }
     }
 
-    return canalResponse(request, snapshot.generatedAt, snapshot.boats);
+    return canalResponse(request, env, snapshot.generatedAt, snapshot.boats);
   }
 
   const token = env.GITHUB_PAT;
   if (!token) {
     // Without a token we can't query GraphQL. Return an empty canal.
-    return canalResponse(request, new Date().toISOString(), [], {
+    return canalResponse(request, env, new Date().toISOString(), [], {
       warning: "GITHUB_PAT not configured — canal is empty.",
     });
   }
@@ -193,9 +208,9 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   // still sees boats, but do not persist — the bell remains the sole writer.
   try {
     const boats = await buildCanalBoats(token, env.ALLY_GITHUB_PAT);
-    return canalResponse(request, new Date().toISOString(), boats);
+    return canalResponse(request, env, new Date().toISOString(), boats);
   } catch (err) {
-    return canalResponse(request, new Date().toISOString(), [], {
+    return canalResponse(request, env, new Date().toISOString(), [], {
       warning: String(err),
     });
   }
