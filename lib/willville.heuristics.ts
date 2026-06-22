@@ -20,6 +20,8 @@ export type Heuristic = {
   /** Optional manual placement inside the district SVG polygon. */
   position?: { x: number; y: number };
   blurb?: string;
+  /** Whether the GitHub repo is publicly visible. Shown in the project directory so visitors know if source links will work. */
+  repoIsPublic?: boolean;
   glyph?: SiteGlyph;
   /**
    * Preview-only queue entry. A .willville.json's `queue` block always wins;
@@ -41,6 +43,7 @@ export const HEURISTICS: Heuristic[] = [
     lines: ["writing"],
     position: { x: 376, y: 355 },
     blurb: "A novel-in-progress. Long form, slow loop.",
+    repoIsPublic: true,
     glyph: {
       label: "book",
       prompt: "weathered open book with gold-edged pages and a long bookmark",
@@ -55,6 +58,7 @@ export const HEURISTICS: Heuristic[] = [
     lines: ["ai"],
     position: { x: 1133, y: 272 },
     blurb: "The original AI framework. Where it all started.",
+    repoIsPublic: true,
     glyph: {
       label: "coffin",
       prompt: "ornate black coffin with brass fittings and faint amber glow",
@@ -82,7 +86,7 @@ export const HEURISTICS: Heuristic[] = [
     district: "the-graveyard",
     lines: ["web"],
     position: { x: 1233, y: 361 },
-    blurb: "Backend for FogOfDog.",
+    blurb: "Deprecated monorepo — see fogofdog-frontend and fogofdog-site.",
     glyph: {
       label: "kennel",
       prompt: "teal backend workshop kennel with server crates and signpost",
@@ -111,6 +115,7 @@ export const HEURISTICS: Heuristic[] = [
     lines: ["workshop"],
     position: { x: 1259, y: 462 },
     blurb: "Bio side project.",
+    repoIsPublic: true,
     glyph: {
       label: "gene greenhouse",
       prompt: "small glass greenhouse with helix-shaped vines and labels",
@@ -202,6 +207,7 @@ export const HEURISTICS: Heuristic[] = [
     lines: ["halloween", "workshop"],
     position: { x: 1059, y: 865 },
     blurb: "OpenCV + Arduino head that tracks movement.",
+    repoIsPublic: true,
     glyph: {
       label: "watchful pumpkin",
       prompt: "tracking pumpkin head with camera eye and copper servo neck",
@@ -222,6 +228,7 @@ export const HEURISTICS: Heuristic[] = [
     lines: ["quality"],
     position: { x: 401, y: 696 },
     blurb: "Harm reduction for addicted agents.",
+    repoIsPublic: true,
     glyph: {
       label: "mop bucket",
       prompt: "wooden mop bucket with brass wringer and tidy mop",
@@ -242,6 +249,7 @@ export const HEURISTICS: Heuristic[] = [
     lines: ["quality"],
     position: { x: 455, y: 602 },
     blurb: "GitHub Actions wrapper for slop-mop.",
+    repoIsPublic: true,
     glyph: {
       label: "action dock",
       prompt: "tiny loading dock with crates stamped action and a mop icon",
@@ -256,6 +264,7 @@ export const HEURISTICS: Heuristic[] = [
     position: { x: 467, y: 632 },
     lines: ["quality", "web"],
     blurb: "The public front door for slop-mop.",
+    repoIsPublic: true,
     glyph: {
       label: "harbor sign",
       prompt:
@@ -271,6 +280,7 @@ export const HEURISTICS: Heuristic[] = [
     lines: ["quality"],
     position: { x: 510, y: 780 },
     blurb: "Intentionally-broken test fixture for slop-mop.",
+    repoIsPublic: true,
     glyph: {
       label: "slop bucket",
       prompt: "dented bucket of spilled papers and red test failure tags",
@@ -460,6 +470,7 @@ export const HEURISTICS: Heuristic[] = [
     lines: ["quality"],
     position: { x: 792, y: 363 },
     blurb: "Closes the developer feedback loop.",
+    repoIsPublic: true,
     glyph: {
       label: "roundabout",
       prompt: "miniature circular rail switch with arrows and signal lights",
@@ -551,6 +562,7 @@ export const HEURISTICS: Heuristic[] = [
     lines: [],
     position: { x: 742, y: 490 },
     blurb: "Best-guess placement - override via .willville.json.",
+    repoIsPublic: true,
   },
   {
     repo: "ScienceIsNeato/RizlDizlScaryBitz",
@@ -559,6 +571,7 @@ export const HEURISTICS: Heuristic[] = [
     lines: [],
     position: { x: 823, y: 204 },
     blurb: "Best-guess placement - override via .willville.json.",
+    repoIsPublic: true,
   },
   {
     repo: "ScienceIsNeato/RizlDizl",
@@ -575,6 +588,7 @@ export const HEURISTICS: Heuristic[] = [
     lines: [],
     position: { x: 486, y: 1046 },
     blurb: "Best-guess placement - override via .willville.json.",
+    repoIsPublic: true,
   },
   {
     repo: "ScienceIsNeato/GANGLIA_ARCHIVES",
@@ -582,7 +596,8 @@ export const HEURISTICS: Heuristic[] = [
     district: "the-graveyard",
     lines: [],
     position: { x: 1323, y: 462 },
-    blurb: "Best-guess placement - override via .willville.json.",
+    blurb: "Archived GANGLIA monorepo.",
+    repoIsPublic: true,
   },
 
   // These two appear in Mayor's Express with recent commits but had no heuristic
@@ -593,14 +608,15 @@ export const HEURISTICS: Heuristic[] = [
     district: "the-nursery",
     lines: ["web"],
     blurb: "FogOfDog website.",
+    repoIsPublic: true,
   },
   {
     repo: "ScienceIsNeato/queueup-website",
-    displayName: "queueup-website",
+    displayName: "firstinq",
     district: "ally-alley",
     position: { x: 919, y: 1154 },
     lines: ["web"],
-    blurb: "Queueup project website.",
+    blurb: "FirstInQ — digital queue management for small businesses.",
   },
   {
     repo: "ScienceIsNeato/lessllm",

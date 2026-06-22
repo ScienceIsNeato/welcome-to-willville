@@ -8,7 +8,11 @@
  */
 const LIVE_SITES: Record<string, string> = {
   "ScienceIsNeato/slop-mop": "https://slop-mop.com",
+  "ScienceIsNeato/slop-mop-action":
+    "https://github.com/marketplace/actions/slop-mop",
   "ScienceIsNeato/slop-mop-website": "https://slop-mop.com",
+  "ScienceIsNeato/fogofdog-frontend": "https://fogofdog.com",
+  "ScienceIsNeato/fogofdog-site": "https://fogofdog.com",
   "ScienceIsNeato/RizlDizl": "https://rizldizl.com",
   "ScienceIsNeato/RizlDizlScaryBitz": "https://rizldizl.com",
   "ScienceIsNeato/rizldizl-website": "https://rizldizl.com",

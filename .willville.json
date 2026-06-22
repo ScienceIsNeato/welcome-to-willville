@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "agent": {
-    "status": "Moved the dog walker to fogofdog-frontend in The Zeitgeist and swapped in a real black lab sprite — PR #49",
-    "direction": "Get Anne's eyes on the updated dog, then merge",
+    "status": "Cleaning up project directory for open-source — private/public labels, fogofdog links, firstinq rename, FogOfDog deprecation notice",
+    "direction": "Get this PR up, then the repo can go public",
     "last_update": "2026-06-21T00:00:00Z"
   }
 }
