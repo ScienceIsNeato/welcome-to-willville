@@ -406,7 +406,7 @@ export const HEURISTICS: Heuristic[] = [
     district: "halls-of-judgement",
     lines: ["halloween", "writing"],
     position: { x: 1014, y: 666 },
-    blurb: "Best-guess placement — override via .willville.json.",
+    blurb: "Workspace for running AI model evaluation rounds — prompts, protocols, and scoring logs.",
     glyph: {
       label: "mystery manor",
       prompt: "tiny crooked manor with locked gate and glowing attic window",
@@ -469,7 +469,6 @@ export const HEURISTICS: Heuristic[] = [
     lines: ["quality"],
     position: { x: 792, y: 363 },
     blurb: "Closes the developer feedback loop.",
-    repoIsPublic: true,
     glyph: {
       label: "roundabout",
       prompt: "miniature circular rail switch with arrows and signal lights",
@@ -539,7 +538,7 @@ export const HEURISTICS: Heuristic[] = [
     district: "dogwallow-ramble-ii",
     lines: ["halloween"],
     position: { x: 724, y: 1054 },
-    blurb: "Best-guess placement — override via .willville.json.",
+    blurb: "3D room planner for the Dogwallow Ramble library renovation — Blender auto-reload, iterating on layout in real space.",
     glyph: {
       label: "wallow pool",
       prompt: "dark bubbling pool with carved stones and small lanterns",
@@ -552,15 +551,15 @@ export const HEURISTICS: Heuristic[] = [
     district: "town-square",
     lines: ["web"],
     position: { x: 730, y: 696 },
-    blurb: "Best-guess placement - override via .willville.json.",
+    blurb: "SEO strategy and assets — sitemaps, schema, robots.txt, and a 90-day plan for Will's sites.",
   },
   {
     repo: "ScienceIsNeato/rizldizl-website",
     displayName: "rizldizl-website",
     district: "town-square",
-    lines: [],
+    lines: ["web"],
     position: { x: 742, y: 490 },
-    blurb: "Best-guess placement - override via .willville.json.",
+    blurb: "Marketing site for RizlDizl, the Razer keyboard lighting app for macOS.",
     repoIsPublic: true,
   },
   {
@@ -569,7 +568,7 @@ export const HEURISTICS: Heuristic[] = [
     district: "the-zeitgeist",
     lines: [],
     position: { x: 823, y: 204 },
-    blurb: "Best-guess placement - override via .willville.json.",
+    blurb: "Open-source, auditable layer of RizlDizl — keystroke capture and USB I/O published for user trust.",
     repoIsPublic: true,
   },
   {
@@ -578,7 +577,7 @@ export const HEURISTICS: Heuristic[] = [
     district: "the-zeitgeist",
     lines: [],
     position: { x: 928, y: 233 },
-    blurb: "Best-guess placement - override via .willville.json.",
+    blurb: "macOS menu-bar app for reactive RGB Razer keyboard lighting — ripples, crawlers, and letter effects.",
   },
   {
     repo: "ScienceIsNeato/tattoo-renderer",
@@ -586,7 +585,7 @@ export const HEURISTICS: Heuristic[] = [
     district: "the-nursery",
     lines: [],
     position: { x: 486, y: 1046 },
-    blurb: "Best-guess placement - override via .willville.json.",
+    blurb: "Renders tattoo designs programmatically.",
     repoIsPublic: true,
   },
   {
@@ -621,9 +620,9 @@ export const HEURISTICS: Heuristic[] = [
     repo: "ScienceIsNeato/lessllm",
     displayName: "lessllm",
     district: "the-zeitgeist",
-    lines: [],
+    lines: ["web"],
     position: { x: 945, y: 389 },
-    blurb: "Best-guess placement - override via .willville.json.",
+    blurb: "macOS app that blocks AI chat on a schedule you set, enforced at the DNS level so you can't just quit it.",
   },
 ];
 
