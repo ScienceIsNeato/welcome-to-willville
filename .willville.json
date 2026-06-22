@@ -1,8 +1,7 @@
 {
-  "schema_version": 1,
   "agent": {
-    "status": "Cleaning up project directory for open-source — private/public labels, fogofdog links, firstinq rename, FogOfDog deprecation notice",
-    "direction": "Get this PR up, then the repo can go public",
+    "status": "Moving CI onto the official slop-mop action and dropping a workaround that's no longer needed",
+    "direction": "Confirm the action keeps the gates green on the newer slop-mop, then move on",
     "last_update": "2026-06-21T00:00:00Z"
   }
 }
