@@ -7,8 +7,9 @@ A purely-visual interactive town that orchestrates Will's projects.
 - **Magic Maze aesthetic**, board-game tile feel, top-down.
 - **Live status.** Every participating repo drops a [`.willville.json`](docs/WILLVILLE_MANIFEST.md)
   to claim a stop and publish its current state, blockers, and next steps.
-- **Mayor vs Tourist.** Tourists see public-repo data. Will, with the Keys to
-  the City, sees private repos and Mayor-only stops.
+- **Open by design.** The town map is public. Every stop — including stops for
+  private repos — is visible to everyone. Source links for private repos will
+  404 unless you're a collaborator; that's expected.
 
 ## Stack
 
@@ -58,11 +59,13 @@ Cloudflare Pages is deployed from GitHub Actions with
     Create a custom token scoped to your Cloudflare account
     with `Cloudflare Pages: Edit`.
 - **Secrets to set in the Pages project:**
-  - `GITHUB_PAT` — fine-grained PAT with `Contents: read` on the ScienceIsNeato
-    repos you want surfaced. Used only when a Mayor cookie is present.
+  - `GITHUB_PAT` — fine-grained PAT with `Contents: read` on the repos you
+    want surfaced. Used server-side to read `.willville.json` packets from
+    private repos and to fetch PR data for the canal history.
   - `WILLVILLE_MAYOR_KEY` — long random string. Visiting
     `https://willville.ai/keys-to-the-city/?key=<value>` sets the Mayor
-    cookie.
+    cookie, which unlocks stop repositioning (edit mode). It does not change
+    what is visible — the same town data is served to everyone.
 
 GitHub Actions compiles `functions/` into `out/_worker.js` and
 `out/_routes.json` before `pages deploy ./out ...`, so the deployed artifact
@@ -85,10 +88,39 @@ See [`docs/WILLVILLE_MANIFEST.md`](docs/WILLVILLE_MANIFEST.md) for how to add
 your repo to the map and [`docs/ART_BRIEF.md`](docs/ART_BRIEF.md) for the
 visual style guide.
 
+## Data visibility
+
+Willville is built around **opt-in transparency**: everything published here is
+published intentionally. Here is the exact list of what is and isn't public.
+
+**What's public (visible to anyone):**
+
+- Every repo's name, district, blurb, and stop on the town map — including
+  private repos. The map shows that the work exists; it doesn't show the work.
+- `.willville.json` agent packets — status and direction updates written by
+  agents working in a repo, explicitly intended for public broadcast.
+- The canal history: PR titles and merge dates, going back to the repo's
+  beginning. **Private repo PRs appear as boats in the canal but their titles
+  are redacted** — you can see that work is happening without seeing what it is.
+
+**What's not public:**
+
+- Source code, commit messages, PR descriptions, diffs, issue titles, branch
+  names, or file structure of any private repo.
+- Source links on the `/projects` page for private repos — these are labeled
+  "Private repo" and not linked. Navigating to the GitHub URL directly will 404
+  unless you are a collaborator.
+
+**For collaborators:**
+
+If you contribute to a repo that uses willville, your PRs will appear as boats
+in the canal with their titles redacted (shown as "private"). Your repo's stop
+will appear on the town map. Any `.willville.json` you commit will broadcast
+publicly.
+
 ## Roadmap
 
-- **Phase 2 auth.** Replace the static Mayor key with GitHub OAuth + per-user
-  tokens.
-- **Real art.** Ganglia-studio / manual LLM-generated tiles per the art brief.
-- **Auto-line discovery.** Today, lines are statically defined; eventually new
-  line tags in `.willville.json` files should automatically appear on the map.
+- **Real art.** Ganglia-studio generated tiles per the art brief — district by
+  district.
+- **Auto-line discovery.** Lines are statically defined today; new line tags in
+  `.willville.json` should eventually auto-appear on the map.
