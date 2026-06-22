@@ -21,7 +21,7 @@ export type Heuristic = {
   position?: { x: number; y: number };
   blurb?: string;
   /** Whether the GitHub repo is publicly visible. Shown in the project directory so visitors know if source links will work. */
-  repoIsPublic?: boolean;
+  repoIsPublic: boolean;
   glyph?: SiteGlyph;
   /**
    * Preview-only queue entry. A .willville.json's `queue` block always wins;
@@ -48,6 +48,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "weathered open book with gold-edged pages and a long bookmark",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -77,6 +78,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "small glowing pipe organ with brass keys and musical glyphs",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -91,6 +93,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "teal backend workshop kennel with server crates and signpost",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -105,6 +108,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "blacksmith forge with compiler runes and molten type blocks",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -134,6 +138,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "plain wooden workbench with blueprints, tools, and test gears",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -149,6 +154,7 @@ export const HEURISTICS: Heuristic[] = [
         "compact filing cabinet with dot-marked drawers and terminal tags",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -169,6 +175,7 @@ export const HEURISTICS: Heuristic[] = [
       etaDays: 6,
       priority: 2,
     },
+    repoIsPublic: false,
   },
 
   {
@@ -183,6 +190,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "artist easel with film reels, brushes, and glowing canvas",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -197,6 +205,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "small brass tool chest with gears, cables, and labeled drawers",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -299,6 +308,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "heavy rulebook with tabs, wax seal, and small checklist charms",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -313,6 +323,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "brass balance scales weighing code scrolls and trace crystals",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -327,6 +338,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "spool of glowing trace tape feeding through a brass recorder",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -341,6 +353,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "small anvil with task cards, terminal prompt, and sparks",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -355,6 +368,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "tiny stone colosseum arena with score flags and torchlight",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -369,6 +383,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "drafting desk with blueprints, rubric cards, and brass ruler",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -384,6 +399,7 @@ export const HEURISTICS: Heuristic[] = [
         "small wooden scaffold holding markdown sheets and rubric plaques",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -398,6 +414,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "table covered in folded code maps, pins, and brass compass",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -406,12 +423,14 @@ export const HEURISTICS: Heuristic[] = [
     district: "halls-of-judgement",
     lines: ["halloween", "writing"],
     position: { x: 1014, y: 666 },
-    blurb: "Workspace for running AI model evaluation rounds — prompts, protocols, and scoring logs.",
+    blurb:
+      "Workspace for running AI model evaluation rounds — prompts, protocols, and scoring logs.",
     glyph: {
       label: "mystery manor",
       prompt: "tiny crooked manor with locked gate and glowing attic window",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -432,6 +451,7 @@ export const HEURISTICS: Heuristic[] = [
       etaDays: 14,
       priority: 3,
     },
+    repoIsPublic: false,
   },
 
   {
@@ -446,6 +466,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "small web storefront with striped awning and glowing display",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -460,6 +481,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "small gothic crypt with velvet-lined coffin and purple candles",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -474,6 +496,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "miniature circular rail switch with arrows and signal lights",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -488,6 +511,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "small mill wheel of colored glass lights and wire channels",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -502,6 +526,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "miniature town hall with bell tower and painted city map",
       state: "placeholder",
     },
+    repoIsPublic: true,
   },
 
   {
@@ -516,6 +541,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "tiny pantry robot carrying grocery baskets and checklist scroll",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -530,6 +556,7 @@ export const HEURISTICS: Heuristic[] = [
       prompt: "warm cottage with porch light, calendar note, and flower boxes",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
 
   {
@@ -538,12 +565,14 @@ export const HEURISTICS: Heuristic[] = [
     district: "dogwallow-ramble-ii",
     lines: ["halloween"],
     position: { x: 724, y: 1054 },
-    blurb: "3D room planner for the Dogwallow Ramble library renovation — Blender auto-reload, iterating on layout in real space.",
+    blurb:
+      "3D room planner for the Dogwallow Ramble library renovation — Blender auto-reload, iterating on layout in real space.",
     glyph: {
       label: "wallow pool",
       prompt: "dark bubbling pool with carved stones and small lanterns",
       state: "placeholder",
     },
+    repoIsPublic: false,
   },
   {
     repo: "ScienceIsNeato/SEO_optimization",
@@ -551,7 +580,9 @@ export const HEURISTICS: Heuristic[] = [
     district: "town-square",
     lines: ["web"],
     position: { x: 730, y: 696 },
-    blurb: "SEO strategy and assets — sitemaps, schema, robots.txt, and a 90-day plan for Will's sites.",
+    blurb:
+      "SEO strategy and assets — sitemaps, schema, robots.txt, and a 90-day plan for Will's sites.",
+    repoIsPublic: false,
   },
   {
     repo: "ScienceIsNeato/rizldizl-website",
@@ -559,7 +590,8 @@ export const HEURISTICS: Heuristic[] = [
     district: "town-square",
     lines: ["web"],
     position: { x: 742, y: 490 },
-    blurb: "Marketing site for RizlDizl, the Razer keyboard lighting app for macOS.",
+    blurb:
+      "Marketing site for RizlDizl, the Razer keyboard lighting app for macOS.",
     repoIsPublic: true,
   },
   {
@@ -568,7 +600,8 @@ export const HEURISTICS: Heuristic[] = [
     district: "the-zeitgeist",
     lines: [],
     position: { x: 823, y: 204 },
-    blurb: "Open-source, auditable layer of RizlDizl — keystroke capture and USB I/O published for user trust.",
+    blurb:
+      "Open-source, auditable layer of RizlDizl — keystroke capture and USB I/O published for user trust.",
     repoIsPublic: true,
   },
   {
@@ -577,7 +610,9 @@ export const HEURISTICS: Heuristic[] = [
     district: "the-zeitgeist",
     lines: [],
     position: { x: 928, y: 233 },
-    blurb: "macOS menu-bar app for reactive RGB Razer keyboard lighting — ripples, crawlers, and letter effects.",
+    blurb:
+      "macOS menu-bar app for reactive RGB Razer keyboard lighting — ripples, crawlers, and letter effects.",
+    repoIsPublic: false,
   },
   {
     repo: "ScienceIsNeato/tattoo-renderer",
@@ -615,6 +650,7 @@ export const HEURISTICS: Heuristic[] = [
     position: { x: 919, y: 1154 },
     lines: ["web"],
     blurb: "FirstInQ — digital queue management for small businesses.",
+    repoIsPublic: false,
   },
   {
     repo: "ScienceIsNeato/lessllm",
@@ -622,7 +658,9 @@ export const HEURISTICS: Heuristic[] = [
     district: "the-zeitgeist",
     lines: ["web"],
     position: { x: 945, y: 389 },
-    blurb: "macOS app that blocks AI chat on a schedule you set, enforced at the DNS level so you can't just quit it.",
+    blurb:
+      "macOS app that blocks AI chat on a schedule you set, enforced at the DNS level so you can't just quit it.",
+    repoIsPublic: false,
   },
 ];
 

@@ -662,7 +662,11 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
           )}
 
           {!isRepositionMode && !isHistoryMode && !mobileSafeMode && (
-            <div
+            <nav
+              aria-label="Site navigation"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+              onDoubleClick={(e) => e.stopPropagation()}
               style={{
                 position: "absolute",
                 bottom: stageControlBottom,
@@ -697,7 +701,7 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                   </Link>
                 </span>
               ))}
-            </div>
+            </nav>
           )}
 
           {isHistoryMode && (

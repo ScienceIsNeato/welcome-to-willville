@@ -41,7 +41,7 @@ export function FogDog() {
     for (let i = 0; i < PAW_COUNT; i += 1) {
       const frac = i / PAW_COUNT;
       const at = path.getPointAtLength(frac * total);
-      const ahead = path.getPointAtLength(((frac * total + 2) % total) + 0);
+      const ahead = path.getPointAtLength((frac * total + 2) % total);
       const angle =
         (Math.atan2(ahead.y - at.y, ahead.x - at.x) * 180) / Math.PI;
       const side: 1 | -1 = i % 2 === 0 ? 1 : -1;

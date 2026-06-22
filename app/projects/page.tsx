@@ -130,7 +130,7 @@ export default function ProjectsDirectory() {
                         Source ↗
                       </a>
                     ) : (
-                      <span style={{ color: "#4a4560" }}>Private repo</span>
+                      <span style={{ color: "#8f88a6" }}>Private repo</span>
                     )}
                   </div>
                 </li>
