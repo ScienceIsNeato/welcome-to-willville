@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { DISTRICTS, TOWN, TOWN_OFFSET, WORLD } from "@/lib/willville";
 import type { Stop } from "@/lib/town";
@@ -658,6 +659,46 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
               editingLocked={mayorEditingLocked}
               editingLockedMessage="Only the mayor can edit Willville. Production mode is read-only."
             />
+          )}
+
+          {!isRepositionMode && !isHistoryMode && !mobileSafeMode && (
+            <div
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                display: "flex",
+                justifyContent: "center",
+                gap: 28,
+                padding: "8px 16px 12px",
+                fontSize: 13,
+                letterSpacing: 0.5,
+                pointerEvents: "auto",
+                zIndex: 10,
+              }}
+            >
+              {(
+                [
+                  { href: "/projects/", label: "Projects" },
+                  { href: "/faq/", label: "FAQ" },
+                  { href: "/history/", label: "History" },
+                ] as const
+              ).map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  style={{
+                    color: "var(--willville-paper)",
+                    opacity: 0.4,
+                    textDecoration: "none",
+                    textShadow: "0 1px 4px rgba(0,0,0,0.8)",
+                  }}
+                >
+                  {label}
+                </Link>
+              ))}
+            </div>
           )}
 
           {isHistoryMode && (
