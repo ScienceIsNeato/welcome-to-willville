@@ -665,17 +665,16 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             <div
               style={{
                 position: "absolute",
-                bottom: 0,
-                left: 0,
-                right: 0,
+                bottom: stageControlBottom,
+                right: 16,
                 display: "flex",
-                justifyContent: "center",
-                gap: 28,
-                padding: "8px 16px 12px",
-                fontSize: 13,
-                letterSpacing: 0.5,
+                gap: 0,
+                color: "var(--willville-paper)",
+                opacity: 0.8,
+                fontSize: 14,
+                letterSpacing: 0.6,
                 pointerEvents: "auto",
-                zIndex: 10,
+                textShadow: "0 1px 4px rgba(0,0,0,0.6)",
               }}
             >
               {(
@@ -684,19 +683,19 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                   { href: "/faq/", label: "FAQ" },
                   { href: "/history/", label: "History" },
                 ] as const
-              ).map(({ href, label }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  style={{
-                    color: "var(--willville-paper)",
-                    opacity: 0.4,
-                    textDecoration: "none",
-                    textShadow: "0 1px 4px rgba(0,0,0,0.8)",
-                  }}
-                >
-                  {label}
-                </Link>
+              ).map(({ href, label }, i) => (
+                <span key={href}>
+                  {i > 0 && " · "}
+                  <Link
+                    href={href}
+                    style={{
+                      color: "inherit",
+                      textDecoration: "none",
+                    }}
+                  >
+                    {label}
+                  </Link>
+                </span>
               ))}
             </div>
           )}
