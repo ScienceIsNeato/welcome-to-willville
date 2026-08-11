@@ -122,6 +122,8 @@ export type CanalBoat = {
   ciState?: "success" | "failure" | "pending" | null;
   /** True when the PR still has unresolved review threads. */
   hasOpenComments?: boolean;
+  /** True when this PR lives in a private repo. */
+  isPrivate?: boolean;
 };
 
 /**

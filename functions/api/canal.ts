@@ -35,6 +35,7 @@ import {
   readPersistedManifestCacheCachedAt,
   type ManifestCacheStore,
 } from "./town-manifests";
+import { isMayorRequest } from "./mayor-auth";
 
 interface Env {
   GITHUB_PAT?: string;
@@ -81,23 +82,41 @@ function isCanalSnapshotStale(
   return manifestTime > snapshotManifestTime;
 }
 
+function redactForTourist(boats: CanalBoat[]): CanalBoat[] {
+  // Default-redact: keep a real title only when the boat is *explicitly* public
+  // (isPrivate === false). Durable snapshots persisted before isPrivate existed
+  // lack the field; treating "unknown" as private prevents leaking real private
+  // PR titles from pre-deploy KV rows until the next bell rebuild stamps it.
+  return boats.map((b) =>
+    b.isPrivate === false ? b : { ...b, title: "private" },
+  );
+}
+
 function canalResponse(
   request: Request,
+  mayor: boolean,
   generatedAt: string,
   boats: CanalBoat[],
   extra?: Record<string, unknown>,
 ): Response {
+  const visibleBoats = mayor ? boats : redactForTourist(boats);
   return new Response(
     JSON.stringify({
-      mayor: true,
+      mayor,
       generatedAt,
-      boats,
+      boats: visibleBoats,
       ...extra,
     }),
     {
       headers: withCorsHeaders(request, {
         "Content-Type": "application/json; charset=utf-8",
-        "Cache-Control": "public, s-maxage=45, stale-while-revalidate=180",
+        // The payload depends on the mayor cookie, so Vary on Cookie — otherwise
+        // an edge cache could serve a redacted tourist body to a mayor request
+        // (or a cached body across the mayor/tourist boundary). CORS appends Origin.
+        Vary: "Cookie",
+        "Cache-Control": mayor
+          ? "private, no-store"
+          : "public, s-maxage=45, stale-while-revalidate=180",
       }),
     },
   );
@@ -144,6 +163,10 @@ async function rebuildAndPersistCanalSnapshot(
 }
 
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
+  // Resolve mayor status once (verifies the signed cookie) and thread the
+  // boolean through every response path — cheaper than re-checking per branch.
+  const mayor = await isMayorRequest(request, env);
+
   // Fast path: serve the durable snapshot the bell persisted. No GitHub round
   // trip, so a hard refresh paints the canal immediately — unless the snapshot
   // fell behind the manifest cache (a bell ring refreshed manifests but the
@@ -154,11 +177,17 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       env.WILLVILLE_MANIFEST_CACHE,
     );
     if (!isCanalSnapshotStale(snapshot, manifestCachedAt)) {
-      return canalResponse(request, snapshot.generatedAt, snapshot.boats, {
-        ...(snapshot.lastBellRingAt && {
-          lastBellRingAt: snapshot.lastBellRingAt,
-        }),
-      });
+      return canalResponse(
+        request,
+        mayor,
+        snapshot.generatedAt,
+        snapshot.boats,
+        {
+          ...(snapshot.lastBellRingAt && {
+            lastBellRingAt: snapshot.lastBellRingAt,
+          }),
+        },
+      );
     }
 
     const token = env.GITHUB_PAT;
@@ -171,20 +200,25 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
           manifestCachedAt,
           snapshot,
         );
-        return canalResponse(request, repaired.generatedAt, repaired.boats);
+        return canalResponse(
+          request,
+          mayor,
+          repaired.generatedAt,
+          repaired.boats,
+        );
       } catch {
         // Rebuild failed — fall back to serving the stale snapshot so the
         // canal stays available rather than blank.
       }
     }
 
-    return canalResponse(request, snapshot.generatedAt, snapshot.boats);
+    return canalResponse(request, mayor, snapshot.generatedAt, snapshot.boats);
   }
 
   const token = env.GITHUB_PAT;
   if (!token) {
     // Without a token we can't query GraphQL. Return an empty canal.
-    return canalResponse(request, new Date().toISOString(), [], {
+    return canalResponse(request, mayor, new Date().toISOString(), [], {
       warning: "GITHUB_PAT not configured — canal is empty.",
     });
   }
@@ -193,9 +227,9 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   // still sees boats, but do not persist — the bell remains the sole writer.
   try {
     const boats = await buildCanalBoats(token, env.ALLY_GITHUB_PAT);
-    return canalResponse(request, new Date().toISOString(), boats);
+    return canalResponse(request, mayor, new Date().toISOString(), boats);
   } catch (err) {
-    return canalResponse(request, new Date().toISOString(), [], {
+    return canalResponse(request, mayor, new Date().toISOString(), [], {
       warning: String(err),
     });
   }

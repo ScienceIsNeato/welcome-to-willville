@@ -164,6 +164,7 @@ function mapPr(pr: GraphQLPR): CanalBoat {
     prNumber: pr.number,
     repo: pr.repository.nameWithOwner,
     title: pr.title,
+    isPrivate: pr.repository.isPrivate,
     author: pr.author?.login ?? "unknown",
     url: pr.url,
     lock,
