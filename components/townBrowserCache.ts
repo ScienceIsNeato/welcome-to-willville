@@ -3,8 +3,16 @@ import type { CanalBoat } from "@/lib/canal";
 
 const BROWSER_TOWN_CACHE_KEY = "willville:town:last:v1";
 
+// Bumped 1 -> 2 to invalidate entries written by older builds. Those stamped
+// `cachedAt` with the client wall-clock (see the fallback removed below), which
+// always beat the server's snapshot `generatedAt` and pinned stale board data
+// (the freshness guard in useTownStageState discarded fresher API responses).
+// Old v1 entries now fail the read check and are ignored until overwritten.
 type BrowserTownSnapshot = {
-  schemaVersion: 1;
+  schemaVersion: 2;
+  // Server snapshot build time (the API's `generatedAt`). Empty string when the
+  // server didn't supply one — a deliberate "unknown recency" sentinel that
+  // parses to NaN, so this cache can never win against a real API response.
   cachedAt: string;
   stops: Stop[];
 };
@@ -31,7 +39,7 @@ export function readBrowserTownSnapshot(): BrowserTownSnapshot | null {
 
     const parsed = JSON.parse(raw) as Partial<BrowserTownSnapshot>;
     if (
-      parsed.schemaVersion !== 1 ||
+      parsed.schemaVersion !== 2 ||
       typeof parsed.cachedAt !== "string" ||
       !Array.isArray(parsed.stops)
     ) {
@@ -39,7 +47,7 @@ export function readBrowserTownSnapshot(): BrowserTownSnapshot | null {
     }
 
     return {
-      schemaVersion: 1,
+      schemaVersion: 2,
       cachedAt: parsed.cachedAt,
       stops: parsed.stops as Stop[],
     };
@@ -56,18 +64,22 @@ export function writeBrowserTownSnapshot(
     return;
   }
 
+  // Only ever trust the server's snapshot time. If it's missing, store "" (an
+  // "unknown recency" sentinel) rather than the client wall-clock — a local
+  // clock stamp would spuriously beat the server's `generatedAt` and pin stale
+  // data. NaN-parsing "" makes the freshness guard fall through to the API.
   const incomingCachedAt = options.cachedAt;
   const cachedAt =
     typeof incomingCachedAt === "string" &&
     Number.isFinite(parseTimestamp(incomingCachedAt))
       ? incomingCachedAt
-      : new Date().toISOString();
+      : "";
 
   try {
     window.localStorage.setItem(
       BROWSER_TOWN_CACHE_KEY,
       JSON.stringify({
-        schemaVersion: 1,
+        schemaVersion: 2,
         cachedAt,
         stops,
       } satisfies BrowserTownSnapshot),

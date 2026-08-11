@@ -1,7 +1,7 @@
 {
   "agent": {
-    "status": "Moving CI onto the official slop-mop action and dropping a workaround that's no longer needed",
-    "direction": "Confirm the action keeps the gates green on the newer slop-mop, then move on",
-    "last_update": "2026-06-21T00:00:00Z"
+    "status": "Fixed the town board showing weeks-old repo info — a stale browser copy was outranking fresh data. Reran the bell so the live board is current again.",
+    "direction": "Land the freshness fix so boards stop getting pinned to old data between bell rings",
+    "last_update": "2026-08-11T00:00:00Z"
   }
 }
