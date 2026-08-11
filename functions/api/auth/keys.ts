@@ -4,9 +4,9 @@
  * Validates the provided key against the configured secret. On success,
  * sets a long-lived signed cookie that unlocks Mayor-only views of /api/town.
  */
-interface Env {
-  WILLVILLE_MAYOR_KEY?: string;
-}
+import { issueMayorCookie, type MayorEnv } from "../mayor-auth";
+
+type Env = MayorEnv;
 
 function constantTimeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
@@ -27,14 +27,8 @@ const handle: PagesFunction<Env> = async ({ request, env }) => {
       headers: { "Content-Type": "application/json; charset=utf-8" },
     });
   }
-  const cookie = [
-    "willville_mayor=1",
-    "Path=/",
-    "HttpOnly",
-    "SameSite=Lax",
-    "Secure",
-    `Max-Age=${60 * 60 * 24 * 30}`,
-  ].join("; ");
+  // Signed cookie (HMAC of the key) rather than a forgeable fixed value.
+  const cookie = (await issueMayorCookie(env))!;
   return new Response(JSON.stringify({ mayor: true }), {
     status: 200,
     headers: {
