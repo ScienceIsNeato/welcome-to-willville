@@ -92,7 +92,10 @@ export function writeBrowserTownSnapshot(
 const BROWSER_CANAL_CACHE_KEY = "willville:canal:last:v1";
 
 type BrowserCanalSnapshot = {
-  schemaVersion: 1;
+  // Bumped 1 -> 2 for the same reason as the town cache above: older builds
+  // stamped cachedAt with the client wall-clock, which outranked the server's
+  // snapshot time and pinned stale boats. Old v1 entries are now ignored.
+  schemaVersion: 2;
   cachedAt: string;
   boats: CanalBoat[];
 };
@@ -110,7 +113,7 @@ export function readBrowserCanalSnapshot(): BrowserCanalSnapshot | null {
 
     const parsed = JSON.parse(raw) as Partial<BrowserCanalSnapshot>;
     if (
-      parsed.schemaVersion !== 1 ||
+      parsed.schemaVersion !== 2 ||
       typeof parsed.cachedAt !== "string" ||
       !Array.isArray(parsed.boats)
     ) {
@@ -118,7 +121,7 @@ export function readBrowserCanalSnapshot(): BrowserCanalSnapshot | null {
     }
 
     return {
-      schemaVersion: 1,
+      schemaVersion: 2,
       cachedAt: parsed.cachedAt,
       boats: parsed.boats as CanalBoat[],
     };
@@ -135,18 +138,21 @@ export function writeBrowserCanalSnapshot(
     return;
   }
 
+  // Same rule as the town cache: trust only the server's snapshot time; store
+  // "" (parses to NaN) when it's absent so a cached copy can never outrank a
+  // real API response.
   const incomingCachedAt = options.cachedAt;
   const cachedAt =
     typeof incomingCachedAt === "string" &&
     Number.isFinite(parseTimestamp(incomingCachedAt))
       ? incomingCachedAt
-      : new Date().toISOString();
+      : "";
 
   try {
     window.localStorage.setItem(
       BROWSER_CANAL_CACHE_KEY,
       JSON.stringify({
-        schemaVersion: 1,
+        schemaVersion: 2,
         cachedAt,
         boats,
       } satisfies BrowserCanalSnapshot),
