@@ -33,7 +33,11 @@ async function mayorToken(key: string): Promise<string> {
     false,
     ["sign"],
   );
-  const sig = await crypto.subtle.sign("HMAC", cryptoKey, enc.encode(MAC_LABEL));
+  const sig = await crypto.subtle.sign(
+    "HMAC",
+    cryptoKey,
+    enc.encode(MAC_LABEL),
+  );
   return Array.from(new Uint8Array(sig))
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");

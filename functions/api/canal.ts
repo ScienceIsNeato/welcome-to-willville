@@ -177,11 +177,17 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       env.WILLVILLE_MANIFEST_CACHE,
     );
     if (!isCanalSnapshotStale(snapshot, manifestCachedAt)) {
-      return canalResponse(request, mayor, snapshot.generatedAt, snapshot.boats, {
-        ...(snapshot.lastBellRingAt && {
-          lastBellRingAt: snapshot.lastBellRingAt,
-        }),
-      });
+      return canalResponse(
+        request,
+        mayor,
+        snapshot.generatedAt,
+        snapshot.boats,
+        {
+          ...(snapshot.lastBellRingAt && {
+            lastBellRingAt: snapshot.lastBellRingAt,
+          }),
+        },
+      );
     }
 
     const token = env.GITHUB_PAT;
@@ -194,7 +200,12 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
           manifestCachedAt,
           snapshot,
         );
-        return canalResponse(request, mayor, repaired.generatedAt, repaired.boats);
+        return canalResponse(
+          request,
+          mayor,
+          repaired.generatedAt,
+          repaired.boats,
+        );
       } catch {
         // Rebuild failed — fall back to serving the stale snapshot so the
         // canal stays available rather than blank.
