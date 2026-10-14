@@ -32,41 +32,40 @@ const CANAL_BANKS = [
 // canal exit (nudged down and left from the old center).
 const OPEN_SEA_CENTER = { x: 1210, y: 930 } as const;
 
-// Boats spread into open sea purely by age. Each zone is exactly 24h wide and
-// sits one concentric ring further out; every ring uses the same arc width, so
-// age alone fans the boats — older boats land on bigger rings that naturally
-// have more circumference (room) to spread. Boats from the same repo cluster
-// together on their ring and overlap.
+// Boats spread into open sea purely by age: each zone is exactly 24h wide and
+// sits one concentric ring further out. Across the current, the fleet is a
+// bell curve: every ship draws one stable z-score from its own seeded normal
+// distribution and holds that lane for life — its angular offset from the
+// Gulf Stream midline is z·σ, so its drift from the spine grows with age
+// while the cross-section stays gaussian (dense midline, rarefied edges).
+// No cluster lanes, no stamped parallel lines.
 //
 // With 2-year history, rings at 108px spacing reach ~78k px radius — well past
 // the SVG canvas, just like the Gulf Stream heading to the African coast. Pan
 // east to see older merges streaming off into the open ocean.
 const OPEN_SEA_INNER_RADIUS = 150;
 const OPEN_SEA_RING_SPACING = 108;
-const OPEN_SEA_HALF_SPAN = 0.85;
 const OPEN_SEA_ZONE_HOURS = 24;
 const OPEN_SEA_MAX_ZONE = 730; // 2 years of daily zones — no age clamping
-// Clusters fill the center (0°, straight out of the bay) first and only fan to
-// the sides as more pile up — this is the angle between adjacent cluster centers.
-const OPEN_SEA_CLUSTER_ANGLE_STEP = 0.32;
-// Same-repo boats scatter into a loose overlapping clump (a mini-armada) instead
-// of a regular stamped line: golden-angle packing plus a seeded jitter.
-const GOLDEN_ANGLE = 2.399963;
-const OPEN_SEA_CLUSTER_STEP = 22;
-const OPEN_SEA_CLUSTER_JITTER = 16;
+// Standard deviation of a ship's angular offset from the stream midline.
+const OPEN_SEA_SIGMA = 0.26;
+// Clamp the tails so one unlucky draw can't sail a ship backward up the coast.
+const OPEN_SEA_MAX_Z = 2.6;
+// Radial scatter within a ring (fraction of ring spacing) so age bands read
+// as a continuous plume instead of hard concentric circles.
+const OPEN_SEA_RADIAL_JITTER = 0.9;
+// Milestone rings span the visible plume: ±2.5σ covers ~99% of ships.
+const OPEN_SEA_RING_HALF_ARC = OPEN_SEA_SIGMA * 2.5;
 
 /**
- * How wide the boat arc is at a given zone index.
- * Full spread for the first week; then hyperbolic convergence toward the spine
- * so the fleet looks like rivers merging into a single Gulf Stream current.
- *   zone 6  (7d)  → 1.0× = full fan
- *   zone 13 (14d) → 0.5×
- *   zone 27 (28d) → 0.25×
- *   zone 59 (2mo) → 0.11×  (basically a ribbon)
+ * Stable standard-normal draw for a seed (Box–Muller over the seeded PRNG),
+ * clamped to ±OPEN_SEA_MAX_Z. Same seed → same z-score, every render.
  */
-function zoneHalfSpan(z: number): number {
-  if (z < 7) return OPEN_SEA_HALF_SPAN;
-  return OPEN_SEA_HALF_SPAN * (7 / (z + 1));
+function seaGaussian(seed: number): number {
+  const u1 = Math.max(seaRand(seed), 1e-6);
+  const u2 = seaRand(seed ^ 0x9e3779b9);
+  const g = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  return Math.max(-OPEN_SEA_MAX_Z, Math.min(OPEN_SEA_MAX_Z, g));
 }
 
 // Gulf Stream curve parameters.
@@ -185,55 +184,26 @@ export function Canal({ boats, layer = "all", historyCurrentTime }: Props) {
     }
 
     for (const [z, boatsInZone] of zoneBoats) {
-      const radius = OPEN_SEA_INNER_RADIUS + z * OPEN_SEA_RING_SPACING;
-      // Arc width shrinks with age: full fan near shore, single ribbon far out.
-      const halfSpan = zoneHalfSpan(z);
-
-      // Cluster boats from the same repo together on this ring.
-      const repoGroups = new Map<string, CanalBoat[]>();
-      for (const b of boatsInZone) {
-        if (!repoGroups.has(b.repo)) repoGroups.set(b.repo, []);
-        repoGroups.get(b.repo)!.push(b);
+      // The spine curves from SE (near shore) to NNE (far out) via
+      // gulfStreamAngle — ships ride the current as it bends northward.
+      const streamAngle = gulfStreamAngle(z);
+      for (const boat of boatsInZone) {
+        const seed = seaHash(`${boat.repo}-${boat.prNumber}`);
+        // The ship's lifetime lane: a bell-curve draw off the midline. A fixed
+        // angular offset means its distance from the spine grows linearly as
+        // it ages outward — deviation over time, proportional to its z-score.
+        const theta = streamAngle + seaGaussian(seed) * OPEN_SEA_SIGMA;
+        const radius =
+          OPEN_SEA_INNER_RADIUS +
+          z * OPEN_SEA_RING_SPACING +
+          (seaRand(seed ^ 0x85ebca6b) - 0.5) *
+            OPEN_SEA_RING_SPACING *
+            OPEN_SEA_RADIAL_JITTER;
+        positions.set(`${boat.repo}-${boat.prNumber}`, {
+          x: cx + radius * Math.cos(theta),
+          y: cy + radius * Math.sin(theta),
+        });
       }
-      // Newest cluster first — it takes the center channel; the rest fan outward.
-      const clusters = [...repoGroups.values()].sort(
-        (a, b) => Math.max(...b.map(timeOf)) - Math.max(...a.map(timeOf)),
-      );
-
-      clusters.forEach((cluster, ci) => {
-        // Center-out placement: 0 → dead center on the spine, then alternate
-        // to either side so the middle fills before the edges.
-        // The spine itself curves from SE (near shore) to NNE (far out) via
-        // gulfStreamAngle — boats ride the current as it bends northward.
-        const rank = Math.ceil(ci / 2) * (ci % 2 === 1 ? 1 : -1);
-        const streamAngle = gulfStreamAngle(z);
-        const theta = Math.max(
-          streamAngle - halfSpan,
-          Math.min(
-            streamAngle + halfSpan,
-            streamAngle + rank * OPEN_SEA_CLUSTER_ANGLE_STEP,
-          ),
-        );
-        const gx = cx + radius * Math.cos(theta);
-        const gy = cy + radius * Math.sin(theta);
-
-        // Scatter same-repo boats into a loose overlapping clump (mini-armada).
-        cluster
-          .sort((a, b) => timeOf(a) - timeOf(b))
-          .forEach((boat, bi) => {
-            const seed = seaHash(`${boat.repo}-${boat.prNumber}`);
-            const jitterA = seaRand(seed);
-            const jitterD = seaRand(seed ^ 0x9e3779b9);
-            const a = bi * GOLDEN_ANGLE + jitterA * 0.9;
-            const d =
-              OPEN_SEA_CLUSTER_STEP * Math.sqrt(bi) +
-              (jitterD - 0.5) * OPEN_SEA_CLUSTER_JITTER;
-            positions.set(`${boat.repo}-${boat.prNumber}`, {
-              x: gx + Math.cos(a) * d,
-              y: gy + Math.sin(a) * d,
-            });
-          });
-      });
     }
     return positions;
   }, [boats, now, historyCurrentTime]);
@@ -406,13 +376,12 @@ export function Canal({ boats, layer = "all", historyCurrentTime }: Props) {
               const cx = OPEN_SEA_CENTER.x;
               const cy = OPEN_SEA_CENTER.y;
 
-              // Each ring spans only as wide as the boats at that age — the
-              // same hyperbolic decay used for boat placement. Near shore the
-              // arcs are wide fans; far out they narrow to a short tick on the
-              // spine, giving the Nike-swoosh / Gulf Stream convergence shape.
-              // The spine angle rotates with the current so rings always face
-              // the direction the fleet is heading at that distance.
-              const halfArc = Math.max(0.02, zoneHalfSpan(zone));
+              // Each ring spans the visible plume (±2.5σ of the bell curve
+              // ships are drawn from), so the arcs trace the widening cone of
+              // the fleet. The spine angle rotates with the current so rings
+              // always face the direction the fleet is heading at that
+              // distance.
+              const halfArc = OPEN_SEA_RING_HALF_ARC;
               const streamAngle = gulfStreamAngle(zone);
               const startAngle = streamAngle - halfArc;
               const endAngle = streamAngle + halfArc;
