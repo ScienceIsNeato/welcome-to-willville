@@ -16,7 +16,7 @@ import { TownSiteAppearances } from "./TownSiteAppearances";
 import { WorldWorkerLayer } from "./WorldWorkerLayer";
 import { FogDog } from "./FogDog";
 import { Leviathan } from "./Leviathan";
-import { WillbotChatPanel } from "./WillbotChatPanel";
+import { WILLBOT_PANEL_WIDTH, WillbotChatPanel } from "./WillbotChatPanel";
 import { SpecialTownLandmarks } from "./SpecialTownLandmarks";
 import { TownPerfPanel } from "./TownPerfPanel";
 import { PanelChromeControls } from "./PanelChromeControls";
@@ -39,7 +39,12 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   const [initialCameraTransform] = useState(() => state.cameraTransform.get());
 
   // Willbot chat (stub) — opened by clicking the leviathan in the Atlantic.
-  const [showWillbotChat, setShowWillbotChat] = useState(false);
+  // Surfaces right below the beast (computed from its on-screen rect at click
+  // time), then lives wherever the visitor drags it.
+  const [willbotChatPosition, setWillbotChatPosition] = useState<{
+    left: number;
+    top: number;
+  } | null>(null);
 
   const {
     localStops,
@@ -480,9 +485,33 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                   <WorldWorkerLayer stops={currentStops} />
                   <FogDog />
                   <Leviathan
-                    onChat={() => {
+                    onChat={(anchor) => {
                       markSkipDrag();
-                      setShowWillbotChat(true);
+                      const stage = stageRef.current;
+                      const stageRect = stage?.getBoundingClientRect();
+                      if (!stageRect) {
+                        setWillbotChatPosition({ left: 18, top: 18 });
+                        return;
+                      }
+                      const panelWidth = Math.min(
+                        WILLBOT_PANEL_WIDTH,
+                        stageRect.width - 16,
+                      );
+                      const left = Math.min(
+                        Math.max(
+                          8,
+                          anchor.left +
+                            anchor.width / 2 -
+                            stageRect.left -
+                            panelWidth / 2,
+                        ),
+                        stageRect.width - panelWidth - 8,
+                      );
+                      const top = Math.min(
+                        Math.max(8, anchor.bottom - stageRect.top + 12),
+                        stageRect.height - 160,
+                      );
+                      setWillbotChatPosition({ left, top });
                     }}
                   />
                   {populating !== "idle" && (
@@ -715,10 +744,10 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
             </nav>
           )}
 
-          {showWillbotChat && !isHistoryMode && !isRepositionMode && (
+          {willbotChatPosition && !isHistoryMode && !isRepositionMode && (
             <WillbotChatPanel
-              mobileSafeMode={mobileSafeMode}
-              onClose={() => setShowWillbotChat(false)}
+              initialPosition={willbotChatPosition}
+              onClose={() => setWillbotChatPosition(null)}
             />
           )}
 

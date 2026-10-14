@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 
 /**
  * Chat with Willbot — STUB.
@@ -11,6 +12,12 @@ import { useEffect, useRef, useState } from "react";
  * change — the request/response contract here stays:
  *
  *   POST /api/willbot  { message: string }  →  { reply: string, stub?: boolean }
+ *
+ * The panel surfaces right below the leviathan (TownStage computes the spot
+ * from the beast's on-screen position at click time) and can be dragged
+ * anywhere in the stage by its header. Dragging is plain left/top state —
+ * the panel doesn't track the map camera after it opens, which is the point:
+ * grab it and park it wherever it isn't in the way.
  */
 
 type ChatMessage = {
@@ -19,9 +26,12 @@ type ChatMessage = {
 };
 
 type Props = {
-  mobileSafeMode: boolean;
+  /** Where to surface, in stage-relative pixels (below the leviathan). */
+  initialPosition: { left: number; top: number };
   onClose: () => void;
 };
+
+export const WILLBOT_PANEL_WIDTH = 340;
 
 const GREETING: ChatMessage = {
   role: "willbot",
@@ -31,16 +41,60 @@ const GREETING: ChatMessage = {
     "Say something and I'll answer as best a stub can.",
 };
 
-export function WillbotChatPanel({ mobileSafeMode, onClose }: Props) {
+export function WillbotChatPanel({ initialPosition, onClose }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [position, setPosition] = useState(initialPosition);
+  const panelRef = useRef<HTMLElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const dragOffset = useRef<{ dx: number; dy: number } | null>(null);
+
+  // Re-anchor if the leviathan is clicked again while the panel is open —
+  // state adjustment during render (not an effect) per the React docs, so
+  // the drag position resets without a cascading render or losing messages.
+  const [lastAnchor, setLastAnchor] = useState(initialPosition);
+  if (lastAnchor !== initialPosition) {
+    setLastAnchor(initialPosition);
+    setPosition(initialPosition);
+  }
 
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, sending]);
+
+  function clampToParent(left: number, top: number) {
+    const panel = panelRef.current;
+    const parent = panel?.offsetParent as HTMLElement | null;
+    if (!panel || !parent) return { left, top };
+    return {
+      left: Math.min(
+        Math.max(0, left),
+        Math.max(0, parent.clientWidth - panel.offsetWidth),
+      ),
+      top: Math.min(Math.max(0, top), Math.max(0, parent.clientHeight - 48)),
+    };
+  }
+
+  function onDragStart(e: ReactPointerEvent<HTMLElement>) {
+    dragOffset.current = {
+      dx: e.clientX - position.left,
+      dy: e.clientY - position.top,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function onDragMove(e: ReactPointerEvent<HTMLElement>) {
+    const offset = dragOffset.current;
+    if (!offset) return;
+    setPosition(clampToParent(e.clientX - offset.dx, e.clientY - offset.dy));
+  }
+
+  function onDragEnd(e: ReactPointerEvent<HTMLElement>) {
+    dragOffset.current = null;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  }
 
   async function send() {
     const message = draft.trim();
@@ -79,17 +133,27 @@ export function WillbotChatPanel({ mobileSafeMode, onClose }: Props) {
 
   return (
     <aside
+      ref={panelRef}
       aria-label="Chat with Willbot"
+      // The camera hook attaches NATIVE pointer listeners to the stage div,
+      // which run before React's synthetic handlers — so stopPropagation alone
+      // can't keep a panel drag from also panning the map. data-no-pan is the
+      // camera's own opt-out (useTownCamera checks event.target.closest).
+      data-no-pan="true"
+      onPointerDown={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      onTouchStart={(e) => e.stopPropagation()}
+      onWheel={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
       style={{
         position: "absolute",
-        right: mobileSafeMode ? 8 : 18,
-        bottom: mobileSafeMode ? 8 : 18,
+        left: position.left,
+        top: position.top,
         zIndex: 40,
-        width: mobileSafeMode ? "calc(100% - 16px)" : 340,
-        maxWidth: 380,
+        width: `min(${WILLBOT_PANEL_WIDTH}px, calc(100vw - 16px))`,
         display: "flex",
         flexDirection: "column",
-        maxHeight: mobileSafeMode ? "55%" : 420,
+        maxHeight: 420,
         borderRadius: 10,
         overflow: "hidden",
         border: "2px solid var(--willville-ink)",
@@ -100,6 +164,9 @@ export function WillbotChatPanel({ mobileSafeMode, onClose }: Props) {
       }}
     >
       <header
+        onPointerDown={onDragStart}
+        onPointerMove={onDragMove}
+        onPointerUp={onDragEnd}
         style={{
           display: "flex",
           alignItems: "center",
@@ -108,6 +175,9 @@ export function WillbotChatPanel({ mobileSafeMode, onClose }: Props) {
           padding: "8px 10px",
           backgroundColor: "var(--willville-ink)",
           color: "var(--willville-paper)",
+          cursor: "grab",
+          touchAction: "none",
+          userSelect: "none",
         }}
       >
         <strong style={{ letterSpacing: 1 }}>
@@ -119,6 +189,7 @@ export function WillbotChatPanel({ mobileSafeMode, onClose }: Props) {
         <button
           type="button"
           onClick={onClose}
+          onPointerDown={(e) => e.stopPropagation()}
           aria-label="Close Willbot chat"
           style={{
             border: "none",

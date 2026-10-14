@@ -32,8 +32,12 @@ const CREAM = "#f4f1e8";
 const GLOW = "#7fe3d4";
 
 type Props = {
-  /** Open the Willbot chat. Wired by TownStage; also marks skip-drag. */
-  onChat: () => void;
+  /**
+   * Open the Willbot chat. Receives the leviathan's current on-screen rect
+   * so TownStage can surface the panel right below the beast (wherever the
+   * camera has it at click time).
+   */
+  onChat: (anchor: DOMRect) => void;
 };
 
 export function Leviathan({ onChat }: Props) {
@@ -82,11 +86,11 @@ export function Leviathan({ onChat }: Props) {
         tabIndex={0}
         aria-label="Willbot, the harbor leviathan — click to chat"
         style={{ cursor: "pointer" }}
-        onClick={onChat}
+        onClick={(e) => onChat(e.currentTarget.getBoundingClientRect())}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            onChat();
+            onChat(e.currentTarget.getBoundingClientRect());
           }
         }}
       >
