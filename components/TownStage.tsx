@@ -15,6 +15,8 @@ import { GeneratedTownBase } from "./GeneratedTownBase";
 import { TownSiteAppearances } from "./TownSiteAppearances";
 import { WorldWorkerLayer } from "./WorldWorkerLayer";
 import { FogDog } from "./FogDog";
+import { Leviathan } from "./Leviathan";
+import { WillbotChatPanel } from "./WillbotChatPanel";
 import { SpecialTownLandmarks } from "./SpecialTownLandmarks";
 import { TownPerfPanel } from "./TownPerfPanel";
 import { PanelChromeControls } from "./PanelChromeControls";
@@ -35,6 +37,9 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
   // during a zoom gesture). Passing a stable string here means a parent
   // re-render won't rewrite the live transform and break the freeze.
   const [initialCameraTransform] = useState(() => state.cameraTransform.get());
+
+  // Willbot chat (stub) — opened by clicking the leviathan in the Atlantic.
+  const [showWillbotChat, setShowWillbotChat] = useState(false);
 
   const {
     localStops,
@@ -474,6 +479,12 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                   />
                   <WorldWorkerLayer stops={currentStops} />
                   <FogDog />
+                  <Leviathan
+                    onChat={() => {
+                      markSkipDrag();
+                      setShowWillbotChat(true);
+                    }}
+                  />
                   {populating !== "idle" && (
                     <BellMessengers
                       stops={currentStops}
@@ -702,6 +713,13 @@ export function TownStage({ initialStops }: { initialStops: Stop[] }) {
                 </span>
               ))}
             </nav>
+          )}
+
+          {showWillbotChat && !isHistoryMode && !isRepositionMode && (
+            <WillbotChatPanel
+              mobileSafeMode={mobileSafeMode}
+              onClose={() => setShowWillbotChat(false)}
+            />
           )}
 
           {isHistoryMode && (
