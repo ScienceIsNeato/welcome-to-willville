@@ -57,7 +57,7 @@ test("success: forwards message, returns live reply without stub", async () => {
   assert.deepEqual(sent, {
     session_id: "abc-123",
     message: "who is this?",
-    speak: false,
+    speak: true,
     stream: false,
   });
 });
@@ -169,4 +169,56 @@ test("probe: live only on {ok:true}; stub on error/missing secrets", async () =>
     await probeWillbot({}, fetchReturning(200, { ok: true })),
     "stub",
   );
+});
+
+test("voice: speak defaults true, audio+visemes pass through camelCased", async () => {
+  let sent: { speak?: boolean } = {};
+  const fetcher: typeof fetch = async (_url, init) => {
+    sent = JSON.parse(String(init?.body));
+    return new Response(
+      JSON.stringify({
+        reply: "hear me",
+        audio_wav_b64: "UklGRg==",
+        visemes: [
+          [0.04, "AI"],
+          [0.5, "rest"],
+        ],
+      }),
+      { status: 200 },
+    );
+  };
+  const result = await proxyWillbotChat(
+    { message: "speak up", sessionId: "abc" },
+    ENV,
+    fetcher,
+  );
+  assert.equal(sent.speak, true);
+  assert.equal(result.payload.audioWavB64, "UklGRg==");
+  assert.deepEqual(result.payload.visemes, [
+    [0.04, "AI"],
+    [0.5, "rest"],
+  ]);
+});
+
+test("voice: speak:false is forwarded; absent audio stays absent", async () => {
+  let sent: { speak?: boolean } = {};
+  const fetcher: typeof fetch = async (_url, init) => {
+    sent = JSON.parse(String(init?.body));
+    return new Response(
+      JSON.stringify({
+        reply: "text only",
+        audio_wav_b64: null,
+        visemes: null,
+      }),
+      { status: 200 },
+    );
+  };
+  const result = await proxyWillbotChat(
+    { message: "hush", sessionId: "abc", speak: false },
+    ENV,
+    fetcher,
+  );
+  assert.equal(sent.speak, false);
+  assert.equal("audioWavB64" in result.payload, false);
+  assert.equal("visemes" in result.payload, false);
 });

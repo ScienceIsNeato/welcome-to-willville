@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { onWillbotMouth } from "@/lib/willbot-speech";
+
 /**
  * Willbot — the harbor leviathan.
  *
@@ -13,10 +16,10 @@
  * fan's spine at comparable radius from the bay mouth.
  *
  * Drift uses SVG-native `<animateMotion>` (no rAF); the humps bob with
- * cheap staggered CSS transforms. Art is inline vector for now — the art
- * pipeline can swap in a painted sprite later without touching the chat
- * wiring (the willbot brain itself is being built separately; see
- * functions/api/willbot.ts for the interface this stub calls).
+ * cheap staggered CSS transforms. When Will speaks (lib/willbot-speech),
+ * the mouth lip-syncs to the reply's viseme timeline and the antenna pulses.
+ * Art is inline vector for now — the art pipeline can swap in a painted
+ * sprite later without touching the chat wiring.
  */
 
 const DRIFT_SECONDS = 52;
@@ -31,6 +34,24 @@ const INK_DEEP = "#0c2630";
 const CREAM = "#f4f1e8";
 const GLOW = "#7fe3d4";
 
+/**
+ * Mouth geometry per viseme (Rhubarb-style shape names). The mouth is an
+ * ellipse at the snout; rx/ry carry openness and roundness. Unknown shapes
+ * fall back to "etc" (slightly open) so new vocabularies degrade gracefully.
+ */
+const MOUTH_SHAPES: Record<string, { rx: number; ry: number }> = {
+  rest: { rx: 2.6, ry: 0.35 },
+  MBP: { rx: 2.2, ry: 0.3 },
+  etc: { rx: 2.2, ry: 1.1 },
+  E: { rx: 2.8, ry: 1.6 },
+  AI: { rx: 3.1, ry: 2.6 },
+  O: { rx: 2.1, ry: 2.3 },
+  U: { rx: 1.5, ry: 1.5 },
+  FV: { rx: 2.4, ry: 0.8 },
+  L: { rx: 2.4, ry: 1.8 },
+  WQ: { rx: 1.7, ry: 1.9 },
+};
+
 type Props = {
   /**
    * Open the Willbot chat. Receives the leviathan's current on-screen rect
@@ -41,6 +62,17 @@ type Props = {
 };
 
 export function Leviathan({ onChat }: Props) {
+  const [mouth, setMouth] = useState<{ shape: string; speaking: boolean }>({
+    shape: "rest",
+    speaking: false,
+  });
+
+  useEffect(
+    () => onWillbotMouth((shape, speaking) => setMouth({ shape, speaking })),
+    [],
+  );
+
+  const mouthGeom = MOUTH_SHAPES[mouth.shape] ?? MOUTH_SHAPES.etc!;
   return (
     <g id="leviathan-layer">
       <style>{`
@@ -187,7 +219,20 @@ export function Leviathan({ onChat }: Props) {
               r={2.4}
               fill={GLOW}
             />
-            {/* Antenna: the tell that this leviathan is a bot. */}
+            {/* Mouth — lip-syncs to Will's voice via the speech bus. */}
+            <ellipse
+              cx={86}
+              cy={-22.5}
+              rx={mouthGeom.rx}
+              ry={mouthGeom.ry}
+              transform="rotate(24 86 -22.5)"
+              fill={INK_DEEP}
+              stroke={CREAM}
+              strokeWidth={0.7}
+              style={{ transition: "rx 60ms linear, ry 60ms linear" }}
+            />
+            {/* Antenna: the tell that this leviathan is a bot. It pulses
+                calmly at rest and races while Will is speaking. */}
             <line
               x1={84}
               y1={-37}
@@ -199,6 +244,7 @@ export function Leviathan({ onChat }: Props) {
             />
             <circle
               className="leviathan-antenna-tip"
+              style={mouth.speaking ? { animationDuration: "0.9s" } : undefined}
               cx={88.5}
               cy={-49.5}
               r={2}

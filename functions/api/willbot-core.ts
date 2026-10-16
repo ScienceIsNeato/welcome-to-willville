@@ -12,6 +12,8 @@ export type WillbotEnv = {
 /** Will-bot rejects messages beyond 4000 chars; clamp instead of erroring. */
 const MAX_MESSAGE_CHARS = 4000;
 const CHAT_TIMEOUT_MS = 20_000;
+/** Voice synthesis is slower than text — give spoken replies more room. */
+const SPEAK_TIMEOUT_MS = 45_000;
 const HEALTH_TIMEOUT_MS = 3_000;
 const SESSION_ID_PATTERN = /^[A-Za-z0-9-]{1,64}$/;
 
@@ -54,7 +56,7 @@ function cannedResult(message: string): ProxyResult {
  * secrets without a server.
  */
 export async function proxyWillbotChat(
-  body: { message?: unknown; sessionId?: unknown },
+  body: { message?: unknown; sessionId?: unknown; speak?: unknown },
   env: WillbotEnv,
   fetcher: typeof fetch = fetch,
 ): Promise<ProxyResult> {
@@ -79,6 +81,10 @@ export async function proxyWillbotChat(
     return cannedResult(message);
   }
 
+  // Voice is on unless the visitor muted it; synthesis takes longer than a
+  // text-only reply, so the timeout stretches accordingly.
+  const speak = body.speak !== false;
+
   try {
     const res = await fetcher(`${env.WILLBOT_URL}/api/chat`, {
       method: "POST",
@@ -89,15 +95,19 @@ export async function proxyWillbotChat(
       body: JSON.stringify({
         session_id: sessionId,
         message: message.slice(0, MAX_MESSAGE_CHARS),
-        speak: false,
+        speak,
         stream: false,
       }),
-      signal: AbortSignal.timeout(CHAT_TIMEOUT_MS),
+      signal: AbortSignal.timeout(speak ? SPEAK_TIMEOUT_MS : CHAT_TIMEOUT_MS),
     });
     if (!res.ok) {
       return cannedResult(message);
     }
-    const data = (await res.json()) as { reply?: unknown };
+    const data = (await res.json()) as {
+      reply?: unknown;
+      audio_wav_b64?: unknown;
+      visemes?: unknown;
+    };
     if (typeof data.reply !== "string" || data.reply.length === 0) {
       return cannedResult(message);
     }
@@ -105,6 +115,12 @@ export async function proxyWillbotChat(
       status: 200,
       payload: {
         reply: data.reply,
+        // Voice passthrough — present only when will-bot actually spoke.
+        ...(typeof data.audio_wav_b64 === "string" &&
+          data.audio_wav_b64.length > 0 && {
+            audioWavB64: data.audio_wav_b64,
+          }),
+        ...(Array.isArray(data.visemes) && { visemes: data.visemes }),
         generatedAt: new Date().toISOString(),
       },
     };

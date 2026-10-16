@@ -2,14 +2,16 @@
  * POST /api/willbot — proxy to the real Will-bot, with a canned fallback.
  *
  * Will-bot is a separate private service that answers in character as Will.
- * This function forwards the visitor's message to it (text-only for now —
- * voice is phase 2) and returns the reply verbatim. The persona is the
- * feature: nothing is added, filtered, or framed on this side.
+ * This function forwards the visitor's message to it — voice on by default,
+ * `speak: false` for text-only — and returns the reply verbatim. The persona
+ * is the feature: nothing is added, filtered, or framed on this side.
  *
  * Browser contract (components/WillbotChatPanel.tsx depends on this):
  *
- *   Request:  { message: string, sessionId?: string }
- *   Response: { reply: string, stub?: boolean, generatedAt: string }
+ *   Request:  { message: string, sessionId?: string, speak?: boolean }
+ *   Response: { reply: string, stub?: boolean, generatedAt: string,
+ *               audioWavB64?: string,            // base64 WAV of Will's voice
+ *               visemes?: [number, string][] }   // mouth shapes timed to it
  *
  * Fallback: if the secrets are unset (production today), Will-bot is
  * unreachable, replies non-200, or takes longer than ~20s, the visitor gets
@@ -46,7 +48,7 @@ export const onRequestPost: PagesFunction<WillbotEnv> = async ({
   request,
   env,
 }) => {
-  let body: { message?: unknown; sessionId?: unknown } = {};
+  let body: { message?: unknown; sessionId?: unknown; speak?: unknown } = {};
   try {
     body = (await request.json()) as typeof body;
   } catch {

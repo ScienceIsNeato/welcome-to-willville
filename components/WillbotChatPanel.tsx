@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
+import {
+  speakWillbotReply,
+  stopWillbotSpeech,
+  type VisemeFrame,
+} from "@/lib/willbot-speech";
 
 /**
  * Chat with Willbot — STUB.
@@ -66,6 +71,8 @@ export function WillbotChatPanel({ initialPosition, onClose }: Props) {
   const [sending, setSending] = useState(false);
   // Stub until the first reply says otherwise — the header badge follows it.
   const [stubMode, setStubMode] = useState(true);
+  // Voice on by default; muting also silences any speech mid-sentence.
+  const [muted, setMuted] = useState(false);
   const [position, setPosition] = useState(initialPosition);
   const [sessionId] = useState(obtainSessionId);
   const panelRef = useRef<HTMLElement>(null);
@@ -85,6 +92,9 @@ export function WillbotChatPanel({ initialPosition, onClose }: Props) {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, sending]);
+
+  // Closing the panel cuts Will off mid-sentence; the mouth rests.
+  useEffect(() => stopWillbotSpeech, []);
 
   function clampToParent(left: number, top: number) {
     const panel = panelRef.current;
@@ -128,14 +138,20 @@ export function WillbotChatPanel({ initialPosition, onClose }: Props) {
       const res = await fetch("/api/willbot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, sessionId }),
+        body: JSON.stringify({ message, sessionId, speak: !muted }),
       });
       const payload = (await res.json()) as {
         reply?: string;
         stub?: boolean;
+        audioWavB64?: string;
+        visemes?: VisemeFrame[];
       };
       if (payload.reply) {
         setStubMode(Boolean(payload.stub));
+      }
+      if (payload.audioWavB64 && !muted) {
+        // Fire and forget: the leviathan's mouth follows via the speech bus.
+        void speakWillbotReply(payload.audioWavB64, payload.visemes);
       }
       setMessages((m) => [
         ...m,
@@ -214,23 +230,50 @@ export function WillbotChatPanel({ initialPosition, onClose }: Props) {
             · harbor leviathan{stubMode ? " · stub" : ""}
           </span>
         </strong>
-        <button
-          type="button"
-          onClick={onClose}
-          onPointerDown={(e) => e.stopPropagation()}
-          aria-label="Close Willbot chat"
-          style={{
-            border: "none",
-            background: "transparent",
-            color: "inherit",
-            fontSize: 16,
-            lineHeight: 1,
-            cursor: "pointer",
-            padding: 2,
-          }}
-        >
-          ×
-        </button>
+        <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <button
+            type="button"
+            onClick={() => {
+              setMuted((m) => {
+                if (!m) stopWillbotSpeech();
+                return !m;
+              });
+            }}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label={muted ? "Unmute Will's voice" : "Mute Will's voice"}
+            aria-pressed={muted}
+            title={muted ? "Voice off" : "Voice on"}
+            style={{
+              border: "none",
+              background: "transparent",
+              color: "inherit",
+              fontSize: 13,
+              lineHeight: 1,
+              cursor: "pointer",
+              padding: 2,
+              opacity: muted ? 0.5 : 1,
+            }}
+          >
+            {muted ? "🔇" : "🔊"}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label="Close Willbot chat"
+            style={{
+              border: "none",
+              background: "transparent",
+              color: "inherit",
+              fontSize: 16,
+              lineHeight: 1,
+              cursor: "pointer",
+              padding: 2,
+            }}
+          >
+            ×
+          </button>
+        </span>
       </header>
 
       <div
