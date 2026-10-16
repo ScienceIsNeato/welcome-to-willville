@@ -6,6 +6,10 @@
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
+    // Lets Node-native tests (node --test *.test.ts) import sibling .ts files
+    // with explicit extensions, which Node's ESM loader requires. Safe: the
+    // project never emits (noEmit) and wrangler/next bundle independently.
+    "allowImportingTsExtensions": true,
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",

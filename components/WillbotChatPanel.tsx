@@ -36,16 +36,38 @@ export const WILLBOT_PANEL_WIDTH = 340;
 const GREETING: ChatMessage = {
   role: "willbot",
   text:
-    "You found me. I am the leviathan north of the shipping lanes — " +
-    "willbot, mostly asleep while they finish building my brain. " +
-    "Say something and I'll answer as best a stub can.",
+    "You found me. I am the leviathan north of the shipping lanes. " +
+    "Say something.",
 };
+
+const SESSION_STORAGE_KEY = "willbot-session-id";
+
+/**
+ * One Will-bot session per browser tab: Will's memory is keyed by session id,
+ * so a reload keeps the conversation (sessionStorage survives it) while a new
+ * tab starts fresh. sessionStorage can throw (private windows, blocked
+ * storage) — then the id just lives for this mount.
+ */
+function obtainSessionId(): string {
+  try {
+    const existing = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
+    if (existing) return existing;
+    const id = crypto.randomUUID();
+    window.sessionStorage.setItem(SESSION_STORAGE_KEY, id);
+    return id;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
 
 export function WillbotChatPanel({ initialPosition, onClose }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  // Stub until the first reply says otherwise — the header badge follows it.
+  const [stubMode, setStubMode] = useState(true);
   const [position, setPosition] = useState(initialPosition);
+  const [sessionId] = useState(obtainSessionId);
   const panelRef = useRef<HTMLElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const dragOffset = useRef<{ dx: number; dy: number } | null>(null);
@@ -106,9 +128,15 @@ export function WillbotChatPanel({ initialPosition, onClose }: Props) {
       const res = await fetch("/api/willbot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, sessionId }),
       });
-      const payload = (await res.json()) as { reply?: string };
+      const payload = (await res.json()) as {
+        reply?: string;
+        stub?: boolean;
+      };
+      if (payload.reply) {
+        setStubMode(Boolean(payload.stub));
+      }
       setMessages((m) => [
         ...m,
         {
@@ -183,7 +211,7 @@ export function WillbotChatPanel({ initialPosition, onClose }: Props) {
         <strong style={{ letterSpacing: 1 }}>
           WILLBOT{" "}
           <span style={{ opacity: 0.65, fontWeight: 400 }}>
-            · harbor leviathan · stub
+            · harbor leviathan{stubMode ? " · stub" : ""}
           </span>
         </strong>
         <button
