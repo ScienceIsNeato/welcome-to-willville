@@ -130,22 +130,42 @@ export async function proxyWillbotChat(
   }
 }
 
+export type WillbotProbe = {
+  status: "live" | "stub";
+  /**
+   * When live: the full Will-bot UI (face, Talk mic, voice) ready to embed
+   * in an iframe. Will-bot's own login flow is a `#token=` link that the UI
+   * stores and strips from the address bar — this hands the token to the
+   * visitor's browser, which is Will-bot's designed behavior for its UI.
+   * Today that is local-only by construction: production has no secrets, so
+   * it never produces an embedUrl. Before Will-bot gets a public home, it
+   * needs visitor-grade auth and this field should carry a tokenless URL.
+   */
+  embedUrl?: string;
+};
+
 /** Probe Will-bot's health endpoint; "live" only on a confirmed {ok:true}. */
 export async function probeWillbot(
   env: WillbotEnv,
   fetcher: typeof fetch = fetch,
-): Promise<"live" | "stub"> {
+): Promise<WillbotProbe> {
   if (!env.WILLBOT_URL || !env.WILLBOT_ACCESS_TOKEN) {
-    return "stub";
+    return { status: "stub" };
   }
   try {
     const res = await fetcher(`${env.WILLBOT_URL}/healthz`, {
       signal: AbortSignal.timeout(HEALTH_TIMEOUT_MS),
     });
-    if (!res.ok) return "stub";
+    if (!res.ok) return { status: "stub" };
     const data = (await res.json()) as { ok?: unknown };
-    return data.ok === true ? "live" : "stub";
+    if (data.ok !== true) return { status: "stub" };
+    return {
+      status: "live",
+      embedUrl: `${env.WILLBOT_URL}/#token=${encodeURIComponent(
+        env.WILLBOT_ACCESS_TOKEN,
+      )}`,
+    };
   } catch {
-    return "stub";
+    return { status: "stub" };
   }
 }

@@ -1,7 +1,7 @@
 {
   "agent": {
-    "status": "Full AV willbot is live locally \u2014 the leviathan speaks in Will's cloned voice and lip-syncs while he talks",
-    "direction": "Production wiring once Will-bot has a home that isn't Will's Mac",
-    "last_update": "2026-10-16T15:20:00Z"
+    "status": "Clicking the leviathan now opens the real Will-bot \u2014 animated face, mic Talk, voice \u2014 embedded right in the town",
+    "direction": "Give Will-bot visitor-safe auth so the full experience can ship to production",
+    "last_update": "2026-10-17T08:05:00Z"
   }
 }

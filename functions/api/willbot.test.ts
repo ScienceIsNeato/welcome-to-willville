@@ -150,25 +150,29 @@ test("malformed reply body: canned fallback", async () => {
 });
 
 test("probe: live only on {ok:true}; stub on error/missing secrets", async () => {
+  const live = await probeWillbot(ENV, fetchReturning(200, { ok: true }));
+  assert.equal(live.status, "live");
+  // Live probes carry the full-UI embed link (will-bot's own hash login).
   assert.equal(
-    await probeWillbot(ENV, fetchReturning(200, { ok: true })),
-    "live",
+    live.embedUrl,
+    `${ENV.WILLBOT_URL}/#token=${ENV.WILLBOT_ACCESS_TOKEN}`,
   );
   assert.equal(
-    await probeWillbot(ENV, fetchReturning(200, { ok: false })),
-    "stub",
-  );
-  assert.equal(await probeWillbot(ENV, fetchReturning(500, {})), "stub");
-  assert.equal(
-    await probeWillbot(ENV, async () => {
-      throw new Error("down");
-    }),
+    (await probeWillbot(ENV, fetchReturning(200, { ok: false }))).status,
     "stub",
   );
   assert.equal(
-    await probeWillbot({}, fetchReturning(200, { ok: true })),
+    (await probeWillbot(ENV, fetchReturning(500, {}))).status,
     "stub",
   );
+  const down = await probeWillbot(ENV, async () => {
+    throw new Error("down");
+  });
+  assert.equal(down.status, "stub");
+  assert.equal(down.embedUrl, undefined);
+  const noSecrets = await probeWillbot({}, fetchReturning(200, { ok: true }));
+  assert.equal(noSecrets.status, "stub");
+  assert.equal(noSecrets.embedUrl, undefined);
 });
 
 test("voice: speak defaults true, audio+visemes pass through camelCased", async () => {

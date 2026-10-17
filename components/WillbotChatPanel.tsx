@@ -36,7 +36,7 @@ type Props = {
   onClose: () => void;
 };
 
-export const WILLBOT_PANEL_WIDTH = 340;
+export const WILLBOT_PANEL_WIDTH = 400;
 
 const GREETING: ChatMessage = {
   role: "willbot",
@@ -72,6 +72,9 @@ export function WillbotChatPanel({ initialPosition, onClose }: Props) {
   // null = unknown (no badge yet); the mount probe below resolves it before
   // the visitor sends anything, and each reply keeps it current after that.
   const [stubMode, setStubMode] = useState<boolean | null>(null);
+  // When the probe hands back Will-bot's own UI, embed the real thing —
+  // face, Talk mic, voice — instead of this panel's text chat.
+  const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   // Voice on by default; muting also silences any speech mid-sentence.
   const [muted, setMuted] = useState(false);
   const [position, setPosition] = useState(initialPosition);
@@ -97,14 +100,46 @@ export function WillbotChatPanel({ initialPosition, onClose }: Props) {
   // Closing the panel cuts Will off mid-sentence; the mouth rests.
   useEffect(() => stopWillbotSpeech, []);
 
+  // The embed panel is much taller than the text chat it replaces; after the
+  // embed commit has painted (effect + rAF, so the 620px height is real),
+  // pull the panel fully back inside the stage so Will-bot's Talk controls
+  // aren't cut off below the fold.
+  useEffect(() => {
+    if (!embedUrl) return;
+    const id = requestAnimationFrame(() => {
+      setPosition((p) => {
+        const panel = panelRef.current;
+        const parent = panel?.offsetParent as HTMLElement | null;
+        if (!panel || !parent) return p;
+        return {
+          left: Math.min(
+            Math.max(0, p.left),
+            Math.max(0, parent.clientWidth - panel.offsetWidth),
+          ),
+          top: Math.min(
+            Math.max(0, p.top),
+            Math.max(0, parent.clientHeight - panel.offsetHeight - 8),
+          ),
+        };
+      });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [embedUrl]);
+
   // Ask the proxy whether Will is actually on the line, so the header badge
-  // is honest from the first moment instead of defaulting to "stub".
+  // is honest from the first moment — and when he is, take the full UI.
   useEffect(() => {
     let cancelled = false;
     void fetch("/api/willbot")
       .then((res) => res.json())
-      .then((data: { status?: string }) => {
-        if (!cancelled) setStubMode(data.status !== "live");
+      .then((data: { status?: string; embedUrl?: string }) => {
+        if (cancelled) return;
+        setStubMode(data.status !== "live");
+        setEmbedUrl(
+          data.status === "live" && typeof data.embedUrl === "string"
+            ? data.embedUrl
+            : null,
+        );
       })
       .catch(() => {
         if (!cancelled) setStubMode(true);
@@ -215,7 +250,10 @@ export function WillbotChatPanel({ initialPosition, onClose }: Props) {
         width: `min(${WILLBOT_PANEL_WIDTH}px, calc(100vw - 16px))`,
         display: "flex",
         flexDirection: "column",
-        maxHeight: 420,
+        // The embedded Will-bot UI (face + Talk controls) needs real estate;
+        // the text fallback keeps its compact chat height.
+        height: embedUrl ? "min(620px, 78vh)" : undefined,
+        maxHeight: embedUrl ? undefined : 420,
         borderRadius: 10,
         overflow: "hidden",
         border: "2px solid var(--willville-ink)",
@@ -249,31 +287,35 @@ export function WillbotChatPanel({ initialPosition, onClose }: Props) {
           </span>
         </strong>
         <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          <button
-            type="button"
-            onClick={() => {
-              setMuted((m) => {
-                if (!m) stopWillbotSpeech();
-                return !m;
-              });
-            }}
-            onPointerDown={(e) => e.stopPropagation()}
-            aria-label={muted ? "Unmute Will's voice" : "Mute Will's voice"}
-            aria-pressed={muted}
-            title={muted ? "Voice off" : "Voice on"}
-            style={{
-              border: "none",
-              background: "transparent",
-              color: "inherit",
-              fontSize: 13,
-              lineHeight: 1,
-              cursor: "pointer",
-              padding: 2,
-              opacity: muted ? 0.5 : 1,
-            }}
-          >
-            {muted ? "🔇" : "🔊"}
-          </button>
+          {/* Will-bot's own UI has its voice/face toggles; the mute button
+              belongs to the text fallback only. */}
+          {!embedUrl && (
+            <button
+              type="button"
+              onClick={() => {
+                setMuted((m) => {
+                  if (!m) stopWillbotSpeech();
+                  return !m;
+                });
+              }}
+              onPointerDown={(e) => e.stopPropagation()}
+              aria-label={muted ? "Unmute Will's voice" : "Mute Will's voice"}
+              aria-pressed={muted}
+              title={muted ? "Voice off" : "Voice on"}
+              style={{
+                border: "none",
+                background: "transparent",
+                color: "inherit",
+                fontSize: 13,
+                lineHeight: 1,
+                cursor: "pointer",
+                padding: 2,
+                opacity: muted ? 0.5 : 1,
+              }}
+            >
+              {muted ? "🔇" : "🔊"}
+            </button>
+          )}
           <button
             type="button"
             onClick={onClose}
@@ -294,84 +336,105 @@ export function WillbotChatPanel({ initialPosition, onClose }: Props) {
         </span>
       </header>
 
-      <div
-        ref={scrollRef}
-        style={{
-          flex: 1,
-          minHeight: 120,
-          overflowY: "auto",
-          padding: 10,
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-        }}
-      >
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            style={{
-              alignSelf: msg.role === "visitor" ? "flex-end" : "flex-start",
-              maxWidth: "85%",
-              padding: "6px 9px",
-              borderRadius: 8,
-              border: "1px solid var(--willville-ink)",
-              backgroundColor:
-                msg.role === "visitor" ? "rgba(42, 29, 16, 0.08)" : "#fdf8ec",
-            }}
-          >
-            {msg.text}
-          </div>
-        ))}
-        {sending && (
-          <div style={{ alignSelf: "flex-start", opacity: 0.6 }}>
-            the water stirs…
-          </div>
-        )}
-      </div>
-
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void send();
-        }}
-        style={{
-          display: "flex",
-          gap: 6,
-          padding: 8,
-          borderTop: "1px solid var(--willville-ink)",
-        }}
-      >
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          placeholder="Speak to the leviathan…"
-          aria-label="Message for Willbot"
+      {embedUrl && (
+        /* The real Will-bot: his own UI — animated face, Talk mic, voice —
+           served by the will-bot service and embedded whole. allow grants
+           the mic (Talk button) and audio autoplay inside the frame. */
+        <iframe
+          src={embedUrl}
+          title="Will-bot"
+          allow="microphone; autoplay"
           style={{
             flex: 1,
-            padding: "6px 8px",
-            borderRadius: 6,
-            border: "1px solid var(--willville-ink)",
-            background: "#fffdf6",
-            color: "inherit",
-            font: "inherit",
+            width: "100%",
+            border: "none",
+            backgroundColor: "#111",
           }}
         />
-        <button
-          type="submit"
-          disabled={sending || draft.trim().length === 0}
+      )}
+
+      {!embedUrl && (
+        <div
+          ref={scrollRef}
           style={{
-            padding: "6px 12px",
-            borderRadius: 6,
-            border: "1px solid var(--willville-ink)",
-            backgroundColor: "var(--willville-ink)",
-            color: "var(--willville-paper)",
-            cursor: sending ? "default" : "pointer",
-            font: "inherit",
+            flex: 1,
+            minHeight: 120,
+            overflowY: "auto",
+            padding: 10,
+            display: "flex",
+            flexDirection: "column",
+            gap: 8,
           }}
         >
-          Send
-        </button>
-      </form>
+          {messages.map((msg, i) => (
+            <div
+              key={i}
+              style={{
+                alignSelf: msg.role === "visitor" ? "flex-end" : "flex-start",
+                maxWidth: "85%",
+                padding: "6px 9px",
+                borderRadius: 8,
+                border: "1px solid var(--willville-ink)",
+                backgroundColor:
+                  msg.role === "visitor" ? "rgba(42, 29, 16, 0.08)" : "#fdf8ec",
+              }}
+            >
+              {msg.text}
+            </div>
+          ))}
+          {sending && (
+            <div style={{ alignSelf: "flex-start", opacity: 0.6 }}>
+              the water stirs…
+            </div>
+          )}
+        </div>
+      )}
+
+      {!embedUrl && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void send();
+          }}
+          style={{
+            display: "flex",
+            gap: 6,
+            padding: 8,
+            borderTop: "1px solid var(--willville-ink)",
+          }}
+        >
+          <input
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Speak to the leviathan…"
+            aria-label="Message for Willbot"
+            style={{
+              flex: 1,
+              padding: "6px 8px",
+              borderRadius: 6,
+              border: "1px solid var(--willville-ink)",
+              background: "#fffdf6",
+              color: "inherit",
+              font: "inherit",
+            }}
+          />
+          <button
+            type="submit"
+            disabled={sending || draft.trim().length === 0}
+            style={{
+              padding: "6px 12px",
+              borderRadius: 6,
+              border: "1px solid var(--willville-ink)",
+              backgroundColor: "var(--willville-ink)",
+              color: "var(--willville-paper)",
+              cursor: sending ? "default" : "pointer",
+              font: "inherit",
+            }}
+          >
+            Send
+          </button>
+        </form>
+      )}
     </aside>
   );
 }

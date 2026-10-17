@@ -58,17 +58,23 @@ export const onRequestPost: PagesFunction<WillbotEnv> = async ({
   return jsonResponse(request, result.status, result.payload);
 };
 
-/** Health probe: "live" when Will-bot is wired and answering, else "stub". */
+/**
+ * Health probe: "live" when Will-bot is wired and answering, else "stub".
+ * Live responses carry embedUrl — the full Will-bot UI for the panel's
+ * iframe. Must never be cached: it is per-deployment state and, locally,
+ * the embed link carries Will-bot's own UI login token.
+ */
 export const onRequestGet: PagesFunction<WillbotEnv> = async ({
   request,
   env,
 }) => {
-  const status = await probeWillbot(env);
+  const probe = await probeWillbot(env);
   return jsonResponse(request, 200, {
-    status,
+    status: probe.status,
+    ...(probe.embedUrl && { embedUrl: probe.embedUrl }),
     hint:
-      status === "live"
-        ? "POST { message, sessionId? } to talk to Will."
+      probe.status === "live"
+        ? "POST { message, sessionId? } to talk to Will, or embed embedUrl for the full experience."
         : "POST { message } for a canned reply. Will-bot not reachable from here.",
   });
 };
