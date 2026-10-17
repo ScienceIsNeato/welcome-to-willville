@@ -69,8 +69,9 @@ export function WillbotChatPanel({ initialPosition, onClose }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([GREETING]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
-  // Stub until the first reply says otherwise — the header badge follows it.
-  const [stubMode, setStubMode] = useState(true);
+  // null = unknown (no badge yet); the mount probe below resolves it before
+  // the visitor sends anything, and each reply keeps it current after that.
+  const [stubMode, setStubMode] = useState<boolean | null>(null);
   // Voice on by default; muting also silences any speech mid-sentence.
   const [muted, setMuted] = useState(false);
   const [position, setPosition] = useState(initialPosition);
@@ -95,6 +96,23 @@ export function WillbotChatPanel({ initialPosition, onClose }: Props) {
 
   // Closing the panel cuts Will off mid-sentence; the mouth rests.
   useEffect(() => stopWillbotSpeech, []);
+
+  // Ask the proxy whether Will is actually on the line, so the header badge
+  // is honest from the first moment instead of defaulting to "stub".
+  useEffect(() => {
+    let cancelled = false;
+    void fetch("/api/willbot")
+      .then((res) => res.json())
+      .then((data: { status?: string }) => {
+        if (!cancelled) setStubMode(data.status !== "live");
+      })
+      .catch(() => {
+        if (!cancelled) setStubMode(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function clampToParent(left: number, top: number) {
     const panel = panelRef.current;
@@ -227,7 +245,7 @@ export function WillbotChatPanel({ initialPosition, onClose }: Props) {
         <strong style={{ letterSpacing: 1 }}>
           WILLBOT{" "}
           <span style={{ opacity: 0.65, fontWeight: 400 }}>
-            · harbor leviathan{stubMode ? " · stub" : ""}
+            · harbor leviathan{stubMode === true ? " · stub" : ""}
           </span>
         </strong>
         <span style={{ display: "flex", gap: 6, alignItems: "center" }}>
